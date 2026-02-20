@@ -5,33 +5,55 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Tournaments from "./pages/Tournaments";
+import TournamentDetail from "./pages/TournamentDetail";
+import Dashboard from "./pages/Dashboard";
+import CreateTournament from "./pages/CreateTournament";
+import MyTournaments from "./pages/MyTournaments";
+import TournamentManage from "./pages/TournamentManage";
+import ManageRegistrations from "./pages/ManageRegistrations";
+import MyTeams from "./pages/MyTeams";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
+      {/* Public routes */}
+      <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
+      <Route path="/tournaments" component={Tournaments} />
+      <Route path="/tournaments/:id" component={TournamentDetail} />
+
+      {/* Premium dashboard routes */}
+      <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard/create-tournament" component={CreateTournament} />
+      <Route path="/dashboard/tournaments" component={MyTournaments} />
+      <Route path="/dashboard/tournament/:id" component={TournamentManage} />
+      <Route path="/dashboard/registrations" component={ManageRegistrations} />
+      <Route path="/dashboard/teams" component={MyTeams} />
+
+      {/* 404 */}
+      <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
+          <Toaster
+            theme="dark"
+            toastOptions={{
+              style: {
+                background: "oklch(0.12 0.005 0)",
+                border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+                color: "oklch(0.90 0.005 0)",
+              },
+            }}
+          />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
