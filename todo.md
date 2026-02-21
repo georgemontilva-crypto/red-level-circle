@@ -221,3 +221,6 @@
 
 ## Fix Avatar Perfil V7.1
 - [x] Corregir posición del avatar: debe quedar superpuesto sobre el borde inferior del banner (estilo Discord)
+
+## Fix Avatar Posición V7.2
+- [x] Avatar debe quedar en la esquina inferior-izquierda del banner, sobresaliendo hacia abajo, y el nombre debajo del avatar

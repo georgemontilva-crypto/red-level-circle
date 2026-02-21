@@ -140,57 +140,49 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Avatar — absolute, anchored to bottom-left of banner, shifted down 50% of its own height */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: "16px",
-            transform: "translateY(50%)",
-            zIndex: 10,
-          }}
-        >
-          <div className="relative inline-block">
-            {equippedAura && (
-              <div
-                className="absolute inset-0 rounded-full blur-xl opacity-70 scale-150 pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
-              />
-            )}
-            {equippedFrame?.frameImage && (
-              <img
-                src={equippedFrame.frameImage}
-                alt="Frame"
-                className="absolute inset-0 z-10 pointer-events-none"
-                style={{ width: "88px", height: "88px" }}
-              />
-            )}
-            <div
-              className="rounded-full overflow-hidden relative z-0"
-              style={{
-                width: "80px",
-                height: "80px",
-                border: "4px solid oklch(0.10 0.005 0)",
-                boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6)",
-              }}
-            >
-              {profile.avatar ? (
-                <img src={profile.avatar} alt={profile.name ?? "Avatar"} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-900 to-black">
-                  <User className="w-8 h-8 text-red-400" />
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Card body — padding-top = half avatar height (40px) + gap (16px) */}
+        {/* Card body — avatar sits at the top-left, overlapping the banner above */}
         <div
           className="rounded-b-2xl pb-4 px-4 sm:px-6"
-          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none", paddingTop: "60px" }}
+          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none", paddingTop: "16px" }}
         >
-          {/* Name row */}
+          {/* Avatar row — pulled up to overlap the banner */}
+          <div className="flex items-end justify-between mb-3" style={{ marginTop: "-48px" }}>
+            <div className="relative inline-block" style={{ zIndex: 10 }}>
+              {equippedAura && (
+                <div
+                  className="absolute inset-0 rounded-full blur-xl opacity-70 scale-150 pointer-events-none"
+                  style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
+                />
+              )}
+              {equippedFrame?.frameImage && (
+                <img
+                  src={equippedFrame.frameImage}
+                  alt="Frame"
+                  className="absolute inset-0 z-10 pointer-events-none"
+                  style={{ width: "96px", height: "96px", top: "-8px", left: "-8px" }}
+                />
+              )}
+              <div
+                className="rounded-full overflow-hidden relative z-0"
+                style={{
+                  width: "88px",
+                  height: "88px",
+                  border: "4px solid oklch(0.10 0.005 0)",
+                  boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6)",
+                }}
+              >
+                {profile.avatar ? (
+                  <img src={profile.avatar} alt={profile.name ?? "Avatar"} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-900 to-black">
+                    <User className="w-10 h-10 text-red-400" />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Name row — below the avatar */}
           <div className="flex items-start justify-between gap-3 flex-wrap">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
