@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
+import { SectionBanner } from "@/components/SectionBanner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Task = {
@@ -710,6 +711,10 @@ export default function Rewards() {
         </div>
       </div>
 
+      {/* ── Section Banner ── */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
+        <SectionBanner sectionKey="rewards" height="h-32 sm:h-44" />
+      </div>
       {/* ── Hero ── */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0b0b0d 0%, #0d0d1a 40%, #0b0b0d 100%)", minHeight: 220 }}>
         <div className="absolute top-0 right-1/3 w-72 h-72 rounded-full opacity-20 pointer-events-none"

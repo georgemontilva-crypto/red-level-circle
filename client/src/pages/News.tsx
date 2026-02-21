@@ -4,6 +4,7 @@ import { Newspaper, Clock, Eye, ChevronRight, Tag } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { SectionBanner } from "@/components/SectionBanner";
 
 const CATEGORIES = [
   { value: "", label: "TODAS" },
@@ -22,6 +23,7 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-black text-white">
       <div className="pt-6 pb-16 max-w-5xl mx-auto px-4">
+        <SectionBanner sectionKey="news" height="h-36 sm:h-48" />
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Newspaper className="w-5 h-5 text-red-500" />

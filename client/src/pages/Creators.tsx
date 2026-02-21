@@ -3,6 +3,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
+import { SectionBanner } from "@/components/SectionBanner";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
   CheckCircle, Clock, XCircle, Send, ChevronDown, Users,
@@ -332,6 +333,10 @@ export default function Creators() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
+      {/* Section Banner */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
+        <SectionBanner sectionKey="creators" height="h-36 sm:h-48" />
+      </div>
       {/* Hero */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-black" />

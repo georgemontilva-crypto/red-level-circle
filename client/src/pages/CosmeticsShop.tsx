@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SectionBanner } from "@/components/SectionBanner";
 import { toast } from "sonner";
 import {
   Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock, X, AlertCircle, ShoppingCart,
@@ -258,6 +259,10 @@ export default function CosmeticsShop() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Section Banner */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+        <SectionBanner sectionKey="cosmetics" height="h-36 sm:h-48" />
+      </div>
       {/* Purchase confirmation modal */}
       {confirmCosmetic && (
         <PurchaseModal

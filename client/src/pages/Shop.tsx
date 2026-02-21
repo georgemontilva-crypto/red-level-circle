@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SectionBanner } from "@/components/SectionBanner";
 import { toast } from "sonner";
 import {
   ShoppingBag, Coins, Package, Zap, Star, Clock, CheckCircle,
@@ -83,6 +84,10 @@ export default function Shop() {
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Section Banner */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
+        <SectionBanner sectionKey="shop" height="h-36 sm:h-48" />
+      </div>
       {/* Hero */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #0d0000 50%, #0a0a0a 100%)" }}>
         <div className="absolute inset-0 pointer-events-none">

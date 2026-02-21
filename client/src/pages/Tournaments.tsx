@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Trophy, Users, Search, Star, Radio, Calendar, ChevronRight } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { useState } from "react";
+import { SectionBanner } from "@/components/SectionBanner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 
@@ -46,6 +47,7 @@ export default function Tournaments() {
     <div className="min-h-screen bg-black text-white">
 
       <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
+        <SectionBanner sectionKey="tournaments" height="h-36 sm:h-48" />
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Trophy className="w-5 h-5 text-red-500" />
