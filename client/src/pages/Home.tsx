@@ -29,92 +29,56 @@ function statusLabel(s: string) {
 
 // ─── Hero Section (Epic Games style) ─────────────────────────────────────────
 function HeroSection() {
-  const { data: ads } = trpc.ads.list.useQuery();
+  const { data: homeBanner } = trpc.banners.getSection.useQuery({ sectionKey: "home" });
   const { data: featuredTournaments } = trpc.home.featuredTournaments.useQuery();
   const [activeIdx, setActiveIdx] = useState(0);
-
-  // Hero: solo anuncios destacados configurados por el admin
-  const heroItems = [
-    ...(ads?.filter((a: any) => a.isFeatured).slice(0, 3).map((a: any) => ({
-      type: "ad" as const,
-      id: a.id,
-      title: a.title,
-      subtitle: a.tagline ?? a.brandName,
-      description: a.description ?? "",
-      image: a.bannerImage,
-      accentColor: a.accentColor ?? "#ff0000",
-      ctaLabel: a.ctaLabel ?? "Ver más",
-      ctaUrl: a.destinationUrl ?? "#",
-    })) ?? []),
-  ];
 
   // Sidebar items: all featured tournaments
   const sidebarItems = featuredTournaments ?? [];
 
-  useEffect(() => {
-    if (heroItems.length <= 1) return;
-    const timer = setInterval(() => setActiveIdx(i => (i + 1) % heroItems.length), 6000);
-    return () => clearInterval(timer);
-  }, [heroItems.length]);
-
-  const active = heroItems[activeIdx];
+  // Banner del inicio configurado por el admin
+  const heroBgImage = homeBanner?.isActive ? homeBanner.imageUrl : null;
 
   return (
     <div className="flex gap-3 h-[420px] sm:h-[480px]">
       {/* Main hero */}
-      <div className="relative flex-1 rounded-2xl overflow-hidden group cursor-pointer">
-        {/* Background */}
-        {active?.image ? (
-          <img src={active.image} alt={active?.title} className="absolute inset-0 w-full h-full object-cover transition-all duration-700" />
+      <div className="relative flex-1 rounded-2xl overflow-hidden">
+        {/* Background: imagen del banner de inicio */}
+        {heroBgImage ? (
+          <img
+            src={heroBgImage}
+            alt={homeBanner?.title ?? "Banner inicio"}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
         ) : (
           <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-red-950/30 to-black" />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent" />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-transparent to-transparent" />
 
-        {/* Content */}
-        {active && (
+        {/* Título/subtítulo opcionales del banner */}
+        {(homeBanner?.title || homeBanner?.subtitle) && (
           <div className="absolute bottom-0 left-0 p-6 sm:p-8 max-w-lg">
-            <p className="text-xs font-mono text-red-400 tracking-widest uppercase mb-2">{active.subtitle}</p>
-            <h1 className="font-orbitron font-black text-2xl sm:text-4xl text-white leading-tight mb-3">{active.title}</h1>
-            {active.description && (
-              <p className="text-zinc-300 text-sm mb-5 line-clamp-2">{active.description}</p>
+            {homeBanner.title && (
+              <h1 className="font-orbitron font-black text-2xl sm:text-4xl text-white leading-tight mb-2 drop-shadow-lg">
+                {homeBanner.title}
+              </h1>
             )}
-            <div className="flex items-center gap-3">
-              <a href={active.ctaUrl} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
-                style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
-                <ExternalLink size={16} /> {active.ctaLabel}
+            {homeBanner.subtitle && (
+              <p className="text-zinc-300 text-sm drop-shadow">{homeBanner.subtitle}</p>
+            )}
+            {homeBanner.linkUrl && (
+              <a
+                href={homeBanner.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white bg-red-600 hover:bg-red-500 transition-all hover:scale-105"
+              >
+                <ExternalLink size={16} /> Ver más
               </a>
-            </div>
+            )}
           </div>
-        )}
-
-        {/* Navigation dots */}
-        {heroItems.length > 1 && (
-          <div className="absolute bottom-4 right-4 flex items-center gap-1.5">
-            {heroItems.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveIdx(i)}
-                className={`rounded-full transition-all ${i === activeIdx ? "w-6 h-2 bg-red-500" : "w-2 h-2 bg-white/30 hover:bg-white/60"}`}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Arrow nav */}
-        {heroItems.length > 1 && (
-          <>
-            <button onClick={() => setActiveIdx(i => (i - 1 + heroItems.length) % heroItems.length)}
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80">
-              <ChevronLeft size={16} />
-            </button>
-            <button onClick={() => setActiveIdx(i => (i + 1) % heroItems.length)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80">
-              <ChevronRight size={16} />
-            </button>
-          </>
         )}
       </div>
 

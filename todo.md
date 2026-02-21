@@ -431,3 +431,4 @@
 - [x] Crear tab "Banners" en AdminPanel para gestionar banners de secciones
 - [ ] Crear tab "Publicidades" mejorada con orden de prioridad drag & drop
 - [ ] Mostrar banners de sección en las páginas correspondientes
+- [x] HeroSection del inicio usa imagen de section_banners[home] en lugar de publicidades
