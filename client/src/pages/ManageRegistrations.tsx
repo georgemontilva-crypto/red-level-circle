@@ -48,7 +48,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 
 export default function ManageRegistrations() {
   const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [actionModal, setActionModal] = useState<{
     regId: number;
@@ -60,7 +60,7 @@ export default function ManageRegistrations() {
 
   const { data: myTournaments } = trpc.tournaments.myTournaments.useQuery();
   const { data: registrations, refetch } = trpc.registrations.byTournament.useQuery(
-    { tournamentId: selectedTournamentId!, status: statusFilter || undefined },
+    { tournamentId: selectedTournamentId!, status: statusFilter === "all" ? undefined : statusFilter },
     { enabled: !!selectedTournamentId }
   );
   const { data: auditLog } = trpc.registrations.auditLog.useQuery(
@@ -148,7 +148,7 @@ export default function ManageRegistrations() {
                 {Object.entries(STATUS_CONFIG).map(([status, cfg]) => (
                   <button
                     key={status}
-                    onClick={() => setStatusFilter(statusFilter === status ? "" : status)}
+                    onClick={() => setStatusFilter(statusFilter === status ? "all" : status)}
                     className="rounded-xl p-4 text-center transition-all duration-200"
                     style={
                       statusFilter === status
@@ -220,7 +220,7 @@ export default function ManageRegistrations() {
                     <SelectValue placeholder="Todos los estados" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Todos los estados</SelectItem>
+                    <SelectItem value="all">Todos los estados</SelectItem>
                     {Object.entries(STATUS_CONFIG).map(([v, cfg]) => (
                       <SelectItem key={v} value={v}>{cfg.label}</SelectItem>
                     ))}
@@ -261,7 +261,7 @@ export default function ManageRegistrations() {
                   </p>
                   {statusFilter && (
                     <button
-                      onClick={() => setStatusFilter("")}
+                      onClick={() => setStatusFilter("all")}
                       className="mt-2 text-xs font-display tracking-wider"
                       style={{ color: "oklch(0.55 0.22 25)" }}
                     >
