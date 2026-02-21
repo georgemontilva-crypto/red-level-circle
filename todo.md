@@ -283,3 +283,8 @@
 - [x] Rediseñar MyTeams: formulario de creación + gestión de roster con búsqueda por @nickname, añadir/eliminar miembros
 - [x] Rediseñar TeamProfile público: fichas de jugadores con avatar, rol, juego, ID de juego, estadísticas individuales
 - [x] Al inscribirse en torneo, validar que todos los miembros del equipo están registrados en la plataforma (ya existía)
+
+## Mejoras Visuales V14
+- [x] Agrandar tarjetas de torneos activos en el Home (w-72, h-44, con hover animado y badges de juego)
+- [x] Rediseñar TournamentDetail: banner hero 420px a pantalla completa con título, organizador, info y botón CTA superpuestos
+- [x] El banner del inicio lo sube el admin desde su panel (no auto-generado)

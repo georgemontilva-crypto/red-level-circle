@@ -95,82 +95,129 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Banner hero background */}
-      {tournament.banner && (
-        <div
-          className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
-          style={{ zIndex: 0 }}
-        >
+      {/* ── HERO BANNER ── */}
+      <div className="relative w-full overflow-hidden" style={{ height: "420px" }}>
+        {/* Banner image */}
+        {tournament.banner ? (
           <img
             src={tournament.banner}
-            alt=""
-            className="w-full h-full object-cover"
-            style={{ opacity: 0.18 }}
+            alt={tournament.name}
+            className="absolute inset-0 w-full h-full object-cover"
           />
+        ) : (
           <div
             className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(to bottom, oklch(0 0 0 / 0.3) 0%, oklch(0.07 0.005 0) 70%, oklch(0.07 0.005 0) 100%)",
-            }}
+            style={{ background: "linear-gradient(135deg, oklch(0.12 0.03 25) 0%, oklch(0.07 0.005 0) 60%, oklch(0.10 0.01 0) 100%)" }}
           />
+        )}
+        {/* Dark gradient overlay — heavier at bottom so text is readable */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.92) 100%)" }}
+        />
+        {/* Left-side vignette */}
+        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
+
+        {/* Back button — top left */}
+        <div className="absolute top-4 left-4 z-10">
+          <Link href="/tournaments">
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white transition-colors text-xs font-mono tracking-wider"
+              style={{ background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.12)", backdropFilter: "blur(8px)" }}>
+              <ChevronLeft size={14} /> VOLVER A TORNEOS
+            </button>
+          </Link>
         </div>
-      )}
 
-      {/* Breadcrumb */}
-      <div className="relative px-4 sm:px-6 pt-4 pb-2" style={{ zIndex: 1 }}>
-        <Link href="/tournaments">
-          <button className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-rajdhani text-sm tracking-wider">
-            <ChevronLeft size={14} /> VOLVER A TORNEOS
-          </button>
-        </Link>
-      </div>
-
-      <div className="relative max-w-5xl mx-auto px-4 py-10" style={{ zIndex: 1 }}>
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex flex-wrap items-center gap-3 mb-4">
+        {/* Hero content — bottom left */}
+        <div className="absolute bottom-0 left-0 right-0 px-6 pb-8 max-w-3xl">
+          {/* Badges */}
+          <div className="flex flex-wrap items-center gap-2 mb-3">
             <span
-              className="text-xs font-display tracking-wider px-3 py-1 rounded-full"
-              style={{
-                background: `${statusColor}20`,
-                border: `1px solid ${statusColor}50`,
-                color: statusColor,
-              }}
+              className="text-xs font-display tracking-wider px-3 py-1 rounded-full font-bold"
+              style={{ background: `${statusColor}30`, border: `1px solid ${statusColor}60`, color: statusColor }}
             >
               {statusLabel}
             </span>
-            <span
-              className="text-xs font-tech px-3 py-1 rounded"
-              style={{
-                background: "oklch(0.13 0.005 0)",
-                border: "1px solid oklch(0.20 0.01 0)",
-                color: "oklch(0.60 0.005 0)",
-              }}
-            >
-              {tournament.game}
-            </span>
-            <span
-              className="text-xs font-display tracking-wider px-3 py-1 rounded"
-              style={{
-                background: "oklch(0.13 0.005 0)",
-                border: "1px solid oklch(0.20 0.01 0)",
-                color: "oklch(0.60 0.005 0)",
-              }}
-            >
+            {tournament.game && (
+              <span className="text-xs font-mono px-3 py-1 rounded" style={{ background: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                {tournament.game}
+              </span>
+            )}
+            <span className="text-xs font-mono px-3 py-1 rounded" style={{ background: "rgba(0,0,0,0.5)", color: "rgba(255,255,255,0.7)", border: "1px solid rgba(255,255,255,0.15)" }}>
               {BRACKET_LABELS[tournament.bracketType] ?? tournament.bracketType}
             </span>
           </div>
 
-          <h1 className="font-display text-4xl md:text-5xl font-black tracking-wider text-foreground mb-4">
+          {/* Organizer */}
+          {tournament.creatorName && (
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                style={{ background: "oklch(0.55 0.22 25 / 0.8)", color: "white" }}>
+                {tournament.creatorName.charAt(0).toUpperCase()}
+              </div>
+              <span className="text-xs text-zinc-300 font-mono">Organizado por <span className="text-white font-semibold">{tournament.creatorName}</span></span>
+            </div>
+          )}
+
+          {/* Title */}
+          <h1 className="font-display text-4xl md:text-5xl font-black tracking-wider text-white mb-3 drop-shadow-lg" style={{ textShadow: "0 2px 20px rgba(0,0,0,0.8)" }}>
             {tournament.name}
           </h1>
 
-          <p className="text-muted-foreground text-lg leading-relaxed max-w-3xl">
-            {tournament.description ?? "Sin descripción"}
-          </p>
-        </div>
+          {/* Description */}
+          {tournament.description && (
+            <p className="text-zinc-300 text-sm leading-relaxed mb-4 max-w-xl">{tournament.description}</p>
+          )}
 
+          {/* Quick info row */}
+          <div className="flex flex-wrap items-center gap-4 mb-5">
+            <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+              <Users size={14} style={{ color: statusColor }} />
+              <span className="font-mono">{tournament.maxTeams} equipos</span>
+            </span>
+            {tournament.prizeAmount ? (
+              <span className="flex items-center gap-1.5 text-sm">
+                <Trophy size={14} style={{ color: "oklch(0.65 0.18 80)" }} />
+                <span className="font-orbitron font-bold" style={{ color: "oklch(0.65 0.18 80)" }}>{tournament.prizeAmount} RLC</span>
+              </span>
+            ) : tournament.prizeDescription ? (
+              <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+                <Trophy size={14} style={{ color: "oklch(0.65 0.18 80)" }} />
+                <span>{tournament.prizeDescription}</span>
+              </span>
+            ) : null}
+            {tournament.startDate && (
+              <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+                <Calendar size={14} className="text-zinc-400" />
+                <span className="font-mono">{new Date(tournament.startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}</span>
+              </span>
+            )}
+          </div>
+
+          {/* CTA button */}
+          {tournament.status === "registration_open" && (
+            isAuthenticated ? (
+              <button
+                onClick={() => setShowRegisterModal(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-sm tracking-widest font-bold transition-all duration-300 hover:scale-105"
+                style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
+              >
+                <Trophy size={16} /> PARTICIPAR EN EL TORNEO
+              </button>
+            ) : (
+              <button
+                onClick={() => (window.location.href = getLoginUrl())}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-sm tracking-widest font-bold transition-all duration-300 hover:scale-105"
+                style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
+              >
+                <Trophy size={16} /> INICIAR SESIÓN PARA PARTICIPAR
+              </button>
+            )
+          )}
+        </div>
+      </div>
+
+      <div className="relative max-w-5xl mx-auto px-4 py-8" style={{ zIndex: 1 }}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">

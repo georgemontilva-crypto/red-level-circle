@@ -212,26 +212,45 @@ function TournamentCard({ t }: { t: any }) {
   const st = statusLabel(t.status ?? "");
   return (
     <Link href={`/tournament/${t.id}`}>
-      <div className="shrink-0 w-52 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group" style={{ scrollSnapAlign: "start" }}>
-        <div className="relative h-28 bg-zinc-800">
+      <div className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+        style={{ scrollSnapAlign: "start", background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.5)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px oklch(0.55 0.22 25 / 0.2)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.18 0.01 0)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 4px 24px rgba(0,0,0,0.4)"; }}
+      >
+        {/* Banner image */}
+        <div className="relative h-44 bg-zinc-900 overflow-hidden">
           {t.banner ? (
-            <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-red-950/20">
-              <Trophy size={28} className="text-red-500/40" />
+            <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, oklch(0.12 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}>
+              <Trophy size={40} style={{ color: "oklch(0.55 0.22 25 / 0.3)" }} />
             </div>
           )}
-          <div className={`absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono text-white ${st.color}`}>
+          {/* Gradient overlay */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.10 0.005 0) 0%, transparent 60%)" }} />
+          {/* Status badge */}
+          <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-white ${st.color}`}
+            style={{ backdropFilter: "blur(8px)", background: "rgba(0,0,0,0.5)" }}>
             {t.status === "in_progress" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
             {st.text}
           </div>
+          {/* Game badge */}
+          {t.game && (
+            <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-mono"
+              style={{ background: "rgba(0,0,0,0.6)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", backdropFilter: "blur(8px)" }}>
+              {t.game}
+            </div>
+          )}
         </div>
-        <div className="p-3">
-          <p className="text-white font-semibold text-sm truncate">{t.name}</p>
-          <p className="text-zinc-500 text-xs mt-0.5">{t.game ?? "Multi-juego"}</p>
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-yellow-400 text-xs font-orbitron">{t.prizeAmount ? `${t.prizeAmount} RLC` : "—"}</span>
-            <span className="text-zinc-600 text-xs flex items-center gap-1"><Calendar size={10} />{formatDate(t.startDate)}</span>
+        {/* Info */}
+        <div className="p-4">
+          <p className="text-white font-bold text-base truncate font-display">{t.name}</p>
+          <div className="flex items-center justify-between mt-3">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg">🪙</span>
+              <span className="font-orbitron font-bold text-sm" style={{ color: "oklch(0.65 0.18 80)" }}>{t.prizeAmount ? `${t.prizeAmount} RLC` : "—"}</span>
+            </div>
+            <span className="text-zinc-500 text-xs flex items-center gap-1 font-mono"><Calendar size={11} />{formatDate(t.startDate)}</span>
           </div>
         </div>
       </div>
