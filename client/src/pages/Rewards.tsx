@@ -1,146 +1,590 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import {
-  Coins, Play, CheckCircle, Clock, Star, Zap, Gift,
-  Video, Megaphone, Calendar, Share2, Lock
+  Coins, Play, CheckCircle, Clock, Zap, Gift,
+  Video, Megaphone, Calendar, Share2, Lock, X,
+  Volume2, VolumeX, Shield, ShoppingBag
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { useLocation } from "wouter";
 
-const TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  video: { label: "Ver Video", icon: <Video className="w-5 h-5" />, color: "text-red-400 bg-red-500/10 border-red-500/30" },
-  ad: { label: "Ver Anuncio", icon: <Megaphone className="w-5 h-5" />, color: "text-blue-400 bg-blue-500/10 border-blue-500/30" },
-  daily_login: { label: "Login Diario", icon: <Calendar className="w-5 h-5" />, color: "text-green-400 bg-green-500/10 border-green-500/30" },
-  share: { label: "Compartir", icon: <Share2 className="w-5 h-5" />, color: "text-purple-400 bg-purple-500/10 border-purple-500/30" },
-  follow: { label: "Seguir", icon: <Star className="w-5 h-5" />, color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30" },
+// ─── Types ────────────────────────────────────────────────────────────────────
+type Task = {
+  id: number;
+  title: string;
+  description?: string | null;
+  type: string;
+  reward: number;
+  contentUrl?: string | null;
+  thumbnailUrl?: string | null;
+  sponsorName?: string | null;
+  sponsorLogoUrl?: string | null;
+  expiresAt?: string | Date | null;
+  durationSeconds?: number | null;
 };
 
-function CountdownTimer({ seconds, onComplete }: { seconds: number; onComplete: () => void }) {
-  const [remaining, setRemaining] = useState(seconds);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setRemaining((prev) => {
-        if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          onComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, []);
-
-  const progress = ((seconds - remaining) / seconds) * 100;
+// ─── Reward Claimed Modal (Discord-style) ─────────────────────────────────────
+function RewardClaimedModal({
+  task,
+  newBalance,
+  onClose,
+}: {
+  task: Task;
+  newBalance: number;
+  onClose: () => void;
+}) {
+  const [, navigate] = useLocation();
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-20 h-20">
-        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
-          <circle cx="40" cy="40" r="34" fill="none" stroke="#1a1a1a" strokeWidth="6" />
-          <circle
-            cx="40" cy="40" r="34" fill="none"
-            stroke="#ff0000" strokeWidth="6"
-            strokeDasharray={`${2 * Math.PI * 34}`}
-            strokeDashoffset={`${2 * Math.PI * 34 * (1 - progress / 100)}`}
-            strokeLinecap="round"
-            style={{ transition: "stroke-dashoffset 1s linear", filter: "drop-shadow(0 0 6px #ff0000)" }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-black font-mono text-white">{remaining}</span>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      style={{ animation: "fadeIn 0.2s ease" }}
+    >
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
+        style={{
+          background: "#1e1f22",
+          animation: "scaleIn 0.35s cubic-bezier(0.34,1.56,0.64,1)",
+        }}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        {/* Breadcrumb */}
+        <div className="px-5 pt-5 pb-0 flex items-center gap-2 text-xs text-zinc-500 font-mono">
+          <span>Recompensa</span>
+          <span>›</span>
+          <span className="text-zinc-300">RLC Coins</span>
+        </div>
+
+        {/* Content */}
+        <div className="flex gap-5 px-5 pt-4 pb-5">
+          {/* Left: coin + amount */}
+          <div className="flex flex-col items-center gap-3 min-w-[120px]">
+            {/* Animated coin */}
+            <div
+              className="w-28 h-28 rounded-full flex items-center justify-center relative"
+              style={{
+                background: "radial-gradient(circle at 35% 35%, oklch(0.80 0.20 85), oklch(0.55 0.22 75))",
+                boxShadow: "0 0 40px oklch(0.65 0.22 80 / 0.6), inset 0 2px 8px rgba(255,255,255,0.3)",
+                animation: "coinPop 0.5s cubic-bezier(0.34,1.56,0.64,1) 0.1s both",
+              }}
+            >
+              <Coins size={52} className="text-white drop-shadow-lg" />
+              {/* Sparkles */}
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1.5 h-1.5 rounded-full bg-yellow-300"
+                  style={{
+                    top: `${20 + Math.sin(i * 60 * Math.PI / 180) * 55}%`,
+                    left: `${50 + Math.cos(i * 60 * Math.PI / 180) * 55}%`,
+                    animation: `sparkle 0.6s ease ${0.2 + i * 0.05}s both`,
+                    opacity: 0,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="text-center">
+              <div className="flex items-center gap-1.5 justify-center">
+                <Coins size={18} className="text-yellow-400" />
+                <span className="text-white font-black text-3xl font-mono">+{task.reward}</span>
+              </div>
+              <p className="text-zinc-400 text-xs mt-1">
+                Tu saldo ahora es <span className="text-white font-bold">{newBalance}</span>. ¡Buen trabajo!
+              </p>
+            </div>
+            <button
+              onClick={() => { onClose(); navigate("/shop"); }}
+              className="w-full py-2 rounded-xl text-sm font-bold text-zinc-300 border border-zinc-600 hover:border-zinc-400 hover:text-white transition-all"
+              style={{ background: "#2b2d31" }}
+            >
+              <span className="flex items-center justify-center gap-1.5">
+                <ShoppingBag size={13} /> Explorar la tienda
+              </span>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="w-px bg-zinc-700/60 self-stretch" />
+
+          {/* Right: task info */}
+          <div className="flex flex-col justify-between flex-1 min-w-0">
+            {/* Thumbnail */}
+            {task.thumbnailUrl ? (
+              <img
+                src={task.thumbnailUrl}
+                alt={task.title}
+                className="w-full rounded-xl object-cover mb-3"
+                style={{ aspectRatio: "16/9" }}
+              />
+            ) : (
+              <div
+                className="w-full rounded-xl mb-3 flex items-center justify-center bg-zinc-800"
+                style={{ aspectRatio: "16/9" }}
+              >
+                <Gift size={28} className="text-zinc-600" />
+              </div>
+            )}
+            <div>
+              <p className="text-white font-bold text-sm leading-snug">{task.title}</p>
+              {task.sponsorName && (
+                <p className="text-zinc-500 text-xs mt-0.5">{task.sponsorName}</p>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="mt-3 w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:brightness-110"
+              style={{ background: "oklch(0.45 0.18 250)", boxShadow: "0 2px 12px oklch(0.45 0.18 250 / 0.3)" }}
+            >
+              Ver recompensa
+            </button>
+          </div>
         </div>
       </div>
-      <p className="text-gray-400 text-sm font-mono">Espera para reclamar...</p>
     </div>
   );
 }
 
+// ─── Video Player Modal ───────────────────────────────────────────────────────
+function VideoPlayerModal({
+  task,
+  onClose,
+  onClaimed,
+}: {
+  task: Task;
+  onClose: () => void;
+  onClaimed: (newBalance: number) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [muted, setMuted] = useState(false);
+  const [videoCompleted, setVideoCompleted] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const required = task.durationSeconds ?? 30;
+  const isYoutube = task.contentUrl?.includes("youtube") || task.contentUrl?.includes("youtu.be");
+  const isDirectVideo = task.contentUrl && !isYoutube;
+
+  const claimMutation = trpc.rewards.claim.useMutation({
+    onSuccess: (data) => {
+      setClaiming(false);
+      onClaimed(data.newBalance);
+    },
+    onError: (err) => {
+      setClaiming(false);
+      toast.error(err.message);
+    },
+  });
+
+  // Direct video: sync elapsed with currentTime
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isDirectVideo) return;
+
+    const onTimeUpdate = () => {
+      const ct = Math.floor(video.currentTime);
+      setElapsed(ct);
+      if (ct >= required && !videoCompleted) {
+        setVideoCompleted(true);
+        video.pause();
+      }
+    };
+    const onSeeking = () => {
+      if (video.currentTime > elapsed + 1.5) video.currentTime = elapsed;
+    };
+    const onPause = () => {
+      if (!videoCompleted && video.currentTime < required) {
+        setTimeout(() => video.play().catch(() => {}), 100);
+      }
+    };
+
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("seeking", onSeeking);
+    video.addEventListener("pause", onPause);
+    video.play().catch(() => {});
+
+    return () => {
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("seeking", onSeeking);
+      video.removeEventListener("pause", onPause);
+    };
+  }, [elapsed, required, videoCompleted, isDirectVideo]);
+
+  // YouTube: simple interval
+  useEffect(() => {
+    if (!isYoutube) return;
+    const interval = setInterval(() => {
+      setElapsed((prev) => {
+        const next = prev + 1;
+        if (next >= required && !videoCompleted) {
+          setVideoCompleted(true);
+          clearInterval(interval);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isYoutube, required, videoCompleted]);
+
+  const progress = Math.min((elapsed / required) * 100, 100);
+  const remaining = Math.max(required - elapsed, 0);
+
+  const getYoutubeEmbedUrl = (url: string) => {
+    let videoId = "";
+    if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
+    else if (url.includes("watch?v=")) videoId = url.split("watch?v=")[1].split("&")[0];
+    else if (url.includes("embed/")) return url + (url.includes("?") ? "&" : "?") + "autoplay=1";
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+  };
+
+  const handleClaim = () => {
+    if (!videoCompleted || claiming) return;
+    setClaiming(true);
+    claimMutation.mutate({ taskId: task.id });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      style={{ animation: "fadeIn 0.2s ease" }}
+    >
+      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: "#111214", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        {/* Video */}
+        <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
+          {isDirectVideo ? (
+            <video
+              ref={videoRef}
+              src={task.contentUrl!}
+              className="w-full h-full object-cover"
+              playsInline
+              muted={muted}
+              disablePictureInPicture
+              controlsList="nodownload nofullscreen noremoteplayback"
+              style={{ pointerEvents: "none" }}
+            />
+          ) : isYoutube ? (
+            <iframe
+              src={getYoutubeEmbedUrl(task.contentUrl!)}
+              className="w-full h-full"
+              allow="autoplay; fullscreen"
+              allowFullScreen
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+              <Gift size={48} className="text-zinc-700" />
+            </div>
+          )}
+
+          {/* Anti-skip badge */}
+          {isDirectVideo && !videoCompleted && (
+            <div className="absolute inset-0 pointer-events-none flex items-end justify-start p-3">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 text-xs text-zinc-400 font-mono">
+                <Shield size={10} /> No se puede adelantar
+              </div>
+            </div>
+          )}
+
+          {/* Mute */}
+          {isDirectVideo && (
+            <button
+              onClick={() => { setMuted((m) => !m); if (videoRef.current) videoRef.current.muted = !muted; }}
+              className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+            >
+              {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            </button>
+          )}
+
+          {/* Completed overlay */}
+          {videoCompleted && (
+            <div
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.6)", animation: "fadeIn 0.3s ease" }}
+            >
+              <div className="flex flex-col items-center gap-3">
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center"
+                  style={{ background: "#22c55e", boxShadow: "0 0 30px #22c55e80", animation: "coinPop 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}
+                >
+                  <CheckCircle size={32} className="text-white" />
+                </div>
+                <p className="text-white font-bold text-lg">¡Video completado!</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full h-1" style={{ background: "#1a1a1a" }}>
+          <div
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${progress}%`,
+              background: videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25)",
+              boxShadow: videoCompleted ? "0 0 8px #22c55e" : "0 0 8px oklch(0.55 0.22 25)",
+            }}
+          />
+        </div>
+
+        {/* Bottom bar */}
+        <div className="px-5 py-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            {task.sponsorLogoUrl ? (
+              <img src={task.sponsorLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center">
+                <Video size={14} className="text-zinc-500" />
+              </div>
+            )}
+            <div>
+              <p className="text-white text-sm font-bold leading-tight">{task.title}</p>
+              {task.sponsorName && <p className="text-zinc-500 text-xs">{task.sponsorName}</p>}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            {!videoCompleted && (
+              <div className="flex items-center gap-1.5 text-zinc-400 text-sm font-mono">
+                <Clock size={14} />
+                <span>{remaining}s</span>
+              </div>
+            )}
+            <button
+              onClick={handleClaim}
+              disabled={!videoCompleted || claiming}
+              className="px-4 py-2 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+              style={{
+                background: videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25 / 0.3)",
+                color: videoCompleted ? "white" : "oklch(0.55 0.22 25)",
+                border: `1px solid ${videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25 / 0.4)"}`,
+                boxShadow: videoCompleted ? "0 0 16px #22c55e60" : "none",
+              }}
+            >
+              {claiming ? (
+                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : videoCompleted ? (
+                <><CheckCircle size={14} /> Reclamar +{task.reward} RLC</>
+              ) : (
+                <><Lock size={14} /> Reclamar recompensa</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Quest Card (Discord-style) ───────────────────────────────────────────────
+function QuestCard({
+  task,
+  isAuthenticated,
+  onStart,
+  claimed,
+}: {
+  task: Task;
+  isAuthenticated: boolean;
+  onStart: (task: Task) => void;
+  claimed: boolean;
+}) {
+  const expiresAt = task.expiresAt ? new Date(task.expiresAt) : null;
+  const expiresLabel = expiresAt ? `Termina el ${expiresAt.getDate()}/${expiresAt.getMonth() + 1}` : null;
+  const isVideo = task.type === "video" || task.type === "ad";
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-zinc-800/60 bg-zinc-900/80 hover:border-zinc-700 transition-all group flex flex-col">
+      {/* Thumbnail */}
+      <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+        {task.thumbnailUrl ? (
+          <img
+            src={task.thumbnailUrl}
+            alt={task.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
+            {isVideo ? <Play size={32} className="text-zinc-600" /> : <Gift size={32} className="text-zinc-600" />}
+          </div>
+        )}
+        {/* Play overlay */}
+        {isVideo && task.thumbnailUrl && (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play size={20} className="text-white ml-0.5" />
+            </div>
+          </div>
+        )}
+        {/* Sponsor + expiry */}
+        <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent">
+          {task.sponsorName ? (
+            <div className="flex items-center gap-1.5">
+              {task.sponsorLogoUrl && <img src={task.sponsorLogoUrl} alt="" className="w-4 h-4 rounded-full object-cover" />}
+              <span className="text-zinc-300 text-xs font-mono">
+                Patrocinado por <span className="text-white font-bold">{task.sponsorName}</span>
+              </span>
+            </div>
+          ) : <span />}
+          {expiresLabel && <span className="text-zinc-400 text-xs font-mono">{expiresLabel}</span>}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="p-4 flex flex-col gap-3 flex-1">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
+            {task.type === "video" && <Video size={16} className="text-red-400" />}
+            {task.type === "ad" && <Megaphone size={16} className="text-blue-400" />}
+            {task.type === "daily_login" && <Calendar size={16} className="text-green-400" />}
+            {task.type === "share" && <Share2 size={16} className="text-purple-400" />}
+            {task.type === "follow" && <Zap size={16} className="text-yellow-400" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-0.5">
+              {task.type === "video" ? "Misión de Video" :
+               task.type === "ad" ? "Ver Anuncio" :
+               task.type === "daily_login" ? "Login Diario" :
+               task.type === "share" ? "Compartir" : "Misión"}
+            </p>
+            <p className="text-white text-sm font-bold leading-snug">{task.title}</p>
+            {task.description && <p className="text-zinc-500 text-xs mt-0.5 line-clamp-2">{task.description}</p>}
+          </div>
+          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 shrink-0">
+            <Coins size={12} className="text-yellow-400" />
+            <span className="text-yellow-400 font-bold font-mono text-sm">+{task.reward}</span>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-auto">
+          {claimed ? (
+            <div className="w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-500 font-bold text-sm text-center font-mono flex items-center justify-center gap-2">
+              <CheckCircle size={14} className="text-green-500" /> Reclamado
+            </div>
+          ) : !isAuthenticated ? (
+            <a
+              href={getLoginUrl()}
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-400 font-bold text-sm hover:bg-zinc-700 transition-all"
+            >
+              <Lock size={14} /> Inicia sesión para ganar
+            </a>
+          ) : (
+            <button
+              onClick={() => onStart(task)}
+              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{
+                background: "oklch(0.45 0.18 250)",
+                boxShadow: "0 2px 12px oklch(0.45 0.18 250 / 0.3)",
+              }}
+            >
+              {isVideo ? "Iniciar misión de video" :
+               task.type === "daily_login" ? "Reclamar login diario" : "Iniciar misión"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Rewards() {
   const { isAuthenticated } = useAuth();
-  const [watchingTask, setWatchingTask] = useState<number | null>(null);
-  const [completedWatch, setCompletedWatch] = useState<Set<number>>(new Set());
-  const [claimedToday, setClaimedToday] = useState<Set<number>>(new Set());
+  const [activeTab, setActiveTab] = useState<"all" | "claimed">("all");
+  const [watchingTask, setWatchingTask] = useState<Task | null>(null);
+  const [claimedTasks, setClaimedTasks] = useState<Set<number>>(new Set());
+  const [rewardResult, setRewardResult] = useState<{ task: Task; newBalance: number } | null>(null);
 
   const { data: tasks = [] } = trpc.rewards.list.useQuery();
   const { data: me, refetch: refetchMe } = trpc.auth.me.useQuery();
 
-  const claimMutation = trpc.rewards.claim.useMutation({
-    onSuccess: (data) => {
-      toast.success(`+${data.reward} RLC Coins ganados!`, {
-        description: `Nuevo balance: ${data.newBalance} RLC`,
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
-      });
-      setWatchingTask(null);
-      setClaimedToday((prev) => { const n = new Set(prev); n.add(data.reward); return n; });
-      refetchMe();
-    },
-    onError: (err) => {
-      toast.error(err.message, {
-        style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
-      });
-      setWatchingTask(null);
-    },
-  });
+  const handleStart = useCallback((task: Task) => {
+    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+    setWatchingTask(task);
+  }, [isAuthenticated]);
 
-  const handleStartTask = (taskId: number) => {
-    if (!isAuthenticated) {
-      window.location.href = getLoginUrl();
-      return;
-    }
-    setWatchingTask(taskId);
-  };
-
-  const handleTimerComplete = (taskId: number) => {
-    setCompletedWatch((prev) => { const n = new Set<number>(); prev.forEach(v => n.add(v)); n.add(taskId); return n; });
-  };
-
-  const handleClaim = (taskId: number) => {
-    claimMutation.mutate({ taskId });
-  };
+  const handleClaimed = useCallback((newBalance: number) => {
+    if (!watchingTask) return;
+    const task = watchingTask;
+    setClaimedTasks((prev) => { const n = new Set(prev); n.add(task.id); return n; });
+    setWatchingTask(null);
+    setRewardResult({ task, newBalance });
+    refetchMe();
+  }, [watchingTask, refetchMe]);
 
   const userBalance = (me as { rlcBalance?: number } | null)?.rlcBalance ?? 0;
-
-  // Group tasks by type
-  const tasksByType = tasks.reduce<Record<string, typeof tasks>>((acc, task) => {
-    const type = task.type;
-    if (!acc[type]) acc[type] = [];
-    acc[type].push(task);
-    return acc;
-  }, {});
+  const typedTasks = tasks as Task[];
+  const displayTasks = activeTab === "claimed"
+    ? typedTasks.filter((t) => claimedTasks.has(t.id))
+    : typedTasks;
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #001a00 50%, #0a0a0a 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #00ff44, transparent)" }} />
+    <div className="min-h-screen" style={{ background: "#0b0b0d" }}>
+      {/* ── Header bar ── */}
+      <div className="sticky top-0 z-40 border-b border-zinc-800/60 backdrop-blur-md" style={{ background: "#111214cc" }}>
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+          <nav className="flex items-center gap-1">
+            {(["all", "claimed"] as const).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 rounded-lg text-sm font-mono transition-all ${
+                  activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                {tab === "all" ? "Todas las misiones" : "Misiones reclamadas"}
+              </button>
+            ))}
+          </nav>
+          {isAuthenticated && (
+            <div className="flex items-center gap-1.5 text-sm font-mono">
+              <Coins size={14} className="text-yellow-400" />
+              <span className="text-white font-bold">{userBalance}</span>
+            </div>
+          )}
         </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      </div>
+
+      {/* ── Hero ── */}
+      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0b0b0d 0%, #0d0d1a 40%, #0b0b0d 100%)", minHeight: 220 }}>
+        <div className="absolute top-0 right-1/3 w-72 h-72 rounded-full opacity-20 pointer-events-none"
+          style={{ background: "radial-gradient(circle, oklch(0.55 0.22 25), transparent)" }} />
+        <div className="absolute -bottom-10 right-10 w-48 h-48 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, oklch(0.55 0.22 25), transparent)" }} />
+        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
             <div>
-              <div className="flex items-center gap-3 mb-3">
-                <Gift className="w-7 h-7 text-green-500" />
-                <span className="text-green-500 font-mono text-sm tracking-widest uppercase">Sistema de Recompensas</span>
-              </div>
-              <h1 className="text-4xl font-black tracking-tight mb-2" style={{ fontFamily: "Orbitron, monospace" }}>
-                GANA <span className="text-green-400" style={{ textShadow: "0 0 20px #00ff44" }}>RLC COINS</span>
+              <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3 leading-none" style={{ fontFamily: "Orbitron, monospace" }}>
+                GANA <span style={{ color: "oklch(0.70 0.28 25)", textShadow: "0 0 30px oklch(0.55 0.22 25)" }}>RLC COINS</span>
               </h1>
-              <p className="text-gray-400 max-w-lg">
-                Completa tareas diarias, ve videos y anuncios para acumular RLC Coins. Úsalos en la tienda o en apuestas.
+              <p className="text-zinc-400 max-w-md text-sm">
+                Completa misiones, ve videos y anuncios para acumular RLC Coins. Úsalos en la tienda o en apuestas de torneos.
               </p>
             </div>
-            {isAuthenticated && me && (
-              <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-2 px-5 py-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10">
-                  <Coins className="w-5 h-5 text-yellow-400" />
-                  <div>
-                    <p className="text-yellow-400 font-black font-mono text-2xl">{userBalance}</p>
-                    <p className="text-gray-500 text-xs font-mono">RLC COINS</p>
-                  </div>
+            {isAuthenticated && (
+              <div className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5">
+                <Coins size={24} className="text-yellow-400" />
+                <div>
+                  <p className="text-yellow-400 font-black font-mono text-3xl leading-none">{userBalance}</p>
+                  <p className="text-zinc-500 text-xs font-mono mt-0.5">RLC COINS</p>
                 </div>
               </div>
             )}
@@ -148,169 +592,54 @@ export default function Rewards() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
-        {/* How it works */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
-          {[
-            { icon: <Play className="w-6 h-6 text-red-400" />, title: "1. Elige una tarea", desc: "Selecciona un video o anuncio disponible" },
-            { icon: <Clock className="w-6 h-6 text-yellow-400" />, title: "2. Completa el tiempo", desc: "Espera el contador para verificar que viste el contenido" },
-            { icon: <Coins className="w-6 h-6 text-green-400" />, title: "3. Reclama tu premio", desc: "Los RLC Coins se acreditan automáticamente" },
-          ].map((step, i) => (
-            <div key={i} className="p-4 rounded-xl border border-white/10 bg-zinc-900 text-center">
-              <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-3">
-                {step.icon}
-              </div>
-              <p className="font-bold font-mono text-sm mb-1">{step.title}</p>
-              <p className="text-gray-500 text-xs">{step.desc}</p>
-            </div>
-          ))}
+      {/* ── Quest grid ── */}
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-white font-bold text-lg">
+            {activeTab === "all" ? "Misiones disponibles" : "Misiones reclamadas"}
+          </h2>
+          <span className="text-zinc-500 text-sm font-mono">{displayTasks.length} misiones</span>
         </div>
 
-        {/* Tasks */}
-        {tasks.length === 0 ? (
+        {displayTasks.length === 0 ? (
           <div className="text-center py-24">
-            <Gift className="w-16 h-16 text-green-500/30 mx-auto mb-4" />
-            <p className="text-gray-500 font-mono text-lg">No hay tareas disponibles aún</p>
-            <p className="text-gray-600 text-sm mt-2">Los administradores agregarán tareas pronto</p>
+            <Gift size={48} className="text-zinc-700 mx-auto mb-4" />
+            <p className="text-zinc-500 font-mono">
+              {activeTab === "claimed" ? "Aún no has reclamado ninguna misión" : "No hay misiones disponibles aún"}
+            </p>
           </div>
         ) : (
-          <div className="space-y-10">
-            {Object.entries(tasksByType).map(([type, typeTasks]) => {
-              const cfg = TYPE_CONFIG[type] ?? TYPE_CONFIG.video;
-              return (
-                <div key={type}>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2 rounded-lg border ${cfg.color}`}>{cfg.icon}</div>
-                    <h2 className="text-xl font-black font-mono tracking-wide">{cfg.label.toUpperCase()}S</h2>
-                    <span className="text-gray-600 font-mono text-sm">({typeTasks.length})</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {typeTasks.map((task) => {
-                      const isWatching = watchingTask === task.id;
-                      const isCompleted = completedWatch.has(task.id);
-
-                      return (
-                        <div
-                          key={task.id}
-                          className={`rounded-xl border bg-zinc-900 overflow-hidden transition-all ${
-                            isWatching ? "border-red-500 shadow-[0_0_20px_rgba(255,0,0,0.2)]" : "border-white/10 hover:border-white/20"
-                          }`}
-                        >
-                          {/* Video preview */}
-                          {task.contentUrl && (
-                            <div className="relative aspect-video bg-zinc-800 overflow-hidden">
-                              {isWatching ? (
-                                <iframe
-                                  src={task.contentUrl.includes("youtube") || task.contentUrl.includes("youtu.be")
-                                    ? task.contentUrl.replace("watch?v=", "embed/").replace("youtu.be/", "youtube.com/embed/") + "?autoplay=1&mute=0"
-                                    : task.contentUrl
-                                  }
-                                  className="w-full h-full"
-                                  allow="autoplay; fullscreen"
-                                  allowFullScreen
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-zinc-800">
-                                  <div className="w-16 h-16 rounded-full bg-red-500/20 border border-red-500/50 flex items-center justify-center">
-                                    <Play className="w-8 h-8 text-red-400 ml-1" />
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          <div className="p-4">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div>
-                                <h3 className="font-bold text-white">{task.title}</h3>
-                                {task.description && (
-                                  <p className="text-gray-500 text-sm mt-0.5">{task.description}</p>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-1 flex-shrink-0 px-2 py-1 rounded-lg bg-yellow-500/10 border border-yellow-500/30">
-                                <Coins className="w-3 h-3 text-yellow-400" />
-                                <span className="text-yellow-400 font-bold font-mono text-sm">+{task.reward}</span>
-                              </div>
-                            </div>
-
-                            {task.durationSeconds && (
-                              <div className="flex items-center gap-1 text-gray-500 text-xs font-mono mb-3">
-                                <Clock className="w-3 h-3" />
-                                {task.durationSeconds}s requeridos
-                              </div>
-                            )}
-
-                            {/* Action */}
-                            {isWatching ? (
-                              <div className="flex flex-col items-center gap-3 py-2">
-                                {!isCompleted ? (
-                                  <CountdownTimer
-                                    seconds={task.durationSeconds ?? 30}
-                                    onComplete={() => handleTimerComplete(task.id)}
-                                  />
-                                ) : (
-                                  <div className="flex flex-col items-center gap-2">
-                                    <CheckCircle className="w-10 h-10 text-green-400" />
-                                    <p className="text-green-400 font-mono text-sm">¡Listo para reclamar!</p>
-                                    <button
-                                      onClick={() => handleClaim(task.id)}
-                                      disabled={claimMutation.isPending}
-                                      className="px-6 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-mono font-bold transition-all disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                      <Coins className="w-4 h-4" />
-                                      Reclamar +{task.reward} RLC
-                                    </button>
-                                  </div>
-                                )}
-                                <button
-                                  onClick={() => { setWatchingTask(null); setCompletedWatch((prev) => { const n = new Set<number>(); prev.forEach(v => { if (v !== task.id) n.add(v); }); return n; }); }}
-                                  className="text-gray-600 text-xs hover:text-gray-400 transition-colors"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            ) : !isAuthenticated ? (
-                              <a
-                                href={getLoginUrl()}
-                                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-zinc-800 text-gray-400 font-mono text-sm hover:bg-zinc-700 transition-all"
-                              >
-                                <Lock className="w-4 h-4" />
-                                Inicia sesión para ganar
-                              </a>
-                            ) : (
-                              <button
-                                onClick={() => handleStartTask(task.id)}
-                                className="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-mono font-bold transition-all"
-                              >
-                                <Play className="w-4 h-4" />
-                                {task.type === "daily_login" ? "Reclamar" : "Iniciar"}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {displayTasks.map((task) => (
+              <QuestCard
+                key={task.id}
+                task={task as Task}
+                isAuthenticated={isAuthenticated}
+                onStart={handleStart}
+                claimed={claimedTasks.has(task.id)}
+              />
+            ))}
           </div>
         )}
-
-        {/* Info Banner */}
-        <div className="mt-12 p-6 rounded-xl border border-yellow-500/20 bg-yellow-500/5">
-          <div className="flex items-start gap-4">
-            <Zap className="w-8 h-8 text-yellow-400 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-bold text-yellow-400 font-mono mb-1">LÍMITES DIARIOS</h3>
-              <p className="text-gray-400 text-sm">
-                Cada tarea tiene un límite diario de reclamaciones para garantizar la equidad. Los límites se reinician a medianoche.
-                Acumula RLC Coins y canjéalos en la tienda de cosméticos, productos o úsalos en apuestas de torneos.
-              </p>
-            </div>
-          </div>
-        </div>
       </div>
+
+      {/* ── Video Modal ── */}
+      {watchingTask && (
+        <VideoPlayerModal
+          task={watchingTask}
+          onClose={() => setWatchingTask(null)}
+          onClaimed={handleClaimed}
+        />
+      )}
+
+      {/* ── Reward Claimed Modal ── */}
+      {rewardResult && (
+        <RewardClaimedModal
+          task={rewardResult.task}
+          newBalance={rewardResult.newBalance}
+          onClose={() => setRewardResult(null)}
+        />
+      )}
     </div>
   );
 }

@@ -387,6 +387,10 @@ export const rewardTasks = mysqlTable("reward_tasks", {
   type: mysqlEnum("type", ["video", "ad", "daily_login", "share", "follow"]).default("video").notNull(),
   reward: int("reward").notNull(), // RLC Coins earned
   contentUrl: text("contentUrl"),  // video/ad URL
+  thumbnailUrl: text("thumbnailUrl"), // thumbnail image for the quest card
+  sponsorName: varchar("sponsorName", { length: 128 }), // sponsor/brand name
+  sponsorLogoUrl: text("sponsorLogoUrl"), // sponsor logo image
+  expiresAt: timestamp("expiresAt"), // optional expiry date
   durationSeconds: int("durationSeconds").default(30), // watch time required
   maxClaimsPerUser: int("maxClaimsPerUser").default(1), // -1 = unlimited
   maxClaimsPerDay: int("maxClaimsPerDay").default(1),

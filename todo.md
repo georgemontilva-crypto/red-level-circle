@@ -391,3 +391,13 @@
 - [x] Quitar banner expandible de solicitud de creador en Creators.tsx
 - [x] Agregar botón flotante pequeño en esquina inferior derecha (solo en /creators)
 - [x] Al hacer click, abrir modal con el formulario de solicitud de creador con animación suave
+
+## Rediseño Recompensas estilo Discord V37
+- [x] Rediseñar la UI de recompensas al estilo Discord Quests (tarjetas con thumbnail, sponsor, misión, botón)
+- [x] Reproductor de video: deshabilitar pausa y adelantar (solo reproducción lineal)
+- [x] Contador del video sincronizado con currentTime del elemento video (no timer independiente)
+- [x] Modal de recompensa ganada al terminar el video (estilo Discord: coin animado, saldo actualizado, botón tienda)
+- [x] Campos thumbnailUrl, sponsorName, expiresAt en tabla rewardTasks (schema + migración)
+- [x] Header bar con tabs Todas/Reclamadas y balance de RLC Coins
+- [x] Hero section con título y balance destacado
+- [x] Grid de tarjetas estilo Discord Quests (3 columnas, thumbnail 16:9, sponsor, fecha, CTA)

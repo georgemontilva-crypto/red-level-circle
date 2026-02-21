@@ -194,6 +194,17 @@
   to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
+@keyframes coinPop {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes sparkle {
+  0% { transform: scale(0); opacity: 1; }
+  100% { transform: scale(2) translate(8px, -8px); opacity: 0; }
+}
+
 @layer components {
   /**
    * Custom container utility that centers content and adds responsive padding.

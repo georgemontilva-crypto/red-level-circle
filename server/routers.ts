@@ -985,10 +985,25 @@ export const appRouter = router({
         type: z.enum(["video", "ad", "daily_login", "share", "follow"]),
         rewardAmount: z.number().int().min(1),
         contentUrl: z.string().optional(),
+        thumbnailUrl: z.string().optional(),
+        sponsorName: z.string().optional(),
+        sponsorLogoUrl: z.string().optional(),
+        expiresAt: z.string().optional(), // ISO date string
         durationSeconds: z.number().int().optional(),
       }))
       .mutation(async ({ input }) => {
-        await adminCreateRewardTask({ title: input.title, description: input.description, type: input.type, reward: input.rewardAmount, contentUrl: input.contentUrl, durationSeconds: input.durationSeconds });
+        await adminCreateRewardTask({
+          title: input.title,
+          description: input.description,
+          type: input.type,
+          reward: input.rewardAmount,
+          contentUrl: input.contentUrl,
+          thumbnailUrl: input.thumbnailUrl,
+          sponsorName: input.sponsorName,
+          sponsorLogoUrl: input.sponsorLogoUrl,
+          expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
+          durationSeconds: input.durationSeconds,
+        });
         return { success: true };
       }),
     updateReward: adminProcedure
