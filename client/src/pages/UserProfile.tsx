@@ -364,7 +364,7 @@ export default function UserProfile() {
                   </div>
                   <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
                     {teamMemberships.map((m: any) => (
-                      <Link key={m.teamId} href={`/team/${m.teamId}`}>
+                      <Link key={m.teamId} href={`/teams/${m.teamId}`}>
                         <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
                           {m.teamLogo ? (
                             <img src={m.teamLogo} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" style={{ border: "1px solid oklch(0.55 0.22 25 / 0.3)" }} />

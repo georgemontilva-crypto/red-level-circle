@@ -378,7 +378,7 @@ export default function MyTeams() {
 
                     {/* Actions */}
                     <div className="flex flex-col gap-2 shrink-0">
-                      <Link href={`/team/${team.id}`}>
+                      <Link href={`/teams/${team.id}`}>
                         <button
                           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-colors"
                           style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}

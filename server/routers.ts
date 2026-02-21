@@ -501,7 +501,7 @@ export const appRouter = router({
       .input(z.object({
         teamId: z.number(),
         base64: z.string(),
-        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
         type: z.enum(["logo", "banner"]),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -1123,7 +1123,7 @@ export const appRouter = router({
     uploadImage: adminProcedure
       .input(z.object({
         base64: z.string(),
-        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
         folder: z.string().default("admin"),
       }))
       .mutation(async ({ input }) => {
@@ -1274,7 +1274,7 @@ export const appRouter = router({
     uploadImage: protectedProcedure
       .input(z.object({
         base64: z.string(),
-        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
         type: z.enum(["avatar", "banner"]),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -1483,7 +1483,7 @@ export const appRouter = router({
     uploadImage: adminProcedure
       .input(z.object({
         base64: z.string(),
-        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
         sectionKey: z.string(),
         isMobile: z.boolean().optional(),
       }))

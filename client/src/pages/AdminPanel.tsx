@@ -980,7 +980,7 @@ function TeamsTab() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/team/${team.id}`}>
+              <Link href={`/teams/${team.id}`}>
                 <Button size="sm" variant="outline" className="h-7 text-xs border-gray-700 text-gray-400">
                   <Eye className="w-3 h-3 mr-1" /> Ver
                 </Button>
