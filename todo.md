@@ -418,3 +418,5 @@
 - [x] Botón "Reanudar" en modal también usa color rojo RLC
 - [x] Contador del modal se pausa cuando el video se pausa (YouTube IFrame API)
 - [x] Ocultar panel "Más videos" que aparece al pausar (rel=0 + enablejsapi)
+- [x] Corregir barra de progreso que no avanza al reproducir video YouTube
+- [x] Botón en modal: 'Ver video (Xm Xs restantes)' mientras corre, 'Reclamar recompensa' cuando termina
