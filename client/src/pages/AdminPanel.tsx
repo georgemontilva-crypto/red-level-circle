@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
-  Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock
+  Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";

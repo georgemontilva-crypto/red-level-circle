@@ -280,7 +280,9 @@ export const games = mysqlTable("games", {
   description: text("description"),
   isActive: boolean("isActive").default(true).notNull(),
   tournamentCount: int("tournamentCount").default(0).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type Game = typeof games.$inferSelect;
@@ -461,3 +463,4 @@ export const contentCreators = mysqlTable("content_creators", {
 });
 export type ContentCreator = typeof contentCreators.$inferSelect;
 export type InsertContentCreator = typeof contentCreators.$inferInsert;
+

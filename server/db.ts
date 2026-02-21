@@ -609,6 +609,12 @@ export async function upsertGame(data: InsertGame) {
   await db.insert(games).values(data).onDuplicateKeyUpdate({ set: { ...data } });
 }
 
+export async function deleteGame(slug: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(games).where(eq(games.slug, slug));
+}
+
 // ─── News ─────────────────────────────────────────────────────────────────────
 export async function getNews(opts?: { category?: string; limit?: number; publishedOnly?: boolean }) {
   const db = await getDb();

@@ -23,7 +23,7 @@ export default function Tournaments() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const [searchText, setSearchText] = useState("");
-  const [selectedGame, setSelectedGame] = useState(params.get("game") ?? "");
+  const [selectedGame, setSelectedGame] = useState(params.get("game") ?? "");  // can be game name or slug
   const [selectedStatus, setSelectedStatus] = useState("");
   const { isAuthenticated } = useAuth();
 
@@ -83,8 +83,12 @@ export default function Tournaments() {
               TODOS
             </button>
             {games.map((game) => (
-              <button key={game.id} onClick={() => setSelectedGame(game.slug)}
-                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded border transition-all ${selectedGame === game.slug ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
+              <button key={game.id} onClick={() => setSelectedGame(prev => prev === game.name ? "" : game.name)}
+                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded border transition-all ${
+                  selectedGame === game.name || selectedGame === game.slug
+                    ? "bg-red-600 border-red-600 text-white"
+                    : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"
+                }`}>
                 {game.logo && <img src={game.logo} alt={game.name} className="w-4 h-4 object-contain" />}
                 {game.name.toUpperCase()}
               </button>

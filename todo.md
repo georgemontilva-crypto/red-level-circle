@@ -293,3 +293,20 @@
 - [x] Quitar banner hero automático del inicio (ahora solo muestra anuncios configurados por el admin)
 - [x] Arreglar tarjeta de torneo: punto verde + etiqueta de estado debajo del título, antes del precio; badge de juego en esquina superior derecha
 - [x] Corregir 404 al hacer click en tarjeta de torneo: ruta era /tournament/:id, corregida a /tournaments/:id en Home, TeamProfile y HeroSection
+
+## Sección de Juegos en Home V17
+- [ ] Tabla `games` en BD con campos: id, name, imageUrl, slug, isActive, sortOrder, createdAt
+- [ ] Endpoints: games.list (público), games.create/update/delete (admin)
+- [ ] Subir imágenes de Valorant, League of Legends, Marvel Rivals, Honor of Kings a S3
+- [ ] Sembrar los 4 juegos iniciales en la BD con sus imágenes de S3
+- [ ] Reemplazar sección "Torneos Activos" en Home por tarjetas de juegos tipo portada
+- [ ] Al hacer click en un juego, ir a /tournaments?game=NombreJuego
+- [ ] Filtro por juego funcional en la página de Torneos
+- [ ] Panel admin: gestión de juegos (crear, editar, eliminar, subir imagen)
+
+## Sección de Juegos + Gestión Admin V17
+- [ ] Tab de juegos en panel admin (crear/editar/eliminar juegos con imagen)
+- [ ] Foto de perfil (logo) y banner en formulario de crear equipo
+- [x] Sección "Torneos por Juego" en Home con tarjetas tipo portada
+- [x] Filtro por juego en /tournaments acepta nombre del juego desde el Home
+- [x] Endpoint games.delete para eliminar juegos desde admin

@@ -1,0 +1,9 @@
+{
+  "query": "\nINSERT INTO games (name, slug, banner, isActive, sortOrder) VALUES\n('Valorant', 'valorant', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/ObCOHvpcrZkNxdnd.png', true, 1),\n('League of Legends', 'league-of-legends', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/xnXJWWTgJXfVDhZC.png', true, 2),\n('Marvel Rivals', 'marvel-rivals', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/rVmgQhlDcBvOlgdo.png', true, 3),\n('Honor of Kings', 'honor-of-kings', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/HHADtbWzmLCAdjqM.png', true, 4)\nON DUPLICATE KEY UPDATE banner = VALUES(banner), sortOrder = VALUES(sortOrder);\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute \nINSERT INTO games (name, slug, banner, isActive, sortOrder) VALUES\n('Valorant', 'valorant', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/ObCOHvpcrZkNxdnd.png', true, 1),\n('League of Legends', 'league-of-legends', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/xnXJWWTgJXfVDhZC.png', true, 2),\n('Marvel Rivals', 'marvel-rivals', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/rVmgQhlDcBvOlgdo.png', true, 3),\n('Honor of Kings', 'honor-of-kings', 'https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/HHADtbWzmLCAdjqM.png', true, 4)\nON DUPLICATE KEY UPDATE banner = VALUES(banner), sortOrder = VALUES(sortOrder);\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 97
+}

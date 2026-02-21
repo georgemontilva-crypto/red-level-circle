@@ -348,10 +348,13 @@ export default function Home() {
   const { data: recentUsers } = trpc.home.recentUsers.useQuery();
   const { data: suggestedUsers } = trpc.home.suggestedUsers.useQuery(undefined, { enabled: isAuthenticated });
   const { data: creators } = trpc.creators.listApproved.useQuery();
+  const { data: gamesList } = trpc.games.list.useQuery();
 
-  const activeTournaments = allTournaments?.filter(t =>
-    t.status === "registration_open" || t.status === "in_progress"
-  ) ?? [];
+  // Count active tournaments per game
+  const tournamentCountByGame = (allTournaments ?? []).reduce((acc: Record<string, number>, t) => {
+    if (t.game) acc[t.game] = (acc[t.game] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -360,11 +363,63 @@ export default function Home() {
         {/* ── Hero ── */}
         <HeroSection />
 
-        {/* ── Torneos activos ── */}
-        {activeTournaments.length > 0 && (
-          <HScrollCarousel title="Torneos Activos" href="/tournaments">
-            {activeTournaments.map(t => <TournamentCard key={t.id} t={t} />)}
-          </HScrollCarousel>
+        {/* ── Juegos ── */}
+        {(gamesList?.length ?? 0) > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+                <Gamepad2 size={18} className="text-red-500" /> Torneos por Juego
+              </h2>
+              <Link href="/tournaments">
+                <button className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                  Ver todos <ArrowRight size={14} />
+                </button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {gamesList!.map(g => (
+                <Link key={g.id} href={`/tournaments?game=${encodeURIComponent(g.name)}`}>
+                  <div className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[3/4] bg-zinc-900"
+                    style={{ border: "1px solid oklch(0.18 0.01 0)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}
+                  >
+                    {/* Game cover image */}
+                    {(g.banner || g.logo) ? (
+                      <img
+                        src={g.banner ?? g.logo ?? ""}
+                        alt={g.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center"
+                        style={{ background: "linear-gradient(135deg, oklch(0.12 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}>
+                        <Gamepad2 size={48} style={{ color: "oklch(0.55 0.22 25 / 0.3)" }} />
+                      </div>
+                    )}
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)" }} />
+                    {/* Hover glow */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ background: "linear-gradient(to top, oklch(0.55 0.22 25 / 0.25) 0%, transparent 60%)" }} />
+                    {/* Game info */}
+                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                      <p className="font-orbitron font-bold text-white text-sm leading-tight mb-1.5 group-hover:text-red-300 transition-colors">{g.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <Trophy size={11} className="text-red-400" />
+                        <span className="text-xs font-mono text-zinc-400">
+                          {tournamentCountByGame[g.name] ?? 0} torneo{(tournamentCountByGame[g.name] ?? 0) !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Active indicator */}
+                    {(tournamentCountByGame[g.name] ?? 0) > 0 && (
+                      <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-green-500"
+                        style={{ boxShadow: "0 0 8px #22c55e" }} />
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* ── Noticias ── */}

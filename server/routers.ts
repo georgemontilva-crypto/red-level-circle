@@ -53,6 +53,7 @@ import {
   updateUserProfile,
   updateUserRole,
   upsertGame,
+  deleteGame,
   createPromotion,
   getShopItems,
   getShopItemById,
@@ -716,6 +717,13 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await upsertGame(input);
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ slug: z.string() }))
+      .mutation(async ({ input }) => {
+        await deleteGame(input.slug);
         return { success: true };
       }),
   }),

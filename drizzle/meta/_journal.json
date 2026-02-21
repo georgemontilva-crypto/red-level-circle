@@ -50,6 +50,13 @@
       "when": 1771641329966,
       "tag": "0006_yielding_mercury",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1771648367849,
+      "tag": "0007_remarkable_living_mummy",
+      "breakpoints": true
     }
   ]
 }
