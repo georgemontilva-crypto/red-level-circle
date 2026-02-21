@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState, useRef, useEffect } from "react";
 import {
   Trophy, Users, Zap, ChevronRight, ChevronLeft, Play,
@@ -80,11 +80,10 @@ function HeroSection() {
               <p className="text-zinc-300 text-sm mb-5 line-clamp-2">{active.description}</p>
             )}
             <div className="flex items-center gap-3">
-              <a href={active.ctaUrl} target="_blank" rel="noopener noreferrer">
-                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
-                  style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
-                  <ExternalLink size={16} /> {active.ctaLabel}
-                </button>
+              <a href={active.ctaUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
+                style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
+                <ExternalLink size={16} /> {active.ctaLabel}
               </a>
             </div>
           </div>
@@ -281,38 +280,41 @@ function UserCard({ u, showFollow = false }: { u: any; showFollow?: boolean }) {
 // ─── Creator Card ─────────────────────────────────────────────────────────────
 function CreatorCard({ c }: { c: any }) {
   const name = c.nickname ?? c.userName ?? "Creador";
+  const [, navigate] = useLocation();
   return (
-    <Link href={`/profile/${c.userId}`}>
-      <div className="shrink-0 w-52 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group" style={{ scrollSnapAlign: "start", overflow: "visible" }}>
-        {/* Banner — overflow hidden only on the banner itself */}
-        <div className="relative h-20 bg-gradient-to-br from-zinc-800 to-red-950/20 rounded-t-xl overflow-hidden">
-          {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover" />}
-        </div>
-        {/* Avatar — outside the overflow-hidden banner so it renders on top */}
-        <div className="relative" style={{ height: 0 }}>
-          <div className="absolute -top-6 left-4" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
-            <UserAvatar
-              avatar={c.avatar}
-              name={name}
-              activeFrameImage={c.activeFrameImage}
-              size={48}
-            />
-          </div>
-        </div>
-        <div className="pt-8 px-4 pb-4 rounded-b-xl" style={{ background: "oklch(0.12 0.005 0)" }}>
-          <p className="text-white font-bold text-sm truncate">{name}</p>
-          {c.category && <p className="text-red-400 text-xs font-mono capitalize">{c.category}</p>}
-          {c.bio && <p className="text-zinc-500 text-xs mt-1 line-clamp-2">{c.bio}</p>}
-          {/* Social links */}
-          <div className="flex items-center gap-2 mt-3">
-            {c.youtube && <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-red-500 transition-colors"><Youtube size={14} /></a>}
-            {c.twitch && <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-purple-400 transition-colors"><Twitch size={14} /></a>}
-            {c.twitter && <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-sky-400 transition-colors"><Twitter size={14} /></a>}
-            {c.instagram && <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-pink-400 transition-colors"><Instagram size={14} /></a>}
-          </div>
+    <div
+      className="shrink-0 w-52 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group"
+      style={{ scrollSnapAlign: "start", overflow: "visible" }}
+      onClick={() => navigate(`/profile/${c.userId}`)}
+    >
+      {/* Banner — overflow hidden only on the banner itself */}
+      <div className="relative h-20 bg-gradient-to-br from-zinc-800 to-red-950/20 rounded-t-xl overflow-hidden">
+        {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover" />}
+      </div>
+      {/* Avatar — outside the overflow-hidden banner so it renders on top */}
+      <div className="relative" style={{ height: 0 }}>
+        <div className="absolute -top-6 left-4" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
+          <UserAvatar
+            avatar={c.avatar}
+            name={name}
+            activeFrameImage={c.activeFrameImage}
+            size={48}
+          />
         </div>
       </div>
-    </Link>
+      <div className="pt-8 px-4 pb-4 rounded-b-xl" style={{ background: "oklch(0.12 0.005 0)" }}>
+        <p className="text-white font-bold text-sm truncate">{name}</p>
+        {c.category && <p className="text-red-400 text-xs font-mono capitalize">{c.category}</p>}
+        {c.bio && <p className="text-zinc-500 text-xs mt-1 line-clamp-2">{c.bio}</p>}
+        {/* Social links */}
+        <div className="flex items-center gap-2 mt-3">
+          {c.youtube && <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-red-500 transition-colors"><Youtube size={14} /></a>}
+          {c.twitch && <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-purple-400 transition-colors"><Twitch size={14} /></a>}
+          {c.twitter && <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-sky-400 transition-colors"><Twitter size={14} /></a>}
+          {c.instagram && <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-zinc-500 hover:text-pink-400 transition-colors"><Instagram size={14} /></a>}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -373,10 +375,8 @@ export default function Home() {
               <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
                 <Gamepad2 size={18} className="text-red-500" /> Torneos por Juego
               </h2>
-              <Link href="/tournaments">
-                <button className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
-                  Ver todos <ArrowRight size={14} />
-                </button>
+              <Link href="/tournaments" className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver todos <ArrowRight size={14} />
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -442,10 +442,8 @@ export default function Home() {
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5">Creadores de contenido verificados de la plataforma</p>
               </div>
-              <Link href="/creators">
-                <button className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
-                  Ver todos <ArrowRight size={14} />
-                </button>
+              <Link href="/creators" className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver todos <ArrowRight size={14} />
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto scrollbar-none pb-2">
@@ -470,10 +468,8 @@ export default function Home() {
               <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
                 <Users size={18} className="text-blue-400" /> Nuevos en la Plataforma
               </h2>
-              <Link href="/community">
-                <button className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white transition-colors">
-                  Ver comunidad <ArrowRight size={14} />
-                </button>
+              <Link href="/community" className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white transition-colors">
+                Ver comunidad <ArrowRight size={14} />
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
@@ -513,16 +509,14 @@ export default function Home() {
                 </p>
               </div>
               <div className="flex gap-3 shrink-0">
-                <a href={getLoginUrl()}>
-                  <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all hover:scale-105"
-                    style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)" }}>
-                    REGISTRARSE
-                  </button>
+                <a href={getLoginUrl()}
+                  className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all hover:scale-105"
+                  style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)" }}>
+                  REGISTRARSE
                 </a>
-                <Link href="/tournaments">
-                  <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white border border-zinc-700 hover:border-zinc-500 transition-colors bg-zinc-900/60">
-                    VER TORNEOS
-                  </button>
+                <Link href="/tournaments"
+                  className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white border border-zinc-700 hover:border-zinc-500 transition-colors bg-zinc-900/60">
+                  VER TORNEOS
                 </Link>
               </div>
             </div>
