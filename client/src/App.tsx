@@ -24,6 +24,8 @@ import CosmeticsShop from "./pages/CosmeticsShop";
 import Shop from "./pages/Shop";
 import Rewards from "./pages/Rewards";
 import BrandAds from "./pages/BrandAds";
+import AdminPanel from "./pages/AdminPanel";
+import UserProfile from "./pages/UserProfile";
 
 function Router() {
   return (
@@ -52,6 +54,13 @@ function Router() {
         <Route path="/dashboard/tournament/:id" component={TournamentManage} />
         <Route path="/dashboard/registrations" component={ManageRegistrations} />
         <Route path="/dashboard/teams" component={MyTeams} />
+
+        {/* Admin */}
+        <Route path="/admin" component={AdminPanel} />
+        <Route path="/admin/:tab" component={AdminPanel} />
+
+        {/* User profiles */}
+        <Route path="/profile/:id" component={UserProfile} />
 
         {/* 404 */}
         <Route path="/404" component={NotFound} />

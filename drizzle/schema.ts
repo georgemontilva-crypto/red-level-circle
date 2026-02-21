@@ -29,6 +29,7 @@ export const users = mysqlTable("users", {
   socialDiscord: varchar("socialDiscord", { length: 128 }),
   socialTwitch: varchar("socialTwitch", { length: 128 }),
   socialTwitter: varchar("socialTwitter", { length: 128 }),
+  bannerUrl: text("bannerUrl"),
   // RLC Coins wallet
   rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
   createdAt: timestamp("createdAt").defaultNow().notNull(),

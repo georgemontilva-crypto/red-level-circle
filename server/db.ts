@@ -719,6 +719,7 @@ export async function updateUserProfile(userId: number, data: {
   socialTwitch?: string;
   socialTwitter?: string;
   avatar?: string;
+  bannerUrl?: string;
 }) {
   const db = await getDb();
   if (!db) return;
@@ -1227,4 +1228,302 @@ export async function createBrandAd(data: InsertBrandAd) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.insert(brandAds).values(data);
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+export async function getUserProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+
+export async function getUserPublicProfile(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      bannerUrl: users.bannerUrl,
+      bio: users.bio,
+      role: users.role,
+      profileType: users.profileType,
+      mainGame: users.mainGame,
+      country: users.country,
+      socialDiscord: users.socialDiscord,
+      socialTwitch: users.socialTwitch,
+      socialTwitter: users.socialTwitter,
+      rlcBalance: users.rlcBalance,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserEquippedCosmetics(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: userCosmetics.id,
+      cosmeticId: userCosmetics.cosmeticId,
+      isEquipped: userCosmetics.isEquipped,
+      name: cosmetics.name,
+      type: cosmetics.type,
+      rarity: cosmetics.rarity,
+      previewImage: cosmetics.previewImage,
+      frameImage: cosmetics.frameImage,
+    })
+    .from(userCosmetics)
+    .innerJoin(cosmetics, eq(userCosmetics.cosmeticId, cosmetics.id))
+    .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.isEquipped, true)));
+}
+
+// ─── Admin: Users Management ──────────────────────────────────────────────────
+export async function adminListUsers(search?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const query = db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      email: users.email,
+      role: users.role,
+      profileType: users.profileType,
+      avatar: users.avatar,
+      rlcBalance: users.rlcBalance,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt));
+  if (search) {
+    return (await query).filter(
+      (u) =>
+        u.name?.toLowerCase().includes(search.toLowerCase()) ||
+        u.email?.toLowerCase().includes(search.toLowerCase()) ||
+        u.nickname?.toLowerCase().includes(search.toLowerCase())
+    );
+  }
+  return query;
+}
+
+export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "admin") {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
+export async function adminAdjustRLC(userId: number, amount: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Update balance
+  await db.update(users).set({ rlcBalance: sql`${users.rlcBalance} + ${amount}` }).where(eq(users.id, userId));
+  // Get updated balance for record
+  const updatedUser = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
+  const newBalance = updatedUser[0]?.rlcBalance ?? 0;
+  // Record transaction
+  await db.insert(rlcTransactions).values({
+    userId,
+    amount,
+    type: amount > 0 ? "reward" : "withdrawal",
+    description: reason,
+    balanceAfter: newBalance,
+  });
+}
+
+// ─── Admin: Shop Items ────────────────────────────────────────────────────────
+export async function adminCreateShopItem(data: InsertShopItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(shopItems).values(data);
+}
+
+export async function adminUpdateShopItem(id: number, data: Partial<InsertShopItem>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(shopItems).set(data).where(eq(shopItems.id, id));
+}
+
+export async function adminDeleteShopItem(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(shopItems).set({ isActive: false }).where(eq(shopItems.id, id));
+}
+
+export async function adminListOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: shopOrders.id,
+      userId: shopOrders.userId,
+      itemId: shopOrders.itemId,
+      quantity: shopOrders.quantity,
+      totalPrice: shopOrders.totalPrice,
+      status: shopOrders.status,
+      deliveryNote: shopOrders.deliveryNote,
+      createdAt: shopOrders.createdAt,
+      userName: users.name,
+      userEmail: users.email,
+      userNickname: users.nickname,
+      itemName: shopItems.name,
+    })
+    .from(shopOrders)
+    .innerJoin(users, eq(shopOrders.userId, users.id))
+    .innerJoin(shopItems, eq(shopOrders.itemId, shopItems.id))
+    .orderBy(desc(shopOrders.createdAt));
+}
+
+export async function adminUpdateOrderStatus(orderId: number, status: "pending" | "delivered" | "cancelled", note?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(shopOrders).set({ status, deliveryNote: note ?? null }).where(eq(shopOrders.id, orderId));
+}
+
+// ─── Admin: Cosmetics ─────────────────────────────────────────────────────────
+export async function adminCreateCosmetic(data: InsertCosmetic) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(cosmetics).values(data);
+}
+
+export async function adminUpdateCosmetic(id: number, data: Partial<InsertCosmetic>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(cosmetics).set(data).where(eq(cosmetics.id, id));
+}
+
+export async function adminDeleteCosmetic(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(cosmetics).where(eq(cosmetics.id, id));
+}
+
+// ─── Admin: Brand Ads ─────────────────────────────────────────────────────────
+export async function adminListBrandAds() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(brandAds).orderBy(desc(brandAds.createdAt));
+}
+
+export async function adminUpdateBrandAd(id: number, data: Partial<InsertBrandAd>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(brandAds).set(data).where(eq(brandAds.id, id));
+}
+
+export async function adminDeleteBrandAd(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(brandAds).set({ isActive: false }).where(eq(brandAds.id, id));
+}
+
+// ─── Admin: Reward Tasks ──────────────────────────────────────────────────────
+export async function adminListRewardTasks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rewardTasks).orderBy(desc(rewardTasks.createdAt));
+}
+
+export async function adminCreateRewardTask(data: InsertRewardTask) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(rewardTasks).values(data);
+}
+
+export async function adminUpdateRewardTask(id: number, data: Partial<InsertRewardTask>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(rewardTasks).set(data).where(eq(rewardTasks.id, id));
+}
+
+export async function adminDeleteRewardTask(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(rewardTasks).set({ isActive: false }).where(eq(rewardTasks.id, id));
+}
+
+// ─── Admin: News ──────────────────────────────────────────────────────────────
+export async function adminCreateNews(data: {
+  title: string;
+  slug: string;
+  content: string;
+  excerpt?: string;
+  coverImage?: string;
+  category: "torneos" | "equipos" | "juegos" | "plataforma" | "general";
+  authorId: number;
+  published?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const { published, ...rest } = data;
+  await db.insert(news).values({
+    ...rest,
+    publishedAt: published ? new Date() : null,
+  });
+}
+
+export async function adminUpdateNews(id: number, data: Partial<{
+  title: string;
+  content: string;
+  excerpt: string;
+  coverImage: string;
+  category: "torneos" | "equipos" | "juegos" | "plataforma" | "general";
+  published: boolean;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(news).set(data).where(eq(news.id, id));
+}
+
+export async function adminDeleteNews(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(news).where(eq(news.id, id));
+}
+
+export async function adminListNews() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(news).orderBy(desc(news.createdAt));
+}
+
+// ─── Admin: Tournaments Pending Approval ──────────────────────────────────────
+export async function adminListPendingTournaments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: tournaments.id,
+      name: tournaments.name,
+      game: tournaments.game,
+      status: tournaments.status,
+      createdAt: tournaments.createdAt,
+      organizerName: users.name,
+      organizerEmail: users.email,
+    })
+    .from(tournaments)
+    .innerJoin(users, eq(tournaments.creatorId, users.id))
+    .where(eq(tournaments.status, "draft"))
+    .orderBy(desc(tournaments.createdAt));
+}
+
+export async function adminApproveTournament(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(tournaments).set({ status: "registration_open" }).where(eq(tournaments.id, id));
+}
+
+export async function adminRejectTournament(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(tournaments).set({ status: "cancelled" }).where(eq(tournaments.id, id));
 }

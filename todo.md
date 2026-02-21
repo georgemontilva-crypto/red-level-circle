@@ -171,3 +171,24 @@
 - [x] Sección TIENDA en SidebarLayout (Cosméticos, Productos, Recompensas, Publicidad)
 - [x] Integración de marco/aura activo en avatar del usuario en el sidebar
 - [ ] Panel admin: gestión de pedidos pendientes con notificación push (pendiente)
+
+## Perfiles de Usuario y Panel Admin V5
+
+### Perfiles de usuario
+- [x] Ampliar tabla users: avatarUrl, bio, nickname, bannerUrl, socialLinks
+- [x] Router profile: getProfile, updateProfile, uploadAvatar
+- [x] Página pública /profile/:id con avatar, banner, cosméticos equipados, bio, stats
+- [ ] Página /settings para editar perfil propio (foto, bio, nickname, redes) (pendiente)
+- [x] Mostrar avatar con marco/aura activo en perfil público
+- [x] Acceso rápido a perfil propio desde el sidebar
+
+### Panel Admin Maestro (/admin)
+- [x] Layout del panel admin con sub-navegación por tabs
+- [x] Sección: Tienda de Productos (agregar/editar/eliminar items, ver pedidos, marcar entregado)
+- [x] Sección: Cosméticos (agregar/editar/eliminar marcos y auras)
+- [x] Sección: Publicidades (cargar banners para marcas, activar/pausar)
+- [x] Sección: Rewards (cargar videos/enlaces YouTube, configurar duración y recompensa RLC)
+- [x] Sección: Usuarios (lista, buscar, cambiar rol, asignar RLC manualmente)
+- [x] Sección: Torneos (aprobar/rechazar torneos pendientes de verificación)
+- [x] Sección: Noticias (crear/editar/publicar artículos del portal)
+- [x] Notificaciones de pedidos pendientes en el panel admin

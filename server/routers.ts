@@ -70,6 +70,33 @@ import {
   trackAdClick,
   trackAdImpression,
   createBrandAd,
+  getUserPublicProfile,
+  getUserEquippedCosmetics,
+  adminListUsers,
+  adminUpdateUserRole,
+  adminAdjustRLC,
+  adminCreateShopItem,
+  adminUpdateShopItem,
+  adminDeleteShopItem,
+  adminListOrders,
+  adminUpdateOrderStatus,
+  adminCreateCosmetic,
+  adminUpdateCosmetic,
+  adminDeleteCosmetic,
+  adminListBrandAds,
+  adminUpdateBrandAd,
+  adminDeleteBrandAd,
+  adminListRewardTasks,
+  adminCreateRewardTask,
+  adminUpdateRewardTask,
+  adminDeleteRewardTask,
+  adminCreateNews,
+  adminUpdateNews,
+  adminDeleteNews,
+  adminListNews,
+  adminListPendingTournaments,
+  adminApproveTournament,
+  adminRejectTournament,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -747,23 +774,8 @@ export const appRouter = router({
       return getAllUsers();
     }),
 
-    pendingTournaments: adminProcedure.query(async () => {
-      return getPendingTournaments();
-    }),
 
-    approveTournament: adminProcedure
-      .input(z.object({ tournamentId: z.number(), note: z.string().optional() }))
-      .mutation(async ({ input }) => {
-        await approveTournament(input.tournamentId, input.note);
-        return { success: true };
-      }),
 
-    rejectTournament: adminProcedure
-      .input(z.object({ tournamentId: z.number(), note: z.string() }))
-      .mutation(async ({ input }) => {
-        await rejectTournament(input.tournamentId, input.note);
-        return { success: true };
-      }),
 
      addCoins: adminProcedure
       .input(z.object({ userId: z.number(), amount: z.number().int(), description: z.string().optional() }))
@@ -774,23 +786,6 @@ export const appRouter = router({
           amount: input.amount,
           description: input.description ?? "Depósito de administrador",
         });
-        return { success: true };
-      }),
-    // Admin: shop item management
-    createShopItem: adminProcedure
-      .input(z.object({
-        name: z.string(),
-        description: z.string().optional(),
-        image: z.string().optional(),
-        price: z.number().int().min(1),
-        originalPrice: z.number().int().optional(),
-        category: z.enum(["physical", "digital", "bundle", "limited"]),
-        stock: z.number().int().default(-1),
-        isFeatured: z.boolean().default(false),
-        isLimited: z.boolean().default(false),
-      }))
-      .mutation(async ({ input }) => {
-        await createShopItem(input);
         return { success: true };
       }),
     getShopOrders: adminProcedure
@@ -820,6 +815,134 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await createBrandAd(input);
+        return { success: true };
+      }),
+    // ── Aliases for AdminPanel.tsx ──────────────────────────────────────────
+    listUsers: adminProcedure
+      .input(z.object({ search: z.string().optional() }))
+      .query(async ({ input }) => adminListUsers(input.search)),
+    updateUserRole: adminProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin"]) }))
+      .mutation(async ({ input }) => {
+        await adminUpdateUserRole(input.userId, input.role);
+        return { success: true };
+      }),
+    adjustRLC: adminProcedure
+      .input(z.object({ userId: z.number(), amount: z.number().int(), reason: z.string() }))
+      .mutation(async ({ input }) => {
+        await adminAdjustRLC(input.userId, input.amount, input.reason);
+        return { success: true };
+      }),
+    listOrders: adminProcedure
+      .query(async () => adminListOrders()),
+    createShopItem: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        imageUrl: z.string().optional(),
+        price: z.number().int().min(1),
+        stock: z.number().int().default(-1),
+        category: z.enum(["physical", "digital", "bundle", "limited"]),
+      }))
+      .mutation(async ({ input }) => {
+        await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category });
+        return { success: true };
+      }),
+    listAds: adminProcedure
+      .query(async () => adminListBrandAds()),
+    createAd: adminProcedure
+      .input(z.object({
+        brand: z.string(),
+        title: z.string(),
+        description: z.string().optional(),
+        imageUrl: z.string(),
+        linkUrl: z.string().optional(),
+        isPremium: z.boolean().default(false),
+        isFeatured: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        await createBrandAd({ brandName: input.brand, title: input.title, description: input.description, bannerImage: input.imageUrl, destinationUrl: input.linkUrl, isPremium: input.isPremium, isFeatured: input.isFeatured });
+        return { success: true };
+      }),
+    updateAd: adminProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean().optional() }))
+      .mutation(async ({ input }) => {
+        await adminUpdateBrandAd(input.id, { isActive: input.isActive });
+        return { success: true };
+      }),
+    deleteAd: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteBrandAd(input.id);
+        return { success: true };
+      }),
+    listRewards: adminProcedure
+      .query(async () => adminListRewardTasks()),
+    createReward: adminProcedure
+      .input(z.object({
+        title: z.string(),
+        description: z.string().optional(),
+        type: z.enum(["video", "ad", "daily_login", "share", "follow"]),
+        rewardAmount: z.number().int().min(1),
+        contentUrl: z.string().optional(),
+        durationSeconds: z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await adminCreateRewardTask({ title: input.title, description: input.description, type: input.type, reward: input.rewardAmount, contentUrl: input.contentUrl, durationSeconds: input.durationSeconds });
+        return { success: true };
+      }),
+    updateReward: adminProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean().optional() }))
+      .mutation(async ({ input }) => {
+        await adminUpdateRewardTask(input.id, { isActive: input.isActive });
+        return { success: true };
+      }),
+    deleteReward: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteRewardTask(input.id);
+        return { success: true };
+      }),
+    listNews: adminProcedure
+      .query(async () => adminListNews()),
+    createNews: adminProcedure
+      .input(z.object({
+        title: z.string(),
+        slug: z.string(),
+        content: z.string(),
+        excerpt: z.string().optional(),
+        coverImage: z.string().optional(),
+        category: z.enum(["torneos", "equipos", "juegos", "plataforma", "general"]).default("general"),
+        published: z.boolean().default(false),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await adminCreateNews({ ...input, authorId: ctx.user.id });
+        return { success: true };
+      }),
+    updateNews: adminProcedure
+      .input(z.object({ id: z.number(), published: z.boolean().optional() }))
+      .mutation(async ({ input }) => {
+        await adminUpdateNews(input.id, { published: input.published });
+        return { success: true };
+      }),
+    deleteNews: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteNews(input.id);
+        return { success: true };
+      }),
+    pendingTournaments: adminProcedure
+      .query(async () => adminListPendingTournaments()),
+    approveTournament: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminApproveTournament(input.id);
+        return { success: true };
+      }),
+    rejectTournament: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminRejectTournament(input.id);
         return { success: true };
       }),
   }),
@@ -909,6 +1032,35 @@ export const appRouter = router({
       .input(z.object({ adId: z.number() }))
       .mutation(async ({ input }) => {
         await trackAdImpression(input.adId);
+        return { success: true };
+      }),
+  }),
+  // ─── Profile ───────────────────────────────────────────────────────────────
+  profile: router({
+    getPublic: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const profile = await getUserPublicProfile(input.userId);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil no encontrado" });
+        return profile;
+      }),
+    getEquippedCosmetics: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => getUserEquippedCosmetics(input.userId)),
+    updateMine: protectedProcedure
+      .input(z.object({
+        nickname: z.string().max(64).optional(),
+        bio: z.string().max(500).optional(),
+        avatar: z.string().url().optional(),
+        bannerUrl: z.string().url().optional(),
+        mainGame: z.string().max(64).optional(),
+        country: z.string().max(64).optional(),
+        socialDiscord: z.string().max(128).optional(),
+        socialTwitch: z.string().max(128).optional(),
+        socialTwitter: z.string().max(128).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await updateUserProfile(ctx.user.id, input);
         return { success: true };
       }),
   }),
