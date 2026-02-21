@@ -112,14 +112,7 @@ export default function Teams() {
                         <Swords className="w-8 h-8 text-zinc-700" />
                       </div>
                     )}
-                    {/* Rank badge */}
-                    {idx < 3 && (
-                      <div className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-xs font-black font-mono ${
-                        idx === 0 ? "bg-yellow-500 text-black" : idx === 1 ? "bg-gray-400 text-black" : "bg-amber-700 text-white"
-                      }`}>
-                        {idx + 1}
-                      </div>
-                    )}
+
                     {/* Gradient overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent" />
                   </div>
