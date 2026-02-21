@@ -4,11 +4,12 @@ import { toast } from "sonner";
 import {
   User, Trophy, Gamepad2, Twitter, MessageSquare, Tv2,
   Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
-  Loader2,
+  Loader2, BadgeCheck,
 } from "lucide-react";
 import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 function ProfileTypeIcon({ type }: { type: string | null }) {
   if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-yellow-400" />;
@@ -221,6 +222,9 @@ export default function UserProfile() {
                     <ProfileTypeIcon type={profile.profileType} />
                     <span className="text-zinc-300">{PROFILE_TYPE_LABEL[profile.profileType] ?? profile.profileType}</span>
                   </div>
+                )}
+                {(profile as { isVerified?: boolean }).isVerified && (
+                  <VerifiedBadge size={20} />
                 )}
                 {profile.role === "admin" && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">ADMIN</span>

@@ -5,7 +5,8 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Camera, User, Globe, MessageSquare, Save, ChevronLeft,
-  Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2
+  Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2,
+  BadgeCheck, Clock, XCircle
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 
@@ -159,6 +160,95 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
         className="hidden"
         onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
       />
+    </div>
+  );
+}
+
+function VerificationSection() {
+  const { data: myRequest, refetch } = trpc.verification.myRequest.useQuery();
+  const requestMutation = trpc.verification.request.useMutation({
+    onSuccess: () => { toast.success("Solicitud enviada correctamente"); refetch(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const [reason, setReason] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  const statusInfo = {
+    pending: { icon: <Clock className="w-4 h-4 text-yellow-400" />, label: "Pendiente de revisión", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30" },
+    approved: { icon: <BadgeCheck className="w-4 h-4 text-blue-400" />, label: "Verificado", color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/30" },
+    rejected: { icon: <XCircle className="w-4 h-4 text-red-400" />, label: "Rechazado", color: "text-red-400", bg: "bg-red-400/10 border-red-400/30" },
+  };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
+        <BadgeCheck className="w-4 h-4" /> VERIFICACIÓN DE CUENTA
+      </h2>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+        <p className="text-zinc-400 text-sm">
+          La verificación confirma que eres un creador, jugador profesional u organización reconocida en la comunidad.
+          El badge <span className="text-blue-400 font-bold">✓</span> aparecerá en tu perfil y en toda la plataforma.
+        </p>
+        {myRequest ? (
+          <div>
+            <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${statusInfo[myRequest.status as keyof typeof statusInfo]?.bg ?? "bg-zinc-800 border-zinc-700"}`}>
+              {statusInfo[myRequest.status as keyof typeof statusInfo]?.icon}
+              <span className={`font-mono font-bold text-sm ${statusInfo[myRequest.status as keyof typeof statusInfo]?.color ?? "text-zinc-400"}`}>
+                {statusInfo[myRequest.status as keyof typeof statusInfo]?.label ?? myRequest.status}
+              </span>
+            </div>
+            {myRequest.adminNote && (
+              <p className="mt-3 text-sm text-zinc-400 bg-zinc-800/50 rounded-lg px-4 py-3 border border-zinc-700">
+                <span className="text-zinc-500 font-mono text-xs">NOTA DEL ADMIN: </span>{myRequest.adminNote}
+              </p>
+            )}
+            {myRequest.status === "rejected" && (
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-3 w-full py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 font-mono text-sm transition-colors"
+              >
+                Volver a solicitar
+              </button>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={() => setShowForm(true)}
+            className="w-full py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-orbitron font-bold text-sm tracking-widest transition-colors flex items-center justify-center gap-2"
+          >
+            <BadgeCheck className="w-4 h-4" /> SOLICITAR VERIFICACIÓN
+          </button>
+        )}
+        {showForm && (
+          <div className="space-y-3 pt-2 border-t border-zinc-800">
+            <label className="block text-xs font-mono text-zinc-500 tracking-widest">¿POR QUÉ DEBERÍAS SER VERIFICADO?</label>
+            <textarea
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Explica brevemente quién eres, tu trayectoria, seguidores, logros..."
+              rows={4}
+              maxLength={500}
+              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder-zinc-600 resize-none"
+            />
+            <p className="text-xs text-zinc-600 text-right">{reason.length}/500</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowForm(false)}
+                className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white font-mono text-sm transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => { requestMutation.mutate({ reason }); setShowForm(false); }}
+                disabled={reason.length < 10 || requestMutation.isPending}
+                className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-mono font-bold text-sm transition-colors"
+              >
+                {requestMutation.isPending ? "Enviando..." : "Enviar solicitud"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -429,6 +519,8 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Verification */}
+        <VerificationSection />
         {/* Save Button */}
         <div className="pb-8">
           <button

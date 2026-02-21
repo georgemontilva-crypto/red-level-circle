@@ -372,3 +372,14 @@
 - [x] Aplicar UserAvatar en Home (UserCard, CreatorCard, nuevos usuarios)
 - [x] Aplicar UserAvatar en Creators.tsx
 - [x] Aplicar UserAvatar en UserProfile (lista seguidores/seguidos)
+
+## Fix Avatar Creadores + Verificación V32
+- [x] Corregir z-index del avatar en tarjetas de creadores (Creators.tsx y Home.tsx) para que aparezca delante del banner
+- [x] Campo isVerified en tabla users (schema + migración)
+- [x] Endpoint verification.request (usuario solicita verificación, guarda en tabla)
+- [x] Endpoint verification.list (admin lista solicitudes pendientes)
+- [x] Endpoint verification.review (admin aprueba/rechaza con nota)
+- [x] Badge de verificado (imagen oficial azul) en perfil público, tarjetas de creadores y comunidad
+- [x] Botón "Solicitar verificación" en /settings del usuario
+- [x] Tab VERIFICACIONES en panel admin con lista de solicitudes pendientes
+- [x] Componente VerifiedBadge reutilizable con imagen oficial subida a S3

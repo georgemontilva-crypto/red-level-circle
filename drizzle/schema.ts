@@ -30,6 +30,7 @@ export const users = mysqlTable("users", {
   socialTwitch: varchar("socialTwitch", { length: 128 }),
   socialTwitter: varchar("socialTwitter", { length: 128 }),
   bannerUrl: text("bannerUrl"),
+  isVerified: boolean("isVerified").default(false).notNull(),
   // RLC Coins wallet
   rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -464,3 +465,17 @@ export const contentCreators = mysqlTable("content_creators", {
 export type ContentCreator = typeof contentCreators.$inferSelect;
 export type InsertContentCreator = typeof contentCreators.$inferInsert;
 
+
+// ─── Verification Requests ────────────────────────────────────────────────────
+export const verificationRequests = mysqlTable("verification_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(), // one active request per user
+  status: varchar("status", { length: 32 }).default("pending").notNull(), // pending | approved | rejected
+  reason: text("reason"), // user's reason for requesting verification
+  adminNote: text("adminNote"), // admin's note when reviewing
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewedBy: int("reviewedBy"), // admin userId
+});
+export type VerificationRequest = typeof verificationRequests.$inferSelect;
+export type InsertVerificationRequest = typeof verificationRequests.$inferInsert;

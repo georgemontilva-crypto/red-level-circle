@@ -26,6 +26,7 @@ import {
   brandAds,
   userFollows,
   contentCreators,
+  verificationRequests,
   type InsertGame,
   type InsertNews,
   type InsertBet,
@@ -1279,14 +1280,14 @@ export async function getUserPublicProfile(userId: number) {
       socialTwitch: users.socialTwitch,
       socialTwitter: users.socialTwitter,
       rlcBalance: users.rlcBalance,
-      createdAt: users.createdAt,
+       createdAt: users.createdAt,
+      isVerified: users.isVerified,
     })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
   return result[0] ?? null;
 }
-
 export async function getUserEquippedCosmetics(userId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -1577,6 +1578,7 @@ export async function listPublicUsers(opts: { search?: string; limit?: number; o
       role: users.role,
       createdAt: users.createdAt,
       activeFrameImage: cosmetics.frameImage,
+      isVerified: users.isVerified,
     })
     .from(users)
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
@@ -1934,6 +1936,7 @@ export async function listApprovedCreators() {
       avatar: users.avatar,
       banner: users.bannerUrl,
       activeFrameImage: cosmetics.frameImage,
+      isVerified: users.isVerified,
     })
     .from(contentCreators)
     .innerJoin(users, eq(contentCreators.userId, users.id))
@@ -2102,4 +2105,91 @@ export async function getTeamsByMembership(userId: number) {
     .from(teamMembers)
     .leftJoin(teams, eq(teamMembers.teamId, teams.id))
     .where(eq(teamMembers.userId, userId));
+}
+
+// ─── Verification Requests ────────────────────────────────────────────────────
+export async function requestVerification(userId: number, reason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Upsert: if user already has a request, update it (re-request)
+  const existing = await db
+    .select({ id: verificationRequests.id, status: verificationRequests.status })
+    .from(verificationRequests)
+    .where(eq(verificationRequests.userId, userId))
+    .limit(1);
+  if (existing.length > 0) {
+    if (existing[0].status === "pending") {
+      throw new Error("Ya tienes una solicitud de verificación pendiente.");
+    }
+    // Allow re-request if previously rejected
+    await db
+      .update(verificationRequests)
+      .set({ status: "pending", reason, adminNote: null, requestedAt: new Date(), reviewedAt: null, reviewedBy: null })
+      .where(eq(verificationRequests.userId, userId));
+    return { success: true };
+  }
+  await db.insert(verificationRequests).values({ userId, reason });
+  return { success: true };
+}
+
+export async function getMyVerificationRequest(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(verificationRequests)
+    .where(eq(verificationRequests.userId, userId))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function listVerificationRequests(status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: verificationRequests.id,
+      userId: verificationRequests.userId,
+      status: verificationRequests.status,
+      reason: verificationRequests.reason,
+      adminNote: verificationRequests.adminNote,
+      requestedAt: verificationRequests.requestedAt,
+      reviewedAt: verificationRequests.reviewedAt,
+      reviewedBy: verificationRequests.reviewedBy,
+      userName: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      userIsVerified: users.isVerified,
+    })
+    .from(verificationRequests)
+    .leftJoin(users, eq(users.id, verificationRequests.userId))
+    .where(status ? eq(verificationRequests.status, status) : undefined)
+    .orderBy(desc(verificationRequests.requestedAt));
+}
+
+export async function reviewVerificationRequest(
+  requestId: number,
+  adminId: number,
+  status: "approved" | "rejected",
+  adminNote?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const rows = await db
+    .select({ userId: verificationRequests.userId })
+    .from(verificationRequests)
+    .where(eq(verificationRequests.id, requestId))
+    .limit(1);
+  if (!rows.length) throw new Error("Solicitud no encontrada");
+  const { userId } = rows[0];
+  await db
+    .update(verificationRequests)
+    .set({ status, adminNote: adminNote ?? null, reviewedAt: new Date(), reviewedBy: adminId })
+    .where(eq(verificationRequests.id, requestId));
+  // If approved, mark user as verified; if rejected, remove verification
+  await db
+    .update(users)
+    .set({ isVerified: status === "approved" })
+    .where(eq(users.id, userId));
+  return { success: true };
 }

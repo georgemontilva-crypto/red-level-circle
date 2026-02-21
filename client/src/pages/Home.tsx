@@ -283,12 +283,14 @@ function CreatorCard({ c }: { c: any }) {
   const name = c.nickname ?? c.userName ?? "Creador";
   return (
     <Link href={`/profile/${c.userId}`}>
-      <div className="shrink-0 w-52 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group" style={{ scrollSnapAlign: "start" }}>
-        {/* Banner */}
-        <div className="relative h-20 bg-gradient-to-br from-zinc-800 to-red-950/20">
+      <div className="shrink-0 w-52 rounded-xl bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group" style={{ scrollSnapAlign: "start", overflow: "visible" }}>
+        {/* Banner — overflow hidden only on the banner itself */}
+        <div className="relative h-20 bg-gradient-to-br from-zinc-800 to-red-950/20 rounded-t-xl overflow-hidden">
           {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover" />}
-          {/* Avatar */}
-          <div className="absolute -bottom-6 left-4" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block" }}>
+        </div>
+        {/* Avatar — outside the overflow-hidden banner so it renders on top */}
+        <div className="relative" style={{ height: 0 }}>
+          <div className="absolute -top-6 left-4" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
             <UserAvatar
               avatar={c.avatar}
               name={name}
@@ -297,7 +299,7 @@ function CreatorCard({ c }: { c: any }) {
             />
           </div>
         </div>
-        <div className="pt-8 px-4 pb-4">
+        <div className="pt-8 px-4 pb-4 rounded-b-xl" style={{ background: "oklch(0.12 0.005 0)" }}>
           <p className="text-white font-bold text-sm truncate">{name}</p>
           {c.category && <p className="text-red-400 text-xs font-mono capitalize">{c.category}</p>}
           {c.bio && <p className="text-zinc-500 text-xs mt-1 line-clamp-2">{c.bio}</p>}

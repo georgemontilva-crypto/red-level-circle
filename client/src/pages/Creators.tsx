@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 const CATEGORIES = [
   { value: "gaming", label: "Gaming", icon: Gamepad2 },
@@ -55,8 +56,10 @@ function CreatorCard({ c }: { c: any }) {
               <cat.icon size={10} /> {cat.label}
             </div>
           )}
-          {/* Avatar */}
-          <div className="absolute -bottom-7 left-5" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block" }}>
+        </div>
+        {/* Avatar — outside the overflow-hidden banner so it renders on top */}
+        <div className="relative" style={{ height: 0 }}>
+          <div className="absolute -top-7 left-5" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
             <UserAvatar
               avatar={c.avatar}
               name={name}
@@ -72,6 +75,7 @@ function CreatorCard({ c }: { c: any }) {
               <div className="flex items-center gap-2">
                 <h3 className="font-orbitron font-bold text-white">{name}</h3>
                 <Star size={12} className="text-yellow-400 fill-yellow-400" />
+                {(c as { isVerified?: boolean }).isVerified && <VerifiedBadge size={16} />}
               </div>
               {c.subscribers > 0 && (
                 <p className="text-zinc-500 text-xs font-mono mt-0.5">

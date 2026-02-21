@@ -8,6 +8,7 @@ import {
   UserPlus, UserMinus, Loader2, Gamepad2,
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -41,6 +42,7 @@ interface UserCardProps {
     country: string | null;
     role: string;
     activeFrameImage?: string | null;
+    isVerified?: boolean | null;
   };
   myId?: number;
 }
@@ -143,6 +145,7 @@ function UserCard({ user, myId }: UserCardProps) {
             <span className="font-orbitron font-bold text-sm text-white truncate">
               {user.nickname ?? user.name ?? "Usuario"}
             </span>
+            {user.isVerified && <VerifiedBadge size={16} />}
             {user.role === "admin" && (
               <span className="text-xs px-1.5 py-0.5 rounded font-mono bg-yellow-500/15 text-yellow-400">ADMIN</span>
             )}

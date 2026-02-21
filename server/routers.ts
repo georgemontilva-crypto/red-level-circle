@@ -127,6 +127,12 @@ import {
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
+import {
+  requestVerification,
+  getMyVerificationRequest,
+  listVerificationRequests,
+  reviewVerificationRequest,
+} from "./db";
 import { storagePut } from "./storage";
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -1344,6 +1350,33 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── Verification ────────────────────────────────────────────────────────────
+  verification: router({
+    request: protectedProcedure
+      .input(z.object({ reason: z.string().min(10).max(500) }))
+      .mutation(async ({ ctx, input }) => {
+        return requestVerification(ctx.user.id, input.reason);
+      }),
+    myRequest: protectedProcedure.query(async ({ ctx }) => {
+      return getMyVerificationRequest(ctx.user.id);
+    }),
+    list: protectedProcedure
+      .input(z.object({ status: z.enum(["pending", "approved", "rejected", "all"]).optional() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return listVerificationRequests(input.status === "all" ? undefined : input.status);
+      }),
+    review: protectedProcedure
+      .input(z.object({
+        requestId: z.number(),
+        status: z.enum(["approved", "rejected"]),
+        adminNote: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return reviewVerificationRequest(input.requestId, ctx.user.id, input.status, input.adminNote);
+      }),
+  }),
   // ─── Home Feed ──────────────────────────────────────────────────────────────
   home: router({
     featuredTournaments: publicProcedure.query(() => getFeaturedTournaments(6)),
