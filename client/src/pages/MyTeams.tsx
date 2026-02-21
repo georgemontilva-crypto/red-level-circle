@@ -288,6 +288,7 @@ export default function MyTeams() {
   const [teamBanners, setTeamBanners] = useState<Record<number, string>>({});
 
   const { data: teams, isLoading, refetch } = trpc.teams.myTeams.useQuery();
+  const uploadImageCreate = trpc.profile.uploadImage.useMutation();
 
   const createMutation = trpc.teams.create.useMutation({
     onSuccess: () => {
@@ -481,14 +482,19 @@ export default function MyTeams() {
                     </div>
                     <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
                       const file = e.target.files?.[0]; if (!file) return;
+                      if (file.size > 5 * 1024 * 1024) { toast.error("Máximo 5MB"); return; }
                       setUploadingCreate(field);
                       try {
-                        const fd = new FormData(); fd.append("file", file);
-                        const res = await fetch("/api/upload", { method: "POST", body: fd });
-                        const { url } = await res.json();
-                        set(url);
-                      } catch { toast.error("Error al subir imagen"); }
-                      finally { setUploadingCreate(null); }
+                        const reader = new FileReader();
+                        reader.onload = async (ev) => {
+                          const base64 = (ev.target?.result as string).split(",")[1];
+                          const result = await uploadImageCreate.mutateAsync({ base64, mimeType: file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp", type: "banner" });
+                          set(result.url);
+                          setUploadingCreate(null);
+                        };
+                        reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingCreate(null); };
+                        reader.readAsDataURL(file);
+                      } catch { toast.error("Error al subir imagen"); setUploadingCreate(null); }
                     }} />
                   </label>
                 </div>

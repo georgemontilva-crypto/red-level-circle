@@ -790,7 +790,7 @@ function GamesTab() {
   const [form, setForm] = useState({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"banner" | "logo" | null>(null);
-  const utils = trpc.useUtils();
+  const uploadImage = trpc.profile.uploadImage.useMutation();
 
   const upsert = trpc.games.upsert.useMutation({
     onSuccess: () => { toast.success("Juego guardado"); refetch(); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); setEditing(null); },
@@ -802,14 +802,19 @@ function GamesTab() {
   });
 
   const handleUpload = async (field: "banner" | "logo", file: File) => {
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
     setUploading(field);
     try {
-      const fd = new FormData(); fd.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const { url } = await res.json();
-      setForm(f => ({ ...f, [field]: url }));
-    } catch { toast.error("Error al subir imagen"); }
-    finally { setUploading(null); }
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp", type: "banner" });
+        setForm(f => ({ ...f, [field]: result.url }));
+        setUploading(null);
+      };
+      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploading(null); };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Error al subir imagen"); setUploading(null); }
   };
 
   const startEdit = (g: any) => { setEditing(g.slug); setForm({ name: g.name, slug: g.slug, banner: g.bannerUrl ?? "", logo: g.logo ?? "", genre: g.genre ?? "", description: g.description ?? "" }); };
