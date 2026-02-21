@@ -9,9 +9,9 @@ import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
-  BadgeCheck
+  BadgeCheck, Upload, ImageIcon, X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "wouter";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -457,6 +457,85 @@ function AdsTab() {
   );
 }
 
+// ─── Image Uploader Component ───────────────────────────────────────────────
+function ImageUploader({
+  label,
+  value,
+  onChange,
+  folder = "rewards",
+  aspectRatio = "16/9",
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  folder?: string;
+  aspectRatio?: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const uploadImage = trpc.admin.uploadImage.useMutation({
+    onSuccess: (data) => { onChange(data.url); toast.success("Imagen subida"); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const handleFile = (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      uploadImage.mutate({ base64, mimeType: file.type as any, folder });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">{label}</label>
+      <div
+        className="relative rounded-lg border-2 border-dashed border-red-900/50 hover:border-red-600/70 transition-colors cursor-pointer overflow-hidden"
+        style={{ aspectRatio, background: "#0a0a0a" }}
+        onClick={() => inputRef.current?.click()}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
+      >
+        {value ? (
+          <>
+            <img src={value} alt="preview" className="w-full h-full object-cover" />
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onChange(""); }}
+              className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-700 transition-colors"
+            >
+              <X size={12} />
+            </button>
+            <div className="absolute bottom-0 left-0 right-0 py-1 text-center text-xs text-white/70 bg-black/50">
+              Click para cambiar
+            </div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            {uploadImage.isPending ? (
+              <span className="w-6 h-6 border-2 border-red-500/30 border-t-red-500 rounded-full animate-spin" />
+            ) : (
+              <>
+                <Upload size={20} className="text-red-900/70" />
+                <span className="text-xs text-gray-600">Click o arrastra una imagen</span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/gif,image/webp"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
+      />
+    </div>
+  );
+}
+
 // ─── Rewards Tab ──────────────────────────────────────────────────────────────
 function RewardsTab() {
   const [showForm, setShowForm] = useState(false);
@@ -518,12 +597,13 @@ function RewardsTab() {
                 className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">URL del Thumbnail (imagen de portada)</label>
-              <input value={form.thumbnailUrl} onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="https://cdn.ejemplo.com/thumbnail.jpg"
-                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
-              {form.thumbnailUrl && (
-                <img src={form.thumbnailUrl} alt="preview" className="mt-2 h-20 rounded-lg object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
-              )}
+              <ImageUploader
+                label="Thumbnail (imagen de portada 16:9)"
+                value={form.thumbnailUrl}
+                onChange={(url) => setForm(f => ({ ...f, thumbnailUrl: url }))}
+                folder="rewards/thumbnails"
+                aspectRatio="16/9"
+              />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Nombre del Sponsor</label>
@@ -531,9 +611,13 @@ function RewardsTab() {
                 className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">URL Logo del Sponsor</label>
-              <input value={form.sponsorLogoUrl} onChange={e => setForm(f => ({ ...f, sponsorLogoUrl: e.target.value }))} placeholder="https://cdn.ejemplo.com/logo.png"
-                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              <ImageUploader
+                label="Logo del Sponsor"
+                value={form.sponsorLogoUrl}
+                onChange={(url) => setForm(f => ({ ...f, sponsorLogoUrl: url }))}
+                folder="rewards/logos"
+                aspectRatio="1/1"
+              />
             </div>
             <div>
               <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Fecha de Expiración</label>

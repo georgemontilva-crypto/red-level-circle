@@ -411,3 +411,4 @@
 - [x] Botón de acción en tarjeta muestra tiempo restante en formato mm:ss estilo Discord
 - [x] Badge 'Patrocinado por ✅ [Empresa]' visible fuera del thumbnail con checkmark verde
 - [x] Agregar campos thumbnailUrl, sponsorName, sponsorLogoUrl y expiresAt al formulario de creación de tareas en AdminPanel
+- [x] Reemplazar campos URL thumbnail y URL logo en AdminPanel por upload de imagen directo con preview
