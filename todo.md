@@ -224,3 +224,16 @@
 
 ## Fix Avatar Posición V7.2
 - [x] Avatar debe quedar en la esquina inferior-izquierda del banner, sobresaliendo hacia abajo, y el nombre debajo del avatar
+
+## Equipos Públicos + Super Admin V8
+- [x] Campos avatar/banner/description en tabla teams (schema + migración)
+- [x] Endpoint teams.uploadImage para subir avatar y banner del equipo a S3
+- [x] Endpoint teams.publicProfile con torneos, logros y jugadores con stats automáticas
+- [x] Página pública /team/:id con banner, avatar, jugadores, torneos inscritos/ganados/perdidos
+- [x] Estadísticas automáticas por jugador: torneos jugados, ganados, perdidos (desde registrations/matches)
+- [x] Subida de imagen en Settings (avatar + banner del usuario) con preview
+- [x] Subida de imagen en MyTeams (logo + banner del equipo)
+- [x] Panel super admin mejorado: tab Overview con métricas globales, tab Equipos con verificación
+- [x] Endpoint admin.stats con 8 métricas globales + usuarios recientes
+- [x] Endpoint admin.listTeams y admin.verifyTeam
+- [x] 29 tests pasando

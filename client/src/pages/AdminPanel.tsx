@@ -727,6 +727,117 @@ function TournamentsTab() {
   );
 }
 
+// ─── Teams Tab ────────────────────────────────────────────────────────────────
+function TeamsTab() {
+  const { data: teams, refetch } = trpc.admin.listTeams.useQuery();
+  const verifyTeam = trpc.admin.verifyTeam.useMutation({
+    onSuccess: () => { toast.success("Estado actualizado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader icon={Shield} title="GESTIÓN DE EQUIPOS" subtitle="Verifica y administra equipos" />
+      <div className="space-y-2">
+        {!teams || teams.length === 0 ? (
+          <p className="text-gray-500 text-sm text-center py-8 font-rajdhani">Sin equipos registrados</p>
+        ) : teams.map((team: any) => (
+          <div key={team.id} className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center gap-4 flex-wrap">
+            <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {team.logo ? <img src={team.logo} alt="" className="w-full h-full object-cover" /> : <Shield className="w-5 h-5 text-gray-500" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <p className="text-white font-rajdhani font-semibold truncate">{team.name}</p>
+                {team.tag && <span className="text-xs font-mono text-gray-500">[{team.tag}]</span>}
+                {team.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400" />}
+              </div>
+              <div className="flex items-center gap-3 mt-0.5">
+                <span className="text-gray-500 text-xs">{team.game ?? "Multi-juego"}</span>
+                <span className="text-yellow-400 text-xs font-orbitron">{team.wins}V / {team.losses}D</span>
+                <span className="text-gray-600 text-xs">{team.tournamentsPlayed ?? 0} torneos</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Link href={`/team/${team.id}`}>
+                <Button size="sm" variant="outline" className="h-7 text-xs border-gray-700 text-gray-400">
+                  <Eye className="w-3 h-3 mr-1" /> Ver
+                </Button>
+              </Link>
+              <Button
+                size="sm"
+                onClick={() => verifyTeam.mutate({ teamId: team.id, verified: !team.isVerified })}
+                disabled={verifyTeam.isPending}
+                className={`h-7 text-xs font-orbitron border ${
+                  team.isVerified
+                    ? "bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border-blue-700/40"
+                    : "bg-green-600/20 hover:bg-green-600/40 text-green-400 border-green-700/40"
+                }`}
+              >
+                {team.isVerified ? "QUITAR VERIFICACIÓN" : "VERIFICAR"}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Overview Tab ─────────────────────────────────────────────────────────────
+function OverviewTab() {
+  const { data: stats } = trpc.admin.stats.useQuery();
+
+  if (!stats) return (
+    <div className="flex items-center justify-center py-16">
+      <div className="w-8 h-8 rounded-full border-2 border-red-600 border-t-transparent animate-spin" />
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon={BarChart3} title="RESUMEN GENERAL" subtitle="Métricas globales de la plataforma" />
+
+      {/* Global Stats Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <StatCard label="Total Usuarios" value={stats.totalUsers} icon={Users} color="text-blue-400" />
+        <StatCard label="Total Equipos" value={stats.totalTeams} icon={Shield} color="text-purple-400" />
+        <StatCard label="Total Torneos" value={stats.totalTournaments} icon={Trophy} color="text-red-400" />
+        <StatCard label="Torneos Activos" value={stats.activeTournaments} icon={Star} color="text-yellow-400" />
+        <StatCard label="Torneos Pendientes" value={stats.pendingTournaments} icon={Eye} color="text-orange-400" />
+        <StatCard label="Total Apuestas" value={stats.totalBets} icon={BarChart3} color="text-green-400" />
+        <StatCard label="Total Pedidos" value={stats.totalOrders} icon={Package} color="text-cyan-400" />
+        <StatCard label="Pedidos Pendientes" value={stats.pendingOrders} icon={ShoppingBag} color="text-pink-400" />
+      </div>
+
+      {/* Recent Users */}
+      <div>
+        <h3 className="font-orbitron text-sm text-gray-400 tracking-wider mb-3">USUARIOS RECIENTES</h3>
+        <div className="space-y-2">
+          {stats.recentUsers?.map((u: any) => (
+            <div key={u.id} className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : <Users className="w-4 h-4 text-gray-500" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-rajdhani font-semibold truncate">{u.nickname ?? u.name ?? "Sin nombre"}</p>
+                <p className="text-gray-600 text-xs">{new Date(u.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}</p>
+              </div>
+              <Badge className={`font-orbitron text-xs border ${
+                u.role === "admin" ? "bg-yellow-500/20 text-yellow-400 border-yellow-600/40" :
+                u.role === "premium" ? "bg-red-500/20 text-red-400 border-red-600/40" :
+                "bg-gray-500/20 text-gray-400 border-gray-600/40"
+              }`}>
+                {u.role.toUpperCase()}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const { user, isAuthenticated } = useAuth();
@@ -743,8 +854,7 @@ export default function AdminPanel() {
     );
   }
 
-  const { data: users } = trpc.admin.listUsers.useQuery({ search: undefined });
-  const { data: orders } = trpc.admin.listOrders.useQuery();
+  const { data: stats } = trpc.admin.stats.useQuery();
   const { data: pending } = trpc.admin.pendingTournaments.useQuery();
 
   return (
@@ -760,20 +870,22 @@ export default function AdminPanel() {
         </div>
       </div>
 
-      {/* Stats */}
+      {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Usuarios" value={users?.length ?? 0} icon={Users} color="text-blue-400" />
-        <StatCard label="Pedidos pendientes" value={orders?.filter(o => o.status === "pending").length ?? 0} icon={Package} color="text-yellow-400" />
-        <StatCard label="Torneos pendientes" value={pending?.length ?? 0} icon={Trophy} color="text-red-400" />
-        <StatCard label="Usuarios premium" value={users?.filter(u => u.role === "premium" || u.role === "admin").length ?? 0} icon={Crown} color="text-purple-400" />
+        <StatCard label="Usuarios" value={stats?.totalUsers ?? 0} icon={Users} color="text-blue-400" />
+        <StatCard label="Equipos" value={stats?.totalTeams ?? 0} icon={Shield} color="text-purple-400" />
+        <StatCard label="Torneos activos" value={stats?.activeTournaments ?? 0} icon={Trophy} color="text-red-400" />
+        <StatCard label="Pendientes aprobación" value={pending?.length ?? 0} icon={Eye} color="text-yellow-400" />
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="tournaments">
+      <Tabs defaultValue="overview">
         <TabsList className="bg-gray-900/60 border border-red-900/30 rounded-xl p-1 flex-wrap h-auto gap-1">
           {[
+            { value: "overview", label: "RESUMEN", icon: BarChart3 },
             { value: "tournaments", label: "TORNEOS", icon: Trophy },
             { value: "users", label: "USUARIOS", icon: Users },
+            { value: "teams", label: "EQUIPOS", icon: Shield },
             { value: "shop", label: "TIENDA", icon: ShoppingBag },
             { value: "ads", label: "PUBLICIDAD", icon: Megaphone },
             { value: "rewards", label: "REWARDS", icon: Gift },
@@ -787,8 +899,10 @@ export default function AdminPanel() {
         </TabsList>
 
         <div className="mt-6">
+          <TabsContent value="overview"><OverviewTab /></TabsContent>
           <TabsContent value="tournaments"><TournamentsTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
+          <TabsContent value="teams"><TeamsTab /></TabsContent>
           <TabsContent value="shop"><ShopTab /></TabsContent>
           <TabsContent value="ads"><AdsTab /></TabsContent>
           <TabsContent value="rewards"><RewardsTab /></TabsContent>

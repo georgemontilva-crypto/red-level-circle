@@ -73,6 +73,12 @@ import {
   getUserPublicProfile,
   getUserEquippedCosmetics,
   adminListUsers,
+  getTeamPublicProfile,
+  updateTeamImages,
+  getAdminStats,
+  adminListTeams,
+  adminVerifyTeam,
+  adminListTournaments,
   adminUpdateUserRole,
   adminAdjustRLC,
   adminCreateShopItem,
@@ -429,6 +435,35 @@ export const appRouter = router({
       .input(z.object({ game: z.string().optional(), limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return getTeamRanking({ game: input?.game, limit: input?.limit ?? 50 });
+      }),
+
+    publicProfile: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const profile = await getTeamPublicProfile(input.id);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Equipo no encontrado" });
+        return profile;
+      }),
+
+    uploadImage: protectedProcedure
+      .input(z.object({
+        teamId: z.number(),
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        type: z.enum(["logo", "banner"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND" });
+        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const ext = input.mimeType.split("/")[1];
+        const key = `teams/${input.teamId}/${input.type}-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        await updateTeamImages(input.teamId, input.type === "logo" ? { logo: url } : { banner: url });
+        return { url };
       }),
   }),
 
@@ -952,6 +987,26 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await adminRejectTournament(input.id);
+        return { success: true };
+      }),
+    stats: adminProcedure
+      .query(async () => getAdminStats()),
+    listTeams: adminProcedure
+      .query(async () => adminListTeams()),
+    verifyTeam: adminProcedure
+      .input(z.object({ teamId: z.number(), verified: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await adminVerifyTeam(input.teamId, input.verified);
+        return { success: true };
+      }),
+    listAllTournaments: adminProcedure
+      .input(z.object({ status: z.string().optional() }).optional())
+      .query(async ({ input }) => adminListTournaments(input?.status)),
+    banUser: adminProcedure
+      .input(z.object({ userId: z.number(), banned: z.boolean() }))
+      .mutation(async ({ input }) => {
+        // Set role to 'user' when banning (remove any elevated access)
+        if (input.banned) await adminUpdateUserRole(input.userId, "user");
         return { success: true };
       }),
   }),

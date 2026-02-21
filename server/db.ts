@@ -1652,3 +1652,200 @@ export async function getFollowing(userId: number) {
     .where(eq(userFollows.followerId, userId))
     .orderBy(desc(userFollows.createdAt));
 }
+
+// ─── Team Public Profile ───────────────────────────────────────────────────────
+export async function getTeamPublicProfile(teamId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Get team base info
+  const teamRows = await db.select().from(teams).where(eq(teams.id, teamId)).limit(1);
+  if (!teamRows.length) return null;
+  const team = teamRows[0];
+
+  // Get members with user info and avatar
+  const members = await db
+    .select({
+      id: teamMembers.id,
+      userId: teamMembers.userId,
+      role: teamMembers.role,
+      gameId: teamMembers.gameId,
+      joinedAt: teamMembers.joinedAt,
+      userName: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      country: users.country,
+      mainGame: users.mainGame,
+    })
+    .from(teamMembers)
+    .leftJoin(users, eq(teamMembers.userId, users.id))
+    .where(eq(teamMembers.teamId, teamId));
+
+  // Get all approved registrations with tournament info
+  const registrations = await db
+    .select({
+      id: tournamentRegistrations.id,
+      tournamentId: tournamentRegistrations.tournamentId,
+      status: tournamentRegistrations.status,
+      registeredAt: tournamentRegistrations.registeredAt,
+      tournamentName: tournaments.name,
+      tournamentGame: tournaments.game,
+      tournamentStatus: tournaments.status,
+      tournamentWinnerId: tournaments.winnerId,
+      tournamentStartDate: tournaments.startDate,
+      tournamentBanner: tournaments.banner,
+    })
+    .from(tournamentRegistrations)
+    .leftJoin(tournaments, eq(tournamentRegistrations.tournamentId, tournaments.id))
+    .where(and(
+      eq(tournamentRegistrations.teamId, teamId),
+      eq(tournamentRegistrations.status, "Aprobado")
+    ))
+    .orderBy(desc(tournamentRegistrations.registeredAt));
+
+  // Compute stats from registrations
+  const tournamentsPlayed = registrations.filter(r => r.tournamentStatus === "completed").length;
+  const tournamentsWon = registrations.filter(r => r.tournamentStatus === "completed" && r.tournamentWinnerId === teamId).length;
+  const tournamentsLost = tournamentsPlayed - tournamentsWon;
+
+  // Get achievements
+  const achievements = await db
+    .select({
+      id: teamAchievements.id,
+      title: teamAchievements.title,
+      description: teamAchievements.description,
+      tournamentId: teamAchievements.tournamentId,
+      awardedAt: teamAchievements.awardedAt,
+    })
+    .from(teamAchievements)
+    .where(eq(teamAchievements.teamId, teamId))
+    .orderBy(desc(teamAchievements.awardedAt));
+
+  // Per-player stats: count matches where they were part of the team
+  const memberStats = await Promise.all(
+    members.map(async (member) => {
+      // Count tournaments played by this player (as part of this team)
+      const playerTournaments = registrations.filter(r => r.tournamentStatus === "completed").length;
+      const playerWins = registrations.filter(r => r.tournamentStatus === "completed" && r.tournamentWinnerId === teamId).length;
+      return {
+        ...member,
+        stats: {
+          tournamentsPlayed: playerTournaments,
+          tournamentsWon: playerWins,
+          tournamentsLost: playerTournaments - playerWins,
+        },
+      };
+    })
+  );
+
+  return {
+    ...team,
+    members: memberStats,
+    achievements,
+    registrations,
+    stats: {
+      tournamentsPlayed,
+      tournamentsWon,
+      tournamentsLost,
+    },
+  };
+}
+
+export async function updateTeamImages(teamId: number, data: { logo?: string; banner?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(teams).set(data).where(eq(teams.id, teamId));
+}
+
+// ─── Admin Stats ───────────────────────────────────────────────────────────────
+export async function getAdminStats() {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
+  const [totalTeams] = await db.select({ count: sql<number>`count(*)` }).from(teams);
+  const [totalTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments);
+  const [activeTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments)
+    .where(eq(tournaments.status, "in_progress"));
+  const [pendingTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments)
+    .where(eq(tournaments.status, "pending_approval"));
+  const [totalBets] = await db.select({ count: sql<number>`count(*)` }).from(bets);
+  const [totalOrders] = await db.select({ count: sql<number>`count(*)` }).from(shopOrders);
+  const [pendingOrders] = await db.select({ count: sql<number>`count(*)` }).from(shopOrders)
+    .where(eq(shopOrders.status, "pending"));
+
+  // Recent users (last 10)
+  const recentUsers = await db
+    .select({ id: users.id, name: users.name, nickname: users.nickname, avatar: users.avatar, role: users.role, createdAt: users.createdAt })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+    .limit(10);
+
+  return {
+    totalUsers: Number(totalUsers.count),
+    totalTeams: Number(totalTeams.count),
+    totalTournaments: Number(totalTournaments.count),
+    activeTournaments: Number(activeTournaments.count),
+    pendingTournaments: Number(pendingTournaments.count),
+    totalBets: Number(totalBets.count),
+    totalOrders: Number(totalOrders.count),
+    pendingOrders: Number(pendingOrders.count),
+    recentUsers,
+  };
+}
+
+export async function adminListTeams(search?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const query = db
+    .select({
+      id: teams.id,
+      name: teams.name,
+      tag: teams.tag,
+      logo: teams.logo,
+      game: teams.game,
+      country: teams.country,
+      points: teams.points,
+      wins: teams.wins,
+      losses: teams.losses,
+      tournamentsPlayed: teams.tournamentsPlayed,
+      tournamentsWon: teams.tournamentsWon,
+      isVerified: teams.isVerified,
+      captainId: teams.captainId,
+      createdAt: teams.createdAt,
+    })
+    .from(teams)
+    .orderBy(desc(teams.createdAt))
+    .limit(100);
+  return query;
+}
+
+export async function adminVerifyTeam(teamId: number, verified: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(teams).set({ isVerified: verified }).where(eq(teams.id, teamId));
+}
+
+export async function adminListTournaments(status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = status ? [eq(tournaments.status, status as any)] : [];
+  return db
+    .select({
+      id: tournaments.id,
+      name: tournaments.name,
+      game: tournaments.game,
+      status: tournaments.status,
+      maxTeams: tournaments.maxTeams,
+      prizeAmount: tournaments.prizeAmount,
+      startDate: tournaments.startDate,
+      creatorId: tournaments.creatorId,
+      isFeatured: tournaments.isFeatured,
+      isPublic: tournaments.isPublic,
+      createdAt: tournaments.createdAt,
+    })
+    .from(tournaments)
+    .where(conditions.length ? and(...conditions) : undefined)
+    .orderBy(desc(tournaments.createdAt))
+    .limit(100);
+}
