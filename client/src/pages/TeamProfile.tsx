@@ -6,35 +6,6 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 
-function NavBar() {
-  const { isAuthenticated } = useAuth();
-  return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800/50">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <span className="font-orbitron font-black text-xl tracking-widest cursor-pointer">
-            <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
-            <span className="text-zinc-400 text-sm ml-1">CIRCLE</span>
-          </span>
-        </Link>
-        <div className="hidden md:flex items-center gap-6 text-sm font-rajdhani font-semibold tracking-wider">
-          <Link href="/tournaments"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">TORNEOS</span></Link>
-          <Link href="/ranking"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">RANKING</span></Link>
-          <Link href="/news"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">NOTICIAS</span></Link>
-          <Link href="/streams"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">EN VIVO</span></Link>
-          <Link href="/betting"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">APUESTAS</span></Link>
-        </div>
-        <div className="flex items-center gap-3">
-          {isAuthenticated ? (
-            <Link href="/dashboard"><Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">DASHBOARD</Button></Link>
-          ) : (
-            <a href={getLoginUrl()}><Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">INGRESAR</Button></a>
-          )}
-        </div>
-      </div>
-    </nav>
-  );
-}
 
 const ROLE_LABELS: Record<string, string> = {
   captain: "CAPITÁN",
@@ -68,7 +39,6 @@ export default function TeamProfile() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <NavBar />
         <div className="pt-24 max-w-4xl mx-auto px-4">
           <div className="h-48 bg-zinc-900/50 rounded-xl animate-pulse mb-6" />
           <div className="grid md:grid-cols-3 gap-4">
@@ -82,7 +52,6 @@ export default function TeamProfile() {
   if (!team) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <NavBar />
         <div className="text-center">
           <h2 className="font-orbitron text-2xl text-zinc-600 mb-4">EQUIPO NO ENCONTRADO</h2>
           <Link href="/ranking"><Button className="bg-red-600 hover:bg-red-700 font-orbitron text-xs">VER RANKING</Button></Link>
@@ -99,7 +68,6 @@ export default function TeamProfile() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <NavBar />
       <div className="pt-24 pb-16 max-w-5xl mx-auto px-4">
         {/* Back */}
         <Link href="/ranking">

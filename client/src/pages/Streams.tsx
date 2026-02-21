@@ -34,30 +34,6 @@ export default function Streams() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800/50">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/">
-            <span className="font-orbitron font-black text-xl tracking-widest cursor-pointer">
-              <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
-              <span className="text-zinc-400 text-sm ml-1">CIRCLE</span>
-            </span>
-          </Link>
-          <div className="hidden md:flex items-center gap-6 text-sm font-rajdhani font-semibold tracking-wider">
-            <Link href="/tournaments"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">TORNEOS</span></Link>
-            <Link href="/ranking"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">RANKING</span></Link>
-            <Link href="/news"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">NOTICIAS</span></Link>
-            <Link href="/streams"><span className="text-white cursor-pointer">EN VIVO</span></Link>
-            <Link href="/betting"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">APUESTAS</span></Link>
-          </div>
-          <div className="flex items-center gap-3">
-            {isAuthenticated ? (
-              <Link href="/dashboard"><Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">DASHBOARD</Button></Link>
-            ) : (
-              <a href={getLoginUrl()}><Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">INGRESAR</Button></a>
-            )}
-          </div>
-        </div>
-      </nav>
 
       <div className="pt-24 pb-16 max-w-7xl mx-auto px-4">
         <div className="mb-8">

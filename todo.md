@@ -130,3 +130,11 @@
 - [ ] Historial completo de resultados por torneo
 - [ ] Filtros por juego, fecha, equipo
 - [ ] Exportar resultados (CSV)
+
+## Navegación V3: Menú Lateral Global
+- [x] Crear componente SidebarLayout con menú lateral persistente estilo cyberpunk
+- [x] Secciones agrupadas: GENERAL, TORNEOS, COMUNIDAD, CUENTA
+- [x] Iconos + texto en cada ítem, sección activa resaltada en rojo neón
+- [x] Botón cerrar sesión al fondo del sidebar
+- [x] Versión colapsable en móvil (hamburger)
+- [x] Aplicar en: Home, Tournaments, TournamentDetail, Ranking, News, Streams, Betting, TeamProfile, Dashboard y subpáginas

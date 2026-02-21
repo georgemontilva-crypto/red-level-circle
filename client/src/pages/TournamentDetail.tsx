@@ -94,28 +94,14 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-6 py-4"
-        style={{
-          background: "oklch(0.07 0.005 0 / 0.95)",
-          borderBottom: "1px solid oklch(0.20 0.01 0)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
+      {/* Breadcrumb */}
+      <div className="px-6 pt-4 pb-2">
         <Link href="/tournaments">
-          <button
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-display text-sm tracking-wider"
-          >
-            <ChevronLeft size={16} /> TORNEOS
+          <button className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-rajdhani text-sm tracking-wider">
+            <ChevronLeft size={14} /> VOLVER A TORNEOS
           </button>
         </Link>
-        <span className="font-display text-xl tracking-widest">
-          <span className="neon-text">RED</span>
-          <span className="text-foreground">LEVEL</span>
-          <span className="text-muted-foreground text-sm ml-1">CIRCLE</span>
-        </span>
-      </nav>
+      </div>
 
       <div className="max-w-5xl mx-auto px-4 py-10">
         {/* Header */}
