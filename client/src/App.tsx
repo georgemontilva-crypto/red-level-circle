@@ -30,6 +30,7 @@ import BrandAds from "./pages/BrandAds";
 import AdminPanel from "./pages/AdminPanel";
 import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
+import Community from "./pages/Community";
 import OnboardingModal from "./components/OnboardingModal";
 
 function OnboardingWrapper({ children }: { children: React.ReactNode }) {
@@ -89,6 +90,9 @@ function Router() {
         {/* Admin */}
         <Route path="/admin" component={AdminPanel} />
         <Route path="/admin/:tab" component={AdminPanel} />
+
+        {/* Community */}
+        <Route path="/community" component={Community} />
 
         {/* User profiles */}
         <Route path="/profile/:id" component={UserProfile} />

@@ -24,6 +24,7 @@ import {
   rewardTasks,
   userRewardClaims,
   brandAds,
+  userFollows,
   type InsertGame,
   type InsertNews,
   type InsertBet,
@@ -1526,4 +1527,128 @@ export async function adminRejectTournament(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(tournaments).set({ status: "cancelled" }).where(eq(tournaments.id, id));
+}
+
+// ─── Community & Follows ──────────────────────────────────────────────────────
+export async function listPublicUsers(opts: { search?: string; limit?: number; offset?: number } = {}) {
+  const db = await getDb();
+  if (!db) return [];
+  const { search, limit = 40, offset = 0 } = opts;
+  const conditions = [];
+  if (search) {
+    conditions.push(
+      or(
+        like(users.name, `%${search}%`),
+        like(users.nickname, `%${search}%`)
+      )
+    );
+  }
+  const query = db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      bannerUrl: users.bannerUrl,
+      bio: users.bio,
+      profileType: users.profileType,
+      mainGame: users.mainGame,
+      country: users.country,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+    .limit(limit)
+    .offset(offset);
+  if (conditions.length > 0) {
+    return query.where(and(...conditions));
+  }
+  return query;
+}
+
+export async function followUser(followerId: number, followingId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Check if already following
+  const existing = await db
+    .select()
+    .from(userFollows)
+    .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)))
+    .limit(1);
+  if (existing.length > 0) return; // already following
+  await db.insert(userFollows).values({ followerId, followingId });
+}
+
+export async function unfollowUser(followerId: number, followingId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db
+    .delete(userFollows)
+    .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)));
+}
+
+export async function isFollowing(followerId: number, followingId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .select()
+    .from(userFollows)
+    .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)))
+    .limit(1);
+  return result.length > 0;
+}
+
+export async function getFollowerCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userFollows)
+    .where(eq(userFollows.followingId, userId));
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function getFollowingCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(userFollows)
+    .where(eq(userFollows.followerId, userId));
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function getFollowers(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      profileType: users.profileType,
+    })
+    .from(userFollows)
+    .innerJoin(users, eq(userFollows.followerId, users.id))
+    .where(eq(userFollows.followingId, userId))
+    .orderBy(desc(userFollows.createdAt));
+}
+
+export async function getFollowing(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      profileType: users.profileType,
+    })
+    .from(userFollows)
+    .innerJoin(users, eq(userFollows.followingId, users.id))
+    .where(eq(userFollows.followerId, userId))
+    .orderBy(desc(userFollows.createdAt));
 }

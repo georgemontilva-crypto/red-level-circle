@@ -430,3 +430,13 @@ export const brandAds = mysqlTable("brand_ads", {
 
 export type BrandAd = typeof brandAds.$inferSelect;
 export type InsertBrandAd = typeof brandAds.$inferInsert;
+
+// ─── User Follows ─────────────────────────────────────────────────────────────
+export const userFollows = mysqlTable("user_follows", {
+  id: int("id").autoincrement().primaryKey(),
+  followerId: int("followerId").notNull(),   // the user who follows
+  followingId: int("followingId").notNull(), // the user being followed
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UserFollow = typeof userFollows.$inferSelect;
+export type InsertUserFollow = typeof userFollows.$inferInsert;

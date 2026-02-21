@@ -207,3 +207,14 @@
 - [x] Componente BracketView interactivo con visualización en árbol y líneas conectoras SVG
 - [x] Toggle Bracket/Lista en TournamentManage
 - [x] Bracket público en TournamentDetail
+
+## Perfil Público y Comunidad V7
+- [x] Tabla user_follows (followerId, followingId) en schema.ts + migración
+- [x] Endpoint community.listUsers (paginado, buscable, público)
+- [x] Endpoints follows: follow, unfollow, getFollowers, getFollowing, isFollowing
+- [x] Rediseñar UserProfile estilo Discord: banner full-width + avatar superpuesto, responsivo móvil
+- [x] Mostrar contadores de seguidores/seguidos en el perfil
+- [x] Botón Follow/Unfollow en perfil público (solo para usuarios autenticados)
+- [x] Página /community con grid de usuarios registrados + búsqueda + follow
+- [x] Enlace a /community en el sidebar (sección COMUNIDAD)
+- [x] Tests para los nuevos endpoints (29 tests pasando)

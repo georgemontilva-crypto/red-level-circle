@@ -1,35 +1,25 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import {
   User, Trophy, Gamepad2, Twitter, MessageSquare, Tv2,
-  Edit3, Coins, Star, Shield, Crown, Swords, Calendar
+  Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
+  Loader2,
 } from "lucide-react";
 import { useParams, Link } from "wouter";
 import { useState } from "react";
 
-function RarityBadge({ rarity }: { rarity: string }) {
-  const colors: Record<string, string> = {
-    common: "text-gray-400 border-gray-600",
-    rare: "text-blue-400 border-blue-600",
-    epic: "text-purple-400 border-purple-600",
-    legendary: "text-yellow-400 border-yellow-600",
-  };
-  return (
-    <span className={`text-xs border px-2 py-0.5 rounded-full font-orbitron ${colors[rarity] ?? colors.common}`}>
-      {rarity.toUpperCase()}
-    </span>
-  );
+function ProfileTypeIcon({ type }: { type: string | null }) {
+  if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-yellow-400" />;
+  if (type === "event_creator") return <Swords className="w-3.5 h-3.5 text-red-400" />;
+  return <Shield className="w-3.5 h-3.5 text-blue-400" />;
 }
 
-function ProfileTypeIcon({ type }: { type: string | null }) {
-  if (type === "team_captain") return <Crown className="w-4 h-4 text-yellow-400" />;
-  if (type === "event_creator") return <Swords className="w-4 h-4 text-red-400" />;
-  return <Shield className="w-4 h-4 text-blue-400" />;
-}
+const PROFILE_TYPE_LABEL: Record<string, string> = {
+  player: "Jugador",
+  team_captain: "Capitán",
+  event_creator: "Creador",
+};
 
 export default function UserProfile() {
   const params = useParams<{ id: string }>();
@@ -37,42 +27,44 @@ export default function UserProfile() {
   const { user: me } = useAuth();
   const isOwnProfile = me?.id === userId;
 
-  const { data: profile, isLoading } = trpc.profile.getPublic.useQuery(
-    { userId },
-    { enabled: !!userId }
-  );
-  const { data: cosmetics } = trpc.profile.getEquippedCosmetics.useQuery(
-    { userId },
-    { enabled: !!userId }
-  );
-  const { data: teams } = trpc.teams.list.useQuery(undefined, { enabled: !!userId });
-
-  // Edit mode state
-  const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({
-    nickname: "",
-    bio: "",
-    mainGame: "",
-    country: "",
-    socialDiscord: "",
-    socialTwitch: "",
-    socialTwitter: "",
-  });
-
   const utils = trpc.useUtils();
-  const updateProfile = trpc.profile.updateMine.useMutation({
+
+  const { data: profile, isLoading } = trpc.profile.getWithStats.useQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+
+  const followMutation = trpc.follows.follow.useMutation({
     onSuccess: () => {
-      toast.success("Perfil actualizado");
-      setEditing(false);
-      utils.profile.getPublic.invalidate({ userId });
+      utils.profile.getWithStats.invalidate({ userId });
+      toast.success("¡Ahora sigues a este usuario!");
     },
     onError: (e) => toast.error(e.message),
   });
 
+  const unfollowMutation = trpc.follows.unfollow.useMutation({
+    onSuccess: () => {
+      utils.profile.getWithStats.invalidate({ userId });
+      toast.success("Dejaste de seguir a este usuario");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const [activeTab, setActiveTab] = useState<"overview" | "cosmetics" | "followers" | "following">("overview");
+
+  const { data: followers } = trpc.follows.getFollowers.useQuery(
+    { userId },
+    { enabled: activeTab === "followers" }
+  );
+  const { data: following } = trpc.follows.getFollowing.useQuery(
+    { userId },
+    { enabled: activeTab === "following" }
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+        <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
       </div>
     );
   }
@@ -80,64 +72,80 @@ export default function UserProfile() {
   if (!profile) {
     return (
       <div className="text-center py-20">
-        <User className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-        <p className="text-gray-400 font-orbitron">Perfil no encontrado</p>
+        <User className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
+        <p className="text-zinc-500 font-mono">Perfil no encontrado</p>
       </div>
     );
   }
 
-  // Find equipped frame cosmetic
-  const equippedFrame = cosmetics?.find(c => c.type === "frame" && c.isEquipped);
-  const equippedAura = cosmetics?.find(c => c.type === "aura" && c.isEquipped);
-
-  const handleEdit = () => {
-    setForm({
-      nickname: profile.nickname ?? "",
-      bio: profile.bio ?? "",
-      mainGame: profile.mainGame ?? "",
-      country: profile.country ?? "",
-      socialDiscord: profile.socialDiscord ?? "",
-      socialTwitch: profile.socialTwitch ?? "",
-      socialTwitter: profile.socialTwitter ?? "",
-    });
-    setEditing(true);
-  };
-
-  const handleSave = () => {
-    const clean = Object.fromEntries(
-      Object.entries(form).filter(([, v]) => v !== "")
-    ) as typeof form;
-    updateProfile.mutate(clean);
-  };
-
-  const profileTypeLabel: Record<string, string> = {
-    player: "Jugador",
-    team_captain: "Capitán de Equipo",
-    event_creator: "Creador de Eventos",
-  };
+  const equippedFrame = profile.equippedCosmetics?.find((c) => c.type === "frame" && c.isEquipped);
+  const equippedAura = profile.equippedCosmetics?.find((c) => c.type === "aura" && c.isEquipped);
+  const isFollowing = profile.isFollowing;
+  const followLoading = followMutation.isPending || unfollowMutation.isPending;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-0 overflow-x-hidden">
-      {/* Banner */}
-      <div className="relative rounded-2xl overflow-hidden h-48 bg-gradient-to-r from-black via-red-950/40 to-black border border-red-900/30">
-        {profile.bannerUrl ? (
-          <img src={profile.bannerUrl} alt="Banner" className="w-full h-full object-cover opacity-60" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-red-950/30 via-black to-red-900/20" />
-        )}
-        {/* Neon overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
-      </div>
+    <div className="max-w-2xl mx-auto overflow-x-hidden">
+      {/* ── Banner + Avatar (Discord-style) ── */}
+      <div className="relative">
+        {/* Banner */}
+        <div
+          className="w-full h-36 sm:h-48 rounded-t-2xl overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)" }}
+        >
+          {profile.bannerUrl ? (
+            <img
+              src={profile.bannerUrl}
+              alt="Banner"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "linear-gradient(rgba(255,0,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,0,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+              <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-transparent to-red-900/20" />
+            </>
+          )}
+          {/* Top-right actions */}
+          <div className="absolute top-3 right-3 flex items-center gap-2">
+            {isOwnProfile && (
+              <Link href="/settings">
+                <button
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200"
+                  style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}
+                  title="Configuración"
+                >
+                  <Settings className="w-4 h-4 text-white" />
+                </button>
+              </Link>
+            )}
+            {!isOwnProfile && me && (
+              <button
+                onClick={() => isFollowing ? unfollowMutation.mutate({ userId }) : followMutation.mutate({ userId })}
+                disabled={followLoading}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all duration-200"
+                style={isFollowing
+                  ? { background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff" }
+                  : { background: "oklch(0.55 0.22 25)", color: "#fff" }
+                }
+              >
+                {followLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isFollowing ? (
+                  <><UserMinus className="w-3.5 h-3.5" /> SIGUIENDO</>
+                ) : (
+                  <><UserPlus className="w-3.5 h-3.5" /> SEGUIR</>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
 
-      {/* Avatar + Info */}
-      <div className="relative px-4 sm:px-6 -mt-16">
-        <div className="flex items-end gap-6">
-          {/* Avatar with cosmetic frame */}
-          <div className="relative flex-shrink-0">
+        {/* Avatar — overlapping the banner */}
+        <div className="absolute left-4 sm:left-6" style={{ bottom: "-48px" }}>
+          <div className="relative">
             {/* Aura glow */}
             {equippedAura && (
               <div
-                className="absolute inset-0 rounded-full blur-xl opacity-60 scale-150"
+                className="absolute inset-0 rounded-full blur-xl opacity-70 scale-150 pointer-events-none"
                 style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
               />
             )}
@@ -147,279 +155,278 @@ export default function UserProfile() {
                 src={equippedFrame.frameImage}
                 alt="Frame"
                 className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+                style={{ width: "88px", height: "88px" }}
               />
             )}
-            <div className="w-24 h-24 rounded-full border-4 border-red-600 overflow-hidden bg-gray-900 relative z-0">
+            <div
+              className="w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden relative z-0"
+              style={{
+                width: "80px",
+                height: "80px",
+                border: "4px solid oklch(0.10 0.005 0)",
+                boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6)",
+              }}
+            >
               {profile.avatar ? (
                 <img src={profile.avatar} alt={profile.name ?? "Avatar"} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-900 to-black">
-                  <User className="w-10 h-10 text-red-400" />
+                  <User className="w-8 h-8 text-red-400" />
                 </div>
               )}
             </div>
           </div>
-
-          {/* Name + info */}
-          <div className="flex-1 pb-2">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-orbitron font-bold text-white">
-                {profile.nickname ?? profile.name ?? "Usuario"}
-              </h1>
-              {profile.profileType && (
-                <div className="flex items-center gap-1.5 bg-red-950/40 border border-red-800/40 rounded-full px-3 py-1">
-                  <ProfileTypeIcon type={profile.profileType} />
-                  <span className="text-xs text-red-300 font-rajdhani">
-                    {profileTypeLabel[profile.profileType] ?? profile.profileType}
-                  </span>
-                </div>
-              )}
-              {profile.role === "admin" && (
-                <Badge className="bg-yellow-500/20 text-yellow-400 border-yellow-600/40 font-orbitron text-xs">
-                  ADMIN
-                </Badge>
-              )}
-              {profile.role === "premium" && (
-                <Badge className="bg-red-500/20 text-red-400 border-red-600/40 font-orbitron text-xs">
-                  PREMIUM
-                </Badge>
-              )}
-            </div>
-            <div className="flex items-center gap-4 mt-1 text-sm text-gray-400 flex-wrap">
-              {profile.mainGame && (
-                <span className="flex items-center gap-1">
-                  <Gamepad2 className="w-3.5 h-3.5 text-red-500" />
-                  {profile.mainGame}
-                </span>
-              )}
-              {profile.country && (
-                <span className="flex items-center gap-1">
-                  🌍 {profile.country}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-yellow-500" />
-                {profile.rlcBalance ?? 0} RLC
-              </span>
-              <span className="flex items-center gap-1 text-xs">
-                <Calendar className="w-3 h-3" />
-                Desde {new Date(profile.createdAt).toLocaleDateString("es", { year: "numeric", month: "long" })}
-              </span>
-            </div>
-          </div>
-
-          {/* Actions */}
-          {isOwnProfile && (
-            <Button
-              onClick={handleEdit}
-              variant="outline"
-              className="border-red-700 text-red-400 hover:bg-red-950/40 font-orbitron text-xs"
-            >
-              <Edit3 className="w-3.5 h-3.5 mr-1.5" />
-              EDITAR
-            </Button>
-          )}
         </div>
 
-        {/* Bio */}
-        {profile.bio && (
-          <p className="mt-4 text-gray-300 text-sm leading-relaxed max-w-2xl">
-            {profile.bio}
-          </p>
-        )}
+        {/* Rounded bottom card */}
+        <div
+          className="rounded-b-2xl pt-14 pb-4 px-4 sm:px-6"
+          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none" }}
+        >
+          {/* Name row */}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="font-orbitron font-black text-xl sm:text-2xl text-white truncate">
+                  {profile.nickname ?? profile.name ?? "Usuario"}
+                </h1>
+                {profile.profileType && (
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
+                    <ProfileTypeIcon type={profile.profileType} />
+                    <span className="text-zinc-300">{PROFILE_TYPE_LABEL[profile.profileType] ?? profile.profileType}</span>
+                  </div>
+                )}
+                {profile.role === "admin" && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">ADMIN</span>
+                )}
+                {profile.role === "premium" && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-red-500/15 text-red-400 border border-red-500/30">PREMIUM</span>
+                )}
+              </div>
+              {/* Username / handle */}
+              {profile.nickname && profile.name && (
+                <p className="text-zinc-500 text-sm font-mono mt-0.5">@{profile.name}</p>
+              )}
+            </div>
+          </div>
 
-        {/* Social links */}
-        <div className="flex gap-3 mt-3">
-          {profile.socialDiscord && (
-            <a href={`https://discord.gg/${profile.socialDiscord}`} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-              <MessageSquare className="w-3.5 h-3.5" />
-              Discord
-            </a>
+          {/* Bio */}
+          {profile.bio && (
+            <p className="mt-3 text-zinc-300 text-sm leading-relaxed">{profile.bio}</p>
           )}
-          {profile.socialTwitch && (
-            <a href={`https://twitch.tv/${profile.socialTwitch}`} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition-colors">
-              <Tv2 className="w-3.5 h-3.5" />
-              Twitch
-            </a>
-          )}
-          {profile.socialTwitter && (
-            <a href={`https://twitter.com/${profile.socialTwitter}`} target="_blank" rel="noreferrer"
-              className="flex items-center gap-1.5 text-xs text-sky-400 hover:text-sky-300 transition-colors">
-              <Twitter className="w-3.5 h-3.5" />
-              Twitter
-            </a>
-          )}
+
+          {/* Meta info row */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-zinc-500">
+            {profile.mainGame && (
+              <span className="flex items-center gap-1">
+                <Gamepad2 className="w-3.5 h-3.5 text-red-500" />
+                {profile.mainGame}
+              </span>
+            )}
+            {profile.country && (
+              <span className="flex items-center gap-1">🌍 {profile.country}</span>
+            )}
+            <span className="flex items-center gap-1">
+              <Calendar className="w-3 h-3" />
+              Desde {new Date(profile.createdAt).toLocaleDateString("es", { year: "numeric", month: "long" })}
+            </span>
+          </div>
+
+          {/* Followers / Following counters */}
+          <div className="flex items-center gap-5 mt-4">
+            <button
+              onClick={() => setActiveTab("followers")}
+              className="flex items-center gap-1.5 text-sm transition-colors hover:text-white"
+              style={{ color: activeTab === "followers" ? "oklch(0.65 0.22 25)" : "oklch(0.60 0.005 0)" }}
+            >
+              <span className="font-bold text-white font-mono">{profile.followerCount ?? 0}</span>
+              <span>seguidores</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("following")}
+              className="flex items-center gap-1.5 text-sm transition-colors hover:text-white"
+              style={{ color: activeTab === "following" ? "oklch(0.65 0.22 25)" : "oklch(0.60 0.005 0)" }}
+            >
+              <span className="font-bold text-white font-mono">{profile.followingCount ?? 0}</span>
+              <span>siguiendo</span>
+            </button>
+          </div>
+
+          {/* Social links */}
+          <div className="flex flex-wrap gap-3 mt-3">
+            {profile.socialDiscord && (
+              <a href={`https://discord.gg/${profile.socialDiscord}`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full transition-all"
+                style={{ background: "oklch(0.40 0.15 265 / 0.15)", color: "oklch(0.70 0.15 265)", border: "1px solid oklch(0.40 0.15 265 / 0.3)" }}>
+                <MessageSquare className="w-3 h-3" /> Discord
+              </a>
+            )}
+            {profile.socialTwitch && (
+              <a href={`https://twitch.tv/${profile.socialTwitch}`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full transition-all"
+                style={{ background: "oklch(0.40 0.15 300 / 0.15)", color: "oklch(0.70 0.15 300)", border: "1px solid oklch(0.40 0.15 300 / 0.3)" }}>
+                <Tv2 className="w-3 h-3" /> Twitch
+              </a>
+            )}
+            {profile.socialTwitter && (
+              <a href={`https://twitter.com/${profile.socialTwitter}`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 text-xs px-3 py-1 rounded-full transition-all"
+                style={{ background: "oklch(0.55 0.15 220 / 0.15)", color: "oklch(0.70 0.15 220)", border: "1px solid oklch(0.55 0.15 220 / 0.3)" }}>
+                <Twitter className="w-3 h-3" /> Twitter
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Edit form */}
-      {editing && isOwnProfile && (
-        <div className="mx-4 sm:mx-6 bg-gray-900/80 border border-red-900/40 rounded-xl p-4 sm:p-6 space-y-4">
-          <h3 className="font-orbitron text-red-400 text-sm tracking-widest">EDITAR PERFIL</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {[
-              { key: "nickname", label: "Nickname", placeholder: "Tu alias en la plataforma" },
-              { key: "mainGame", label: "Juego Principal", placeholder: "Ej: Valorant" },
-              { key: "country", label: "País", placeholder: "Ej: Colombia" },
-              { key: "socialDiscord", label: "Discord (usuario/servidor)", placeholder: "usuario#1234" },
-              { key: "socialTwitch", label: "Twitch (usuario)", placeholder: "tu_canal" },
-              { key: "socialTwitter", label: "Twitter (usuario)", placeholder: "@usuario" },
-            ].map(({ key, label, placeholder }) => (
-              <div key={key}>
-                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase tracking-wider">{label}</label>
-                <input
-                  value={form[key as keyof typeof form]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
-                />
-              </div>
-            ))}
-          </div>
-          <div>
-            <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase tracking-wider">Bio</label>
-            <textarea
-              value={form.bio}
-              onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-              placeholder="Cuéntanos sobre ti..."
-              rows={3}
-              className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 transition-colors resize-none"
-            />
-          </div>
-          <div className="flex gap-3">
-            <Button
-              onClick={handleSave}
-              disabled={updateProfile.isPending}
-              className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
+      {/* ── Tabs ── */}
+      <div className="mt-4">
+        {/* Tab bar */}
+        <div className="flex border-b" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+          {(["overview", "cosmetics", "followers", "following"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-4 py-2.5 text-xs font-mono tracking-wider transition-all duration-200 relative"
+              style={{ color: activeTab === tab ? "oklch(0.65 0.22 25)" : "oklch(0.50 0.005 0)" }}
             >
-              {updateProfile.isPending ? "GUARDANDO..." : "GUARDAR"}
-            </Button>
-            <Button
-              onClick={() => setEditing(false)}
-              variant="outline"
-              className="border-gray-700 text-gray-400 hover:bg-gray-900 font-orbitron text-xs"
-            >
-              CANCELAR
-            </Button>
-          </div>
+              {tab === "overview" && "PERFIL"}
+              {tab === "cosmetics" && "COSMÉTICOS"}
+              {tab === "followers" && `SEGUIDORES (${profile.followerCount ?? 0})`}
+              {tab === "following" && `SIGUIENDO (${profile.followingCount ?? 0})`}
+              {activeTab === tab && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: "oklch(0.55 0.22 25)" }} />
+              )}
+            </button>
+          ))}
         </div>
-      )}
 
-      {/* Tabs: Cosméticos / Equipos / Estadísticas */}
-      <div className="px-4 sm:px-6">
-        <Tabs defaultValue="cosmetics">
-          <TabsList className="bg-gray-900/60 border border-red-900/30 rounded-xl p-1">
-            <TabsTrigger value="cosmetics" className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Star className="w-3.5 h-3.5 mr-1.5" />
-              COSMÉTICOS
-            </TabsTrigger>
-            <TabsTrigger value="teams" className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Trophy className="w-3.5 h-3.5 mr-1.5" />
-              EQUIPOS
-            </TabsTrigger>
-            <TabsTrigger value="stats" className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Swords className="w-3.5 h-3.5 mr-1.5" />
-              ESTADÍSTICAS
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Cosméticos equipados */}
-          <TabsContent value="cosmetics" className="mt-6">
-            {cosmetics && cosmetics.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {cosmetics.map(c => (
+        {/* Tab content */}
+        <div className="mt-4 space-y-4">
+          {/* Overview tab */}
+          {activeTab === "overview" && (
+            <div className="space-y-4">
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: "🪙" },
+                  { label: "Seguidores", value: profile.followerCount ?? 0, icon: "👥" },
+                  { label: "Siguiendo", value: profile.followingCount ?? 0, icon: "➕" },
+                ].map((stat) => (
                   <div
-                    key={c.id}
-                    className={`relative bg-gray-900/60 border rounded-xl p-4 text-center transition-all ${
-                      c.isEquipped ? "border-red-500 shadow-[0_0_12px_rgba(239,68,68,0.3)]" : "border-gray-800"
-                    }`}
+                    key={stat.label}
+                    className="rounded-xl p-4 text-center"
+                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    {c.isEquipped && (
-                      <div className="absolute top-2 right-2">
-                        <span className="text-xs bg-red-600 text-white px-1.5 py-0.5 rounded font-orbitron">EN USO</span>
-                      </div>
-                    )}
-                    <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-800 flex items-center justify-center overflow-hidden">
-                      {c.previewImage ? (
-                        <img src={c.previewImage} alt={c.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Star className="w-8 h-8 text-gray-600" />
-                      )}
-                    </div>
-                    <p className="text-white text-xs font-rajdhani font-semibold">{c.name}</p>
-                    <p className="text-gray-500 text-xs capitalize mt-0.5">{c.type}</p>
-                    <div className="mt-2">
-                      <RarityBadge rarity={c.rarity} />
-                    </div>
+                    <div className="text-2xl mb-1">{stat.icon}</div>
+                    <div className="font-mono font-bold text-white text-lg">{stat.value.toLocaleString()}</div>
+                    <div className="text-xs text-zinc-500 font-mono mt-0.5">{stat.label}</div>
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <Star className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500 font-rajdhani">Sin cosméticos equipados</p>
-                {isOwnProfile && (
-                  <Link href="/shop/cosmetics">
-                    <Button className="mt-4 bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
-                      VER TIENDA
-                    </Button>
-                  </Link>
-                )}
-              </div>
-            )}
-          </TabsContent>
 
-          {/* Equipos */}
-          <TabsContent value="teams" className="mt-6">
-            {teams && teams.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {teams.slice(0, 6).map(team => (
-                  <Link key={team.id} href={`/teams/${team.id}`}>
-                    <div className="flex items-center gap-4 bg-gray-900/60 border border-gray-800 hover:border-red-700/50 rounded-xl p-4 transition-all cursor-pointer">
-                      <div className="w-12 h-12 rounded-lg bg-gray-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {team.logo ? (
-                          <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <Trophy className="w-6 h-6 text-gray-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-white font-rajdhani font-semibold">{team.name}</p>
-                        <p className="text-gray-500 text-xs">{team.game}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
+              {/* No activity placeholder */}
+              <div
+                className="rounded-xl p-6 text-center"
+                style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+              >
+                <Trophy className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                <p className="text-zinc-500 text-sm font-mono">Historial de torneos próximamente</p>
               </div>
-            ) : (
-              <div className="text-center py-12">
-                <Trophy className="w-12 h-12 text-gray-700 mx-auto mb-3" />
-                <p className="text-gray-500 font-rajdhani">Sin equipos registrados</p>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* Estadísticas */}
-          <TabsContent value="stats" className="mt-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[
-                { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: Coins, color: "text-yellow-400" },
-                { label: "Perfil", value: profileTypeLabel[profile.profileType ?? ""] ?? "Jugador", icon: User, color: "text-blue-400" },
-                { label: "Miembro desde", value: new Date(profile.createdAt).getFullYear(), icon: Calendar, color: "text-green-400" },
-                { label: "Cosméticos", value: cosmetics?.length ?? 0, icon: Star, color: "text-purple-400" },
-              ].map(({ label, value, icon: Icon, color }) => (
-                <div key={label} className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 text-center">
-                  <Icon className={`w-6 h-6 mx-auto mb-2 ${color}`} />
-                  <p className={`text-xl font-orbitron font-bold ${color}`}>{value}</p>
-                  <p className="text-gray-500 text-xs mt-1 font-rajdhani">{label}</p>
-                </div>
-              ))}
             </div>
-          </TabsContent>
-        </Tabs>
+          )}
+
+          {/* Cosmetics tab */}
+          {activeTab === "cosmetics" && (
+            <div>
+              {!profile.equippedCosmetics || profile.equippedCosmetics.length === 0 ? (
+                <div
+                  className="rounded-xl p-8 text-center"
+                  style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                >
+                  <span className="text-4xl mb-3 block">🎨</span>
+                  <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {profile.equippedCosmetics.map((c) => (
+                    <div
+                      key={c.id}
+                      className="rounded-xl p-4 text-center"
+                      style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                    >
+                      {c.previewImage && (
+                        <img src={c.previewImage} alt={c.name} className="w-16 h-16 object-contain mx-auto mb-2" />
+                      )}
+                      <p className="text-xs font-mono text-zinc-300 truncate">{c.name}</p>
+                      <p className="text-xs text-zinc-600 font-mono capitalize mt-0.5">{c.type}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Followers tab */}
+          {activeTab === "followers" && (
+            <UserList users={followers ?? []} emptyText="Sin seguidores aún" />
+          )}
+
+          {/* Following tab */}
+          {activeTab === "following" && (
+            <UserList users={following ?? []} emptyText="No sigue a nadie aún" />
+          )}
+        </div>
       </div>
+    </div>
+  );
+}
+
+function UserList({ users, emptyText }: { users: { id: number; name: string | null; nickname: string | null; avatar: string | null; profileType: string | null }[]; emptyText: string }) {
+  if (!users.length) {
+    return (
+      <div
+        className="rounded-xl p-8 text-center"
+        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+      >
+        <Users className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+        <p className="text-zinc-500 font-mono text-sm">{emptyText}</p>
+      </div>
+    );
+  }
+  return (
+    <div className="space-y-2">
+      {users.map((u) => (
+        <Link key={u.id} href={`/profile/${u.id}`}>
+          <div
+            className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer"
+            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)")}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)")}
+          >
+            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-zinc-900 border border-zinc-700">
+              {u.avatar ? (
+                <img src={u.avatar} alt={u.name ?? ""} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <User className="w-5 h-5 text-zinc-600" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-mono font-bold text-sm text-white truncate">
+                {u.nickname ?? u.name ?? "Usuario"}
+              </p>
+              {u.profileType && (
+                <p className="text-xs text-zinc-500 font-mono capitalize">
+                  {PROFILE_TYPE_LABEL[u.profileType] ?? u.profileType}
+                </p>
+              )}
+            </div>
+          </div>
+        </Link>
+      ))}
     </div>
   );
 }

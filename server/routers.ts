@@ -97,6 +97,14 @@ import {
   adminListPendingTournaments,
   adminApproveTournament,
   adminRejectTournament,
+  listPublicUsers,
+  followUser,
+  unfollowUser,
+  isFollowing,
+  getFollowerCount,
+  getFollowingCount,
+  getFollowers,
+  getFollowing,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1078,6 +1086,62 @@ export const appRouter = router({
         await updateUserProfile(ctx.user.id, input);
         return { success: true };
       }),
+    getWithStats: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const profile = await getUserPublicProfile(input.userId);
+        if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil no encontrado" });
+        const [followerCount, followingCount, equippedCosmetics] = await Promise.all([
+          getFollowerCount(input.userId),
+          getFollowingCount(input.userId),
+          getUserEquippedCosmetics(input.userId),
+        ]);
+        const following = ctx.user ? await isFollowing(ctx.user.id, input.userId) : false;
+        return { ...profile, followerCount, followingCount, equippedCosmetics, isFollowing: following };
+      }),
+  }),
+
+  // ─── Community ─────────────────────────────────────────────────────────────
+  community: router({
+    listUsers: publicProcedure
+      .input(z.object({
+        search: z.string().optional(),
+        limit: z.number().min(1).max(100).default(40),
+        offset: z.number().min(0).default(0),
+      }))
+      .query(async ({ input }) => listPublicUsers(input)),
+  }),
+
+  // ─── Follows ───────────────────────────────────────────────────────────────
+  follows: router({
+    follow: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.id === input.userId) throw new TRPCError({ code: "BAD_REQUEST", message: "No puedes seguirte a ti mismo" });
+        await followUser(ctx.user.id, input.userId);
+        return { success: true };
+      }),
+    unfollow: protectedProcedure
+      .input(z.object({ userId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await unfollowUser(ctx.user.id, input.userId);
+        return { success: true };
+      }),
+    isFollowing: publicProcedure
+      .input(z.object({ followerId: z.number(), followingId: z.number() }))
+      .query(async ({ input }) => isFollowing(input.followerId, input.followingId)),
+    getFollowers: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => getFollowers(input.userId)),
+    getFollowing: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => getFollowing(input.userId)),
+    getCounts: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => ({
+        followers: await getFollowerCount(input.userId),
+        following: await getFollowingCount(input.userId),
+      })),
   }),
 });
 export type AppRouter = typeof appRouter;
