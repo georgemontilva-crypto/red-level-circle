@@ -337,26 +337,6 @@ export default function Creators() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="creators" height="h-36 sm:h-48" />
       </div>
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-950/30 via-black to-black" />
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #9333ea 0%, transparent 50%), radial-gradient(circle at 80% 50%, #dc2626 0%, transparent 50%)" }} />
-        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-16 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <Star size={20} className="text-yellow-400 fill-yellow-400" />
-            <span className="font-mono text-sm text-zinc-400 tracking-widest uppercase">Creadores Oficiales</span>
-            <Star size={20} className="text-yellow-400 fill-yellow-400" />
-          </div>
-          <h1 className="font-orbitron font-black text-4xl sm:text-5xl text-white mb-4">
-            Creadores de Contenido
-          </h1>
-          <p className="text-zinc-400 text-lg max-w-xl mx-auto mb-8">
-            Conoce a los streamers, YouTubers y creadores verificados que forman parte de la comunidad Red Level Circle.
-          </p>
-
-        </div>
-      </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 space-y-10">
 

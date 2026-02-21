@@ -715,26 +715,6 @@ export default function Rewards() {
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="rewards" height="h-32 sm:h-44" />
       </div>
-      {/* ── Hero ── */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0b0b0d 0%, #0d0d1a 40%, #0b0b0d 100%)", minHeight: 220 }}>
-        <div className="absolute top-0 right-1/3 w-72 h-72 rounded-full opacity-20 pointer-events-none"
-          style={{ background: "radial-gradient(circle, oklch(0.55 0.22 25), transparent)" }} />
-        <div className="absolute -bottom-10 right-10 w-48 h-48 rounded-full opacity-10 pointer-events-none"
-          style={{ background: "radial-gradient(circle, oklch(0.55 0.22 25), transparent)" }} />
-        <div className="relative max-w-[1400px] mx-auto px-4 sm:px-6 py-12">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-            <div>
-              <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-3 leading-none" style={{ fontFamily: "Orbitron, monospace" }}>
-                GANA <span style={{ color: "oklch(0.70 0.28 25)", textShadow: "0 0 30px oklch(0.55 0.22 25)" }}>RLC COINS</span>
-              </h1>
-              <p className="text-zinc-400 max-w-md text-sm">
-                Completa misiones, ve videos y anuncios para acumular RLC Coins. Úsalos en la tienda o en apuestas de torneos.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </div>
 
       {/* ── Quest grid ── */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">

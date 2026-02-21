@@ -24,13 +24,7 @@ export function NewsList() {
     <div className="min-h-screen bg-black text-white">
       <div className="pt-6 pb-16 max-w-5xl mx-auto px-4">
         <SectionBanner sectionKey="news" height="h-36 sm:h-48" />
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Newspaper className="w-5 h-5 text-red-500" />
-            <h1 className="font-orbitron font-black text-3xl text-white tracking-wider">NOTICIAS</h1>
-          </div>
-          <p className="text-zinc-500 font-rajdhani">Las últimas noticias del mundo de los esports</p>
-        </div>
+
 
         {isLoading ? (
           <div className="grid md:grid-cols-2 gap-4">

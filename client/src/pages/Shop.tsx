@@ -88,44 +88,6 @@ export default function Shop() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="shop" height="h-36 sm:h-48" />
       </div>
-      {/* Hero */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #0d0000 50%, #0a0a0a 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-10 right-1/3 w-80 h-80 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #ff0000, transparent)" }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <ShoppingBag className="w-7 h-7 text-red-500" />
-                <span className="text-red-500 font-mono text-sm tracking-widest uppercase">Tienda RLC</span>
-              </div>
-              <h1 className="text-4xl font-black tracking-tight mb-2" style={{ fontFamily: "Orbitron, monospace" }}>
-                TIENDA DE <span className="text-red-500" style={{ textShadow: "0 0 20px #ff0000" }}>PRODUCTOS</span>
-              </h1>
-              <p className="text-gray-400">Canjea tus RLC Coins por productos exclusivos. Físicos y digitales.</p>
-            </div>
-            <div className="flex flex-col items-end gap-3">
-              {isAuthenticated && me && (
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10">
-                  <Coins className="w-4 h-4 text-yellow-400" />
-                  <span className="text-yellow-400 font-bold font-mono">{userBalance} RLC</span>
-                </div>
-              )}
-              {isAuthenticated && (
-                <button
-                  onClick={() => setShowOrders(!showOrders)}
-                  className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors font-mono"
-                >
-                  <Package className="w-4 h-4" />
-                  Mis pedidos ({myOrders.length})
-                  <ChevronRight className={`w-4 h-4 transition-transform ${showOrders ? "rotate-90" : ""}`} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* My Orders Panel */}

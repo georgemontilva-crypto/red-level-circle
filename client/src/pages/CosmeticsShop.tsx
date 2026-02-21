@@ -275,32 +275,7 @@ export default function CosmeticsShop() {
         />
       )}
 
-      {/* Hero Banner */}
-      <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #1a0000 50%, #0a0a0a 100%)" }}>
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #ff0000, transparent)" }} />
-          <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full opacity-5" style={{ background: "radial-gradient(circle, #ff4444, transparent)" }} />
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-          <div className="flex items-center gap-3 mb-4">
-            <Sparkles className="w-8 h-8 text-red-500" />
-            <span className="text-red-500 font-mono text-sm tracking-widest uppercase">Red Level Circle</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-3" style={{ fontFamily: "Orbitron, monospace", wordBreak: "break-word" }}>
-            TIENDA DE <span className="text-red-500" style={{ textShadow: "0 0 20px #ff0000" }}>COSMÉTICOS</span>
-          </h1>
-          <p className="text-gray-400 text-lg max-w-xl">
-            Personaliza tu perfil con marcos, auras e insignias exclusivas. Compra con RLC Coins y destácate en la comunidad.
-          </p>
-          {isAuthenticated && me && (
-            <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10">
-              <Coins className="w-4 h-4 text-yellow-400" />
-              <span className="text-yellow-400 font-bold font-mono">{userBalance} RLC</span>
-              <span className="text-gray-500 text-sm">disponibles</span>
-            </div>
-          )}
-        </div>
-      </div>
+
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Type Filters */}

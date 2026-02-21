@@ -48,13 +48,7 @@ export default function Tournaments() {
 
       <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
         <SectionBanner sectionKey="tournaments" height="h-36 sm:h-48" />
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-2">
-            <Trophy className="w-5 h-5 text-red-500" />
-            <h1 className="font-orbitron font-black text-3xl text-white tracking-wider">TORNEOS</h1>
-          </div>
-          <p className="text-zinc-500 font-rajdhani">Explora y únete a los torneos de esports más emocionantes</p>
-        </div>
+
 
         {/* Filters */}
         <div className="flex flex-wrap gap-3 mb-6">
