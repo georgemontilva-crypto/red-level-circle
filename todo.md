@@ -345,3 +345,6 @@
 
 ## Quick Fix V25
 - [x] Ampliar el ancho del perfil de usuario para que ocupe todo el espacio disponible (quitar max-w-2xl)
+
+## Quick Fix V26
+- [x] Perfil ocupa todo el ancho disponible y el banner queda pegado arriba sin padding

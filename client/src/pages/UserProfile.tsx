@@ -109,13 +109,13 @@ export default function UserProfile() {
   const followLoading = followMutation.isPending || unfollowMutation.isPending;
 
   return (
-    <div className="max-w-4xl mx-auto overflow-x-hidden px-4 sm:px-6 py-4">
+    <div className="w-full overflow-x-hidden">
       {/* ── Banner + Avatar (Discord-style) ── */}
       {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
       <div className="relative">
         {/* Banner */}
         <div
-          className="w-full h-36 sm:h-48 rounded-t-2xl overflow-hidden"
+          className="w-full h-40 sm:h-56 overflow-hidden"
           style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)", position: "relative" }}
         >
           {profile.bannerUrl ? (
@@ -167,8 +167,8 @@ export default function UserProfile() {
 
         {/* Card body — avatar sits at the top-left, overlapping the banner above */}
         <div
-          className="rounded-b-2xl pb-4 px-4 sm:px-6"
-          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none", paddingTop: "16px" }}
+          className="pb-4 px-4 sm:px-6"
+          style={{ background: "oklch(0.10 0.005 0)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px" }}
         >
           {/* Avatar row — pulled up to overlap the banner */}
           <div className="flex items-end justify-between mb-3" style={{ marginTop: "-48px" }}>
@@ -305,7 +305,7 @@ export default function UserProfile() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="mt-4">
+      <div className="mt-4 px-4 sm:px-6">
         {/* Tab bar */}
         <div className="flex border-b" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
           {(["overview", "cosmetics", "followers", "following"] as const).map((tab) => (
