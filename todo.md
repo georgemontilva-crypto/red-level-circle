@@ -416,3 +416,5 @@
 - [x] Cambiar botón "Reanudar" a "Ver Video" en tarjetas QuestCard con color rojo RLC
 - [x] Usar logo del sponsor en el círculo del ícono de misión en QuestCard
 - [x] Botón "Reanudar" en modal también usa color rojo RLC
+- [x] Contador del modal se pausa cuando el video se pausa (YouTube IFrame API)
+- [x] Ocultar panel "Más videos" que aparece al pausar (rel=0 + enablejsapi)

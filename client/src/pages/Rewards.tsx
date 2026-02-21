@@ -172,10 +172,12 @@ function VideoPlayerModal({
   onClaimed: (newBalance: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [ytPlaying, setYtPlaying] = useState(false);
   const required = task.durationSeconds ?? 30;
   const isYoutube = task.contentUrl?.includes("youtube") || task.contentUrl?.includes("youtu.be");
   const isDirectVideo = task.contentUrl && !isYoutube;
@@ -225,13 +227,30 @@ function VideoPlayerModal({
     };
   }, [elapsed, required, videoCompleted, isDirectVideo]);
 
-  // YouTube: simple interval
+  // YouTube IFrame API: listen to player state changes via postMessage
   useEffect(() => {
     if (!isYoutube) return;
+    const onMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+        if (data?.event === "onStateChange") {
+          // 1 = playing, 2 = paused, 0 = ended
+          if (data.info === 1) setYtPlaying(true);
+          else setYtPlaying(false);
+        }
+      } catch {}
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [isYoutube]);
+
+  // YouTube: counter only ticks when video is playing
+  useEffect(() => {
+    if (!isYoutube || !ytPlaying || videoCompleted) return;
     const interval = setInterval(() => {
       setElapsed((prev) => {
         const next = prev + 1;
-        if (next >= required && !videoCompleted) {
+        if (next >= required) {
           setVideoCompleted(true);
           clearInterval(interval);
         }
@@ -239,7 +258,7 @@ function VideoPlayerModal({
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [isYoutube, required, videoCompleted]);
+  }, [isYoutube, ytPlaying, required, videoCompleted]);
 
   const progress = Math.min((elapsed / required) * 100, 100);
   const remaining = Math.max(required - elapsed, 0);
@@ -249,7 +268,7 @@ function VideoPlayerModal({
     if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
     else if (url.includes("watch?v=")) videoId = url.split("watch?v=")[1].split("&")[0];
     else if (url.includes("embed/")) return url + (url.includes("?") ? "&" : "?") + "autoplay=1";
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0&enablejsapi=1&origin=${encodeURIComponent(window.location.origin)}`;
   };
 
   const handleClaim = () => {
@@ -291,6 +310,7 @@ function VideoPlayerModal({
             />
           ) : isYoutube ? (
             <iframe
+              ref={iframeRef}
               src={getYoutubeEmbedUrl(task.contentUrl!)}
               className="w-full h-full"
               allow="autoplay; fullscreen"
@@ -299,6 +319,21 @@ function VideoPlayerModal({
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-zinc-900">
               <Gift size={48} className="text-zinc-700" />
+            </div>
+          )}
+
+          {/* YouTube pause overlay */}
+          {isYoutube && !ytPlaying && !videoCompleted && elapsed > 0 && (
+            <div
+              className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              style={{ background: "rgba(0,0,0,0.55)", animation: "fadeIn 0.2s ease" }}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center border border-white/20">
+                  <svg width="20" height="24" viewBox="0 0 20 24" fill="white"><rect x="0" y="0" width="7" height="24" rx="2"/><rect x="13" y="0" width="7" height="24" rx="2"/></svg>
+                </div>
+                <p className="text-white/70 text-xs font-medium">Contador pausado</p>
+              </div>
             </div>
           )}
 
