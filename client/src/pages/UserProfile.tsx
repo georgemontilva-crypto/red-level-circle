@@ -112,7 +112,7 @@ export default function UserProfile() {
     <div className="w-full overflow-x-hidden">
       {/* ── Banner + Avatar (Discord-style) ── */}
       {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
-      <div className="relative">
+      <div className="relative max-w-5xl mx-auto">
         {/* Banner */}
         <div
           className="w-full h-40 sm:h-56 overflow-hidden"
@@ -305,7 +305,7 @@ export default function UserProfile() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="mt-4 px-4 sm:px-6">
+      <div className="mt-4 max-w-5xl mx-auto px-4 sm:px-6">
         {/* Tab bar */}
         <div className="flex border-b" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
           {(["overview", "cosmetics", "followers", "following"] as const).map((tab) => (

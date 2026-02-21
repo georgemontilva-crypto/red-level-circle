@@ -348,3 +348,6 @@
 
 ## Quick Fix V26
 - [x] Perfil ocupa todo el ancho disponible y el banner queda pegado arriba sin padding
+
+## Quick Fix V27
+- [x] Ajustar ancho del perfil a max-w-5xl centrado (banner pegado arriba, contenido centrado)
