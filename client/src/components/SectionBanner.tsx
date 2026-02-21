@@ -1,5 +1,8 @@
 import { trpc } from "@/lib/trpc";
-import { ReactNode } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { ReactNode, useRef, useState } from "react";
+import { Pencil, X, Upload, Loader2, Check, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 interface SectionBannerProps {
   sectionKey: string;
@@ -15,6 +18,7 @@ interface SectionBannerProps {
  * Muestra el banner configurado por el admin para una sección específica.
  * Si no hay banner activo, muestra un fondo degradado oscuro.
  * Los children se renderizan superpuestos sobre la imagen.
+ * Los admins ven un botón de edición inline en la esquina superior derecha.
  */
 export function SectionBanner({
   sectionKey,
@@ -22,60 +26,268 @@ export function SectionBanner({
   className = "",
   children,
 }: SectionBannerProps) {
-  const { data: banner } = trpc.banners.getSection.useQuery({ sectionKey });
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin";
+
+  const { data: banner, refetch } = trpc.banners.getSection.useQuery({ sectionKey });
+  const utils = trpc.useUtils();
+
+  const [editing, setEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [subtitle, setSubtitle] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const uploadMutation = trpc.banners.uploadImage.useMutation();
+  const upsertMutation = trpc.banners.upsert.useMutation({
+    onSuccess: () => {
+      toast.success("Banner actualizado");
+      utils.banners.getSection.invalidate({ sectionKey });
+      setEditing(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const openEditor = () => {
+    setTitle(banner?.title ?? "");
+    setSubtitle(banner?.subtitle ?? "");
+    setLinkUrl(banner?.linkUrl ?? "");
+    setIsActive(banner?.isActive ?? true);
+    setPreviewUrl(banner?.imageUrl ?? null);
+    setEditing(true);
+  };
+
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Solo imágenes"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("Máximo 10MB"); return; }
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = (e.target?.result as string).split(",")[1];
+        const mimeType = file.type as any;
+        const { url } = await uploadMutation.mutateAsync({ sectionKey, base64, mimeType });
+        setPreviewUrl(url);
+        setUploading(false);
+      };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Error al subir imagen"); setUploading(false); }
+  };
+
+  const handleSave = () => {
+    upsertMutation.mutate({
+      sectionKey,
+      imageUrl: previewUrl ?? undefined,
+      title: title || undefined,
+      subtitle: subtitle || undefined,
+      linkUrl: linkUrl || undefined,
+      isActive,
+    });
+  };
 
   const imageUrl = banner?.isActive ? banner.imageUrl : null;
 
   return (
-    <div className={`relative w-full overflow-hidden rounded-xl mb-6 ${height} ${className}`}>
-      {/* Background */}
-      {imageUrl ? (
-        <img
-          src={imageUrl}
-          alt={banner?.title ?? sectionKey}
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-      ) : (
-        <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-red-950/20 to-black" />
-      )}
+    <>
+      <div className={`relative w-full overflow-hidden rounded-xl mb-6 ${height} ${className}`}>
+        {/* Background */}
+        {imageUrl ? (
+          <img
+            src={imageUrl}
+            alt={banner?.title ?? sectionKey}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-red-950/20 to-black" />
+        )}
 
-      {/* Gradient overlay for text readability */}
-      {(children || banner?.title || banner?.subtitle) && (
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Gradient overlay for text readability */}
+        {(children || banner?.title || banner?.subtitle) && (
+          <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-      {/* Optional link covering entire banner */}
-      {banner?.linkUrl && !children && (
-        <a
-          href={banner.linkUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="absolute inset-0"
-          aria-label={banner.title ?? "Ver más"}
-        />
-      )}
+        {/* Optional link covering entire banner */}
+        {banner?.linkUrl && !children && (
+          <a
+            href={banner.linkUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="absolute inset-0"
+            aria-label={banner.title ?? "Ver más"}
+          />
+        )}
 
-      {/* Children (custom overlay content per page) */}
-      {children && (
-        <div className="absolute inset-0 flex items-center px-6 sm:px-10">
-          {children}
+        {/* Children (custom overlay content per page) */}
+        {children && (
+          <div className="absolute inset-0 flex items-center px-6 sm:px-10">
+            {children}
+          </div>
+        )}
+
+        {/* Fallback: title/subtitle from admin config (when no children) */}
+        {!children && (banner?.title || banner?.subtitle) && (
+          <div className="absolute bottom-0 left-0 p-4 sm:p-6">
+            {banner.title && (
+              <h2 className="font-orbitron font-black text-xl sm:text-3xl text-white tracking-wider drop-shadow-lg">
+                {banner.title}
+              </h2>
+            )}
+            {banner.subtitle && (
+              <p className="text-zinc-300 text-sm font-rajdhani mt-1 drop-shadow">{banner.subtitle}</p>
+            )}
+          </div>
+        )}
+
+        {/* Admin edit button — inline, top-right corner */}
+        {isAdmin && (
+          <button
+            onClick={openEditor}
+            className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 backdrop-blur-sm"
+            style={{
+              background: "rgba(0,0,0,0.55)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.85)",
+            }}
+            title="Editar banner"
+          >
+            <Pencil size={12} />
+            <span className="hidden sm:inline">Editar banner</span>
+          </button>
+        )}
+      </div>
+
+      {/* ── Inline Editor Panel ── */}
+      {editing && isAdmin && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setEditing(false); }}
+        >
+          <div
+            className="w-full sm:w-[480px] rounded-t-2xl sm:rounded-2xl p-6 space-y-4 animate-in slide-in-from-bottom-4 duration-300"
+            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-mono font-black text-white text-sm tracking-widest">EDITAR BANNER</h3>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">Sección: {sectionKey}</p>
+              </div>
+              <button onClick={() => setEditing(false)} className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white">
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Image upload */}
+            <div
+              className="relative rounded-xl overflow-hidden cursor-pointer group"
+              style={{ height: "140px", border: "1px dashed oklch(0.30 0.01 0)", background: "oklch(0.08 0.005 0)" }}
+              onClick={() => fileRef.current?.click()}
+            >
+              {previewUrl ? (
+                <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                  <Upload size={20} style={{ color: "oklch(0.40 0.005 0)" }} />
+                  <span className="text-xs font-mono" style={{ color: "oklch(0.40 0.005 0)" }}>SUBIR IMAGEN</span>
+                  <span className="text-xs" style={{ color: "oklch(0.30 0.005 0)" }}>JPG, PNG, WebP · máx 10MB</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                {uploading ? (
+                  <Loader2 size={20} className="text-white animate-spin" />
+                ) : (
+                  <><Upload size={16} className="text-white" /><span className="text-xs text-white font-mono">CAMBIAR IMAGEN</span></>
+                )}
+              </div>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+              />
+            </div>
+
+            {/* Fields */}
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-mono text-gray-500 mb-1 block">TÍTULO (opcional)</label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Título del banner"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
+                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-mono text-gray-500 mb-1 block">SUBTÍTULO (opcional)</label>
+                <input
+                  type="text"
+                  value={subtitle}
+                  onChange={(e) => setSubtitle(e.target.value)}
+                  placeholder="Descripción corta"
+                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
+                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
+                />
+              </div>
+              <div>
+                <label className="text-xs font-mono text-gray-500 mb-1 block">LINK (opcional)</label>
+                <input
+                  type="url"
+                  value={linkUrl}
+                  onChange={(e) => setLinkUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
+                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
+                />
+              </div>
+            </div>
+
+            {/* Active toggle + Save */}
+            <div className="flex items-center gap-3 pt-1">
+              <button
+                onClick={() => setIsActive(!isActive)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono transition-all"
+                style={{
+                  background: isActive ? "oklch(0.55 0.22 25 / 0.15)" : "oklch(0.15 0.005 0)",
+                  border: `1px solid ${isActive ? "oklch(0.55 0.22 25 / 0.4)" : "oklch(0.22 0.01 0)"}`,
+                  color: isActive ? "oklch(0.65 0.22 25)" : "oklch(0.45 0.005 0)",
+                }}
+              >
+                {isActive ? <Eye size={12} /> : <EyeOff size={12} />}
+                {isActive ? "Activo" : "Inactivo"}
+              </button>
+
+              <button
+                onClick={handleSave}
+                disabled={upsertMutation.isPending || uploading}
+                className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-mono font-bold transition-all disabled:opacity-50"
+                style={{ background: "oklch(0.55 0.22 25)", color: "white" }}
+              >
+                {upsertMutation.isPending ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <Check size={14} />
+                )}
+                GUARDAR
+              </button>
+            </div>
+          </div>
         </div>
       )}
-
-      {/* Fallback: title/subtitle from admin config (when no children) */}
-      {!children && (banner?.title || banner?.subtitle) && (
-        <div className="absolute bottom-0 left-0 p-4 sm:p-6">
-          {banner.title && (
-            <h2 className="font-orbitron font-black text-xl sm:text-3xl text-white tracking-wider drop-shadow-lg">
-              {banner.title}
-            </h2>
-          )}
-          {banner.subtitle && (
-            <p className="text-zinc-300 text-sm font-rajdhani mt-1 drop-shadow">{banner.subtitle}</p>
-          )}
-        </div>
-      )}
-    </div>
+    </>
   );
 }
