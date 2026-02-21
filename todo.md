@@ -273,3 +273,13 @@
 
 ## Fix Ruta /my-teams V12
 - [x] Corregir error 404 en la ruta /my-teams (ruta correcta es /dashboard/teams, corregidos enlaces en Dashboard, TournamentDetail y TeamProfile)
+
+## Sistema de Equipos Rediseñado V13
+- [x] Endpoint teams.searchUsers para buscar jugadores por @nickname o nombre
+- [x] Endpoint teams.addMember: solo el capitán puede añadir jugadores registrados en la plataforma
+- [x] Endpoint teams.removeMember: solo el capitán puede eliminar jugadores
+- [x] Endpoint teams.myMemberships y teams.membershipOf: saber a qué equipo pertenece un usuario
+- [x] Mostrar equipo actual en el perfil público del jugador (UserProfile)
+- [x] Rediseñar MyTeams: formulario de creación + gestión de roster con búsqueda por @nickname, añadir/eliminar miembros
+- [x] Rediseñar TeamProfile público: fichas de jugadores con avatar, rol, juego, ID de juego, estadísticas individuales
+- [x] Al inscribirse en torneo, validar que todos los miembros del equipo están registrados en la plataforma (ya existía)

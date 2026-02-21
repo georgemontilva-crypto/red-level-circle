@@ -119,6 +119,9 @@ import {
   getRecentUsers,
   getSuggestedUsers,
   getFeaturedTournaments,
+  searchUsersByNickname,
+  removeTeamMember,
+  getTeamsByMembership,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -446,6 +449,34 @@ export const appRouter = router({
       .input(z.object({ game: z.string().optional(), limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return getTeamRanking({ game: input?.game, limit: input?.limit ?? 50 });
+      }),
+
+    searchUsers: publicProcedure
+      .input(z.object({ query: z.string().min(1) }))
+      .query(async ({ input }) => {
+        return searchUsersByNickname(input.query, 10);
+      }),
+
+    removeMember: protectedProcedure
+      .input(z.object({ teamId: z.number(), memberId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND" });
+        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede eliminar miembros." });
+        }
+        await removeTeamMember(input.teamId, input.memberId);
+        return { success: true };
+      }),
+
+    myMemberships: protectedProcedure.query(async ({ ctx }) => {
+      return getTeamsByMembership(ctx.user.id);
+    }),
+
+    membershipOf: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamsByMembership(input.userId);
       }),
 
     publicProfile: publicProcedure

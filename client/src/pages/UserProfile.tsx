@@ -52,6 +52,11 @@ export default function UserProfile() {
 
   const [activeTab, setActiveTab] = useState<"overview" | "cosmetics" | "followers" | "following">("overview");
 
+  const { data: teamMemberships } = trpc.teams.membershipOf.useQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+
   const { data: followers } = trpc.follows.getFollowers.useQuery(
     { userId },
     { enabled: activeTab === "followers" }
@@ -324,6 +329,49 @@ export default function UserProfile() {
                   </div>
                 ))}
               </div>
+
+              {/* Team memberships */}
+              {teamMemberships && teamMemberships.length > 0 && (
+                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                    <Shield className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                    <span className="text-xs font-display tracking-wider text-foreground">EQUIPOS</span>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+                    {teamMemberships.map((m: any) => (
+                      <Link key={m.teamId} href={`/team/${m.teamId}`}>
+                        <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                          {m.teamLogo ? (
+                            <img src={m.teamLogo} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" style={{ border: "1px solid oklch(0.55 0.22 25 / 0.3)" }} />
+                          ) : (
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                              <Shield size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground truncate">{m.teamName}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {m.teamGame && <span className="text-xs text-muted-foreground">{m.teamGame}</span>}
+                              <span
+                                className="text-xs font-display tracking-wider px-1.5 py-0.5 rounded"
+                                style={m.role === "captain"
+                                  ? { background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)" }
+                                  : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
+                                }
+                              >
+                                {m.role === "captain" ? "Capitán" : m.role === "substitute" ? "Suplente" : m.role === "coach" ? "Coach" : "Jugador"}
+                              </span>
+                            </div>
+                          </div>
+                          {m.teamTag && (
+                            <span className="text-xs font-mono shrink-0" style={{ color: "oklch(0.50 0.005 0)" }}>[{m.teamTag}]</span>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* No activity placeholder */}
               <div

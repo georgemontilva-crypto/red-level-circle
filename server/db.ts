@@ -2009,3 +2009,53 @@ export async function getFeaturedTournaments(limit = 6) {
     .orderBy(desc(tournaments.isFeatured), desc(tournaments.createdAt))
     .limit(limit);
 }
+
+// ─── Search users by nickname ─────────────────────────────────────────────────
+export async function searchUsersByNickname(query: string, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      mainGame: users.mainGame,
+      country: users.country,
+      profileType: users.profileType,
+    })
+    .from(users)
+    .where(
+      sql`(${users.nickname} LIKE ${`%${query}%`} OR ${users.name} LIKE ${`%${query}%`})`
+    )
+    .limit(limit);
+}
+
+// ─── Remove team member ───────────────────────────────────────────────────────
+export async function removeTeamMember(teamId: number, memberId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db
+    .delete(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.id, memberId)));
+}
+
+// ─── Get team(s) a user belongs to ───────────────────────────────────────────
+export async function getTeamsByMembership(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      teamId: teamMembers.teamId,
+      role: teamMembers.role,
+      joinedAt: teamMembers.joinedAt,
+      teamName: teams.name,
+      teamTag: teams.tag,
+      teamLogo: teams.logo,
+      teamGame: teams.game,
+      teamCaptainId: teams.captainId,
+    })
+    .from(teamMembers)
+    .leftJoin(teams, eq(teamMembers.teamId, teams.id))
+    .where(eq(teamMembers.userId, userId));
+}

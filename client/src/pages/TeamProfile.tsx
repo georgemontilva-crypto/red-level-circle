@@ -239,7 +239,7 @@ export default function TeamProfile() {
         {/* Players */}
         <section>
           <h2 className="font-orbitron text-sm tracking-widest text-red-400 mb-4 flex items-center gap-2">
-            <Users size={16} /> JUGADORES ({team.members.length})
+            <Users size={16} /> ROSTER ({team.members.length})
           </h2>
           {team.members.length === 0 ? (
             <div className="text-center py-10 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
@@ -250,31 +250,66 @@ export default function TeamProfile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {team.members.map((member: any) => (
                 <Link key={member.id} href={`/profile/${member.userId}`}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/50 hover:border-red-500/30 transition-colors cursor-pointer group">
-                    {/* Avatar */}
-                    {member.avatar ? (
-                      <img src={member.avatar} alt={member.nickname || member.userName || "?"} className="w-12 h-12 rounded-full object-cover border-2 border-zinc-700 group-hover:border-red-600/40 transition-colors shrink-0" />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center shrink-0">
-                        <span className="text-lg font-black text-red-500">
+                  <div
+                    className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200"
+                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.4)"; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.18 0.01 0)"; }}
+                  >
+                    {/* Avatar with role crown */}
+                    <div className="relative shrink-0">
+                      {member.avatar ? (
+                        <img src={member.avatar} alt={member.nickname || member.userName || "?"} className="w-14 h-14 rounded-xl object-cover" style={{ border: "2px solid oklch(0.55 0.22 25 / 0.3)" }} />
+                      ) : (
+                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "2px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}>
                           {(member.nickname || member.userName || "?").charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                        </div>
+                      )}
+                      {member.role === "captain" && (
+                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "oklch(0.65 0.18 80)", border: "2px solid oklch(0.07 0.005 0)" }}>
+                          <Crown size={10} style={{ color: "oklch(0.07 0.005 0)" }} />
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-sm text-white truncate">
-                          {member.nickname || member.userName || "Jugador"}
+                      {/* Nickname */}
+                      <p className="font-bold text-sm text-white truncate">
+                        {member.nickname ? `@${member.nickname}` : (member.userName || "Jugador")}
+                      </p>
+                      {/* Role badge + country */}
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span
+                          className="text-xs font-display tracking-wider px-1.5 py-0.5 rounded"
+                          style={member.role === "captain"
+                            ? { background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)" }
+                            : member.role === "coach"
+                            ? { background: "oklch(0.65 0.18 145 / 0.15)", color: "oklch(0.65 0.18 145)" }
+                            : member.role === "substitute"
+                            ? { background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.55 0.18 220)" }
+                            : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
+                          }
+                        >
+                          {ROLE_LABELS[member.role] ?? member.role}
                         </span>
-                        {member.role === "captain" && <Crown size={12} className="text-yellow-400 shrink-0" />}
+                        {member.country && <span className="text-xs text-zinc-500">{member.country}</span>}
                       </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-zinc-500 font-mono">{ROLE_LABELS[member.role] ?? member.role}</span>
-                        {member.country && <span className="text-xs text-zinc-600">· {member.country}</span>}
-                      </div>
+                      {/* Game info */}
+                      {(member.mainGame || member.gameId) && (
+                        <div className="flex items-center gap-2 mt-1.5">
+                          {member.mainGame && (
+                            <div className="flex items-center gap-1">
+                              <Gamepad2 size={10} className="text-zinc-600" />
+                              <span className="text-xs text-zinc-500">{member.mainGame}</span>
+                            </div>
+                          )}
+                          {member.gameId && (
+                            <span className="text-xs font-mono text-zinc-600">ID: {member.gameId}</span>
+                          )}
+                        </div>
+                      )}
                       {/* Mini stats */}
-                      <div className="flex items-center gap-3 mt-1.5">
+                      <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: "1px solid oklch(0.15 0.005 0)" }}>
                         <div className="flex items-center gap-1">
                           <TrendingUp size={10} className="text-green-500" />
                           <span className="text-xs text-green-400">{member.stats?.tournamentsWon ?? 0}V</span>
@@ -282,6 +317,10 @@ export default function TeamProfile() {
                         <div className="flex items-center gap-1">
                           <Swords size={10} className="text-zinc-500" />
                           <span className="text-xs text-zinc-500">{member.stats?.tournamentsPlayed ?? 0} torneos</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Star size={10} className="text-yellow-500/70" />
+                          <span className="text-xs text-zinc-500">{member.stats?.tournamentsLost ?? 0}D</span>
                         </div>
                       </div>
                     </div>
