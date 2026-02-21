@@ -118,8 +118,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0);
 
   const isActive = (href: string) => {
-    if (href === "/") return location === "/";
-    return location.startsWith(href);
+    return location === href;
   };
 
   const SidebarContent = () => (
