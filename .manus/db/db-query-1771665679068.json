@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, sectionKey, isActive, CHAR_LENGTH(imageUrl) as imageUrlLen, LEFT(imageUrl, 100) as imageUrlPreview FROM section_banners;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, sectionKey, isActive, CHAR_LENGTH(imageUrl) as imageUrlLen, LEFT(imageUrl, 100) as imageUrlPreview FROM section_banners;",
+  "rows": [
+    {
+      "id": "1",
+      "sectionKey": "home",
+      "isActive": "1",
+      "imageUrlLen": "119",
+      "imageUrlPreview": "https://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/banners/home/desktop"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsectionKey\tisActive\timageUrlLen\timageUrlPreview\n1\thome\t1\t119\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/banners/home/desktop\n",
+  "stderr": "",
+  "execution_time_ms": 52
+}

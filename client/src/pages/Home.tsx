@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { SectionBanner } from "@/components/SectionBanner";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: Date | string | null | undefined) {
@@ -368,7 +369,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-10">
-
+        {/* ── Section Banner ── */}
+        <SectionBanner sectionKey="home" height="h-48 sm:h-64" />
         {/* ── Hero ── */}
         <HeroSection />
 
