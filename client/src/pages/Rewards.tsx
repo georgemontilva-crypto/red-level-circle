@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import {
   Coins, Play, CheckCircle, Clock, Zap, Gift,
   Video, Megaphone, Calendar, Share2, Lock, X,
-  Volume2, VolumeX, Shield, ShoppingBag
+  Volume2, VolumeX, Shield, ShoppingBag, BadgeCheck
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
@@ -24,6 +24,13 @@ type Task = {
   expiresAt?: string | Date | null;
   durationSeconds?: number | null;
 };
+
+// ─── Format seconds to mm:ss ──────────────────────────────────────────────────
+function formatTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 // ─── Reward Claimed Modal (Discord-style) ─────────────────────────────────────
 function RewardClaimedModal({
@@ -339,8 +346,8 @@ function VideoPlayerModal({
             className="h-full transition-all duration-300"
             style={{
               width: `${progress}%`,
-              background: videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25)",
-              boxShadow: videoCompleted ? "0 0 8px oklch(0.55 0.22 25)" : "0 0 8px oklch(0.55 0.22 25 / 0.7)",
+              background: "oklch(0.55 0.22 25)",
+              boxShadow: "0 0 8px oklch(0.55 0.22 25 / 0.7)",
             }}
           />
         </div>
@@ -362,12 +369,6 @@ function VideoPlayerModal({
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {!videoCompleted && (
-              <div className="flex items-center gap-1.5 text-zinc-400 text-sm font-mono">
-                <Clock size={14} />
-                <span>{remaining}s</span>
-              </div>
-            )}
             <button
               onClick={handleClaim}
               disabled={!videoCompleted || claiming}
@@ -384,7 +385,7 @@ function VideoPlayerModal({
               ) : videoCompleted ? (
                 <><CheckCircle size={14} /> Reclamar +{task.reward} RLC 🎉</>
               ) : (
-                <><Lock size={14} /> Reclamar recompensa</>
+                <><Clock size={14} /> Reanudar (tiempo restante: {formatTime(remaining)})</>
               )}
             </button>
           </div>
@@ -394,7 +395,7 @@ function VideoPlayerModal({
   );
 }
 
-// ─── Quest Card (Discord-style) ───────────────────────────────────────────────
+// ─── Quest Card (Discord-style rediseñado) ────────────────────────────────────
 function QuestCard({
   task,
   isAuthenticated,
@@ -410,9 +411,26 @@ function QuestCard({
   const expiresLabel = expiresAt ? `Termina el ${expiresAt.getDate()}/${expiresAt.getMonth() + 1}` : null;
   const isVideo = task.type === "video" || task.type === "ad";
 
+  // Label de tipo de misión
+  const missionTypeLabel =
+    task.type === "video" ? "MISIÓN DE VIDEO" :
+    task.type === "ad" ? "VER ANUNCIO" :
+    task.type === "daily_login" ? "LOGIN DIARIO" :
+    task.type === "share" ? "COMPARTIR" : "MISIÓN";
+
+  // Icono del tipo
+  const MissionIcon =
+    task.type === "video" ? Video :
+    task.type === "ad" ? Megaphone :
+    task.type === "daily_login" ? Calendar :
+    task.type === "share" ? Share2 : Zap;
+
   return (
-    <div className="rounded-xl overflow-hidden border border-zinc-800/60 bg-zinc-900/80 hover:border-zinc-700 transition-all group flex flex-col">
-      {/* Thumbnail */}
+    <div
+      className="rounded-xl overflow-hidden border border-zinc-800/60 hover:border-zinc-600 transition-all duration-200 group flex flex-col"
+      style={{ background: "#1e1f22" }}
+    >
+      {/* ── Thumbnail ── */}
       <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
         {task.thumbnailUrl ? (
           <img
@@ -421,82 +439,124 @@ function QuestCard({
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-            {isVideo ? <Play size={32} className="text-zinc-600" /> : <Gift size={32} className="text-zinc-600" />}
+          <div className="w-full h-full flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" }}>
+            {isVideo
+              ? <Play size={36} className="text-zinc-600" />
+              : <Gift size={36} className="text-zinc-600" />}
           </div>
         )}
-        {/* Play overlay */}
+
+        {/* Play overlay on hover */}
         {isVideo && task.thumbnailUrl && (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
-            <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <Play size={20} className="text-white ml-0.5" />
+            <div className="w-14 h-14 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}>
+              <Play size={24} className="text-white ml-1" />
             </div>
           </div>
         )}
-        {/* Sponsor + expiry */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 py-2 flex items-center justify-between bg-gradient-to-t from-black/80 to-transparent">
-          {task.sponsorName ? (
-            <div className="flex items-center gap-1.5">
-              {task.sponsorLogoUrl && <img src={task.sponsorLogoUrl} alt="" className="w-4 h-4 rounded-full object-cover" />}
-              <span className="text-zinc-300 text-xs font-mono">
-                Patrocinado por <span className="text-white font-bold">{task.sponsorName}</span>
-              </span>
-            </div>
-          ) : <span />}
-          {expiresLabel && <span className="text-zinc-400 text-xs font-mono">{expiresLabel}</span>}
+
+        {/* Play button always visible (top-right) */}
+        {isVideo && (
+          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+            <Play size={14} className="text-white ml-0.5" />
+          </div>
+        )}
+
+        {/* Reward badge top-left */}
+        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full"
+          style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}>
+          <Coins size={11} className="text-yellow-400" />
+          <span className="text-yellow-400 font-bold font-mono text-xs">+{task.reward}</span>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="p-4 flex flex-col gap-3 flex-1">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0 mt-0.5">
-            {task.type === "video" && <Video size={16} className="text-red-400" />}
-            {task.type === "ad" && <Megaphone size={16} className="text-blue-400" />}
-            {task.type === "daily_login" && <Calendar size={16} className="text-green-400" />}
-            {task.type === "share" && <Share2 size={16} className="text-purple-400" />}
-            {task.type === "follow" && <Zap size={16} className="text-yellow-400" />}
+      {/* ── Info section (fuera del thumbnail) ── */}
+      <div className="px-3 py-2.5 flex flex-col gap-2.5 flex-1" style={{ background: "#1e1f22" }}>
+
+        {/* Sponsor row + expiry */}
+        <div className="flex items-center justify-between gap-2">
+          {task.sponsorName ? (
+            <div className="flex items-center gap-1.5">
+              {task.sponsorLogoUrl ? (
+                <img src={task.sponsorLogoUrl} alt="" className="w-4 h-4 rounded-full object-cover" />
+              ) : null}
+              <span className="text-zinc-400 text-xs">
+                Patrocinado por{" "}
+              </span>
+              <BadgeCheck size={13} className="text-green-400 shrink-0" />
+              <span className="text-white text-xs font-semibold">{task.sponsorName}</span>
+            </div>
+          ) : (
+            <span />
+          )}
+          {expiresLabel && (
+            <span className="text-zinc-500 text-xs font-mono shrink-0">{expiresLabel}</span>
+          )}
+        </div>
+
+        {/* Mission icon + type label + title */}
+        <div className="flex items-start gap-2.5">
+          {/* Icon circle */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            style={{ background: "#2b2d31", border: "1.5px solid #3f4147" }}
+          >
+            <MissionIcon size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
           </div>
+
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-0.5">
-              {task.type === "video" ? "Misión de Video" :
-               task.type === "ad" ? "Ver Anuncio" :
-               task.type === "daily_login" ? "Login Diario" :
-               task.type === "share" ? "Compartir" : "Misión"}
+            {/* Type label in RLC red */}
+            <p
+              className="text-xs font-bold font-mono uppercase tracking-wider mb-0.5"
+              style={{ color: "oklch(0.65 0.22 25)" }}
+            >
+              {task.sponsorName ? `MISIÓN ${task.sponsorName.toUpperCase()}: ${missionTypeLabel}` : missionTypeLabel}
             </p>
-            <p className="text-white text-sm font-bold leading-snug">{task.title}</p>
-            {task.description && <p className="text-zinc-500 text-xs mt-0.5 line-clamp-2">{task.description}</p>}
-          </div>
-          <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-zinc-800 border border-zinc-700 shrink-0">
-            <Coins size={12} className="text-yellow-400" />
-            <span className="text-yellow-400 font-bold font-mono text-sm">+{task.reward}</span>
+            {/* Title */}
+            <p className="text-white text-sm font-bold leading-snug">
+              Canjear <Coins size={11} className="inline text-yellow-400 mx-0.5 -mt-0.5" />
+              <span className="text-yellow-400 font-mono">{task.reward}</span> de RLC Coins
+            </p>
+            {/* Description */}
+            {task.description && (
+              <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{task.description}</p>
+            )}
           </div>
         </div>
 
-        {/* CTA */}
-        <div className="mt-auto">
+        {/* ── CTA Button ── */}
+        <div className="mt-auto pt-1">
           {claimed ? (
-            <div className="w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-500 font-bold text-sm text-center font-mono flex items-center justify-center gap-2">
+            <div
+              className="w-full py-2.5 rounded-lg font-bold text-sm text-center flex items-center justify-center gap-2"
+              style={{ background: "#2b2d31", color: "#6b7280" }}
+            >
               <CheckCircle size={14} className="text-green-500" /> Reclamado
             </div>
           ) : !isAuthenticated ? (
             <a
               href={getLoginUrl()}
-              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-400 font-bold text-sm hover:bg-zinc-700 transition-all"
+              className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-bold text-sm transition-all hover:brightness-110"
+              style={{ background: "#2b2d31", color: "#9ca3af" }}
             >
               <Lock size={14} /> Inicia sesión para ganar
             </a>
           ) : (
             <button
               onClick={() => onStart(task)}
-              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              className="w-full py-2.5 rounded-lg font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98]"
               style={{
                 background: "oklch(0.45 0.18 250)",
-                boxShadow: "0 2px 12px oklch(0.45 0.18 250 / 0.3)",
+                boxShadow: "0 2px 12px oklch(0.45 0.18 250 / 0.25)",
               }}
             >
-              {isVideo ? "Iniciar misión de video" :
-               task.type === "daily_login" ? "Reclamar login diario" : "Iniciar misión"}
+              {isVideo
+                ? `Reanudar (tiempo restante: ${formatTime(task.durationSeconds ?? 30)})`
+                : task.type === "daily_login"
+                ? "Reclamar login diario"
+                : "Iniciar misión"}
             </button>
           )}
         </div>
@@ -539,7 +599,7 @@ export default function Rewards() {
   return (
     <div className="min-h-screen" style={{ background: "#0b0b0d" }}>
       {/* ── Header bar ── */}
-      <div className="sticky top-0 z-40 border-b border-zinc-800/60 backdrop-blur-md" style={{ background: "#111214cc" }}>
+      <div className="sticky top-0 z-30 border-b border-zinc-800/60" style={{ background: "#111214" }}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <nav className="flex items-center gap-1">
             {(["all", "claimed"] as const).map((tab) => (

@@ -407,3 +407,6 @@
 - [x] Barra de progreso bloqueada (no se puede adelantar con click/drag)
 - [x] Botones con colores RLC rojos (reclamar recompensa usa oklch rojo RLC)
 - [x] Footer con info de la misión y botón de reclamar al estilo Discord
+- [x] Rediseñar QuestCard al estilo Discord: sponsor badge con checkmark verde, título en rojo RLC, botón con tiempo restante (mm:ss), info fuera del thumbnail
+- [x] Botón de acción en tarjeta muestra tiempo restante en formato mm:ss estilo Discord
+- [x] Badge 'Patrocinado por ✅ [Empresa]' visible fuera del thumbnail con checkmark verde
