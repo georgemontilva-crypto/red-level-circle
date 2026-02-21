@@ -419,7 +419,7 @@ export default function UserProfile() {
                     <a href="/shop/cosmetics" className="mt-3 inline-block text-xs text-red-400 hover:text-red-300 font-mono underline">Ir a la tienda</a>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-4">
                     {myCosmetics.map((c) => {
                       const rarity = (c as any).rarity ?? "common";
                       const rarityColor: Record<string, string> = {
@@ -484,7 +484,7 @@ export default function UserProfile() {
                     <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-4">
                     {profile.equippedCosmetics.map((c) => {
                       const rarity = (c as any).rarity ?? "common";
                       const rarityColor: Record<string, string> = {

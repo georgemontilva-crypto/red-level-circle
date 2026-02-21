@@ -359,3 +359,6 @@
 - [x] Outline del cosmético equipado: más fino y que no se corte (outline 1px en lugar de ring-2)
 - [x] Imagen del cosmético: object-cover para que llene la tarjeta sin espacios negros
 - [x] Rareza mostrada con colores: gris (Común), azul (Raro), morado (Épico), dorado (Legendario)
+
+## Quick Fix V30
+- [x] Agregar padding inferior a la grilla de cosméticos para que el outline no se corte
