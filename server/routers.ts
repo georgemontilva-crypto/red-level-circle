@@ -54,6 +54,22 @@ import {
   updateUserRole,
   upsertGame,
   createPromotion,
+  getShopItems,
+  getShopItemById,
+  createShopItem,
+  buyShopItem,
+  getShopOrders,
+  updateOrderStatus,
+  getCosmetics,
+  getUserCosmetics,
+  buyCosmetic,
+  equipCosmetic,
+  getRewardTasks,
+  claimReward,
+  getBrandAds,
+  trackAdClick,
+  trackAdImpression,
+  createBrandAd,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -749,7 +765,7 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    addCoins: adminProcedure
+     addCoins: adminProcedure
       .input(z.object({ userId: z.number(), amount: z.number().int(), description: z.string().optional() }))
       .mutation(async ({ input }) => {
         await addRlcTransaction({
@@ -760,7 +776,141 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+    // Admin: shop item management
+    createShopItem: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        image: z.string().optional(),
+        price: z.number().int().min(1),
+        originalPrice: z.number().int().optional(),
+        category: z.enum(["physical", "digital", "bundle", "limited"]),
+        stock: z.number().int().default(-1),
+        isFeatured: z.boolean().default(false),
+        isLimited: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        await createShopItem(input);
+        return { success: true };
+      }),
+    getShopOrders: adminProcedure
+      .input(z.object({ status: z.string().optional() }))
+      .query(async ({ input }) => {
+        return getShopOrders(undefined, input.status);
+      }),
+    updateOrderStatus: adminProcedure
+      .input(z.object({ orderId: z.number(), status: z.string(), deliveryNote: z.string().optional() }))
+      .mutation(async ({ input }) => {
+        await updateOrderStatus(input.orderId, input.status, input.deliveryNote);
+        return { success: true };
+      }),
+    createBrandAd: adminProcedure
+      .input(z.object({
+        brandName: z.string(),
+        title: z.string(),
+        tagline: z.string().optional(),
+        description: z.string().optional(),
+        bannerImage: z.string(),
+        logoImage: z.string().optional(),
+        accentColor: z.string().optional(),
+        destinationUrl: z.string().optional(),
+        ctaLabel: z.string().optional(),
+        isFeatured: z.boolean().default(false),
+        isPremium: z.boolean().default(false),
+      }))
+      .mutation(async ({ input }) => {
+        await createBrandAd(input);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Shop ──────────────────────────────────────────────────────────────────
+  shop: router({
+    list: publicProcedure
+      .input(z.object({ category: z.string().optional() }))
+      .query(async ({ input }) => getShopItems(input.category)),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => getShopItemById(input.id)),
+
+    buy: protectedProcedure
+      .input(z.object({
+        itemId: z.number(),
+        quantity: z.number().int().min(1).default(1),
+        userNote: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const result = await buyShopItem(ctx.user.id, input.itemId, input.quantity, input.userNote);
+        // Notify admin
+        const item = await getShopItemById(input.itemId);
+        try {
+          const { notifyOwner } = await import("./_core/notification");
+          await notifyOwner({
+            title: `🛒 Nueva compra en la tienda`,
+            content: `${ctx.user.name ?? ctx.user.openId} compró ${input.quantity}x "${item?.name}" por ${result.totalPrice} RLC Coins. Pedido #${result.orderId} — Estado: Pendiente de entrega.`,
+          });
+        } catch {}
+        return result;
+      }),
+
+    myOrders: protectedProcedure
+      .query(async ({ ctx }) => getShopOrders(ctx.user.id)),
+  }),
+
+  // ─── Cosmetics ─────────────────────────────────────────────────────────────
+  cosmetics: router({
+    list: publicProcedure
+      .input(z.object({ type: z.string().optional(), collection: z.string().optional() }))
+      .query(async ({ input }) => getCosmetics(input.type, input.collection)),
+
+    myCosmetics: protectedProcedure
+      .query(async ({ ctx }) => getUserCosmetics(ctx.user.id)),
+
+    buy: protectedProcedure
+      .input(z.object({ cosmeticId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return buyCosmetic(ctx.user.id, input.cosmeticId);
+      }),
+
+    equip: protectedProcedure
+      .input(z.object({ cosmeticId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await equipCosmetic(ctx.user.id, input.cosmeticId);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Rewards ───────────────────────────────────────────────────────────────
+  rewards: router({
+    list: publicProcedure
+      .query(async () => getRewardTasks()),
+
+    claim: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        return claimReward(ctx.user.id, input.taskId);
+      }),
+  }),
+
+  // ─── Brand Ads ─────────────────────────────────────────────────────────────
+  ads: router({
+    list: publicProcedure
+      .query(async () => getBrandAds(true)),
+
+    trackClick: publicProcedure
+      .input(z.object({ adId: z.number() }))
+      .mutation(async ({ input }) => {
+        await trackAdClick(input.adId);
+        return { success: true };
+      }),
+
+    trackImpression: publicProcedure
+      .input(z.object({ adId: z.number() }))
+      .mutation(async ({ input }) => {
+        await trackAdImpression(input.adId);
+        return { success: true };
+      }),
   }),
 });
-
 export type AppRouter = typeof appRouter;

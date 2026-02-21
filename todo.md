@@ -144,3 +144,30 @@
 - [x] Reemplazar selects nativos en CreateTournament.tsx
 - [x] Reemplazar selects nativos en ManageRegistrations.tsx
 - [x] Reemplazar selects nativos en Tournaments.tsx, Ranking.tsx y otras páginas con filtros
+
+## Ecosistema de Monetización V4
+
+### Esquema de BD
+- [x] Tabla shop_items (productos físicos/digitales: nombre, descripción, imagen, precio RLC, stock, categoría)
+- [x] Tabla shop_orders (usuario, item, cantidad, estado: pending/delivered/cancelled, fecha)
+- [x] Tabla cosmetics (marcos/auras de perfil: nombre, tipo, imagen_preview, imagen_frame, precio RLC, rareza)
+- [x] Tabla user_cosmetics (usuario, cosmetic, activo, fecha de compra)
+- [x] Tabla reward_tasks (tipo: video/ad, título, descripción, recompensa RLC, url_contenido, duración_segundos)
+- [x] Tabla user_reward_claims (usuario, task, completado, fecha)
+- [x] Tabla brand_ads (marca, título, descripción, imagen, url_destino, activo, destacado, fecha_inicio, fecha_fin)
+
+### Backend
+- [x] Router shop: list, buy, getOrders, updateOrderStatus (admin)
+- [x] Router cosmetics: list, buy, getMyCosmetics, setActive
+- [x] Router rewards: listTasks, claimReward (con validación anti-spam)
+- [x] Router ads: list, getActive, create (admin), trackClick
+
+### Frontend
+- [x] Página /shop/cosmetics — Tienda de cosméticos estilo Discord: grid de marcos/auras con preview en avatar
+- [x] Página /shop — Tienda de productos con cards, precio RLC, botón comprar y notificación al admin
+- [x] Página /rewards — Centro de recompensas con lista de tareas (ver video/ad → ganar RLC)
+- [x] Reproductor de video/ad con temporizador y botón de reclamar al finalizar
+- [x] Página /ads — Sección de publicidad para marcas estilo Epic Games (banners grandes, cards premium)
+- [x] Sección TIENDA en SidebarLayout (Cosméticos, Productos, Recompensas, Publicidad)
+- [x] Integración de marco/aura activo en avatar del usuario en el sidebar
+- [ ] Panel admin: gestión de pedidos pendientes con notificación push (pendiente)

@@ -17,10 +17,21 @@ import {
   promotions,
   rlcTransactions,
   teamAchievements,
+  shopItems,
+  shopOrders,
+  cosmetics,
+  userCosmetics,
+  rewardTasks,
+  userRewardClaims,
+  brandAds,
   type InsertGame,
   type InsertNews,
   type InsertBet,
   type InsertStream,
+  type InsertShopItem,
+  type InsertCosmetic,
+  type InsertRewardTask,
+  type InsertBrandAd,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -875,4 +886,345 @@ export async function updateTeam(teamId: number, data: Partial<{
   const db = await getDb();
   if (!db) return;
   await db.update(teams).set(data).where(eq(teams.id, teamId));
+}
+
+// ─── Shop Items ────────────────────────────────────────────────────────────────
+export async function getShopItems(category?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(shopItems.isActive, true)];
+  if (category && category !== "all") {
+    conditions.push(eq(shopItems.category, category as "physical" | "digital" | "bundle" | "limited"));
+  }
+  return db.select().from(shopItems).where(and(...conditions)).orderBy(shopItems.sortOrder, desc(shopItems.createdAt));
+}
+
+export async function getShopItemById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(shopItems).where(eq(shopItems.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function createShopItem(data: InsertShopItem) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(shopItems).values(data);
+  return result;
+}
+
+export async function buyShopItem(userId: number, itemId: number, quantity: number, userNote?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const item = await getShopItemById(itemId);
+  if (!item) throw new Error("Producto no encontrado");
+  if (!item.isActive) throw new Error("Producto no disponible");
+  if (item.stock !== -1 && item.stock < quantity) throw new Error("Stock insuficiente");
+
+  const totalPrice = item.price * quantity;
+
+  // Check user balance
+  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
+  const user = userRows[0];
+  if (!user || user.rlcBalance < totalPrice) throw new Error("Saldo RLC insuficiente");
+
+  // Deduct balance
+  const newBalance = user.rlcBalance - totalPrice;
+  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+  // Record transaction
+  await db.insert(rlcTransactions).values({
+    userId,
+    type: "withdrawal",
+    amount: -totalPrice,
+    balanceAfter: newBalance,
+    description: `Compra: ${item.name} x${quantity}`,
+    referenceId: itemId,
+  });
+
+  // Reduce stock if limited
+  if (item.stock !== -1) {
+    await db.update(shopItems).set({ stock: item.stock - quantity }).where(eq(shopItems.id, itemId));
+  }
+
+  // Create order
+  const [order] = await db.insert(shopOrders).values({
+    userId,
+    itemId,
+    quantity,
+    totalPrice,
+    status: "pending",
+    userNote: userNote ?? null,
+  });
+
+  return { orderId: (order as { insertId: number }).insertId, totalPrice, newBalance };
+}
+
+export async function getShopOrders(userId?: number, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (userId) conditions.push(eq(shopOrders.userId, userId));
+  if (status) conditions.push(eq(shopOrders.status, status as "pending" | "processing" | "delivered" | "cancelled"));
+
+  const rows = await db
+    .select({
+      id: shopOrders.id,
+      userId: shopOrders.userId,
+      quantity: shopOrders.quantity,
+      totalPrice: shopOrders.totalPrice,
+      status: shopOrders.status,
+      deliveryNote: shopOrders.deliveryNote,
+      userNote: shopOrders.userNote,
+      createdAt: shopOrders.createdAt,
+      itemName: shopItems.name,
+      itemImage: shopItems.image,
+      itemCategory: shopItems.category,
+      userName: users.name,
+      userNickname: users.nickname,
+    })
+    .from(shopOrders)
+    .leftJoin(shopItems, eq(shopOrders.itemId, shopItems.id))
+    .leftJoin(users, eq(shopOrders.userId, users.id))
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(shopOrders.createdAt));
+
+  return rows;
+}
+
+export async function updateOrderStatus(orderId: number, status: string, deliveryNote?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(shopOrders).set({
+    status: status as "pending" | "processing" | "delivered" | "cancelled",
+    deliveryNote: deliveryNote ?? null,
+  }).where(eq(shopOrders.id, orderId));
+}
+
+// ─── Cosmetics ─────────────────────────────────────────────────────────────────
+export async function getCosmetics(type?: string, collection?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(cosmetics.isActive, true)];
+  if (type && type !== "all") {
+    conditions.push(eq(cosmetics.type, type as "frame" | "aura" | "badge" | "background"));
+  }
+  if (collection) {
+    conditions.push(eq(cosmetics.collection, collection));
+  }
+  return db.select().from(cosmetics).where(and(...conditions)).orderBy(cosmetics.sortOrder, desc(cosmetics.createdAt));
+}
+
+export async function getCosmeticById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(cosmetics).where(eq(cosmetics.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getUserCosmetics(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: userCosmetics.id,
+      cosmeticId: userCosmetics.cosmeticId,
+      isEquipped: userCosmetics.isEquipped,
+      purchasedAt: userCosmetics.purchasedAt,
+      name: cosmetics.name,
+      type: cosmetics.type,
+      rarity: cosmetics.rarity,
+      previewImage: cosmetics.previewImage,
+      frameImage: cosmetics.frameImage,
+      colors: cosmetics.colors,
+      collection: cosmetics.collection,
+    })
+    .from(userCosmetics)
+    .leftJoin(cosmetics, eq(userCosmetics.cosmeticId, cosmetics.id))
+    .where(eq(userCosmetics.userId, userId))
+    .orderBy(desc(userCosmetics.purchasedAt));
+}
+
+export async function buyCosmetic(userId: number, cosmeticId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const cosmetic = await getCosmeticById(cosmeticId);
+  if (!cosmetic) throw new Error("Cosmético no encontrado");
+  if (!cosmetic.isActive) throw new Error("Cosmético no disponible");
+
+  // Check if already owned
+  const existing = await db.select().from(userCosmetics)
+    .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.cosmeticId, cosmeticId))).limit(1);
+  if (existing.length > 0) throw new Error("Ya tienes este cosmético");
+
+  // Check balance
+  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
+  const user = userRows[0];
+  if (!user || user.rlcBalance < cosmetic.price) throw new Error("Saldo RLC insuficiente");
+
+  const newBalance = user.rlcBalance - cosmetic.price;
+  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+  await db.insert(rlcTransactions).values({
+    userId,
+    type: "withdrawal",
+    amount: -cosmetic.price,
+    balanceAfter: newBalance,
+    description: `Cosmético: ${cosmetic.name}`,
+    referenceId: cosmeticId,
+  });
+
+  await db.insert(userCosmetics).values({ userId, cosmeticId, isEquipped: false });
+
+  return { newBalance };
+}
+
+export async function equipCosmetic(userId: number, cosmeticId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  // Get cosmetic type
+  const cosmeticRows = await db.select({ type: cosmetics.type }).from(cosmetics).where(eq(cosmetics.id, cosmeticId)).limit(1);
+  const cosmeticType = cosmeticRows[0]?.type;
+
+  if (cosmeticType) {
+    // Unequip all of same type
+    const ownedOfType = await db
+      .select({ id: userCosmetics.id })
+      .from(userCosmetics)
+      .leftJoin(cosmetics, eq(userCosmetics.cosmeticId, cosmetics.id))
+      .where(and(eq(userCosmetics.userId, userId), eq(cosmetics.type, cosmeticType)));
+
+    for (const uc of ownedOfType) {
+      await db.update(userCosmetics).set({ isEquipped: false }).where(eq(userCosmetics.id, uc.id));
+    }
+  }
+
+  // Equip selected
+  await db.update(userCosmetics).set({ isEquipped: true })
+    .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.cosmeticId, cosmeticId)));
+}
+
+export async function getEquippedCosmetic(userId: number, type: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({
+      cosmeticId: userCosmetics.cosmeticId,
+      name: cosmetics.name,
+      type: cosmetics.type,
+      frameImage: cosmetics.frameImage,
+      previewImage: cosmetics.previewImage,
+      colors: cosmetics.colors,
+    })
+    .from(userCosmetics)
+    .leftJoin(cosmetics, eq(userCosmetics.cosmeticId, cosmetics.id))
+    .where(and(
+      eq(userCosmetics.userId, userId),
+      eq(userCosmetics.isEquipped, true),
+      eq(cosmetics.type, type as "frame" | "aura" | "badge" | "background")
+    ))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+// ─── Reward Tasks ──────────────────────────────────────────────────────────────
+export async function getRewardTasks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rewardTasks).where(eq(rewardTasks.isActive, true)).orderBy(rewardTasks.sortOrder);
+}
+
+export async function getUserClaimsToday(userId: number, taskId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const rows = await db.select().from(userRewardClaims)
+    .where(and(
+      eq(userRewardClaims.userId, userId),
+      eq(userRewardClaims.taskId, taskId),
+      sql`${userRewardClaims.claimedAt} >= ${today}`
+    ));
+  return rows.length;
+}
+
+export async function getTotalUserClaims(userId: number, taskId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select().from(userRewardClaims)
+    .where(and(eq(userRewardClaims.userId, userId), eq(userRewardClaims.taskId, taskId)));
+  return rows.length;
+}
+
+export async function claimReward(userId: number, taskId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const taskRows = await db.select().from(rewardTasks).where(eq(rewardTasks.id, taskId)).limit(1);
+  const task = taskRows[0];
+  if (!task || !task.isActive) throw new Error("Tarea no disponible");
+
+  // Anti-spam: check daily limit
+  const maxPerDay = task.maxClaimsPerDay ?? 1;
+  if (maxPerDay > 0) {
+    const todayClaims = await getUserClaimsToday(userId, taskId);
+    if (todayClaims >= maxPerDay) throw new Error("Ya alcanzaste el límite diario de esta tarea");
+  }
+  // Check total limit
+  const maxPerUser = task.maxClaimsPerUser ?? 1;
+  if (maxPerUser > 0) {
+    const totalClaims = await getTotalUserClaims(userId, taskId);
+     if (totalClaims >= maxPerUser) throw new Error("Ya completaste esta tarea el máximo de veces");
+  }
+  // Credit coins
+  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
+  const user = userRows[0];
+  if (!user) throw new Error("Usuario no encontrado");
+
+  const newBalance = user.rlcBalance + task.reward;
+  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+  await db.insert(rlcTransactions).values({
+    userId,
+    type: "reward",
+    amount: task.reward,
+    balanceAfter: newBalance,
+    description: `Recompensa: ${task.title}`,
+    referenceId: taskId,
+  });
+
+  await db.insert(userRewardClaims).values({ userId, taskId });
+
+  return { reward: task.reward, newBalance };
+}
+
+// ─── Brand Ads ─────────────────────────────────────────────────────────────────
+export async function getBrandAds(onlyActive = true) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = onlyActive ? [eq(brandAds.isActive, true)] : [];
+  return db.select().from(brandAds)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(brandAds.isFeatured), desc(brandAds.isPremium), desc(brandAds.createdAt));
+}
+
+export async function trackAdClick(adId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brandAds).set({ clickCount: sql`${brandAds.clickCount} + 1` }).where(eq(brandAds.id, adId));
+}
+
+export async function trackAdImpression(adId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(brandAds).set({ impressionCount: sql`${brandAds.impressionCount} + 1` }).where(eq(brandAds.id, adId));
+}
+
+export async function createBrandAd(data: InsertBrandAd) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(brandAds).values(data);
 }

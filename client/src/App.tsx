@@ -20,6 +20,10 @@ import { NewsList, NewsArticle } from "./pages/News";
 import Streams from "./pages/Streams";
 import Betting from "./pages/Betting";
 import TeamProfile from "./pages/TeamProfile";
+import CosmeticsShop from "./pages/CosmeticsShop";
+import Shop from "./pages/Shop";
+import Rewards from "./pages/Rewards";
+import BrandAds from "./pages/BrandAds";
 
 function Router() {
   return (
@@ -36,6 +40,10 @@ function Router() {
         <Route path="/streams" component={Streams} />
         <Route path="/betting" component={Betting} />
         <Route path="/teams/:id" component={TeamProfile} />
+        <Route path="/shop/cosmetics" component={CosmeticsShop} />
+        <Route path="/shop" component={Shop} />
+        <Route path="/rewards" component={Rewards} />
+        <Route path="/ads" component={BrandAds} />
 
         {/* Premium dashboard routes */}
         <Route path="/dashboard" component={Dashboard} />

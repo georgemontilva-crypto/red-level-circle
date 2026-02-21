@@ -302,3 +302,130 @@ export const streams = mysqlTable("streams", {
 
 export type Stream = typeof streams.$inferSelect;
 export type InsertStream = typeof streams.$inferInsert;
+
+// ─── Shop Items (Physical & Digital Products) ─────────────────────────────────
+export const shopItems = mysqlTable("shop_items", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  image: text("image"),
+  price: int("price").notNull(), // in RLC Coins
+  originalPrice: int("originalPrice"), // for showing discount
+  category: mysqlEnum("category", ["physical", "digital", "bundle", "limited"]).default("digital").notNull(),
+  stock: int("stock").default(-1).notNull(), // -1 = unlimited
+  isActive: boolean("isActive").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  isLimited: boolean("isLimited").default(false).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShopItem = typeof shopItems.$inferSelect;
+export type InsertShopItem = typeof shopItems.$inferInsert;
+
+// ─── Shop Orders ──────────────────────────────────────────────────────────────
+export const shopOrders = mysqlTable("shop_orders", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  itemId: int("itemId").notNull(),
+  quantity: int("quantity").default(1).notNull(),
+  totalPrice: int("totalPrice").notNull(), // RLC Coins spent
+  status: mysqlEnum("status", ["pending", "processing", "delivered", "cancelled"]).default("pending").notNull(),
+  deliveryNote: text("deliveryNote"), // admin note when delivering
+  userNote: text("userNote"), // buyer's note/instructions
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ShopOrder = typeof shopOrders.$inferSelect;
+export type InsertShopOrder = typeof shopOrders.$inferInsert;
+
+// ─── Cosmetics (Profile Frames / Auras) ──────────────────────────────────────
+export const cosmetics = mysqlTable("cosmetics", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  type: mysqlEnum("type", ["frame", "aura", "badge", "background"]).default("frame").notNull(),
+  rarity: mysqlEnum("rarity", ["common", "rare", "epic", "legendary"]).default("common").notNull(),
+  previewImage: text("previewImage"), // full preview card image
+  frameImage: text("frameImage"),     // transparent PNG overlay
+  colors: json("colors"),             // array of hex colors for swatches
+  price: int("price").notNull(),      // RLC Coins
+  originalPrice: int("originalPrice"),
+  isActive: boolean("isActive").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  isLimited: boolean("isLimited").default(false).notNull(),
+  collection: varchar("collection", { length: 128 }), // e.g. "Neon Series", "Red Level Pack"
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Cosmetic = typeof cosmetics.$inferSelect;
+export type InsertCosmetic = typeof cosmetics.$inferInsert;
+
+// ─── User Cosmetics (Owned & Equipped) ────────────────────────────────────────
+export const userCosmetics = mysqlTable("user_cosmetics", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  cosmeticId: int("cosmeticId").notNull(),
+  isEquipped: boolean("isEquipped").default(false).notNull(),
+  purchasedAt: timestamp("purchasedAt").defaultNow().notNull(),
+});
+
+export type UserCosmetic = typeof userCosmetics.$inferSelect;
+
+// ─── Reward Tasks ─────────────────────────────────────────────────────────────
+export const rewardTasks = mysqlTable("reward_tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  type: mysqlEnum("type", ["video", "ad", "daily_login", "share", "follow"]).default("video").notNull(),
+  reward: int("reward").notNull(), // RLC Coins earned
+  contentUrl: text("contentUrl"),  // video/ad URL
+  durationSeconds: int("durationSeconds").default(30), // watch time required
+  maxClaimsPerUser: int("maxClaimsPerUser").default(1), // -1 = unlimited
+  maxClaimsPerDay: int("maxClaimsPerDay").default(1),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RewardTask = typeof rewardTasks.$inferSelect;
+export type InsertRewardTask = typeof rewardTasks.$inferInsert;
+
+// ─── User Reward Claims ───────────────────────────────────────────────────────
+export const userRewardClaims = mysqlTable("user_reward_claims", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  taskId: int("taskId").notNull(),
+  claimedAt: timestamp("claimedAt").defaultNow().notNull(),
+});
+
+export type UserRewardClaim = typeof userRewardClaims.$inferSelect;
+
+// ─── Brand Ads ────────────────────────────────────────────────────────────────
+export const brandAds = mysqlTable("brand_ads", {
+  id: int("id").autoincrement().primaryKey(),
+  brandName: varchar("brandName", { length: 128 }).notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  tagline: varchar("tagline", { length: 256 }),
+  description: text("description"),
+  bannerImage: text("bannerImage").notNull(), // main large banner
+  logoImage: text("logoImage"),
+  accentColor: varchar("accentColor", { length: 32 }).default("#ff0000"),
+  destinationUrl: text("destinationUrl"),
+  ctaLabel: varchar("ctaLabel", { length: 64 }).default("Ver más"),
+  isActive: boolean("isActive").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(), // hero slot
+  isPremium: boolean("isPremium").default(false).notNull(),   // premium placement
+  clickCount: int("clickCount").default(0).notNull(),
+  impressionCount: int("impressionCount").default(0).notNull(),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type BrandAd = typeof brandAds.$inferSelect;
+export type InsertBrandAd = typeof brandAds.$inferInsert;
