@@ -412,3 +412,7 @@
 - [x] Badge 'Patrocinado por ✅ [Empresa]' visible fuera del thumbnail con checkmark verde
 - [x] Agregar campos thumbnailUrl, sponsorName, sponsorLogoUrl y expiresAt al formulario de creación de tareas en AdminPanel
 - [x] Reemplazar campos URL thumbnail y URL logo en AdminPanel por upload de imagen directo con preview
+- [x] Ocultar controles nativos de YouTube en el iframe del modal (controls=0)
+- [x] Cambiar botón "Reanudar" a "Ver Video" en tarjetas QuestCard con color rojo RLC
+- [x] Usar logo del sponsor en el círculo del ícono de misión en QuestCard
+- [x] Botón "Reanudar" en modal también usa color rojo RLC

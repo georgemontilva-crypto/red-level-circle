@@ -249,7 +249,7 @@ function VideoPlayerModal({
     if (url.includes("youtu.be/")) videoId = url.split("youtu.be/")[1].split("?")[0];
     else if (url.includes("watch?v=")) videoId = url.split("watch?v=")[1].split("&")[0];
     else if (url.includes("embed/")) return url + (url.includes("?") ? "&" : "?") + "autoplay=1";
-    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+    return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&showinfo=0`;
   };
 
   const handleClaim = () => {
@@ -356,7 +356,7 @@ function VideoPlayerModal({
         <div className="px-5 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             {task.sponsorLogoUrl ? (
-              <img src={task.sponsorLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover" />
+              <img src={task.sponsorLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-700" />
             ) : (
               <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center">
                 <Video size={14} className="text-zinc-500" />
@@ -364,7 +364,12 @@ function VideoPlayerModal({
             )}
             <div>
               <p className="text-white text-sm font-bold leading-tight">{task.title}</p>
-              {task.sponsorName && <p className="text-zinc-500 text-xs">{task.sponsorName}</p>}
+              {task.sponsorName && (
+                <div className="flex items-center gap-1">
+                  <BadgeCheck size={11} className="text-green-400" />
+                  <p className="text-zinc-400 text-xs">{task.sponsorName}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -385,7 +390,7 @@ function VideoPlayerModal({
               ) : videoCompleted ? (
                 <><CheckCircle size={14} /> Reclamar +{task.reward} RLC 🎉</>
               ) : (
-                <><Clock size={14} /> Reanudar (tiempo restante: {formatTime(remaining)})</>
+                <><Play size={14} /> Ver video ({formatTime(remaining)} restantes)</>
               )}
             </button>
           </div>
@@ -498,12 +503,16 @@ function QuestCard({
 
         {/* Mission icon + type label + title */}
         <div className="flex items-start gap-2.5">
-          {/* Icon circle */}
+          {/* Icon circle: sponsor logo or mission icon */}
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
+            className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 overflow-hidden"
             style={{ background: "#2b2d31", border: "1.5px solid #3f4147" }}
           >
-            <MissionIcon size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
+            {task.sponsorLogoUrl ? (
+              <img src={task.sponsorLogoUrl} alt={task.sponsorName ?? ""} className="w-full h-full object-cover" />
+            ) : (
+              <MissionIcon size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
+            )}
           </div>
 
           <div className="flex-1 min-w-0">
@@ -546,17 +555,19 @@ function QuestCard({
           ) : (
             <button
               onClick={() => onStart(task)}
-              className="w-full py-2.5 rounded-lg font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98]"
+              className="w-full py-2.5 rounded-lg font-bold text-sm text-white transition-all hover:brightness-110 active:scale-[0.98] flex items-center justify-center gap-2"
               style={{
-                background: "oklch(0.45 0.18 250)",
-                boxShadow: "0 2px 12px oklch(0.45 0.18 250 / 0.25)",
+                background: "oklch(0.50 0.22 25)",
+                boxShadow: "0 2px 12px oklch(0.50 0.22 25 / 0.30)",
               }}
             >
-              {isVideo
-                ? `Reanudar (tiempo restante: ${formatTime(task.durationSeconds ?? 30)})`
-                : task.type === "daily_login"
-                ? "Reclamar login diario"
-                : "Iniciar misión"}
+              {isVideo ? (
+                <><Play size={14} /> Ver video</>
+              ) : task.type === "daily_login" ? (
+                "Reclamar login diario"
+              ) : (
+                "Iniciar misión"
+              )}
             </button>
           )}
         </div>
