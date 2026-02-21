@@ -138,3 +138,9 @@
 - [x] Botón cerrar sesión al fondo del sidebar
 - [x] Versión colapsable en móvil (hamburger)
 - [x] Aplicar en: Home, Tournaments, TournamentDetail, Ranking, News, Streams, Betting, TeamProfile, Dashboard y subpáginas
+
+## Dropdowns V3: Estilo Cyberpunk Coherente
+- [x] Aplicar estilos cyberpunk al componente Select de shadcn/ui (fondo negro, borde rojo neón, hover rojo)
+- [x] Reemplazar selects nativos en CreateTournament.tsx
+- [x] Reemplazar selects nativos en ManageRegistrations.tsx
+- [x] Reemplazar selects nativos en Tournaments.tsx, Ranking.tsx y otras páginas con filtros

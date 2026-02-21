@@ -3,6 +3,13 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Search,
   Filter,
   CheckCircle,
@@ -208,26 +215,17 @@ export default function ManageRegistrations() {
                   }}
                 />
               </div>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-4 py-2 rounded-lg text-sm font-display tracking-wider"
-                style={{
-                  background: "oklch(0.09 0.005 0)",
-                  border: "1px solid oklch(0.22 0.01 0)",
-                  color: "oklch(0.80 0.005 0)",
-                  outline: "none",
-                }}
-              >
-                <option value="" style={{ background: "oklch(0.09 0.005 0)" }}>
-                  Todos los estados
-                </option>
-                {Object.entries(STATUS_CONFIG).map(([v, cfg]) => (
-                  <option key={v} value={v} style={{ background: "oklch(0.09 0.005 0)" }}>
-                    {cfg.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v)}>
+                  <SelectTrigger className="min-w-[180px]">
+                    <SelectValue placeholder="Todos los estados" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Todos los estados</SelectItem>
+                    {Object.entries(STATUS_CONFIG).map(([v, cfg]) => (
+                      <SelectItem key={v} value={v}>{cfg.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
             </div>
 
             {/* Table */}

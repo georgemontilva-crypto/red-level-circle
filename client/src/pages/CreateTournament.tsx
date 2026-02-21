@@ -4,6 +4,13 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Trophy, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const GAMES = [
   "League of Legends", "Valorant", "CS2", "FIFA", "Fortnite",
@@ -273,29 +280,19 @@ export default function CreateTournament() {
               />
 
               <div>
-                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">
-                  JUEGO <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
+                <label className="block text-xs font-orbitron tracking-widest text-zinc-500 mb-3">
+                  JUEGO <span className="text-red-500">*</span>
                 </label>
-                <select
-                  value={form.game}
-                  onChange={(e) => set("game")(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl text-sm font-sans transition-all duration-200"
-                  style={{
-                    background: "oklch(0.09 0.005 0)",
-                    border: "1px solid oklch(0.22 0.01 0)",
-                    color: form.game ? "oklch(0.90 0.005 0)" : "oklch(0.45 0.005 0)",
-                    outline: "none",
-                  }}
-                >
-                  <option value="" style={{ background: "oklch(0.09 0.005 0)" }}>
-                    Selecciona un juego
-                  </option>
-                  {GAMES.map((g) => (
-                    <option key={g} value={g} style={{ background: "oklch(0.09 0.005 0)" }}>
-                      {g}
-                    </option>
-                  ))}
-                </select>
+                <Select value={form.game} onValueChange={(v) => set("game")(v)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona un juego" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {GAMES.map((g) => (
+                      <SelectItem key={g} value={g}>{g}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {form.game === "Otro" && (
