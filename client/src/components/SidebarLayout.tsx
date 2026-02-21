@@ -222,13 +222,25 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Bottom: logout + version */}
       <div className="px-3 pb-5 pt-2 border-t border-zinc-800/50 mt-auto">
         {isAuthenticated && (
-          <button
-            onClick={() => { logout(); setMobileOpen(false); }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all duration-150 group"
-          >
-            <LogOut className="w-4 h-4 group-hover:text-red-400 transition-colors" />
-            <span className="font-rajdhani font-semibold text-sm">Cerrar sesión</span>
-          </button>
+          <>
+            <Link href="/settings" onClick={() => setMobileOpen(false)}>
+              <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group mb-1 ${
+                location === "/settings" ? "bg-red-500/10 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+              }`}>
+                <Settings className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                  location === "/settings" ? "text-red-400" : "text-zinc-500 group-hover:text-zinc-300"
+                }`} />
+                <span className="font-rajdhani font-semibold text-sm">Configuración</span>
+              </div>
+            </Link>
+            <button
+              onClick={() => { logout(); setMobileOpen(false); }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all duration-150 group"
+            >
+              <LogOut className="w-4 h-4 group-hover:text-red-400 transition-colors" />
+              <span className="font-rajdhani font-semibold text-sm">Cerrar sesión</span>
+            </button>
+          </>
         )}
         <p className="text-center text-xs text-zinc-700 font-mono mt-3">Red Level Circle v2.0</p>
       </div>
@@ -236,7 +248,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white flex">
+    <div className="min-h-screen bg-black text-white flex overflow-x-hidden">
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 bg-zinc-950 border-r border-zinc-800/50 flex-col fixed h-full z-40 overflow-hidden">
         <SidebarContent />
@@ -269,7 +281,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0">
+      <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0 overflow-x-hidden min-w-0">
         {children}
       </main>
     </div>

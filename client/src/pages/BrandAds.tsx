@@ -33,13 +33,13 @@ export default function BrandAds() {
             />
           ))}
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-16 sm:py-20">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-4">
               <Megaphone className="w-8 h-8 text-red-500" />
               <span className="text-red-500 font-mono text-sm tracking-widest uppercase">Para Marcas</span>
             </div>
-            <h1 className="text-6xl font-black tracking-tight mb-4 leading-none" style={{ fontFamily: "Orbitron, monospace" }}>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight mb-4 leading-tight" style={{ fontFamily: "Orbitron, monospace", wordBreak: "break-word", overflowWrap: "break-word" }}>
               LLEGA A LA<br />
               <span className="text-red-500" style={{ textShadow: "0 0 30px #ff0000" }}>COMUNIDAD</span><br />
               GAMER

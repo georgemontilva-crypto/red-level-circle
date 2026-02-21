@@ -104,12 +104,12 @@ export default function CosmeticsShop() {
           <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #ff0000, transparent)" }} />
           <div className="absolute bottom-0 right-1/4 w-64 h-64 rounded-full opacity-5" style={{ background: "radial-gradient(circle, #ff4444, transparent)" }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 py-16">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
           <div className="flex items-center gap-3 mb-4">
             <Sparkles className="w-8 h-8 text-red-500" />
             <span className="text-red-500 font-mono text-sm tracking-widest uppercase">Red Level Circle</span>
           </div>
-          <h1 className="text-5xl font-black tracking-tight mb-3" style={{ fontFamily: "Orbitron, monospace" }}>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-3" style={{ fontFamily: "Orbitron, monospace", wordBreak: "break-word" }}>
             TIENDA DE <span className="text-red-500" style={{ textShadow: "0 0 20px #ff0000" }}>COSMÉTICOS</span>
           </h1>
           <p className="text-gray-400 text-lg max-w-xl">
@@ -125,7 +125,7 @@ export default function CosmeticsShop() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Type Filters */}
         <div className="flex flex-wrap gap-3 mb-8">
           {["all", "frame", "aura", "badge", "background"].map((type) => (

@@ -95,7 +95,7 @@ export default function ManageRegistrations() {
 
   return (
     <PremiumLayout title="GESTIÓN DE INSCRIPCIONES">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6 overflow-x-hidden">
         {/* Tournament selector */}
         <div
           className="rounded-xl p-5"

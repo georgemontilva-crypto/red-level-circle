@@ -26,7 +26,7 @@ export default function MyTeams() {
 
   return (
     <PremiumLayout title="MIS EQUIPOS">
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-center justify-between">
           <p className="text-muted-foreground text-sm">

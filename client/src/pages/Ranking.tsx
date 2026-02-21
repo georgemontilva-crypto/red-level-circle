@@ -23,7 +23,7 @@ export default function Ranking() {
   return (
     <div className="min-h-screen bg-black text-white">
 
-      <div className="pt-24 pb-16 max-w-4xl mx-auto px-4">
+      <div className="pt-6 pb-16 max-w-4xl mx-auto px-4">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-5 h-5 text-red-500" />

@@ -88,8 +88,8 @@ export default function Shop() {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-10 right-1/3 w-80 h-80 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #ff0000, transparent)" }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 py-14">
-          <div className="flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <ShoppingBag className="w-7 h-7 text-red-500" />
@@ -122,7 +122,7 @@ export default function Shop() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* My Orders Panel */}
         {showOrders && isAuthenticated && (
           <div className="mb-10 rounded-xl border border-white/10 bg-zinc-900 overflow-hidden">

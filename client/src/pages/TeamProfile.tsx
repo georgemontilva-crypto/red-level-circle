@@ -39,7 +39,7 @@ export default function TeamProfile() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <div className="pt-24 max-w-4xl mx-auto px-4">
+        <div className="pt-6 max-w-4xl mx-auto px-4">
           <div className="h-48 bg-zinc-900/50 rounded-xl animate-pulse mb-6" />
           <div className="grid md:grid-cols-3 gap-4">
             {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-32 bg-zinc-900/50 rounded-xl animate-pulse" />)}
@@ -68,7 +68,7 @@ export default function TeamProfile() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="pt-24 pb-16 max-w-5xl mx-auto px-4">
+      <div className="pt-6 pb-16 max-w-5xl mx-auto px-4">
         {/* Back */}
         <Link href="/ranking">
           <button className="flex items-center gap-1 text-zinc-500 hover:text-white text-xs font-mono mb-6 transition-colors">

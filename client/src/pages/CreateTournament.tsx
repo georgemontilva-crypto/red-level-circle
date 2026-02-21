@@ -212,7 +212,7 @@ export default function CreateTournament() {
 
   return (
     <PremiumLayout title="CREAR TORNEO">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto overflow-x-hidden">
         {/* Progress */}
         <div className="flex items-center gap-3 mb-8">
           {[1, 2, 3].map((s) => (

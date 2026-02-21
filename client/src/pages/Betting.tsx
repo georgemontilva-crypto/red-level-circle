@@ -52,7 +52,7 @@ export default function Betting() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="pt-24 pb-16 max-w-7xl mx-auto px-4">
+      <div className="pt-6 sm:pt-24 pb-16 max-w-7xl mx-auto px-4 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>

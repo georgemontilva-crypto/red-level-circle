@@ -117,7 +117,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 px-4 sm:px-0 overflow-x-hidden">
       {/* Banner */}
       <div className="relative rounded-2xl overflow-hidden h-48 bg-gradient-to-r from-black via-red-950/40 to-black border border-red-900/30">
         {profile.bannerUrl ? (
@@ -130,7 +130,7 @@ export default function UserProfile() {
       </div>
 
       {/* Avatar + Info */}
-      <div className="relative px-6 -mt-16">
+      <div className="relative px-4 sm:px-6 -mt-16">
         <div className="flex items-end gap-6">
           {/* Avatar with cosmetic frame */}
           <div className="relative flex-shrink-0">
@@ -256,7 +256,7 @@ export default function UserProfile() {
 
       {/* Edit form */}
       {editing && isOwnProfile && (
-        <div className="mx-6 bg-gray-900/80 border border-red-900/40 rounded-xl p-6 space-y-4">
+        <div className="mx-4 sm:mx-6 bg-gray-900/80 border border-red-900/40 rounded-xl p-4 sm:p-6 space-y-4">
           <h3 className="font-orbitron text-red-400 text-sm tracking-widest">EDITAR PERFIL</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -308,7 +308,7 @@ export default function UserProfile() {
       )}
 
       {/* Tabs: Cosméticos / Equipos / Estadísticas */}
-      <div className="px-6">
+      <div className="px-4 sm:px-6">
         <Tabs defaultValue="cosmetics">
           <TabsList className="bg-gray-900/60 border border-red-900/30 rounded-xl p-1">
             <TabsTrigger value="cosmetics" className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">

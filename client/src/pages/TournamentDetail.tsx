@@ -1,6 +1,7 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
+import BracketView from "@/components/BracketView";
 import {
   Trophy,
   Calendar,
@@ -95,7 +96,7 @@ export default function TournamentDetail() {
   return (
     <div className="min-h-screen bg-background">
       {/* Breadcrumb */}
-      <div className="px-6 pt-4 pb-2">
+      <div className="px-4 sm:px-6 pt-4 pb-2">
         <Link href="/tournaments">
           <button className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-rajdhani text-sm tracking-wider">
             <ChevronLeft size={14} /> VOLVER A TORNEOS
@@ -210,7 +211,7 @@ export default function TournamentDetail() {
               </div>
             )}
 
-            {/* Matches */}
+            {/* Matches / Bracket */}
             {matches && matches.length > 0 && (
               <div
                 className="rounded-xl p-6"
@@ -219,53 +220,11 @@ export default function TournamentDetail() {
                   border: "1px solid oklch(0.18 0.01 0)",
                 }}
               >
-                <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4">
-                  BRACKET / PARTIDAS
+                <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
+                  <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
+                  BRACKET
                 </h2>
-                <div className="space-y-3">
-                  {matches.map((match) => (
-                    <div
-                      key={match.id}
-                      className="flex items-center justify-between p-3 rounded-lg"
-                      style={{
-                        background: "oklch(0.12 0.005 0)",
-                        border: "1px solid oklch(0.20 0.01 0)",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="text-xs font-tech px-2 py-0.5 rounded"
-                          style={{
-                            background: "oklch(0.55 0.22 25 / 0.15)",
-                            color: "oklch(0.65 0.22 25)",
-                          }}
-                        >
-                          R{match.round}
-                        </span>
-                        <span className="text-sm text-foreground font-display tracking-wide">
-                          Partida #{match.matchNumber}
-                        </span>
-                      </div>
-                      <span
-                        className="text-xs font-display tracking-wider"
-                        style={{
-                          color:
-                            match.status === "completed"
-                              ? "oklch(0.65 0.18 145)"
-                              : match.status === "in_progress"
-                              ? "oklch(0.65 0.18 80)"
-                              : "oklch(0.55 0.005 0)",
-                        }}
-                      >
-                        {match.status === "completed"
-                          ? "COMPLETADA"
-                          : match.status === "in_progress"
-                          ? "EN CURSO"
-                          : "PENDIENTE"}
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <BracketView matches={matches} canEditResults={false} />
               </div>
             )}
           </div>

@@ -21,7 +21,7 @@ export function NewsList() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="pt-24 pb-16 max-w-5xl mx-auto px-4">
+      <div className="pt-6 pb-16 max-w-5xl mx-auto px-4">
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Newspaper className="w-5 h-5 text-red-500" />
@@ -111,7 +111,7 @@ export function NewsArticle() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-black text-white">
-        <div className="pt-24 max-w-3xl mx-auto px-4">
+        <div className="pt-6 max-w-3xl mx-auto px-4">
           <div className="h-64 bg-zinc-900/50 rounded-xl animate-pulse mb-6" />
           <div className="h-8 bg-zinc-900/50 rounded animate-pulse mb-4 w-3/4" />
           <div className="space-y-3">
@@ -135,7 +135,7 @@ export function NewsArticle() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="pt-24 pb-16 max-w-3xl mx-auto px-4">
+      <div className="pt-6 pb-16 max-w-3xl mx-auto px-4">
         {article.coverImage && (
           <img src={article.coverImage} alt={article.title} className="w-full h-64 object-cover rounded-xl mb-6" />
         )}

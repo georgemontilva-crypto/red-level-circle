@@ -74,7 +74,7 @@ export default function Dashboard() {
 
   return (
     <PremiumLayout title="DASHBOARD">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-8 px-4 sm:px-0">
         {/* Welcome */}
         <div>
           <h2 className="font-display text-2xl font-bold tracking-wider text-foreground">

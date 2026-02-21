@@ -192,3 +192,18 @@
 - [x] Sección: Torneos (aprobar/rechazar torneos pendientes de verificación)
 - [x] Sección: Noticias (crear/editar/publicar artículos del portal)
 - [x] Notificaciones de pedidos pendientes en el panel admin
+
+## Fix Responsivo V6
+- [x] Corregir desbordamiento horizontal en móvil (overflow-x hidden global + tipografía responsiva)
+- [x] Ajustar padding-top en páginas públicas (Tournaments, Ranking, News, Streams, TeamProfile)
+- [x] Ajustar padding responsivo en PremiumLayout, MyTournaments, MyTeams, ManageRegistrations, CreateTournament
+
+## Nuevas Funcionalidades V6
+- [x] Página /settings para editar perfil propio (foto, banner, nickname, bio, redes sociales)
+- [x] Endpoint profile.uploadImage para subir avatar y banner a S3
+- [x] Endpoint profile.updateMine con soporte para profileType
+- [x] Modal de onboarding para nuevos usuarios sin nickname (2 pasos: nickname + tipo de perfil)
+- [x] Enlace a Configuración en el sidebar (junto al botón de cerrar sesión)
+- [x] Componente BracketView interactivo con visualización en árbol y líneas conectoras SVG
+- [x] Toggle Bracket/Lista en TournamentManage
+- [x] Bracket público en TournamentDetail

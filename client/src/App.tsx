@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { useAuth } from "./_core/hooks/useAuth";
+import { trpc } from "./lib/trpc";
 import SidebarLayout from "./components/SidebarLayout";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -26,6 +29,34 @@ import Rewards from "./pages/Rewards";
 import BrandAds from "./pages/BrandAds";
 import AdminPanel from "./pages/AdminPanel";
 import UserProfile from "./pages/UserProfile";
+import Settings from "./pages/Settings";
+import OnboardingModal from "./components/OnboardingModal";
+
+function OnboardingWrapper({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, loading } = useAuth();
+  const { data: me } = trpc.auth.me.useQuery();
+  const utils = trpc.useUtils();
+  const [dismissed, setDismissed] = useState(false);
+
+  const showOnboarding =
+    !loading &&
+    isAuthenticated &&
+    !dismissed &&
+    me &&
+    !(me as { nickname?: string }).nickname;
+
+  const handleComplete = () => {
+    setDismissed(true);
+    utils.auth.me.invalidate();
+  };
+
+  return (
+    <>
+      {children}
+      {showOnboarding && <OnboardingModal onComplete={handleComplete} />}
+    </>
+  );
+}
 
 function Router() {
   return (
@@ -61,6 +92,7 @@ function Router() {
 
         {/* User profiles */}
         <Route path="/profile/:id" component={UserProfile} />
+        <Route path="/settings" component={Settings} />
 
         {/* 404 */}
         <Route path="/404" component={NotFound} />
@@ -85,7 +117,9 @@ function App() {
               },
             }}
           />
-          <Router />
+          <OnboardingWrapper>
+            <Router />
+          </OnboardingWrapper>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

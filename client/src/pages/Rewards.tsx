@@ -119,8 +119,8 @@ export default function Rewards() {
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 right-1/4 w-96 h-96 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #00ff44, transparent)" }} />
         </div>
-        <div className="relative max-w-7xl mx-auto px-6 py-14">
-          <div className="flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-3">
                 <Gift className="w-7 h-7 text-green-500" />
@@ -148,9 +148,9 @@ export default function Rewards() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         {/* How it works */}
-        <div className="grid grid-cols-3 gap-4 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
           {[
             { icon: <Play className="w-6 h-6 text-red-400" />, title: "1. Elige una tarea", desc: "Selecciona un video o anuncio disponible" },
             { icon: <Clock className="w-6 h-6 text-yellow-400" />, title: "2. Completa el tiempo", desc: "Espera el contador para verificar que viste el contenido" },

@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import BracketView from "@/components/BracketView";
 import PremiumLayout from "@/components/PremiumLayout";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ export default function TournamentManage() {
   const params = useParams<{ id: string }>();
   const id = parseInt(params.id ?? "0");
   const [, navigate] = useLocation();
+  const [bracketView, setBracketView] = useState(true);
   const [resultModal, setResultModal] = useState<{
     matchId: number;
     team1Id: number | null;
@@ -321,122 +323,124 @@ export default function TournamentManage() {
               border: "1px solid oklch(0.18 0.01 0)",
             }}
           >
-            <h2 className="font-display text-sm font-bold tracking-wider text-foreground flex items-center gap-2 mb-4">
-              <Swords size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
-              PARTIDAS DEL TORNEO
-            </h2>
-
-            {/* Group by round */}
-            {Array.from(new Set(matches.map((m) => m.round))).map((round) => (
-              <div key={round} className="mb-5">
-                <div
-                  className="text-xs font-display tracking-wider mb-3 flex items-center gap-2"
-                  style={{ color: "oklch(0.55 0.22 25)" }}
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-sm font-bold tracking-wider text-foreground flex items-center gap-2">
+                <Swords size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+                PARTIDAS DEL TORNEO
+              </h2>
+              {/* View toggle */}
+              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: "oklch(0.08 0.005 0)" }}>
+                <button
+                  onClick={() => setBracketView(true)}
+                  className="px-3 py-1 rounded-md text-xs font-mono tracking-wider transition-all duration-200"
+                  style={bracketView ? { background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)" } : { color: "oklch(0.45 0.005 0)" }}
                 >
-                  <div
-                    className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
-                    style={{ background: "oklch(0.55 0.22 25 / 0.2)" }}
-                  >
-                    {round}
-                  </div>
-                  RONDA {round}
-                </div>
-                <div className="space-y-2">
-                  {matches
-                    .filter((m) => m.round === round)
-                    .map((match) => {
-                      const isCompleted = match.status === "completed";
-                      return (
-                        <div
-                          key={match.id}
-                          className="flex items-center justify-between p-4 rounded-xl transition-all duration-200"
-                          style={{
-                            background: "oklch(0.12 0.005 0)",
-                            border: isCompleted
-                              ? "1px solid oklch(0.65 0.18 145 / 0.2)"
-                              : "1px solid oklch(0.20 0.01 0)",
-                          }}
-                        >
-                          <div className="flex items-center gap-4 flex-1">
-                            <span className="text-xs text-muted-foreground font-tech w-16">
-                              #{match.matchNumber}
-                            </span>
-                            <div className="flex items-center gap-3 flex-1">
-                              <span className="text-sm text-foreground font-display tracking-wide">
-                                {match.team1Name ?? `Equipo ${match.team1Id}`}
-                              </span>
-                              {isCompleted && match.team1Score !== null && (
-                                <span
-                                  className="font-display text-lg font-black"
-                                  style={{
-                                    color:
-                                      match.winnerId === match.team1Id
-                                        ? "oklch(0.65 0.18 145)"
-                                        : "oklch(0.45 0.005 0)",
-                                  }}
-                                >
-                                  {match.team1Score}
-                                </span>
-                              )}
-                              <span className="text-muted-foreground text-xs font-display">VS</span>
-                              {isCompleted && match.team2Score !== null && (
-                                <span
-                                  className="font-display text-lg font-black"
-                                  style={{
-                                    color:
-                                      match.winnerId === match.team2Id
-                                        ? "oklch(0.65 0.18 145)"
-                                        : "oklch(0.45 0.005 0)",
-                                  }}
-                                >
-                                  {match.team2Score}
-                                </span>
-                              )}
-                              <span className="text-sm text-foreground font-display tracking-wide">
-                                {match.team2Name ?? `Equipo ${match.team2Id}`}
-                              </span>
-                            </div>
-                          </div>
+                  BRACKET
+                </button>
+                <button
+                  onClick={() => setBracketView(false)}
+                  className="px-3 py-1 rounded-md text-xs font-mono tracking-wider transition-all duration-200"
+                  style={!bracketView ? { background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)" } : { color: "oklch(0.45 0.005 0)" }}
+                >
+                  LISTA
+                </button>
+              </div>
+            </div>
 
-                          <div className="flex items-center gap-3">
-                            <span
-                              className="text-xs font-display tracking-wider"
+            {bracketView ? (
+              <BracketView
+                matches={matches}
+                canEditResults={tournament.status === "in_progress"}
+                onSelectMatch={(match) => {
+                  if (tournament.status !== "in_progress" || match.status === "completed") return;
+                  setResultModal({
+                    matchId: match.id,
+                    team1Id: match.team1Id,
+                    team2Id: match.team2Id,
+                    team1Name: match.team1Name ?? `Equipo ${match.team1Id}`,
+                    team2Name: match.team2Name ?? `Equipo ${match.team2Id}`,
+                  });
+                }}
+              />
+            ) : (
+              /* List view */
+              <div>
+                {Array.from(new Set(matches.map((m) => m.round))).map((round) => (
+                  <div key={round} className="mb-5">
+                    <div
+                      className="text-xs font-display tracking-wider mb-3 flex items-center gap-2"
+                      style={{ color: "oklch(0.55 0.22 25)" }}
+                    >
+                      <div
+                        className="w-5 h-5 rounded flex items-center justify-center text-xs font-bold"
+                        style={{ background: "oklch(0.55 0.22 25 / 0.2)" }}
+                      >
+                        {round}
+                      </div>
+                      RONDA {round}
+                    </div>
+                    <div className="space-y-2">
+                      {matches
+                        .filter((m) => m.round === round)
+                        .map((match) => {
+                          const isCompleted = match.status === "completed";
+                          return (
+                            <div
+                              key={match.id}
+                              className="flex items-center justify-between p-4 rounded-xl transition-all duration-200"
                               style={{
-                                color: isCompleted
-                                  ? "oklch(0.65 0.18 145)"
-                                  : "oklch(0.55 0.005 0)",
+                                background: "oklch(0.12 0.005 0)",
+                                border: isCompleted
+                                  ? "1px solid oklch(0.65 0.18 145 / 0.2)"
+                                  : "1px solid oklch(0.20 0.01 0)",
                               }}
                             >
-                              {isCompleted ? "✓ COMPLETADA" : "PENDIENTE"}
-                            </span>
-                            {tournament.status === "in_progress" && !isCompleted && (
-                              <button
-                                onClick={() =>
-                                  setResultModal({
-                                    matchId: match.id,
-                                    team1Id: match.team1Id,
-                                    team2Id: match.team2Id,
-                                    team1Name: match.team1Name ?? `Equipo ${match.team1Id}`,
-                                    team2Name: match.team2Name ?? `Equipo ${match.team2Id}`,
-                                  })
-                                }
-                                className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
-                                style={{
-                                  background: "oklch(0.55 0.22 25 / 0.15)",
-                                  border: "1px solid oklch(0.55 0.22 25 / 0.3)",
-                                  color: "oklch(0.65 0.22 25)",
-                                }}
-                              >
-                                RESULTADO
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                              <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <span className="text-xs text-muted-foreground font-tech w-16 flex-shrink-0">
+                                  #{match.matchNumber}
+                                </span>
+                                <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
+                                  <span className="text-sm text-foreground font-display tracking-wide truncate">
+                                    {match.team1Name ?? `Equipo ${match.team1Id}`}
+                                  </span>
+                                  {isCompleted && match.team1Score !== null && (
+                                    <span className="font-display text-lg font-black" style={{ color: match.winnerId === match.team1Id ? "oklch(0.65 0.18 145)" : "oklch(0.45 0.005 0)" }}>
+                                      {match.team1Score}
+                                    </span>
+                                  )}
+                                  <span className="text-muted-foreground text-xs font-display">VS</span>
+                                  {isCompleted && match.team2Score !== null && (
+                                    <span className="font-display text-lg font-black" style={{ color: match.winnerId === match.team2Id ? "oklch(0.65 0.18 145)" : "oklch(0.45 0.005 0)" }}>
+                                      {match.team2Score}
+                                    </span>
+                                  )}
+                                  <span className="text-sm text-foreground font-display tracking-wide truncate">
+                                    {match.team2Name ?? `Equipo ${match.team2Id}`}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 flex-shrink-0">
+                                <span className="text-xs font-display tracking-wider" style={{ color: isCompleted ? "oklch(0.65 0.18 145)" : "oklch(0.55 0.005 0)" }}>
+                                  {isCompleted ? "✓" : "•"}
+                                </span>
+                                {tournament.status === "in_progress" && !isCompleted && (
+                                  <button
+                                    onClick={() => setResultModal({ matchId: match.id, team1Id: match.team1Id, team2Id: match.team2Id, team1Name: match.team1Name ?? `Equipo ${match.team1Id}`, team2Name: match.team2Name ?? `Equipo ${match.team2Id}` })}
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
+                                    style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}
+                                  >
+                                    RESULTADO
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         )}
 

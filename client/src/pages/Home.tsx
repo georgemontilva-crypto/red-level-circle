@@ -25,7 +25,7 @@ function HeroSection() {
           <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
           <span className="text-red-400 font-mono text-xs tracking-widest">PLATAFORMA DE ESPORTS</span>
         </div>
-        <h1 className="font-orbitron font-black text-5xl md:text-7xl text-white mb-6 leading-tight">
+        <h1 className="font-orbitron font-black text-4xl sm:text-5xl md:text-7xl text-white mb-6 leading-tight break-words" style={{ wordBreak: "break-word", overflowWrap: "break-word" }}>
           <span className="text-red-500">RED</span>LEVEL<br />
           <span className="text-zinc-400 text-3xl md:text-4xl tracking-widest">CIRCLE</span>
         </h1>

@@ -35,7 +35,7 @@ export default function Streams() {
   return (
     <div className="min-h-screen bg-black text-white">
 
-      <div className="pt-24 pb-16 max-w-7xl mx-auto px-4">
+      <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
             {liveStreams.length > 0 && <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
