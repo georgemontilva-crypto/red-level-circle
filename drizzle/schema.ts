@@ -424,6 +424,9 @@ export const brandAds = mysqlTable("brand_ads", {
   accentColor: varchar("accentColor", { length: 32 }).default("#ff0000"),
   destinationUrl: text("destinationUrl"),
   ctaLabel: varchar("ctaLabel", { length: 64 }).default("Ver más"),
+  // adType: featured = hero carousel, card = small grid card, wide = wide horizontal card
+  adType: mysqlEnum("adType", ["featured", "card", "wide"]).default("card").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
   isActive: boolean("isActive").default(true).notNull(),
   isFeatured: boolean("isFeatured").default(false).notNull(), // hero slot
   isPremium: boolean("isPremium").default(false).notNull(),   // premium placement

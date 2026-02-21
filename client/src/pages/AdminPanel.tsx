@@ -329,12 +329,22 @@ function ShopTab() {
 }
 
 // ─── Ads Tab ──────────────────────────────────────────────────────────────────
+const AD_TYPE_LABELS: Record<string, { label: string; color: string; desc: string }> = {
+  featured: { label: "DESTACADO", color: "bg-red-500/20 text-red-400 border-red-600/40", desc: "Carousel hero auto-slide (imagen grande)" },
+  card: { label: "CARD", color: "bg-zinc-500/20 text-zinc-300 border-zinc-600/40", desc: "Grid de cards pequeñas (imagen vertical)" },
+  wide: { label: "ANCHO", color: "bg-blue-500/20 text-blue-400 border-blue-600/40", desc: "Banner horizontal ancho" },
+};
+
 function AdsTab() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ brand: "", title: "", description: "", imageUrl: "", linkUrl: "", isPremium: false, isFeatured: false });
+  const [form, setForm] = useState({
+    brand: "", title: "", tagline: "", description: "", imageUrl: "",
+    linkUrl: "", ctaLabel: "Ver más", adType: "card" as "featured" | "card" | "wide",
+    sortOrder: 0, isPremium: false, isFeatured: false,
+  });
   const { data: ads, refetch } = trpc.admin.listAds.useQuery();
   const createAd = trpc.admin.createAd.useMutation({
-    onSuccess: () => { toast.success("Publicidad creada"); setShowForm(false); refetch(); },
+    onSuccess: () => { toast.success("Publicidad creada"); setShowForm(false); setForm({ brand: "", title: "", tagline: "", description: "", imageUrl: "", linkUrl: "", ctaLabel: "Ver más", adType: "card", sortOrder: 0, isPremium: false, isFeatured: false }); refetch(); },
     onError: e => toast.error(e.message),
   });
   const updateAd = trpc.admin.updateAd.useMutation({
@@ -346,58 +356,92 @@ function AdsTab() {
     onError: e => toast.error(e.message),
   });
 
+  const adsByType = {
+    featured: ads?.filter(a => a.adType === "featured") ?? [],
+    card: ads?.filter(a => a.adType === "card") ?? [],
+    wide: ads?.filter(a => a.adType === "wide") ?? [],
+  };
+
   return (
     <div className="space-y-6">
       <SectionHeader icon={Megaphone} title="PUBLICIDAD DE MARCAS" subtitle="Gestiona los anuncios de la plataforma" />
+
+      {/* Type guide */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        {Object.entries(AD_TYPE_LABELS).map(([type, info]) => (
+          <div key={type} className={`rounded-lg border p-3 ${info.color.includes("red") ? "border-red-900/40 bg-red-900/10" : info.color.includes("blue") ? "border-blue-900/40 bg-blue-900/10" : "border-zinc-700/40 bg-zinc-900/40"}`}>
+            <Badge className={`text-xs mb-1 ${info.color}`}>{info.label}</Badge>
+            <p className="text-xs text-gray-400">{info.desc}</p>
+            <p className="text-xs text-gray-600 mt-1">{adsByType[type as keyof typeof adsByType].length} anuncio(s)</p>
+          </div>
+        ))}
+      </div>
+
       <Button onClick={() => setShowForm(!showForm)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
         <Plus className="w-3.5 h-3.5 mr-1.5" />
         NUEVO ANUNCIO
       </Button>
+
       {showForm && (
         <div className="bg-gray-900/60 border border-red-900/40 rounded-xl p-5 space-y-4">
+          {/* Type selector */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-2 font-rajdhani uppercase">Tipo de anuncio</label>
+            <div className="flex gap-2 flex-wrap">
+              {(["featured", "card", "wide"] as const).map(type => (
+                <button
+                  key={type}
+                  onClick={() => setForm(f => ({ ...f, adType: type }))}
+                  className={`px-4 py-2 rounded-lg text-xs font-mono font-bold border transition-all ${
+                    form.adType === type
+                      ? type === "featured" ? "bg-red-600 border-red-500 text-white" : type === "wide" ? "bg-blue-600 border-blue-500 text-white" : "bg-zinc-600 border-zinc-500 text-white"
+                      : "bg-black border-gray-700 text-gray-400 hover:border-gray-500"
+                  }`}
+                >
+                  {AD_TYPE_LABELS[type].label}
+                  <span className="ml-1 font-normal opacity-60">— {AD_TYPE_LABELS[type].desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
               { key: "brand", label: "Marca", placeholder: "Nombre de la marca" },
               { key: "title", label: "Título", placeholder: "Título del anuncio" },
+              { key: "tagline", label: "Tagline / Subtítulo", placeholder: "Frase corta descriptiva" },
               { key: "linkUrl", label: "URL de destino", placeholder: "https://..." },
+              { key: "ctaLabel", label: "Texto del botón (CTA)", placeholder: "Ver más" },
+              { key: "sortOrder", label: "Orden (número)", placeholder: "0 = primero" },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
                 <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">{label}</label>
                 <input
                   value={form[key as keyof typeof form] as string}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, [key]: key === "sortOrder" ? parseInt(e.target.value) || 0 : e.target.value }))}
                   placeholder={placeholder}
+                  type={key === "sortOrder" ? "number" : "text"}
                   className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                 />
               </div>
             ))}
             <div className="md:col-span-2">
               <ImageUploader
-                label="Imagen del anuncio (16:9)"
+                label={form.adType === "featured" ? "Imagen destacada (16:9 o más ancha)" : form.adType === "card" ? "Imagen card (3:4 vertical recomendado)" : "Imagen ancha (16:9 o panorámica)"}
                 value={form.imageUrl}
                 onChange={url => setForm(f => ({ ...f, imageUrl: url }))}
                 folder="ads"
-                aspectRatio="16/9"
+                aspectRatio={form.adType === "card" ? "3/4" : "16/9"}
               />
             </div>
             <div className="md:col-span-2">
-              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción</label>
+              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción (opcional)</label>
               <textarea
                 value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 rows={2}
                 className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none"
               />
-            </div>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.isPremium} onChange={e => setForm(f => ({ ...f, isPremium: e.target.checked }))} className="accent-red-500" />
-                <span className="text-xs text-gray-400 font-rajdhani">PREMIUM</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} className="accent-red-500" />
-                <span className="text-xs text-gray-400 font-rajdhani">DESTACADO</span>
-              </label>
             </div>
           </div>
           <div className="flex gap-3">
@@ -415,52 +459,68 @@ function AdsTab() {
         </div>
       )}
 
-      {/* Ads list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {ads?.map(ad => (
-          <div key={ad.id} className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden">
-            {ad.bannerImage && (
-              <div className="h-32 overflow-hidden">
-                <img src={ad.bannerImage} alt={ad.title} className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="p-4">
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-xs text-gray-500 font-rajdhani">{ad.brandName}</p>
-                  <p className="text-white font-rajdhani font-semibold">{ad.title}</p>
+      {/* Ads list grouped by type */}
+      {(["featured", "card", "wide"] as const).map(type => (
+        adsByType[type].length > 0 && (
+          <div key={type}>
+            <div className="flex items-center gap-2 mb-3">
+              <Badge className={`text-xs ${AD_TYPE_LABELS[type].color}`}>{AD_TYPE_LABELS[type].label}</Badge>
+              <span className="text-xs text-gray-500">{adsByType[type].length} anuncio(s)</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adsByType[type].map(ad => (
+                <div key={ad.id} className="bg-gray-900/60 border border-gray-800 rounded-xl overflow-hidden">
+                  {ad.bannerImage && (
+                    <div className={`overflow-hidden ${type === "card" ? "h-40" : "h-32"}`}>
+                      <img src={ad.bannerImage} alt={ad.title} className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs text-gray-500 font-rajdhani">{ad.brandName}</p>
+                        <p className="text-white font-rajdhani font-semibold">{ad.title}</p>
+                        {ad.tagline && <p className="text-gray-500 text-xs mt-0.5">{ad.tagline}</p>}
+                      </div>
+                      <div className="flex gap-1 flex-wrap justify-end">
+                        <Badge className={`text-xs ${AD_TYPE_LABELS[type].color}`}>{AD_TYPE_LABELS[type].label}</Badge>
+                        {ad.isFeatured && <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-600/40">HERO</Badge>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className={`text-xs ${ad.isActive ? "text-green-400" : "text-gray-500"}`}>
+                        {ad.isActive ? "● Activo" : "○ Inactivo"}
+                      </span>
+                      <span className="text-gray-600 text-xs">Orden: {ad.sortOrder ?? 0}</span>
+                      <span className="text-gray-600 text-xs">{ad.clickCount ?? 0} clicks</span>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                      <Button
+                        size="sm"
+                        onClick={() => updateAd.mutate({ id: ad.id, isActive: !ad.isActive })}
+                        className="h-6 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 font-orbitron"
+                      >
+                        {ad.isActive ? "PAUSAR" : "ACTIVAR"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => deleteAd.mutate({ id: ad.id })}
+                        className="h-6 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 font-orbitron"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex gap-1">
-                  {ad.isFeatured && <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-600/40">DEST.</Badge>}
-                  {ad.isPremium && <Badge className="text-xs bg-red-500/20 text-red-400 border-red-600/40">PREM.</Badge>}
-                </div>
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <span className={`text-xs ${ad.isActive ? "text-green-400" : "text-gray-500"}`}>
-                  {ad.isActive ? "● Activo" : "○ Inactivo"}
-                </span>
-                <span className="text-gray-600 text-xs">{ad.clickCount ?? 0} clicks · {ad.impressionCount ?? 0} impresiones</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <Button
-                  size="sm"
-                  onClick={() => updateAd.mutate({ id: ad.id, isActive: !ad.isActive })}
-                  className="h-6 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 font-orbitron"
-                >
-                  {ad.isActive ? "PAUSAR" : "ACTIVAR"}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => deleteAd.mutate({ id: ad.id })}
-                  className="h-6 text-xs bg-red-900/30 hover:bg-red-900/50 text-red-400 font-orbitron"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
+              ))}
             </div>
           </div>
-        ))}
-      </div>
+        )
+      ))}
+
+      {(!ads || ads.length === 0) && (
+        <div className="text-center py-10 text-gray-600 text-sm font-mono">No hay anuncios creados aún</div>
+      )}
     </div>
   );
 }

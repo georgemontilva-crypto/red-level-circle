@@ -957,20 +957,57 @@ export const appRouter = router({
       .input(z.object({
         brand: z.string(),
         title: z.string(),
+        tagline: z.string().optional(),
         description: z.string().optional(),
         imageUrl: z.string(),
         linkUrl: z.string().optional(),
+        ctaLabel: z.string().optional(),
+        adType: z.enum(["featured", "card", "wide"]).default("card"),
+        sortOrder: z.number().int().default(0),
         isPremium: z.boolean().default(false),
         isFeatured: z.boolean().default(false),
+        accentColor: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        await createBrandAd({ brandName: input.brand, title: input.title, description: input.description, bannerImage: input.imageUrl, destinationUrl: input.linkUrl, isPremium: input.isPremium, isFeatured: input.isFeatured });
+        await createBrandAd({
+          brandName: input.brand,
+          title: input.title,
+          tagline: input.tagline,
+          description: input.description,
+          bannerImage: input.imageUrl,
+          destinationUrl: input.linkUrl,
+          ctaLabel: input.ctaLabel,
+          adType: input.adType,
+          sortOrder: input.sortOrder,
+          isPremium: input.isPremium,
+          isFeatured: input.isFeatured,
+          accentColor: input.accentColor,
+        });
         return { success: true };
       }),
     updateAd: adminProcedure
-      .input(z.object({ id: z.number(), isActive: z.boolean().optional() }))
+      .input(z.object({
+        id: z.number(),
+        isActive: z.boolean().optional(),
+        adType: z.enum(["featured", "card", "wide"]).optional(),
+        sortOrder: z.number().int().optional(),
+        title: z.string().optional(),
+        tagline: z.string().optional(),
+        description: z.string().optional(),
+        imageUrl: z.string().optional(),
+        linkUrl: z.string().optional(),
+        ctaLabel: z.string().optional(),
+        isFeatured: z.boolean().optional(),
+        isPremium: z.boolean().optional(),
+        accentColor: z.string().optional(),
+      }))
       .mutation(async ({ input }) => {
-        await adminUpdateBrandAd(input.id, { isActive: input.isActive });
+        const { id, imageUrl, linkUrl, ...rest } = input;
+        await adminUpdateBrandAd(id, {
+          ...rest,
+          ...(imageUrl !== undefined ? { bannerImage: imageUrl } : {}),
+          ...(linkUrl !== undefined ? { destinationUrl: linkUrl } : {}),
+        });
         return { success: true };
       }),
     deleteAd: adminProcedure

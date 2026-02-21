@@ -1231,7 +1231,7 @@ export async function getBrandAds(onlyActive = true) {
   const conditions = onlyActive ? [eq(brandAds.isActive, true)] : [];
   return db.select().from(brandAds)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
-    .orderBy(desc(brandAds.isFeatured), desc(brandAds.isPremium), desc(brandAds.createdAt));
+    .orderBy(brandAds.sortOrder, desc(brandAds.isFeatured), desc(brandAds.isPremium), desc(brandAds.createdAt));
 }
 
 export async function trackAdClick(adId: number) {
