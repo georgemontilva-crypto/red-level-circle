@@ -194,26 +194,7 @@ export default function TournamentDetail() {
             )}
           </div>
 
-          {/* CTA button */}
-          {tournament.status === "registration_open" && (
-            isAuthenticated ? (
-              <button
-                onClick={() => setShowRegisterModal(true)}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-sm tracking-widest font-bold transition-all duration-300 hover:scale-105"
-                style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
-              >
-                <Trophy size={16} /> PARTICIPAR EN EL TORNEO
-              </button>
-            ) : (
-              <button
-                onClick={() => (window.location.href = getLoginUrl())}
-                className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-sm tracking-widest font-bold transition-all duration-300 hover:scale-105"
-                style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
-              >
-                <Trophy size={16} /> INICIAR SESIÓN PARA PARTICIPAR
-              </button>
-            )
-          )}
+
         </div>
       </div>
 
