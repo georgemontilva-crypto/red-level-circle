@@ -436,3 +436,4 @@
 - [x] Texto de cada sección superpuesto sobre la imagen del SectionBanner (título + descripción encima del banner)
 - [x] Sistema de publicidad rediseñado: carousel auto-slide (featured), grid cards pequeñas, cards anchas
 - [x] Panel admin para gestionar anuncios por tipo (featured/card/wide) con subida de imagen
+- [x] Agregar Equipos al menú lateral y crear página pública de listado de equipos

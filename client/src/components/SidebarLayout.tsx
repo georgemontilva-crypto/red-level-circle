@@ -45,6 +45,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       title: "COMUNIDAD",
       items: [
         { label: "Comunidad", href: "/community", icon: Users },
+        { label: "Equipos", href: "/teams", icon: Swords },
         { label: "Creadores", href: "/creators", icon: Crown },
         { label: "Noticias", href: "/news", icon: Newspaper },
         { label: "Apuestas", href: "/betting", icon: Coins, requiresAuth: true },
