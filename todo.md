@@ -351,3 +351,6 @@
 
 ## Quick Fix V27
 - [x] Ajustar ancho del perfil a max-w-5xl centrado (banner pegado arriba, contenido centrado)
+
+## Quick Fix V28
+- [x] Reducir tamaño de las tarjetas de cosméticos en la galería del perfil (grilla 3-5 columnas, tarjetas más pequeñas con proporciones correctas)
