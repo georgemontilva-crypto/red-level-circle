@@ -425,3 +425,9 @@
 - [x] Sincronizar video YouTube y contador: playVideo/pauseVideo via postMessage al hacer clic en overlay
 - [x] Auto-play al abrir modal: ytPlaying=true desde inicio, video arranca automáticamente
 - [x] Mejorar responsividad del modal de video en móvil
+- [x] Agregar tabla section_banners al schema para banners por sección
+- [x] Reemplazar campo URL imagen de portada en NewsTab por ImageUploader
+- [x] Reemplazar campos URL imagen en AdsTab por ImageUploader
+- [x] Crear tab "Banners" en AdminPanel para gestionar banners de secciones
+- [ ] Crear tab "Publicidades" mejorada con orden de prioridad drag & drop
+- [ ] Mostrar banners de sección en las páginas correspondientes

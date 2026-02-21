@@ -9,7 +9,7 @@ import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
-  BadgeCheck, Upload, ImageIcon, X
+  BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Link } from "wouter";
@@ -359,7 +359,6 @@ function AdsTab() {
             {[
               { key: "brand", label: "Marca", placeholder: "Nombre de la marca" },
               { key: "title", label: "Título", placeholder: "Título del anuncio" },
-              { key: "imageUrl", label: "URL de imagen", placeholder: "https://..." },
               { key: "linkUrl", label: "URL de destino", placeholder: "https://..." },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
@@ -372,6 +371,15 @@ function AdsTab() {
                 />
               </div>
             ))}
+            <div className="md:col-span-2">
+              <ImageUploader
+                label="Imagen del anuncio (16:9)"
+                value={form.imageUrl}
+                onChange={url => setForm(f => ({ ...f, imageUrl: url }))}
+                folder="ads"
+                aspectRatio="16/9"
+              />
+            </div>
             <div className="md:col-span-2">
               <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción</label>
               <textarea
@@ -738,9 +746,13 @@ function NewsTab() {
               </Select>
             </div>
             <div>
-              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Imagen de portada (URL)</label>
-              <input value={form.coverImage} onChange={e => setForm(f => ({ ...f, coverImage: e.target.value }))} placeholder="https://..."
-                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              <ImageUploader
+                label="Imagen de portada"
+                value={form.coverImage}
+                onChange={url => setForm(f => ({ ...f, coverImage: url }))}
+                folder="news"
+                aspectRatio="16/9"
+              />
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Resumen</label>
@@ -1177,6 +1189,7 @@ export default function AdminPanel() {
             { value: "games", label: "JUEGOS", icon: Gamepad2 },
             { value: "cosmetics", label: "COSMÉTICOS", icon: Star },
             { value: "verifications", label: "VERIFICACIONES", icon: BadgeCheck },
+            { value: "banners", label: "BANNERS", icon: Layout },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -1198,6 +1211,7 @@ export default function AdminPanel() {
           <TabsContent value="games"><GamesTab /></TabsContent>
           <TabsContent value="cosmetics"><CosmeticsAdminTab /></TabsContent>
           <TabsContent value="verifications"><VerificationsTab /></TabsContent>
+          <TabsContent value="banners"><BannersTab /></TabsContent>
         </div>
       </Tabs>
     </div>
@@ -1667,6 +1681,157 @@ function VerificationsTab() {
             )}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Banners Tab ──────────────────────────────────────────────────────────────
+const SECTION_DEFS = [
+  { key: "home", label: "Inicio", description: "Banner principal del home" },
+  { key: "news", label: "Noticias", description: "Header de la sección de noticias" },
+  { key: "tournaments", label: "Torneos", description: "Header de la sección de torneos" },
+  { key: "rewards", label: "Rewards", description: "Header de la sección de rewards" },
+  { key: "creators", label: "Creadores", description: "Header de la sección de creadores" },
+  { key: "games", label: "Juegos", description: "Header de la sección de juegos" },
+  { key: "cosmetics", label: "Cosméticos", description: "Header de la sección de cosméticos" },
+  { key: "shop", label: "Tienda", description: "Header de la tienda" },
+];
+
+function BannersTab() {
+  const { data: allBanners, refetch } = trpc.banners.listAll.useQuery();
+  const uploadBannerImage = trpc.banners.uploadImage.useMutation({
+    onError: e => toast.error(e.message),
+  });
+  const upsertBanner = trpc.banners.upsert.useMutation({
+    onSuccess: () => { toast.success("Banner guardado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+
+  const getBanner = (key: string) => allBanners?.find(b => b.sectionKey === key);
+
+  const handleUpload = async (sectionKey: string, file: File, isMobile = false) => {
+    if (!file.type.startsWith("image/")) { toast.error("Solo imágenes"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Máx 5MB"); return; }
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      const result = await uploadBannerImage.mutateAsync({ base64, mimeType: file.type as any, sectionKey, isMobile });
+      const existing = getBanner(sectionKey);
+      await upsertBanner.mutateAsync({
+        sectionKey,
+        imageUrl: isMobile ? (existing?.imageUrl ?? null) : result.url,
+        mobileImageUrl: isMobile ? result.url : (existing?.mobileImageUrl ?? null),
+        title: existing?.title ?? null,
+        subtitle: existing?.subtitle ?? null,
+        linkUrl: existing?.linkUrl ?? null,
+        isActive: existing?.isActive ?? true,
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemove = (sectionKey: string, isMobile = false) => {
+    const existing = getBanner(sectionKey);
+    upsertBanner.mutate({
+      sectionKey,
+      imageUrl: isMobile ? (existing?.imageUrl ?? null) : null,
+      mobileImageUrl: isMobile ? null : (existing?.mobileImageUrl ?? null),
+      title: existing?.title ?? null,
+      subtitle: existing?.subtitle ?? null,
+      linkUrl: existing?.linkUrl ?? null,
+      isActive: existing?.isActive ?? true,
+    });
+  };
+
+  const handleToggle = (sectionKey: string) => {
+    const existing = getBanner(sectionKey);
+    upsertBanner.mutate({
+      sectionKey,
+      imageUrl: existing?.imageUrl ?? null,
+      mobileImageUrl: existing?.mobileImageUrl ?? null,
+      title: existing?.title ?? null,
+      subtitle: existing?.subtitle ?? null,
+      linkUrl: existing?.linkUrl ?? null,
+      isActive: !(existing?.isActive ?? true),
+    });
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon={Layout} title="BANNERS DE SECCIONES" subtitle="Personaliza las imágenes de cabecera de cada sección" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {SECTION_DEFS.map(({ key, label, description }) => {
+          const banner = getBanner(key);
+          const isActive = banner?.isActive ?? true;
+          return (
+            <div key={key} className={`bg-gray-900/60 border rounded-xl overflow-hidden transition-colors ${isActive ? "border-red-900/40" : "border-gray-800 opacity-60"}`}>
+              {/* Desktop banner preview */}
+              <div className="relative w-full" style={{ aspectRatio: "16/5", background: "#0a0a0a" }}>
+                {banner?.imageUrl ? (
+                  <>
+                    <img src={banner.imageUrl} alt={label} className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => handleRemove(key)}
+                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-red-700 transition-colors"
+                    >
+                      <X size={12} />
+                    </button>
+                  </>
+                ) : (
+                  <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-white/5 transition-colors">
+                    <Upload size={24} className="text-red-900/50" />
+                    <span className="text-xs text-gray-600 font-rajdhani">Subir banner desktop (16:5)</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(key, e.target.files[0])} />
+                  </label>
+                )}
+                {banner?.imageUrl && (
+                  <label className="absolute bottom-2 left-2 cursor-pointer">
+                    <div className="bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white/70 flex items-center gap-1">
+                      <Upload size={10} /> Cambiar
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(key, e.target.files[0])} />
+                  </label>
+                )}
+              </div>
+              {/* Info + controls */}
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-orbitron text-white text-sm tracking-wider">{label.toUpperCase()}</p>
+                    <p className="text-gray-500 text-xs font-rajdhani">{description}</p>
+                  </div>
+                  <button
+                    onClick={() => handleToggle(key)}
+                    className={`text-xs font-orbitron px-2 py-1 rounded border transition-colors ${isActive ? "border-green-700/50 text-green-400 bg-green-900/20 hover:bg-green-900/40" : "border-gray-700 text-gray-500 bg-gray-900/40 hover:bg-gray-800"}`}
+                  >
+                    {isActive ? "● ACTIVO" : "○ INACTIVO"}
+                  </button>
+                </div>
+                {/* Mobile banner */}
+                <div>
+                  <p className="text-xs text-gray-500 font-rajdhani mb-1">BANNER MÓVIL (opcional)</p>
+                  <div className="flex items-center gap-3">
+                    {banner?.mobileImageUrl ? (
+                      <div className="relative w-20 h-12 rounded overflow-hidden flex-shrink-0">
+                        <img src={banner.mobileImageUrl} alt="" className="w-full h-full object-cover" />
+                        <button onClick={() => handleRemove(key, true)} className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/70 flex items-center justify-center">
+                          <X size={8} className="text-white" />
+                        </button>
+                      </div>
+                    ) : null}
+                    <label className="cursor-pointer flex-1">
+                      <div className="bg-gray-800 hover:bg-gray-700 border border-dashed border-gray-700 hover:border-red-500 rounded px-3 py-2 text-gray-500 text-xs font-rajdhani flex items-center justify-center gap-1.5 transition-colors">
+                        <Upload size={12} /> {banner?.mobileImageUrl ? "Cambiar móvil" : "Subir versión móvil"}
+                      </div>
+                      <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(key, e.target.files[0], true)} />
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

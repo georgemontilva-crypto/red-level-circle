@@ -134,6 +134,9 @@ import {
   reviewVerificationRequest,
 } from "./db";
 import { storagePut } from "./storage";
+import { getDb } from "./db";
+import { eq } from "drizzle-orm";
+import { sectionBanners } from "../drizzle/schema";
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
 const premiumProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -1397,6 +1400,63 @@ export const appRouter = router({
     featuredTournaments: publicProcedure.query(() => getFeaturedTournaments(6)),
     recentUsers: publicProcedure.query(() => getRecentUsers(12)),
     suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 12)),
+  }),
+  // ─── Section Banners ─────────────────────────────────────────────────────────
+  banners: router({
+    // Public: get banner for a specific section
+    getSection: publicProcedure
+      .input(z.object({ sectionKey: z.string() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return null;
+        const rows = await db.select().from(sectionBanners).where(eq(sectionBanners.sectionKey, input.sectionKey)).limit(1);
+        return rows[0] ?? null;
+      }),
+    // Public: get all active banners
+    listAll: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      return db.select().from(sectionBanners);
+    }),
+    // Admin: upsert banner for a section
+    upsert: adminProcedure
+      .input(z.object({
+        sectionKey: z.string().max(64),
+        imageUrl: z.string().url().optional().nullable(),
+        mobileImageUrl: z.string().url().optional().nullable(),
+        title: z.string().max(256).optional().nullable(),
+        subtitle: z.string().max(512).optional().nullable(),
+        linkUrl: z.string().url().optional().nullable(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const existing = await db.select().from(sectionBanners).where(eq(sectionBanners.sectionKey, input.sectionKey)).limit(1);
+        const { sectionKey, ...rest } = input;
+        if (existing.length > 0) {
+          await db.update(sectionBanners).set(rest).where(eq(sectionBanners.sectionKey, sectionKey));
+        } else {
+          await db.insert(sectionBanners).values({ sectionKey, ...rest, isActive: rest.isActive ?? true });
+        }
+        const rows = await db.select().from(sectionBanners).where(eq(sectionBanners.sectionKey, sectionKey)).limit(1);
+        return rows[0];
+      }),
+    // Admin: upload image for a section banner
+    uploadImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        sectionKey: z.string(),
+        isMobile: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const ext = input.mimeType.split("/")[1];
+        const key = `banners/${input.sectionKey}/${input.isMobile ? "mobile" : "desktop"}-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

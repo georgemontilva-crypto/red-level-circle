@@ -483,3 +483,19 @@ export const verificationRequests = mysqlTable("verification_requests", {
 });
 export type VerificationRequest = typeof verificationRequests.$inferSelect;
 export type InsertVerificationRequest = typeof verificationRequests.$inferInsert;
+
+// ─── Section Banners ─────────────────────────────────────────────────────────
+// Stores customizable banner/header images for each section of the site
+export const sectionBanners = mysqlTable("section_banners", {
+  id: int("id").autoincrement().primaryKey(),
+  sectionKey: varchar("sectionKey", { length: 64 }).notNull().unique(), // e.g. "home", "news", "tournaments", "rewards", "creators", "games", "cosmetics"
+  imageUrl: text("imageUrl"), // banner image URL (S3)
+  mobileImageUrl: text("mobileImageUrl"), // optional mobile-specific banner
+  title: varchar("title", { length: 256 }), // optional overlay title
+  subtitle: varchar("subtitle", { length: 512 }), // optional overlay subtitle
+  linkUrl: text("linkUrl"), // optional click-through URL
+  isActive: boolean("isActive").default(true).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SectionBanner = typeof sectionBanners.$inferSelect;
+export type InsertSectionBanner = typeof sectionBanners.$inferInsert;
