@@ -178,6 +178,7 @@ function VideoPlayerModal({
   const [muted, setMuted] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  // ytPlaying: starts false, user must click play overlay to start
   const [ytPlaying, setYtPlaying] = useState(false);
   const required = task.durationSeconds ?? 30;
   const isYoutube = task.contentUrl?.includes("youtube") || task.contentUrl?.includes("youtu.be");
@@ -228,44 +229,27 @@ function VideoPlayerModal({
     };
   }, [elapsed, required, videoCompleted, isDirectVideo]);
 
-  // YouTube IFrame API: manage interval directly on play/pause events
+  // YouTube: tick counter when ytPlaying is true
   useEffect(() => {
     if (!isYoutube) return;
-
-    const startTicking = () => {
-      if (ytIntervalRef.current) return; // already running
-      ytIntervalRef.current = setInterval(() => {
-        setElapsed((prev) => {
-          const next = prev + 1;
-          if (next >= required) {
-            setVideoCompleted(true);
-            if (ytIntervalRef.current) { clearInterval(ytIntervalRef.current); ytIntervalRef.current = null; }
-          }
-          return next;
-        });
-      }, 1000);
-    };
-
-    const stopTicking = () => {
+    if (!ytPlaying || videoCompleted) {
+      if (ytIntervalRef.current) { clearInterval(ytIntervalRef.current); ytIntervalRef.current = null; }
+      return;
+    }
+    ytIntervalRef.current = setInterval(() => {
+      setElapsed((prev) => {
+        const next = prev + 1;
+        if (next >= required) {
+          setVideoCompleted(true);
+          if (ytIntervalRef.current) { clearInterval(ytIntervalRef.current); ytIntervalRef.current = null; }
+        }
+        return next;
+      });
+    }, 1000);
+    return () => {
       if (ytIntervalRef.current) { clearInterval(ytIntervalRef.current); ytIntervalRef.current = null; }
     };
-
-    const onMessage = (e: MessageEvent) => {
-      try {
-        const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-        if (data?.event === "onStateChange") {
-          if (data.info === 1) { setYtPlaying(true); startTicking(); }
-          else { setYtPlaying(false); stopTicking(); }
-        }
-      } catch {}
-    };
-
-    window.addEventListener("message", onMessage);
-    return () => {
-      window.removeEventListener("message", onMessage);
-      stopTicking();
-    };
-  }, [isYoutube, required]);
+  }, [isYoutube, ytPlaying, videoCompleted, required]);
 
   const progress = Math.min((elapsed / required) * 100, 100);
   const remaining = Math.max(required - elapsed, 0);
@@ -329,18 +313,29 @@ function VideoPlayerModal({
             </div>
           )}
 
-          {/* YouTube pause overlay */}
-          {isYoutube && !ytPlaying && !videoCompleted && elapsed > 0 && (
+          {/* YouTube play/pause overlay — clickeable para pausar/reanudar el contador */}
+          {isYoutube && !videoCompleted && (
             <div
-              className="absolute inset-0 flex items-center justify-center pointer-events-none"
-              style={{ background: "rgba(0,0,0,0.55)", animation: "fadeIn 0.2s ease" }}
+              className="absolute inset-0 flex items-center justify-center"
+              style={{ cursor: "pointer", background: ytPlaying ? "transparent" : "rgba(0,0,0,0.50)" }}
+              onClick={() => setYtPlaying((p) => !p)}
             >
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full bg-black/60 flex items-center justify-center border border-white/20">
-                  <svg width="20" height="24" viewBox="0 0 20 24" fill="white"><rect x="0" y="0" width="7" height="24" rx="2"/><rect x="13" y="0" width="7" height="24" rx="2"/></svg>
+              {!ytPlaying && (
+                <div className="flex flex-col items-center gap-2" style={{ animation: "fadeIn 0.2s ease" }}>
+                  <div
+                    className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-white/30"
+                    style={{ background: "rgba(0,0,0,0.65)" }}
+                  >
+                    {elapsed === 0
+                      ? <Play size={28} className="text-white ml-1" />
+                      : <svg width="20" height="24" viewBox="0 0 20 24" fill="white"><rect x="0" y="0" width="7" height="24" rx="2"/><rect x="13" y="0" width="7" height="24" rx="2"/></svg>
+                    }
+                  </div>
+                  <p className="text-white/80 text-xs font-semibold">
+                    {elapsed === 0 ? "Haz clic para iniciar" : "Contador pausado — clic para continuar"}
+                  </p>
                 </div>
-                <p className="text-white/70 text-xs font-medium">Contador pausado</p>
-              </div>
+              )}
             </div>
           )}
 
@@ -700,15 +695,7 @@ export default function Rewards() {
                 Completa misiones, ve videos y anuncios para acumular RLC Coins. Úsalos en la tienda o en apuestas de torneos.
               </p>
             </div>
-            {isAuthenticated && (
-              <div className="flex items-center gap-3 px-5 py-3 rounded-2xl border border-yellow-500/20 bg-yellow-500/5">
-                <Coins size={24} className="text-yellow-400" />
-                <div>
-                  <p className="text-yellow-400 font-black font-mono text-3xl leading-none">{userBalance}</p>
-                  <p className="text-zinc-500 text-xs font-mono mt-0.5">RLC COINS</p>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>

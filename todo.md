@@ -420,3 +420,5 @@
 - [x] Ocultar panel "Más videos" que aparece al pausar (rel=0 + enablejsapi)
 - [x] Corregir barra de progreso que no avanza al reproducir video YouTube
 - [x] Botón en modal: 'Ver video (Xm Xs restantes)' mientras corre, 'Reclamar recompensa' cuando termina
+- [x] Corregir barra roja y botón que no cambia de estado en modal YouTube
+- [x] Eliminar badge de monedas de la esquina superior derecha en Rewards
