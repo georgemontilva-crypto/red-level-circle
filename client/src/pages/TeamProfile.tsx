@@ -349,7 +349,7 @@ export default function TeamProfile() {
                 <div className="mb-4">
                   <p className="text-xs font-mono text-yellow-400 mb-2 tracking-wider">EN CURSO</p>
                   {activeTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournament/${reg.tournamentId}`}>
+                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-950/20 border border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer mb-2">
                         <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -370,7 +370,7 @@ export default function TeamProfile() {
                 <div className="mb-4">
                   <p className="text-xs font-mono text-yellow-400 mb-2 tracking-wider">VICTORIAS</p>
                   {wonTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournament/${reg.tournamentId}`}>
+                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-950/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer mb-2">
                         <Trophy size={16} className="text-yellow-400 shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -389,7 +389,7 @@ export default function TeamProfile() {
                 <div>
                   <p className="text-xs font-mono text-zinc-500 mb-2 tracking-wider">PARTICIPACIONES</p>
                   {lostTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournament/${reg.tournamentId}`}>
+                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
                       <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700 transition-colors cursor-pointer mb-2">
                         <Swords size={16} className="text-zinc-600 shrink-0" />
                         <div className="flex-1 min-w-0">

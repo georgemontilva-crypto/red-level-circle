@@ -288,3 +288,8 @@
 - [x] Agrandar tarjetas de torneos activos en el Home (w-72, h-44, con hover animado y badges de juego)
 - [x] Rediseñar TournamentDetail: banner hero 420px a pantalla completa con título, organizador, info y botón CTA superpuestos
 - [x] El banner del inicio lo sube el admin desde su panel (no auto-generado)
+
+## Correcciones Home V15
+- [x] Quitar banner hero automático del inicio (ahora solo muestra anuncios configurados por el admin)
+- [x] Arreglar tarjeta de torneo: punto verde + etiqueta de estado debajo del título, antes del precio; badge de juego en esquina superior derecha
+- [x] Corregir 404 al hacer click en tarjeta de torneo: ruta era /tournament/:id, corregida a /tournaments/:id en Home, TeamProfile y HeroSection

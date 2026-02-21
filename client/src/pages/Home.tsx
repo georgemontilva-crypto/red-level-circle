@@ -31,7 +31,7 @@ function HeroSection() {
   const { data: featuredTournaments } = trpc.home.featuredTournaments.useQuery();
   const [activeIdx, setActiveIdx] = useState(0);
 
-  // Combine featured ads + featured tournaments for the hero
+  // Hero: solo anuncios destacados configurados por el admin
   const heroItems = [
     ...(ads?.filter((a: any) => a.isFeatured).slice(0, 3).map((a: any) => ({
       type: "ad" as const,
@@ -43,17 +43,6 @@ function HeroSection() {
       accentColor: a.accentColor ?? "#ff0000",
       ctaLabel: a.ctaLabel ?? "Ver más",
       ctaUrl: a.destinationUrl ?? "#",
-    })) ?? []),
-    ...(featuredTournaments?.slice(0, 3).map(t => ({
-      type: "tournament" as const,
-      id: t.id,
-      title: t.name,
-      subtitle: t.game ?? "Torneo",
-      description: `Premio: ${t.prizeAmount ? `${t.prizeAmount} RLC` : "Por definir"} · Inicio: ${formatDate(t.startDate)}`,
-      image: t.banner ?? "",
-      accentColor: "#dc2626",
-      ctaLabel: "Ver torneo",
-      ctaUrl: `/tournament/${t.id}`,
     })) ?? []),
   ];
 
@@ -90,21 +79,12 @@ function HeroSection() {
               <p className="text-zinc-300 text-sm mb-5 line-clamp-2">{active.description}</p>
             )}
             <div className="flex items-center gap-3">
-              {active.type === "tournament" ? (
-                <Link href={active.ctaUrl}>
-                  <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
-                    style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
-                    <Trophy size={16} /> {active.ctaLabel}
-                  </button>
-                </Link>
-              ) : (
-                <a href={active.ctaUrl} target="_blank" rel="noopener noreferrer">
-                  <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
-                    style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
-                    <ExternalLink size={16} /> {active.ctaLabel}
-                  </button>
-                </a>
-              )}
+              <a href={active.ctaUrl} target="_blank" rel="noopener noreferrer">
+                <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron text-sm font-bold text-white transition-all hover:scale-105"
+                  style={{ background: active.accentColor, boxShadow: `0 0 20px ${active.accentColor}60` }}>
+                  <ExternalLink size={16} /> {active.ctaLabel}
+                </button>
+              </a>
             </div>
           </div>
         )}
@@ -146,7 +126,7 @@ function HeroSection() {
         ) : sidebarItems.map((t, i) => {
           const st = statusLabel(t.status ?? "");
           return (
-            <Link key={t.id} href={`/tournament/${t.id}`}>
+            <Link key={t.id} href={`/tournaments/${t.id}`}>
               <div className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
                 i === activeIdx ? "bg-zinc-800 border-red-600/40" : "bg-zinc-900/60 border-zinc-800/50 hover:bg-zinc-800/80 hover:border-zinc-700"
               }`}>
@@ -211,7 +191,7 @@ function HScrollCarousel({ title, href, children }: { title: string; href?: stri
 function TournamentCard({ t }: { t: any }) {
   const st = statusLabel(t.status ?? "");
   return (
-    <Link href={`/tournament/${t.id}`}>
+    <Link href={`/tournaments/${t.id}`}>
       <div className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
         style={{ scrollSnapAlign: "start", background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
         onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.5)"; (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px oklch(0.55 0.22 25 / 0.2)"; }}
@@ -228,26 +208,33 @@ function TournamentCard({ t }: { t: any }) {
           )}
           {/* Gradient overlay */}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.10 0.005 0) 0%, transparent 60%)" }} />
-          {/* Status badge */}
-          <div className={`absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-bold text-white ${st.color}`}
-            style={{ backdropFilter: "blur(8px)", background: "rgba(0,0,0,0.5)" }}>
-            {t.status === "in_progress" && <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />}
-            {st.text}
-          </div>
-          {/* Game badge */}
+          {/* Game badge — top right */}
           {t.game && (
             <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full text-xs font-mono"
-              style={{ background: "rgba(0,0,0,0.6)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", backdropFilter: "blur(8px)" }}>
+              style={{ background: "rgba(0,0,0,0.65)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", backdropFilter: "blur(8px)" }}>
               {t.game}
             </div>
           )}
         </div>
         {/* Info */}
         <div className="p-4">
-          <p className="text-white font-bold text-base truncate font-display">{t.name}</p>
-          <div className="flex items-center justify-between mt-3">
+          <p className="text-white font-bold text-base truncate font-display mb-3">{t.name}</p>
+          {/* Status badge — green dot + label */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className={`w-2 h-2 rounded-full shrink-0 ${
+              t.status === "registration_open" ? "bg-green-500" :
+              t.status === "in_progress" ? "bg-yellow-400 animate-pulse" :
+              "bg-zinc-500"
+            }`} />
+            <span className={`text-xs font-mono font-semibold ${
+              t.status === "registration_open" ? "text-green-400" :
+              t.status === "in_progress" ? "text-yellow-400" :
+              "text-zinc-500"
+            }`}>{st.text}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <span className="text-lg">🪙</span>
+              <span className="text-base">🪙</span>
               <span className="font-orbitron font-bold text-sm" style={{ color: "oklch(0.65 0.18 80)" }}>{t.prizeAmount ? `${t.prizeAmount} RLC` : "—"}</span>
             </div>
             <span className="text-zinc-500 text-xs flex items-center gap-1 font-mono"><Calendar size={11} />{formatDate(t.startDate)}</span>
