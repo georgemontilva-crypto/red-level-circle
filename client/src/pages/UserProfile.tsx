@@ -109,7 +109,7 @@ export default function UserProfile() {
   const followLoading = followMutation.isPending || unfollowMutation.isPending;
 
   return (
-    <div className="max-w-2xl mx-auto overflow-x-hidden">
+    <div className="max-w-4xl mx-auto overflow-x-hidden px-4 sm:px-6 py-4">
       {/* ── Banner + Avatar (Discord-style) ── */}
       {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
       <div className="relative">

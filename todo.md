@@ -342,3 +342,6 @@
 
 ## Quick Fix V24
 - [x] Foto y nombre del usuario en el sidebar son clickeables y llevan al perfil
+
+## Quick Fix V25
+- [x] Ampliar el ancho del perfil de usuario para que ocupe todo el espacio disponible (quitar max-w-2xl)
