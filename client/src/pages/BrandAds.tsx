@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, ChevronLeft, ChevronRight, Megaphone, Mail } from "lucide-react";
+import { ExternalLink, ChevronLeft, ChevronRight, Megaphone } from "lucide-react";
 
 // ─── Featured Carousel ────────────────────────────────────────────────────────
 function FeaturedCarousel({ ads }: { ads: any[] }) {
@@ -288,74 +288,6 @@ export default function BrandAds() {
           </div>
         )}
 
-        {/* ── Advertising Plans ── */}
-        <section className="border-t border-white/5 pt-12">
-          <h2 className="text-3xl font-black font-mono text-center mb-2">
-            PUBLICITA EN <span className="text-red-500">RED LEVEL CIRCLE</span>
-          </h2>
-          <p className="text-gray-500 text-center text-sm mb-10">Conecta tu marca con miles de jugadores apasionados</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {[
-              {
-                name: "CARD",
-                badge: null,
-                price: "Desde $50 USD/mes",
-                color: "border-white/10",
-                bg: "bg-zinc-900",
-                accent: "text-gray-400",
-                dot: "bg-gray-500",
-                features: ["Aparece en la grilla de cards", "Imagen cuadrada/vertical", "Estadísticas de clics"],
-              },
-              {
-                name: "WIDE",
-                badge: "MÁS POPULAR",
-                badgeColor: "bg-blue-500",
-                price: "Desde $150 USD/mes",
-                color: "border-blue-500/30",
-                bg: "bg-blue-500/5",
-                accent: "text-blue-400",
-                dot: "bg-blue-500",
-                features: ["Banner horizontal ancho", "Logo + título + CTA visibles", "Alta visibilidad", "Estadísticas avanzadas"],
-              },
-              {
-                name: "DESTACADO",
-                badge: "MÁXIMA VISIBILIDAD",
-                badgeColor: "bg-red-500",
-                price: "Desde $300 USD/mes",
-                color: "border-red-500/30",
-                bg: "bg-red-500/5",
-                accent: "text-red-400",
-                dot: "bg-red-500",
-                features: ["Carousel hero principal", "Auto-slide con transiciones", "Pantalla completa", "Integración en torneos", "Account manager dedicado"],
-              },
-            ].map((plan, i) => (
-              <div key={i} className={`rounded-2xl border p-6 ${plan.color} ${plan.bg} relative`}>
-                {plan.badge && (
-                  <div className={`absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 ${plan.badgeColor} rounded-full text-white text-xs font-bold font-mono whitespace-nowrap`}>
-                    {plan.badge}
-                  </div>
-                )}
-                <h3 className={`font-black font-mono text-xl mb-1 ${plan.accent}`}>{plan.name}</h3>
-                <p className="text-gray-400 text-sm mb-5">{plan.price}</p>
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-2 text-sm text-gray-300">
-                      <div className={`w-1.5 h-1.5 rounded-full ${plan.dot} flex-shrink-0`} />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-                <a
-                  href="mailto:ads@redlevelcircle.gg"
-                  className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-lg font-mono font-bold text-sm transition-all border ${plan.color} ${plan.accent} hover:bg-white/5`}
-                >
-                  <Mail className="w-4 h-4" />
-                  Contactar
-                </a>
-              </div>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   );
