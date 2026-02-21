@@ -4,9 +4,10 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import {
-  User, Search, Users, Crown, Swords, Shield,
+  Search, Users, Crown, Swords, Shield,
   UserPlus, UserMinus, Loader2, Gamepad2,
 } from "lucide-react";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -39,6 +40,7 @@ interface UserCardProps {
     mainGame: string | null;
     country: string | null;
     role: string;
+    activeFrameImage?: string | null;
   };
   myId?: number;
 }
@@ -124,16 +126,15 @@ function UserCard({ user, myId }: UserCardProps) {
           {/* Avatar overlapping banner */}
           <div className="relative -mt-7 mb-3">
             <div
-              className="w-14 h-14 rounded-full overflow-hidden"
-              style={{ border: "3px solid oklch(0.10 0.005 0)", boxShadow: "0 0 0 1.5px oklch(0.55 0.22 25 / 0.5)" }}
+              className="rounded-full"
+              style={{ border: "3px solid oklch(0.10 0.005 0)", boxShadow: "0 0 0 1.5px oklch(0.55 0.22 25 / 0.5)", display: "inline-block" }}
             >
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-zinc-900">
-                  <User className="w-6 h-6 text-zinc-600" />
-                </div>
-              )}
+              <UserAvatar
+                avatar={user.avatar}
+                name={user.name ?? user.nickname}
+                activeFrameImage={user.activeFrameImage}
+                size={56}
+              />
             </div>
           </div>
 

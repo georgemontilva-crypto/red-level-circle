@@ -139,6 +139,7 @@ export async function getTeamById(teamId: number) {
 export async function getTeamMembers(teamId: number) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmeticMember");
   return db
     .select({
       id: teamMembers.id,
@@ -148,9 +149,14 @@ export async function getTeamMembers(teamId: number) {
       joinedAt: teamMembers.joinedAt,
       userName: users.name,
       userEmail: users.email,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(teamMembers)
     .leftJoin(users, eq(teamMembers.userId, users.id))
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(eq(teamMembers.teamId, teamId));
 }
 
@@ -1547,6 +1553,7 @@ export async function listPublicUsers(opts: { search?: string; limit?: number; o
   const db = await getDb();
   if (!db) return [];
   const { search, limit = 40, offset = 0 } = opts;
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   const conditions = [];
   if (search) {
     conditions.push(
@@ -1569,8 +1576,11 @@ export async function listPublicUsers(opts: { search?: string; limit?: number; o
       country: users.country,
       role: users.role,
       createdAt: users.createdAt,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(users)
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .orderBy(desc(users.createdAt))
     .limit(limit)
     .offset(offset);
@@ -1635,6 +1645,7 @@ export async function getFollowingCount(userId: number): Promise<number> {
 export async function getFollowers(userId: number) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmeticFollower");
   return db
     .select({
       id: users.id,
@@ -1642,9 +1653,12 @@ export async function getFollowers(userId: number) {
       nickname: users.nickname,
       avatar: users.avatar,
       profileType: users.profileType,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(userFollows)
     .innerJoin(users, eq(userFollows.followerId, users.id))
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(eq(userFollows.followingId, userId))
     .orderBy(desc(userFollows.createdAt));
 }
@@ -1652,6 +1666,7 @@ export async function getFollowers(userId: number) {
 export async function getFollowing(userId: number) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmeticFollowing");
   return db
     .select({
       id: users.id,
@@ -1659,9 +1674,12 @@ export async function getFollowing(userId: number) {
       nickname: users.nickname,
       avatar: users.avatar,
       profileType: users.profileType,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(userFollows)
     .innerJoin(users, eq(userFollows.followingId, users.id))
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(eq(userFollows.followerId, userId))
     .orderBy(desc(userFollows.createdAt));
 }
@@ -1677,6 +1695,7 @@ export async function getTeamPublicProfile(teamId: number) {
   const team = teamRows[0];
 
   // Get members with user info and avatar
+  const equippedCosmeticPublic = alias(userCosmetics, "equippedCosmeticPublic");
   const members = await db
     .select({
       id: teamMembers.id,
@@ -1689,9 +1708,12 @@ export async function getTeamPublicProfile(teamId: number) {
       avatar: users.avatar,
       country: users.country,
       mainGame: users.mainGame,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(teamMembers)
     .leftJoin(users, eq(teamMembers.userId, users.id))
+    .leftJoin(equippedCosmeticPublic, and(eq(equippedCosmeticPublic.userId, users.id), eq(equippedCosmeticPublic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmeticPublic.cosmeticId))
     .where(eq(teamMembers.teamId, teamId));
 
   // Get all approved registrations with tournament info
@@ -1892,6 +1914,7 @@ export async function getCreatorByUserId(userId: number) {
 export async function listApprovedCreators() {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   return db
     .select({
       id: contentCreators.id,
@@ -1910,9 +1933,12 @@ export async function listApprovedCreators() {
       nickname: users.nickname,
       avatar: users.avatar,
       banner: users.bannerUrl,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(contentCreators)
     .innerJoin(users, eq(contentCreators.userId, users.id))
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(eq(contentCreators.status, "approved"))
     .orderBy(desc(contentCreators.subscribers));
 }
@@ -1959,6 +1985,7 @@ export async function reviewCreator(id: number, status: "approved" | "rejected",
 export async function getRecentUsers(limit = 10) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   return db
     .select({
       id: users.id,
@@ -1967,8 +1994,11 @@ export async function getRecentUsers(limit = 10) {
       avatar: users.avatar,
       role: users.role,
       createdAt: users.createdAt,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(users)
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .orderBy(desc(users.createdAt))
     .limit(limit);
 }
@@ -1976,6 +2006,7 @@ export async function getRecentUsers(limit = 10) {
 export async function getSuggestedUsers(currentUserId: number, limit = 10) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   // Return recent users excluding the current user
   return db
     .select({
@@ -1985,8 +2016,11 @@ export async function getSuggestedUsers(currentUserId: number, limit = 10) {
       avatar: users.avatar,
       role: users.role,
       createdAt: users.createdAt,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(users)
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(sql`${users.id} != ${currentUserId}`)
     .orderBy(desc(users.createdAt))
     .limit(limit);
@@ -2020,6 +2054,7 @@ export async function getFeaturedTournaments(limit = 6) {
 export async function searchUsersByNickname(query: string, limit = 10) {
   const db = await getDb();
   if (!db) return [];
+  const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   return db
     .select({
       id: users.id,
@@ -2029,8 +2064,11 @@ export async function searchUsersByNickname(query: string, limit = 10) {
       mainGame: users.mainGame,
       country: users.country,
       profileType: users.profileType,
+      activeFrameImage: cosmetics.frameImage,
     })
     .from(users)
+    .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
+    .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(
       sql`(${users.nickname} LIKE ${`%${query}%`} OR ${users.name} LIKE ${`%${query}%`})`
     )

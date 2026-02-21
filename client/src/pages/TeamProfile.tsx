@@ -3,6 +3,7 @@ import { Users, Trophy, Swords, Star, Shield, ChevronLeft, Crown, UserPlus, Chec
 import { Link, useParams } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const ROLE_LABELS: Record<string, string> = {
   captain: "Capitán",
@@ -258,13 +259,13 @@ export default function TeamProfile() {
                   >
                     {/* Avatar with role crown */}
                     <div className="relative shrink-0">
-                      {member.avatar ? (
-                        <img src={member.avatar} alt={member.nickname || member.userName || "?"} className="w-14 h-14 rounded-xl object-cover" style={{ border: "2px solid oklch(0.55 0.22 25 / 0.3)" }} />
-                      ) : (
-                        <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-black" style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "2px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}>
-                          {(member.nickname || member.userName || "?").charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <UserAvatar
+                        avatar={member.avatar}
+                        name={member.nickname ?? member.userName}
+                        activeFrameImage={member.activeFrameImage}
+                        size={56}
+                        className="rounded-xl"
+                      />
                       {member.role === "captain" && (
                         <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "oklch(0.65 0.18 80)", border: "2px solid oklch(0.07 0.005 0)" }}>
                           <Crown size={10} style={{ color: "oklch(0.07 0.005 0)" }} />

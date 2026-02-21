@@ -7,6 +7,7 @@ import {
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { Link } from "wouter";
+import { UserAvatar } from "@/components/UserAvatar";
 
 // ─── Image Upload Component ───────────────────────────────────────────────────
 function TeamImageUpload({
@@ -141,13 +142,12 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
             <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
               {results.map((user) => (
                 <div key={user.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)" }}>
-                      {(user.nickname || user.name || "?").charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                  <UserAvatar
+                    avatar={user.avatar}
+                    name={user.nickname ?? user.name}
+                    activeFrameImage={(user as any).activeFrameImage}
+                    size={32}
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">
                       {user.nickname ? `@${user.nickname}` : user.name}
@@ -228,13 +228,12 @@ function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () 
         <div className="space-y-2">
           {allMembers.map((member: any) => (
             <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl group" style={{ background: "oklch(0.08 0.005 0)" }}>
-              {member.avatar ? (
-                <img src={member.avatar} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-              ) : (
-                <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ background: "oklch(0.13 0.005 0)", color: "oklch(0.55 0.22 25)" }}>
-                  {(member.nickname || member.userName || "?").charAt(0).toUpperCase()}
-                </div>
-              )}
+              <UserAvatar
+                avatar={member.avatar}
+                name={member.nickname ?? member.userName}
+                activeFrameImage={member.activeFrameImage}
+                size={32}
+              />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <Link href={`/profile/${member.userId}`}>

@@ -362,3 +362,13 @@
 
 ## Quick Fix V30
 - [x] Agregar padding inferior a la grilla de cosméticos para que el outline no se corte
+
+## UserAvatar Component V31
+- [x] Crear componente UserAvatar reutilizable con soporte de frameImage como overlay
+- [x] Incluir activeFrame (frameImage) en los endpoints de listado de usuarios (community, ranking, followers, following, team members)
+- [x] Aplicar UserAvatar en la página de Comunidad
+- [x] Aplicar UserAvatar en la página de Ranking (ya tenía implementación)
+- [x] Aplicar UserAvatar en tarjetas de equipos (MyTeams, TeamProfile)
+- [x] Aplicar UserAvatar en Home (UserCard, CreatorCard, nuevos usuarios)
+- [x] Aplicar UserAvatar en Creators.tsx
+- [x] Aplicar UserAvatar en UserProfile (lista seguidores/seguidos)

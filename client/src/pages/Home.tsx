@@ -8,6 +8,7 @@ import {
   Newspaper, Star, Youtube, Twitch, Twitter, Instagram,
   Calendar, Gamepad2, Crown, UserPlus, ArrowRight, ExternalLink
 } from "lucide-react";
+import { UserAvatar } from "@/components/UserAvatar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: Date | string | null | undefined) {
@@ -250,17 +251,18 @@ function UserCard({ u, showFollow = false }: { u: any; showFollow?: boolean }) {
   const { isAuthenticated, user } = useAuth();
   const follow = trpc.follows.follow.useMutation();
   const utils = trpc.useUtils();
-
   return (
     <Link href={`/profile/${u.id}`}>
       <div className="shrink-0 w-36 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/30 transition-all cursor-pointer group text-center p-4" style={{ scrollSnapAlign: "start" }}>
-        {u.avatar ? (
-          <img src={u.avatar} alt={u.nickname ?? u.name} className="w-14 h-14 rounded-full object-cover mx-auto border-2 border-zinc-700 group-hover:border-red-600/40 transition-colors" />
-        ) : (
-          <div className="w-14 h-14 rounded-full bg-zinc-800 border-2 border-zinc-700 mx-auto flex items-center justify-center">
-            <span className="text-xl font-black text-red-500">{(u.nickname ?? u.name ?? "?").charAt(0).toUpperCase()}</span>
-          </div>
-        )}
+        <div className="flex justify-center">
+          <UserAvatar
+            avatar={u.avatar}
+            name={u.nickname ?? u.name}
+            activeFrameImage={u.activeFrameImage}
+            size={56}
+            className="border-2 border-zinc-700 group-hover:border-red-600/40 transition-colors rounded-full"
+          />
+        </div>
         <p className="text-white text-xs font-semibold mt-2 truncate">{u.nickname ?? u.name ?? "Usuario"}</p>
         <p className="text-zinc-600 text-xs font-mono truncate">@{u.name ?? "user"}</p>
         {showFollow && isAuthenticated && user?.id !== u.id && (
@@ -286,14 +288,13 @@ function CreatorCard({ c }: { c: any }) {
         <div className="relative h-20 bg-gradient-to-br from-zinc-800 to-red-950/20">
           {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover" />}
           {/* Avatar */}
-          <div className="absolute -bottom-6 left-4">
-            {c.avatar ? (
-              <img src={c.avatar} alt={name} className="w-12 h-12 rounded-full object-cover border-3 border-zinc-900 group-hover:border-red-600/40 transition-colors" style={{ borderWidth: 3 }} />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-zinc-800 border-3 border-zinc-900 flex items-center justify-center" style={{ borderWidth: 3 }}>
-                <span className="text-lg font-black text-red-500">{name.charAt(0).toUpperCase()}</span>
-              </div>
-            )}
+          <div className="absolute -bottom-6 left-4" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block" }}>
+            <UserAvatar
+              avatar={c.avatar}
+              name={name}
+              activeFrameImage={c.activeFrameImage}
+              size={48}
+            />
           </div>
         </div>
         <div className="pt-8 px-4 pb-4">
@@ -477,13 +478,12 @@ export default function Home() {
               {recentUsers!.slice(0, 6).map(u => (
                 <Link key={u.id} href={`/profile/${u.id}`}>
                   <div className="flex items-center gap-2 p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/50 hover:border-zinc-700 transition-colors cursor-pointer">
-                    {u.avatar ? (
-                      <img src={u.avatar} alt={u.nickname ?? u.name ?? ""} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                        <span className="text-sm font-black text-red-500">{(u.nickname ?? u.name ?? "?").charAt(0).toUpperCase()}</span>
-                      </div>
-                    )}
+                    <UserAvatar
+                      avatar={u.avatar}
+                      name={u.nickname ?? u.name}
+                      activeFrameImage={u.activeFrameImage}
+                      size={32}
+                    />
                     <div className="min-w-0">
                       <p className="text-white text-xs font-semibold truncate">{u.nickname ?? u.name ?? "Usuario"}</p>
                       <p className="text-zinc-600 text-xs">{formatDate(u.createdAt)}</p>

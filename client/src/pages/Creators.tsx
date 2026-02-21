@@ -9,6 +9,7 @@ import {
   Gamepad2, Mic, Camera, Music, Zap, ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const CATEGORIES = [
   { value: "gaming", label: "Gaming", icon: Gamepad2 },
@@ -55,17 +56,13 @@ function CreatorCard({ c }: { c: any }) {
             </div>
           )}
           {/* Avatar */}
-          <div className="absolute -bottom-7 left-5">
-            {c.avatar ? (
-              <img src={c.avatar} alt={name}
-                className="w-14 h-14 rounded-full object-cover border-3 border-zinc-900 group-hover:border-red-600/30 transition-colors"
-                style={{ borderWidth: 3 }} />
-            ) : (
-              <div className="w-14 h-14 rounded-full bg-zinc-800 border-3 border-zinc-900 flex items-center justify-center"
-                style={{ borderWidth: 3 }}>
-                <span className="text-xl font-black text-red-500">{name.charAt(0).toUpperCase()}</span>
-              </div>
-            )}
+          <div className="absolute -bottom-7 left-5" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block" }}>
+            <UserAvatar
+              avatar={c.avatar}
+              name={name}
+              activeFrameImage={c.activeFrameImage}
+              size={56}
+            />
           </div>
         </div>
 

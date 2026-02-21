@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect } from "react";
+import { UserAvatar } from "@/components/UserAvatar";
 
 function ProfileTypeIcon({ type }: { type: string | null }) {
   if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-yellow-400" />;
@@ -546,7 +547,7 @@ export default function UserProfile() {
   );
 }
 
-function UserList({ users, emptyText }: { users: { id: number; name: string | null; nickname: string | null; avatar: string | null; profileType: string | null }[]; emptyText: string }) {
+function UserList({ users, emptyText }: { users: { id: number; name: string | null; nickname: string | null; avatar: string | null; profileType: string | null; activeFrameImage?: string | null }[]; emptyText: string }) {
   if (!users.length) {
     return (
       <div
@@ -568,15 +569,12 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)")}
           >
-            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-zinc-900 border border-zinc-700">
-              {u.avatar ? (
-                <img src={u.avatar} alt={u.name ?? ""} className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-zinc-600" />
-                </div>
-              )}
-            </div>
+            <UserAvatar
+              avatar={u.avatar}
+              name={u.nickname ?? u.name}
+              activeFrameImage={u.activeFrameImage}
+              size={40}
+            />
             <div className="flex-1 min-w-0">
               <p className="font-mono font-bold text-sm text-white truncate">
                 {u.nickname ?? u.name ?? "Usuario"}
