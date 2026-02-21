@@ -95,8 +95,30 @@ export default function TournamentDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Banner hero background */}
+      {tournament.banner && (
+        <div
+          className="absolute inset-x-0 top-0 h-[420px] pointer-events-none"
+          style={{ zIndex: 0 }}
+        >
+          <img
+            src={tournament.banner}
+            alt=""
+            className="w-full h-full object-cover"
+            style={{ opacity: 0.18 }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(to bottom, oklch(0 0 0 / 0.3) 0%, oklch(0.07 0.005 0) 70%, oklch(0.07 0.005 0) 100%)",
+            }}
+          />
+        </div>
+      )}
+
       {/* Breadcrumb */}
-      <div className="px-4 sm:px-6 pt-4 pb-2">
+      <div className="relative px-4 sm:px-6 pt-4 pb-2" style={{ zIndex: 1 }}>
         <Link href="/tournaments">
           <button className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-rajdhani text-sm tracking-wider">
             <ChevronLeft size={14} /> VOLVER A TORNEOS
@@ -104,7 +126,7 @@ export default function TournamentDetail() {
         </Link>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-10">
+      <div className="relative max-w-5xl mx-auto px-4 py-10" style={{ zIndex: 1 }}>
         {/* Header */}
         <div className="mb-8">
           <div className="flex flex-wrap items-center gap-3 mb-4">
@@ -409,7 +431,7 @@ export default function TournamentDetail() {
               <div className="text-center py-6">
                 <Users size={32} className="mx-auto mb-3" style={{ color: "oklch(0.30 0.01 0)" }} />
                 <p className="text-muted-foreground text-sm mb-4">No tienes equipos creados</p>
-                <Link href="/my-teams">
+                <Link href="/dashboard/teams">
                   <button
                     className="px-6 py-2 rounded-lg font-display text-xs tracking-widest"
                     style={{

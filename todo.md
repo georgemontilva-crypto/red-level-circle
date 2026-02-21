@@ -267,3 +267,9 @@
 - [x] Página /dashboard/edit-tournament/:id con formulario de 3 pasos pre-cargado con datos del torneo
 - [x] Botón "Editar" en TournamentManage y en MyTournaments
 - [x] Soporte para cambiar el banner del torneo en la edición
+
+## Banner de Fondo en TournamentDetail V12
+- [x] Mostrar banner del torneo como fondo con opacidad en la página de detalle del torneo
+
+## Fix Ruta /my-teams V12
+- [x] Corregir error 404 en la ruta /my-teams (ruta correcta es /dashboard/teams, corregidos enlaces en Dashboard, TournamentDetail y TeamProfile)

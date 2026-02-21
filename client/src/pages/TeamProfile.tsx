@@ -91,7 +91,7 @@ export default function TeamProfile() {
       {/* Captain actions */}
       {isCaptain && (
         <div className="absolute top-4 right-4 z-20">
-          <Link href="/my-teams">
+          <Link href="/dashboard/teams">
             <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur border border-red-600/40 text-red-400 hover:text-red-300 text-xs font-mono transition-colors">
               <Shield size={14} /> Gestionar
             </button>

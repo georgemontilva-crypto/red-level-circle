@@ -59,7 +59,7 @@ export default function Dashboard() {
           value: myTeams?.length ?? 0,
           icon: <Users size={22} />,
           color: "oklch(0.55 0.18 145)",
-          href: "/my-teams",
+          href: "/dashboard/teams",
         },
       ]
     : [
@@ -68,7 +68,7 @@ export default function Dashboard() {
           value: myTeams?.length ?? 0,
           icon: <Users size={22} />,
           color: "oklch(0.55 0.18 145)",
-          href: "/my-teams",
+          href: "/dashboard/teams",
         },
       ];
 
