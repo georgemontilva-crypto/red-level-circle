@@ -10,6 +10,17 @@ import {
   tournamentRegistrations,
   tournaments,
   users,
+  games,
+  news,
+  bets,
+  streams,
+  promotions,
+  rlcTransactions,
+  teamAchievements,
+  type InsertGame,
+  type InsertNews,
+  type InsertBet,
+  type InsertStream,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -133,7 +144,7 @@ export async function getTeamMembers(teamId: number) {
 export async function addTeamMember(data: {
   teamId: number;
   userId: number;
-  role?: "captain" | "player" | "substitute";
+  role?: "captain" | "player" | "substitute" | "coach";
   gameId?: string;
 }) {
   const db = await getDb();
@@ -159,13 +170,25 @@ export async function createTournament(data: {
   endDate?: Date;
   creatorId: number;
   banner?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  streamUrl?: string;
+  streamPlatform?: string;
+  registrationType?: "team" | "player" | "both";
+  prizeFirst?: string;
+  prizeSecond?: string;
+  prizeThird?: string;
   isPublic?: boolean;
+  status?: "draft" | "pending_approval" | "registration_open" | "registration_closed" | "in_progress" | "completed" | "cancelled";
+  adminNote?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  const { status, streamPlatform, ...rest } = data;
   const [result] = await db.insert(tournaments).values({
-    ...data,
-    status: "draft",
+    ...rest,
+    status: (status ?? "draft") as any,
+    streamPlatform: streamPlatform as any,
     maxTeams: data.maxTeams ?? 16,
     minPlayersPerTeam: data.minPlayersPerTeam ?? 1,
     maxPlayersPerTeam: data.maxPlayersPerTeam ?? 5,
@@ -544,4 +567,312 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
   }
 
   return matchesToInsert.length;
+}
+
+// ─── Games ────────────────────────────────────────────────────────────────────
+export async function getGames() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(games).where(eq(games.isActive, true)).orderBy(games.name);
+}
+
+export async function getGameBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(games).where(eq(games.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function upsertGame(data: InsertGame) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(games).values(data).onDuplicateKeyUpdate({ set: { ...data } });
+}
+
+// ─── News ─────────────────────────────────────────────────────────────────────
+export async function getNews(opts?: { category?: string; limit?: number; publishedOnly?: boolean }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts?.publishedOnly !== false) conditions.push(eq(news.isPublished, true));
+  if (opts?.category) conditions.push(eq(news.category, opts.category as any));
+  const q = db.select().from(news);
+  const filtered = conditions.length > 0 ? q.where(and(...conditions)) : q;
+  return filtered.orderBy(desc(news.publishedAt)).limit(opts?.limit ?? 50);
+}
+
+export async function getNewsById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(news).where(eq(news.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getNewsBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(news).where(eq(news.slug, slug)).limit(1);
+  return result[0];
+}
+
+export async function createNews(data: InsertNews) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(news).values(data).$returningId();
+  return result.id;
+}
+
+export async function updateNews(id: number, data: Partial<InsertNews>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(news).set(data).where(eq(news.id, id));
+}
+
+export async function incrementNewsViews(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(news).set({ viewCount: sql`viewCount + 1` }).where(eq(news.id, id));
+}
+
+// ─── Promotions ───────────────────────────────────────────────────────────────
+export async function getActivePromotions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(promotions).where(eq(promotions.isActive, true)).orderBy(desc(promotions.createdAt));
+}
+
+export async function createPromotion(data: { title: string; description?: string; bannerImage?: string; linkUrl?: string; linkLabel?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(promotions).values({ ...data, isActive: true }).$returningId();
+  return result.id;
+}
+
+// ─── Streams ──────────────────────────────────────────────────────────────────
+export async function getStreams(opts?: { liveOnly?: boolean; tournamentId?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts?.liveOnly) conditions.push(eq(streams.isLive, true));
+  if (opts?.tournamentId) conditions.push(eq(streams.tournamentId, opts.tournamentId));
+  const q = db.select().from(streams);
+  const filtered = conditions.length > 0 ? q.where(and(...conditions)) : q;
+  return filtered.orderBy(desc(streams.updatedAt));
+}
+
+export async function createStream(data: InsertStream) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(streams).values(data).$returningId();
+  return result.id;
+}
+
+export async function updateStream(id: number, data: Partial<InsertStream>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(streams).set(data).where(eq(streams.id, id));
+}
+
+// ─── Ranking ──────────────────────────────────────────────────────────────────
+export async function getTeamRanking(opts?: { game?: string; limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [];
+  if (opts?.game) conditions.push(eq(teams.game, opts.game));
+  const q = db.select().from(teams);
+  const filtered = conditions.length > 0 ? q.where(and(...conditions)) : q;
+  return filtered.orderBy(desc(teams.points)).limit(opts?.limit ?? 50);
+}
+
+// ─── Team Achievements ────────────────────────────────────────────────────────
+export async function getTeamAchievements(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teamAchievements).where(eq(teamAchievements.teamId, teamId)).orderBy(desc(teamAchievements.awardedAt));
+}
+
+export async function addTeamAchievement(data: { teamId: number; title: string; description?: string; tournamentId?: number }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(teamAchievements).values(data);
+}
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+export async function updateUserProfile(userId: number, data: {
+  nickname?: string;
+  bio?: string;
+  mainGame?: string;
+  country?: string;
+  profileType?: "player" | "team_captain" | "event_creator";
+  socialDiscord?: string;
+  socialTwitch?: string;
+  socialTwitter?: string;
+  avatar?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set(data).where(eq(users.id, userId));
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getAllUsers(opts?: { limit?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(desc(users.createdAt)).limit(opts?.limit ?? 100);
+}
+
+// ─── RLC Coins / Bets ─────────────────────────────────────────────────────────
+export async function getUserBalance(userId: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ balance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
+  return result[0]?.balance ?? 0;
+}
+
+export async function addRlcTransaction(data: {
+  userId: number;
+  type: "deposit" | "withdrawal" | "bet_placed" | "bet_won" | "bet_lost" | "reward" | "refund";
+  amount: number;
+  description?: string;
+  referenceId?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  // Get current balance
+  const current = await getUserBalance(data.userId);
+  const newBalance = current + data.amount;
+  if (newBalance < 0) throw new Error("Saldo insuficiente");
+
+  // Update user balance
+  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, data.userId));
+
+  // Record transaction
+  await db.insert(rlcTransactions).values({
+    userId: data.userId,
+    type: data.type,
+    amount: data.amount,
+    balanceAfter: newBalance,
+    description: data.description,
+    referenceId: data.referenceId,
+  });
+
+  return newBalance;
+}
+
+export async function getRlcTransactions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(rlcTransactions).where(eq(rlcTransactions.userId, userId)).orderBy(desc(rlcTransactions.createdAt)).limit(50);
+}
+
+export async function createBet(data: InsertBet) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(bets).values(data).$returningId();
+  return result.id;
+}
+
+export async function getBetsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bets).where(eq(bets.userId, userId)).orderBy(desc(bets.createdAt));
+}
+
+export async function getBetsByTournament(tournamentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bets).where(eq(bets.tournamentId, tournamentId)).orderBy(desc(bets.createdAt));
+}
+
+export async function resolveBets(tournamentId: number, winnerTeamId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const pendingBets = await db.select().from(bets)
+    .where(and(eq(bets.tournamentId, tournamentId), eq(bets.status, "pending")));
+
+  for (const bet of pendingBets) {
+    if (bet.teamId === winnerTeamId) {
+      // Won
+      await db.update(bets).set({ status: "won", resolvedAt: new Date() }).where(eq(bets.id, bet.id));
+      await addRlcTransaction({
+        userId: bet.userId,
+        type: "bet_won",
+        amount: bet.potentialWin,
+        description: `Apuesta ganada en torneo #${tournamentId}`,
+        referenceId: bet.id,
+      });
+    } else {
+      // Lost
+      await db.update(bets).set({ status: "lost", resolvedAt: new Date() }).where(eq(bets.id, bet.id));
+    }
+  }
+}
+
+// ─── Tournament admin approval ────────────────────────────────────────────────
+export async function approveTournament(tournamentId: number, adminNote?: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(tournaments).set({
+    status: "registration_open",
+    adminNote: adminNote ?? null,
+  }).where(eq(tournaments.id, tournamentId));
+}
+
+export async function rejectTournament(tournamentId: number, adminNote: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(tournaments).set({
+    status: "cancelled",
+    adminNote,
+  }).where(eq(tournaments.id, tournamentId));
+}
+
+export async function getPendingTournaments() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(tournaments).where(eq(tournaments.status, "pending_approval")).orderBy(desc(tournaments.createdAt));
+}
+
+// ─── Team stats update ────────────────────────────────────────────────────────
+export async function updateTeamStats(teamId: number, won: boolean) {
+  const db = await getDb();
+  if (!db) return;
+  if (won) {
+    await db.update(teams).set({
+      wins: sql`wins + 1`,
+      tournamentsWon: sql`tournamentsWon + 1`,
+      tournamentsPlayed: sql`tournamentsPlayed + 1`,
+      points: sql`points + 100`,
+    }).where(eq(teams.id, teamId));
+  } else {
+    await db.update(teams).set({
+      losses: sql`losses + 1`,
+      tournamentsPlayed: sql`tournamentsPlayed + 1`,
+      points: sql`points + 10`,
+    }).where(eq(teams.id, teamId));
+  }
+}
+
+export async function updateTeam(teamId: number, data: Partial<{
+  name: string;
+  tag: string;
+  logo: string;
+  banner: string;
+  description: string;
+  game: string;
+  country: string;
+  socialDiscord: string;
+  socialTwitch: string;
+  socialTwitter: string;
+}>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(teams).set(data).where(eq(teams.id, teamId));
 }

@@ -51,4 +51,82 @@
 - [x] Tests unitarios con Vitest (13 tests, 2 archivos)
 - [x] Estados de carga y error en toda la UI
 - [x] Diseño responsivo (desktop, tablet, móvil)
-- [ ] Checkpoint y entrega al usuario
+- [x] Checkpoint y entrega al usuario
+
+## Expansión V2: Plataforma Completa de Esports
+
+### Esquema de BD ampliado
+- [x] Tabla user_profiles (tipo: player/team_captain/event_creator, bio, avatar, redes sociales)
+- [x] Tabla news (título, contenido, imagen, autor, categoría, publicado)
+- [x] Tabla rlc_coins (balance por usuario, historial de transacciones)
+- [x] Tabla bets (usuario, torneo, equipo apostado, monto, estado, resultado)
+- [x] Tabla streams (torneo, plataforma, url, estado en vivo)
+- [x] Tabla promotions (banner, título, descripción, link, activo)
+- [x] Tabla tournament_results (tabla de posiciones final)
+- [x] Ampliar tournaments: banner, reglamento, premios detallados, estado de verificación admin
+- [x] Ampliar teams: logo, banner, redes sociales, descripción larga, logros
+
+### Home rediseñado
+- [x] Sección hero con próximos torneos y cuenta regresiva
+- [x] Carrusel de torneos destacados/activos
+- [x] Sección de transmisiones en vivo (streams activos)
+- [x] Sección de noticias recientes (últimas 3)
+- [x] Banner de promociones rotativo
+- [x] Ranking top 5 equipos en home
+- [ ] Sección de juegos disponibles en la plataforma (pendiente)
+
+### Tres tipos de registro de usuario
+- [ ] Flujo de onboarding: selección de tipo (Jugador / Capitán de Equipo / Creador de Eventos) (pendiente)
+- [ ] Perfil de jugador: nickname, juego principal, estadísticas (pendiente)
+- [ ] Perfil de capitán: gestión de equipo, roster (pendiente)
+- [ ] Perfil de creador: torneos creados, verificación premium (pendiente)
+- [ ] Verificación de torneos por admin (panel admin con lista de torneos pendientes) (pendiente)
+
+### Perfiles de equipos
+- [x] Página pública de perfil de equipo (/teams/:id)
+- [x] Sección de jugadores (roster) con roles
+- [ ] Historial de torneos (ganados, perdidos, participaciones) (pendiente)
+- [x] Estadísticas: win rate, partidas jugadas, torneos ganados
+- [x] Logros/badges del equipo
+- [x] Banner y logo del equipo
+
+### Ranking global
+- [x] Página de ranking de equipos con puntuación acumulada
+- [x] Filtro por juego
+- [x] Sistema de puntos por resultado en torneos
+- [ ] Top 10 jugadores individuales (pendiente)
+
+### Portal de noticias
+- [x] Lista de noticias con categorías (torneos, equipos, juegos, plataforma)
+- [x] Página de detalle de noticia
+- [ ] Panel admin para crear/editar noticias (pendiente)
+- [ ] Noticias relacionadas por categoría (pendiente)
+
+### Centro de apuestas (RLC Coins)
+- [x] Moneda interna: RLC Coins (balance en perfil de usuario)
+- [x] Wallet: ver balance, historial de transacciones
+- [x] Apostar en torneos activos (elegir equipo ganador)
+- [ ] Resolución automática de apuestas al declarar ganador (pendiente)
+- [ ] Multiplicadores según probabilidad (basado en ranking) (pendiente)
+- [ ] Panel admin para gestionar apuestas y ajustar balances (pendiente)
+
+### Página de torneo mejorada
+- [ ] Banner personalizable del torneo
+- [ ] Sección de reglamento con formato rico
+- [ ] Estadísticas del torneo (partidas jugadas, goles, etc.)
+- [ ] Bracket visual interactivo (árbol con líneas conectoras)
+- [ ] Tabla de posiciones (para formato grupos)
+- [ ] Lista de equipos inscritos con links a perfiles
+- [ ] Sección de streams del torneo
+- [ ] Premios detallados (1°, 2°, 3° lugar)
+
+### Transmisiones en vivo
+- [x] Página de streams activos (/streams)
+- [x] Embed de Twitch/YouTube en página de torneo
+- [ ] Indicador "EN VIVO" en torneos con stream activo (pendiente)
+- [ ] Panel para que el creador agregue links de stream (pendiente)
+
+### Tabla de resultados
+- [ ] Historial completo de resultados por torneo
+- [ ] Filtros por juego, fecha, equipo
+- [ ] Exportar resultados (CSV)

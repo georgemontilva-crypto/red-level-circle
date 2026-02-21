@@ -14,6 +14,11 @@ import MyTournaments from "./pages/MyTournaments";
 import TournamentManage from "./pages/TournamentManage";
 import ManageRegistrations from "./pages/ManageRegistrations";
 import MyTeams from "./pages/MyTeams";
+import Ranking from "./pages/Ranking";
+import { NewsList, NewsArticle } from "./pages/News";
+import Streams from "./pages/Streams";
+import Betting from "./pages/Betting";
+import TeamProfile from "./pages/TeamProfile";
 
 function Router() {
   return (
@@ -23,6 +28,12 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/tournaments" component={Tournaments} />
       <Route path="/tournaments/:id" component={TournamentDetail} />
+      <Route path="/ranking" component={Ranking} />
+      <Route path="/news" component={NewsList} />
+      <Route path="/news/:slug" component={NewsArticle} />
+      <Route path="/streams" component={Streams} />
+      <Route path="/betting" component={Betting} />
+      <Route path="/teams/:id" component={TeamProfile} />
 
       {/* Premium dashboard routes */}
       <Route path="/dashboard" component={Dashboard} />

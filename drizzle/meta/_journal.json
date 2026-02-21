@@ -15,6 +15,13 @@
       "when": 1771629447598,
       "tag": "0001_third_infant_terrible",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1771630902776,
+      "tag": "0002_milky_mantis",
+      "breakpoints": true
     }
   ]
 }

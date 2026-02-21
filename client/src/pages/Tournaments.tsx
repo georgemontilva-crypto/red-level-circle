@@ -1,312 +1,189 @@
 import { trpc } from "@/lib/trpc";
-import { Trophy, Search, Filter, ChevronRight, Calendar, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Trophy, Users, Search, Star, Radio, Calendar, ChevronRight } from "lucide-react";
+import { Link, useSearch } from "wouter";
 import { useState } from "react";
-import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 
-const GAMES = ["Todos", "League of Legends", "Valorant", "CS2", "FIFA", "Fortnite", "Dota 2", "Rocket League"];
-const STATUSES = [
-  { value: "", label: "Todos" },
-  { value: "registration_open", label: "Inscripciones Abiertas" },
-  { value: "in_progress", label: "En Curso" },
-  { value: "completed", label: "Finalizados" },
-];
-const BRACKET_LABELS: Record<string, string> = {
-  single_elimination: "Elim. Simple",
-  double_elimination: "Doble Elim.",
-  groups: "Grupos",
-};
-const STATUS_COLORS: Record<string, string> = {
-  registration_open: "oklch(0.65 0.18 145)",
-  in_progress: "oklch(0.65 0.18 80)",
-  completed: "oklch(0.50 0.005 0)",
-  draft: "oklch(0.55 0.18 220)",
-  registration_closed: "oklch(0.55 0.22 25)",
-  cancelled: "oklch(0.40 0.005 0)",
-};
-const STATUS_LABELS: Record<string, string> = {
-  registration_open: "Inscripciones Abiertas",
-  in_progress: "En Curso",
-  completed: "Finalizado",
-  draft: "Próximamente",
-  registration_closed: "Inscripciones Cerradas",
-  cancelled: "Cancelado",
-};
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    registration_open: { label: "INSCRIPCIONES", cls: "bg-green-500/20 text-green-400 border-green-500/40" },
+    in_progress: { label: "EN CURSO", cls: "bg-yellow-500/20 text-yellow-400 border-yellow-500/40" },
+    completed: { label: "FINALIZADO", cls: "bg-zinc-500/20 text-zinc-400 border-zinc-500/40" },
+    pending_approval: { label: "PENDIENTE", cls: "bg-blue-500/20 text-blue-400 border-blue-500/40" },
+    registration_closed: { label: "CERRADO", cls: "bg-orange-500/20 text-orange-400 border-orange-500/40" },
+    cancelled: { label: "CANCELADO", cls: "bg-red-900/20 text-red-700 border-red-900/40" },
+  };
+  const s = map[status] ?? { label: status.toUpperCase(), cls: "bg-zinc-500/20 text-zinc-400 border-zinc-500/40" };
+  return <span className={`text-xs px-2 py-0.5 rounded border font-mono ${s.cls}`}>{s.label}</span>;
+}
 
 export default function Tournaments() {
-  const [search, setSearch] = useState("");
-  const [selectedGame, setSelectedGame] = useState("Todos");
+  const search = useSearch();
+  const params = new URLSearchParams(search);
+  const [searchText, setSearchText] = useState("");
+  const [selectedGame, setSelectedGame] = useState(params.get("game") ?? "");
   const [selectedStatus, setSelectedStatus] = useState("");
+  const { isAuthenticated } = useAuth();
 
   const { data: tournaments, isLoading } = trpc.tournaments.list.useQuery({
-    search: search || undefined,
-    game: selectedGame !== "Todos" ? selectedGame : undefined,
+    game: selectedGame || undefined,
     status: selectedStatus || undefined,
+    search: searchText || undefined,
   });
 
+  const { data: games } = trpc.games.list.useQuery();
+
+  const statuses = [
+    { value: "", label: "TODOS" },
+    { value: "registration_open", label: "INSCRIPCIONES" },
+    { value: "in_progress", label: "EN CURSO" },
+    { value: "completed", label: "FINALIZADOS" },
+  ];
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Nav */}
-      <nav
-        className="sticky top-0 z-50 flex items-center justify-between px-6 py-4"
-        style={{
-          background: "oklch(0.07 0.005 0 / 0.95)",
-          borderBottom: "1px solid oklch(0.20 0.01 0)",
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        <Link href="/">
-          <span className="font-display text-xl tracking-widest cursor-pointer">
-            <span className="neon-text">RED</span>
-            <span className="text-foreground">LEVEL</span>
-            <span className="text-muted-foreground text-sm ml-1">CIRCLE</span>
-          </span>
-        </Link>
-        <Link href="/dashboard">
-          <button
-            className="px-5 py-2 rounded-full font-display text-xs tracking-widest transition-all duration-300"
-            style={{
-              background: "oklch(0.55 0.22 25)",
-              color: "oklch(0.98 0 0)",
-              boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
-            }}
-          >
-            DASHBOARD
-          </button>
-        </Link>
+    <div className="min-h-screen bg-black text-white">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-zinc-800/50">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <Link href="/">
+            <span className="font-orbitron font-black text-xl tracking-widest cursor-pointer">
+              <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
+              <span className="text-zinc-400 text-sm ml-1">CIRCLE</span>
+            </span>
+          </Link>
+          <div className="hidden md:flex items-center gap-6 text-sm font-rajdhani font-semibold tracking-wider">
+            <Link href="/tournaments"><span className="text-white cursor-pointer">TORNEOS</span></Link>
+            <Link href="/ranking"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">RANKING</span></Link>
+            <Link href="/news"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">NOTICIAS</span></Link>
+            <Link href="/streams"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">EN VIVO</span></Link>
+            <Link href="/betting"><span className="text-zinc-400 hover:text-white transition-colors cursor-pointer">APUESTAS</span></Link>
+          </div>
+          <div className="flex items-center gap-3">
+            {isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">DASHBOARD</Button>
+              </Link>
+            ) : (
+              <a href={getLoginUrl()}>
+                <Button size="sm" className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">INGRESAR</Button>
+              </a>
+            )}
+          </div>
+        </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 py-10">
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="font-display text-4xl font-bold tracking-wider text-foreground mb-2">
-            TORNEOS
-          </h1>
-          <p className="text-muted-foreground">Explora y únete a torneos de esports</p>
+      <div className="pt-24 pb-16 max-w-7xl mx-auto px-4">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-2">
+            <Trophy className="w-5 h-5 text-red-500" />
+            <h1 className="font-orbitron font-black text-3xl text-white tracking-wider">TORNEOS</h1>
+          </div>
+          <p className="text-zinc-500 font-rajdhani">Explora y únete a los torneos de esports más emocionantes</p>
         </div>
 
         {/* Filters */}
-        <div
-          className="rounded-xl p-5 mb-8"
-          style={{
-            background: "oklch(0.10 0.005 0)",
-            border: "1px solid oklch(0.18 0.01 0)",
-          }}
-        >
-          <div className="flex flex-col md:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1 relative">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2"
-                style={{ color: "oklch(0.45 0.005 0)" }}
-              />
-              <input
-                type="text"
-                placeholder="Buscar torneos..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg text-sm font-sans transition-all duration-200"
-                style={{
-                  background: "oklch(0.09 0.005 0)",
-                  border: "1px solid oklch(0.22 0.01 0)",
-                  color: "oklch(0.90 0.005 0)",
-                  outline: "none",
-                }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "oklch(0.55 0.22 25)";
-                  e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "oklch(0.22 0.01 0)";
-                  e.target.style.boxShadow = "none";
-                }}
-              />
-            </div>
-
-            {/* Status filter */}
-            <select
-              value={selectedStatus}
-              onChange={(e) => setSelectedStatus(e.target.value)}
-              className="px-4 py-2.5 rounded-lg text-sm font-display tracking-wider transition-all duration-200"
-              style={{
-                background: "oklch(0.09 0.005 0)",
-                border: "1px solid oklch(0.22 0.01 0)",
-                color: "oklch(0.80 0.005 0)",
-                outline: "none",
-              }}
-            >
-              {STATUSES.map((s) => (
-                <option key={s.value} value={s.value} style={{ background: "oklch(0.09 0.005 0)" }}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
+        <div className="flex flex-wrap gap-3 mb-6">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              placeholder="Buscar torneo..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 focus:border-red-500/50 text-white placeholder:text-zinc-600 font-rajdhani text-sm outline-none transition-colors"
+            />
           </div>
-
-          {/* Game filter chips */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {GAMES.map((game) => (
-              <button
-                key={game}
-                onClick={() => setSelectedGame(game)}
-                className="px-3 py-1 rounded-full font-display text-xs tracking-wider transition-all duration-200"
-                style={
-                  selectedGame === game
-                    ? {
-                        background: "oklch(0.55 0.22 25)",
-                        color: "oklch(0.98 0 0)",
-                        boxShadow: "0 0 8px oklch(0.55 0.22 25 / 0.4)",
-                      }
-                    : {
-                        background: "oklch(0.13 0.005 0)",
-                        border: "1px solid oklch(0.22 0.01 0)",
-                        color: "oklch(0.60 0.005 0)",
-                      }
-                }
-              >
-                {game}
+          <div className="flex gap-2 flex-wrap">
+            {statuses.map((s) => (
+              <button key={s.value} onClick={() => setSelectedStatus(s.value)}
+                className={`text-xs font-mono px-3 py-2 rounded border transition-all ${selectedStatus === s.value ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
+                {s.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Results */}
+        {/* Game filter */}
+        {games && games.length > 0 && (
+          <div className="flex gap-2 flex-wrap mb-8">
+            <button onClick={() => setSelectedGame("")}
+              className={`text-xs font-mono px-3 py-1.5 rounded border transition-all ${selectedGame === "" ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
+              TODOS
+            </button>
+            {games.map((game) => (
+              <button key={game.id} onClick={() => setSelectedGame(game.slug)}
+                className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded border transition-all ${selectedGame === game.slug ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
+                {game.logo && <img src={game.logo} alt={game.name} className="w-4 h-4 object-contain" />}
+                {game.name.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div
-                key={i}
-                className="rounded-xl h-52 animate-pulse"
-                style={{ background: "oklch(0.10 0.005 0)" }}
-              />
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-zinc-900/50 border border-zinc-800 rounded-xl h-64 animate-pulse" />
             ))}
           </div>
         ) : tournaments && tournaments.length > 0 ? (
           <>
-            <p className="text-muted-foreground text-sm mb-6 font-display tracking-wider">
-              {tournaments.length} torneo{tournaments.length !== 1 ? "s" : ""} encontrado
-              {tournaments.length !== 1 ? "s" : ""}
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {tournaments.map((t) => {
-                const statusColor = STATUS_COLORS[t.status] ?? "oklch(0.55 0.005 0)";
-                const statusLabel = STATUS_LABELS[t.status] ?? t.status;
-                return (
-                  <Link key={t.id} href={`/tournaments/${t.id}`}>
-                    <div
-                      className="rounded-xl p-5 cursor-pointer transition-all duration-300 h-full flex flex-col"
-                      style={{
-                        background: "oklch(0.10 0.005 0)",
-                        border: "1px solid oklch(0.18 0.01 0)",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)";
-                        e.currentTarget.style.boxShadow = "0 0 20px oklch(0.55 0.22 25 / 0.1)";
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)";
-                        e.currentTarget.style.boxShadow = "none";
-                        e.currentTarget.style.transform = "translateY(0)";
-                      }}
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <span
-                          className="text-xs font-display tracking-wider px-2 py-1 rounded-full"
-                          style={{
-                            background: `${statusColor}20`,
-                            border: `1px solid ${statusColor}50`,
-                            color: statusColor,
-                          }}
-                        >
-                          {statusLabel}
-                        </span>
-                        <span
-                          className="text-xs font-tech px-2 py-1 rounded"
-                          style={{
-                            background: "oklch(0.13 0.005 0)",
-                            color: "oklch(0.60 0.005 0)",
-                          }}
-                        >
-                          {t.game}
-                        </span>
-                      </div>
-
-                      <h3 className="font-display text-lg font-bold text-foreground mb-2 tracking-wide">
-                        {t.name}
-                      </h3>
-
-                      <p className="text-muted-foreground text-sm line-clamp-2 mb-4 flex-1">
-                        {t.description ?? "Sin descripción"}
-                      </p>
-
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span style={{ color: "oklch(0.50 0.005 0)" }} className="font-display tracking-wider">
-                            {BRACKET_LABELS[t.bracketType] ?? t.bracketType}
-                          </span>
-                          <span style={{ color: "oklch(0.50 0.005 0)" }} className="flex items-center gap-1">
-                            <Users size={12} />
-                            Máx. {t.maxTeams} equipos
-                          </span>
+            <p className="text-zinc-600 text-xs font-mono mb-4">{tournaments.length} TORNEOS ENCONTRADOS</p>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {tournaments.map((t) => (
+                <Link key={t.id} href={`/tournaments/${t.id}`}>
+                  <div className="group bg-zinc-900/80 border border-zinc-800 hover:border-red-500/50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-[0_0_20px_rgba(220,38,38,0.15)]">
+                    <div className="h-36 relative overflow-hidden">
+                      {t.banner ? (
+                        <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-red-950/50 to-zinc-900 flex items-center justify-center">
+                          <Trophy className="w-10 h-10 text-red-500/30" />
                         </div>
-
-                        {t.startDate && (
-                          <div
-                            className="flex items-center gap-1 text-xs"
-                            style={{ color: "oklch(0.55 0.005 0)" }}
-                          >
-                            <Calendar size={12} />
-                            <span>
-                              {new Date(t.startDate).toLocaleDateString("es-ES", {
-                                day: "numeric",
-                                month: "short",
-                                year: "numeric",
-                              })}
-                            </span>
-                          </div>
-                        )}
-
-                        {t.prizeDescription && (
-                          <div
-                            className="text-xs font-display tracking-wider"
-                            style={{ color: "oklch(0.65 0.18 80)" }}
-                          >
-                            🏆 {t.prizeDescription}
-                          </div>
-                        )}
-                      </div>
-
-                      <div
-                        className="mt-4 pt-3 flex items-center justify-between"
-                        style={{ borderTop: "1px solid oklch(0.15 0.005 0)" }}
-                      >
-                        <span className="text-xs text-muted-foreground">
-                          por {t.creatorName ?? "Organizador"}
-                        </span>
-                        <ChevronRight size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
-                      </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent" />
+                      <div className="absolute top-2 right-2"><StatusBadge status={t.status} /></div>
+                      {(t as any).isLive && (
+                        <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-xs px-2 py-0.5 rounded font-mono animate-pulse">
+                          <Radio className="w-3 h-3" /> EN VIVO
+                        </div>
+                      )}
                     </div>
-                  </Link>
-                );
-              })}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-orbitron font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-1">{t.name}</h3>
+                        <span className="text-xs text-red-400 font-mono shrink-0">{t.game}</span>
+                      </div>
+                      {t.description && <p className="text-xs text-zinc-500 font-rajdhani line-clamp-2 mb-3">{t.description}</p>}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 text-xs text-zinc-500">
+                          <span className="flex items-center gap-1"><Users className="w-3 h-3" />{t.maxTeams}</span>
+                          {(t.prizeAmount ?? 0) > 0 && (
+                            <span className="flex items-center gap-1 text-yellow-500"><Star className="w-3 h-3" />{(t.prizeAmount ?? 0).toLocaleString()} RLC</span>
+                          )}
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
+                      </div>
+                      {t.startDate && (
+                        <div className="flex items-center gap-1 mt-2 text-xs text-zinc-600">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(t.startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
             </div>
           </>
         ) : (
-          <div
-            className="rounded-xl p-16 text-center"
-            style={{
-              background: "oklch(0.10 0.005 0)",
-              border: "1px solid oklch(0.18 0.01 0)",
-            }}
-          >
-            <Trophy size={48} className="mx-auto mb-4" style={{ color: "oklch(0.25 0.01 0)" }} />
-            <p className="text-muted-foreground font-display tracking-wider text-lg">
-              No se encontraron torneos
-            </p>
-            <p className="text-muted-foreground text-sm mt-2">
-              Intenta con otros filtros o vuelve más tarde
-            </p>
+          <div className="text-center py-20">
+            <Trophy className="w-16 h-16 mx-auto mb-4 text-zinc-700" />
+            <h3 className="font-orbitron font-bold text-xl text-zinc-600 mb-2">SIN TORNEOS</h3>
+            <p className="text-zinc-600 font-rajdhani mb-6">No se encontraron torneos con los filtros seleccionados.</p>
+            <button onClick={() => { setSearchText(""); setSelectedGame(""); setSelectedStatus(""); }}
+              className="text-red-400 hover:text-red-300 font-mono text-sm">LIMPIAR FILTROS</button>
           </div>
         )}
       </div>

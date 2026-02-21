@@ -7,6 +7,8 @@ import {
   varchar,
   boolean,
   json,
+  decimal,
+  bigint,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -17,7 +19,18 @@ export const users = mysqlTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "premium", "admin"]).default("user").notNull(),
+  // Profile type chosen during onboarding
+  profileType: mysqlEnum("profileType", ["player", "team_captain", "event_creator"]).default("player"),
   avatar: text("avatar"),
+  bio: text("bio"),
+  nickname: varchar("nickname", { length: 64 }),
+  mainGame: varchar("mainGame", { length: 64 }),
+  country: varchar("country", { length: 64 }),
+  socialDiscord: varchar("socialDiscord", { length: 128 }),
+  socialTwitch: varchar("socialTwitch", { length: 128 }),
+  socialTwitter: varchar("socialTwitter", { length: 128 }),
+  // RLC Coins wallet
+  rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -30,12 +43,22 @@ export type InsertUser = typeof users.$inferInsert;
 export const teams = mysqlTable("teams", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 128 }).notNull(),
+  tag: varchar("tag", { length: 8 }), // short team tag e.g. "RDG"
   logo: text("logo"),
   banner: text("banner"),
-  captainId: int("captainId").notNull(), // FK → users.id
+  captainId: int("captainId").notNull(),
   description: text("description"),
   game: varchar("game", { length: 64 }),
+  country: varchar("country", { length: 64 }),
   points: int("points").default(0).notNull(),
+  wins: int("wins").default(0).notNull(),
+  losses: int("losses").default(0).notNull(),
+  tournamentsPlayed: int("tournamentsPlayed").default(0).notNull(),
+  tournamentsWon: int("tournamentsWon").default(0).notNull(),
+  socialDiscord: varchar("socialDiscord", { length: 128 }),
+  socialTwitch: varchar("socialTwitch", { length: 128 }),
+  socialTwitter: varchar("socialTwitter", { length: 128 }),
+  isVerified: boolean("isVerified").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -46,15 +69,27 @@ export type InsertTeam = typeof teams.$inferInsert;
 // ─── Team Members ─────────────────────────────────────────────────────────────
 export const teamMembers = mysqlTable("team_members", {
   id: int("id").autoincrement().primaryKey(),
-  teamId: int("teamId").notNull(), // FK → teams.id
-  userId: int("userId").notNull(), // FK → users.id
-  role: mysqlEnum("role", ["captain", "player", "substitute"]).default("player").notNull(),
-  gameId: varchar("gameId", { length: 128 }), // in-game username/ID
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  role: mysqlEnum("role", ["captain", "player", "substitute", "coach"]).default("player").notNull(),
+  gameId: varchar("gameId", { length: 128 }),
   joinedAt: timestamp("joinedAt").defaultNow().notNull(),
 });
 
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamMember = typeof teamMembers.$inferInsert;
+
+// ─── Team Achievements ────────────────────────────────────────────────────────
+export const teamAchievements = mysqlTable("team_achievements", {
+  id: int("id").autoincrement().primaryKey(),
+  teamId: int("teamId").notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  tournamentId: int("tournamentId"), // optional FK
+  awardedAt: timestamp("awardedAt").defaultNow().notNull(),
+});
+
+export type TeamAchievement = typeof teamAchievements.$inferSelect;
 
 // ─── Tournaments ──────────────────────────────────────────────────────────────
 export const tournaments = mysqlTable("tournaments", {
@@ -68,27 +103,40 @@ export const tournaments = mysqlTable("tournaments", {
     "double_elimination",
     "groups",
   ]).notNull(),
+  registrationType: mysqlEnum("registrationType", ["team", "player", "both"]).default("team").notNull(),
   maxTeams: int("maxTeams").default(16).notNull(),
   minPlayersPerTeam: int("minPlayersPerTeam").default(1).notNull(),
   maxPlayersPerTeam: int("maxPlayersPerTeam").default(5).notNull(),
   prizeDescription: text("prizeDescription"),
-  prizeAmount: int("prizeAmount").default(0), // in platform coins
+  prizeFirst: varchar("prizeFirst", { length: 256 }),
+  prizeSecond: varchar("prizeSecond", { length: 256 }),
+  prizeThird: varchar("prizeThird", { length: 256 }),
+  prizeAmount: int("prizeAmount").default(0),
   registrationStart: timestamp("registrationStart"),
   registrationEnd: timestamp("registrationEnd"),
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
   status: mysqlEnum("status", [
     "draft",
+    "pending_approval",
     "registration_open",
     "registration_closed",
     "in_progress",
     "completed",
     "cancelled",
   ]).default("draft").notNull(),
-  creatorId: int("creatorId").notNull(), // FK → users.id (must be premium/admin)
-  winnerId: int("winnerId"), // FK → teams.id
+  adminNote: text("adminNote"), // note from admin on approval/rejection
+  creatorId: int("creatorId").notNull(),
+  winnerId: int("winnerId"),
   banner: text("banner"),
+  primaryColor: varchar("primaryColor", { length: 32 }).default("#ff0000"),
+  secondaryColor: varchar("secondaryColor", { length: 32 }).default("#000000"),
   isPublic: boolean("isPublic").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  streamUrl: text("streamUrl"),
+  streamPlatform: mysqlEnum("streamPlatform", ["twitch", "youtube", "discord", "other"]),
+  isLive: boolean("isLive").default(false).notNull(),
+  viewCount: int("viewCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -99,16 +147,16 @@ export type InsertTournament = typeof tournaments.$inferInsert;
 // ─── Tournament Registrations ─────────────────────────────────────────────────
 export const tournamentRegistrations = mysqlTable("tournament_registrations", {
   id: int("id").autoincrement().primaryKey(),
-  tournamentId: int("tournamentId").notNull(), // FK → tournaments.id
-  teamId: int("teamId").notNull(), // FK → teams.id
+  tournamentId: int("tournamentId").notNull(),
+  teamId: int("teamId").notNull(),
   status: mysqlEnum("status", [
     "Pendiente",
     "Aprobado",
     "Rechazado",
     "Cancelado",
   ]).default("Pendiente").notNull(),
-  creatorMessage: text("creatorMessage"), // optional rejection/approval note
-  teamMessage: text("teamMessage"), // optional note from team
+  creatorMessage: text("creatorMessage"),
+  teamMessage: text("teamMessage"),
   registeredAt: timestamp("registeredAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -119,10 +167,10 @@ export type InsertTournamentRegistration = typeof tournamentRegistrations.$infer
 // ─── Registration Audit Log ───────────────────────────────────────────────────
 export const registrationAuditLog = mysqlTable("registration_audit_log", {
   id: int("id").autoincrement().primaryKey(),
-  registrationId: int("registrationId").notNull(), // FK → tournament_registrations.id
+  registrationId: int("registrationId").notNull(),
   previousStatus: varchar("previousStatus", { length: 32 }),
   newStatus: varchar("newStatus", { length: 32 }).notNull(),
-  changedById: int("changedById").notNull(), // FK → users.id
+  changedById: int("changedById").notNull(),
   note: text("note"),
   changedAt: timestamp("changedAt").defaultNow().notNull(),
 });
@@ -132,22 +180,125 @@ export type RegistrationAuditLog = typeof registrationAuditLog.$inferSelect;
 // ─── Tournament Matches ───────────────────────────────────────────────────────
 export const tournamentMatches = mysqlTable("tournament_matches", {
   id: int("id").autoincrement().primaryKey(),
-  tournamentId: int("tournamentId").notNull(), // FK → tournaments.id
+  tournamentId: int("tournamentId").notNull(),
   round: int("round").notNull(),
   matchNumber: int("matchNumber").notNull(),
-  team1Id: int("team1Id"), // FK → teams.id (null = TBD)
-  team2Id: int("team2Id"), // FK → teams.id (null = TBD)
-  winnerId: int("winnerId"), // FK → teams.id
+  team1Id: int("team1Id"),
+  team2Id: int("team2Id"),
+  winnerId: int("winnerId"),
   team1Score: int("team1Score"),
   team2Score: int("team2Score"),
   status: mysqlEnum("status", ["pending", "in_progress", "completed"]).default("pending").notNull(),
   scheduledAt: timestamp("scheduledAt"),
   completedAt: timestamp("completedAt"),
   notes: text("notes"),
-  bracketPosition: json("bracketPosition"), // { round, position, side? }
+  bracketPosition: json("bracketPosition"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
 
 export type TournamentMatch = typeof tournamentMatches.$inferSelect;
 export type InsertTournamentMatch = typeof tournamentMatches.$inferInsert;
+
+// ─── News ─────────────────────────────────────────────────────────────────────
+export const news = mysqlTable("news", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  slug: varchar("slug", { length: 256 }).notNull().unique(),
+  excerpt: text("excerpt"),
+  content: text("content").notNull(),
+  coverImage: text("coverImage"),
+  category: mysqlEnum("category", ["torneos", "equipos", "juegos", "plataforma", "general"]).default("general").notNull(),
+  authorId: int("authorId").notNull(),
+  isPublished: boolean("isPublished").default(false).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  viewCount: int("viewCount").default(0).notNull(),
+  publishedAt: timestamp("publishedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type News = typeof news.$inferSelect;
+export type InsertNews = typeof news.$inferInsert;
+
+// ─── RLC Coins Transactions ───────────────────────────────────────────────────
+export const rlcTransactions = mysqlTable("rlc_transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", ["deposit", "withdrawal", "bet_placed", "bet_won", "bet_lost", "reward", "refund"]).notNull(),
+  amount: int("amount").notNull(), // positive = credit, negative = debit
+  balanceAfter: int("balanceAfter").notNull(),
+  description: varchar("description", { length: 256 }),
+  referenceId: int("referenceId"), // bet id or tournament id
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type RlcTransaction = typeof rlcTransactions.$inferSelect;
+
+// ─── Bets ─────────────────────────────────────────────────────────────────────
+export const bets = mysqlTable("bets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  tournamentId: int("tournamentId").notNull(),
+  teamId: int("teamId").notNull(), // team bet on
+  amount: int("amount").notNull(), // RLC coins wagered
+  multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull(), // e.g. 1.50
+  potentialWin: int("potentialWin").notNull(),
+  status: mysqlEnum("status", ["pending", "won", "lost", "cancelled", "refunded"]).default("pending").notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Bet = typeof bets.$inferSelect;
+export type InsertBet = typeof bets.$inferInsert;
+
+// ─── Promotions ───────────────────────────────────────────────────────────────
+export const promotions = mysqlTable("promotions", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  bannerImage: text("bannerImage"),
+  linkUrl: text("linkUrl"),
+  linkLabel: varchar("linkLabel", { length: 64 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  startsAt: timestamp("startsAt"),
+  endsAt: timestamp("endsAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Promotion = typeof promotions.$inferSelect;
+
+// ─── Games ────────────────────────────────────────────────────────────────────
+export const games = mysqlTable("games", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull().unique(),
+  slug: varchar("slug", { length: 128 }).notNull().unique(),
+  logo: text("logo"),
+  banner: text("banner"),
+  genre: varchar("genre", { length: 64 }),
+  description: text("description"),
+  isActive: boolean("isActive").default(true).notNull(),
+  tournamentCount: int("tournamentCount").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Game = typeof games.$inferSelect;
+export type InsertGame = typeof games.$inferInsert;
+
+// ─── Streams ──────────────────────────────────────────────────────────────────
+export const streams = mysqlTable("streams", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId"),
+  title: varchar("title", { length: 256 }).notNull(),
+  platform: mysqlEnum("platform", ["twitch", "youtube", "discord", "other"]).notNull(),
+  url: text("url").notNull(),
+  embedUrl: text("embedUrl"),
+  isLive: boolean("isLive").default(false).notNull(),
+  viewerCount: int("viewerCount").default(0),
+  thumbnailUrl: text("thumbnailUrl"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Stream = typeof streams.$inferSelect;
+export type InsertStream = typeof streams.$inferInsert;
