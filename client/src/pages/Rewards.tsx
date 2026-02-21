@@ -251,6 +251,24 @@ function VideoPlayerModal({
     };
   }, [isYoutube, ytPlaying, videoCompleted, required]);
 
+  // Send command to YouTube iframe via postMessage
+  const ytCommand = (cmd: "playVideo" | "pauseVideo") => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: cmd, args: [] }),
+      "*"
+    );
+  };
+
+  const toggleYtPlay = () => {
+    if (ytPlaying) {
+      ytCommand("pauseVideo");
+      setYtPlaying(false);
+    } else {
+      ytCommand("playVideo");
+      setYtPlaying(true);
+    }
+  };
+
   const progress = Math.min((elapsed / required) * 100, 100);
   const remaining = Math.max(required - elapsed, 0);
 
@@ -318,7 +336,7 @@ function VideoPlayerModal({
             <div
               className="absolute inset-0 flex items-center justify-center"
               style={{ cursor: "pointer", background: ytPlaying ? "transparent" : "rgba(0,0,0,0.50)" }}
-              onClick={() => setYtPlaying((p) => !p)}
+              onClick={toggleYtPlay}
             >
               {!ytPlaying && (
                 <div className="flex flex-col items-center gap-2" style={{ animation: "fadeIn 0.2s ease" }}>

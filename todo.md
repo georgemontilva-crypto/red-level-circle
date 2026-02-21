@@ -422,3 +422,4 @@
 - [x] Botón en modal: 'Ver video (Xm Xs restantes)' mientras corre, 'Reclamar recompensa' cuando termina
 - [x] Corregir barra roja y botón que no cambia de estado en modal YouTube
 - [x] Eliminar badge de monedas de la esquina superior derecha en Rewards
+- [x] Sincronizar video YouTube y contador: playVideo/pauseVideo via postMessage al hacer clic en overlay
