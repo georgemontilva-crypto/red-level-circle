@@ -310,3 +310,8 @@
 - [x] Sección "Torneos por Juego" en Home con tarjetas tipo portada
 - [x] Filtro por juego en /tournaments acepta nombre del juego desde el Home
 - [x] Endpoint games.delete para eliminar juegos desde admin
+
+## Gestión de Juegos + Equipo Imágenes V18
+- [x] Tab JUEGOS en panel admin: crear/editar/eliminar juegos con subida de imagen (portada y logo)
+- [x] Campos de logo y banner en formulario "Crear Equipo" de MyTeams con subida a S3
+- [x] Resolución automática de apuestas al declarar ganador (ya estaba implementada en V2)

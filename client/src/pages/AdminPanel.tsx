@@ -784,6 +784,136 @@ function TeamsTab() {
   );
 }
 
+// ─── Games Tab ───────────────────────────────────────────────────────────────
+function GamesTab() {
+  const { data: games, refetch } = trpc.games.list.useQuery();
+  const [form, setForm] = useState({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" });
+  const [editing, setEditing] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<"banner" | "logo" | null>(null);
+  const utils = trpc.useUtils();
+
+  const upsert = trpc.games.upsert.useMutation({
+    onSuccess: () => { toast.success("Juego guardado"); refetch(); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); setEditing(null); },
+    onError: e => toast.error(e.message),
+  });
+  const del = trpc.games.delete.useMutation({
+    onSuccess: () => { toast.success("Juego eliminado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+
+  const handleUpload = async (field: "banner" | "logo", file: File) => {
+    setUploading(field);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const { url } = await res.json();
+      setForm(f => ({ ...f, [field]: url }));
+    } catch { toast.error("Error al subir imagen"); }
+    finally { setUploading(null); }
+  };
+
+  const startEdit = (g: any) => { setEditing(g.slug); setForm({ name: g.name, slug: g.slug, banner: g.bannerUrl ?? "", logo: g.logo ?? "", genre: g.genre ?? "", description: g.description ?? "" }); };
+  const cancelEdit = () => { setEditing(null); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); };
+  const autoSlug = (name: string) => name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon={Gamepad2} title="GESTIÓN DE JUEGOS" subtitle="Agrega y administra los juegos disponibles en la plataforma" />
+
+      {/* Form */}
+      <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-5 space-y-4">
+        <p className="text-white font-orbitron text-sm">{editing ? "EDITAR JUEGO" : "AGREGAR JUEGO"}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">NOMBRE *</label>
+            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value, slug: editing ? f.slug : autoSlug(e.target.value) }))}
+              className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Valorant" />
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">SLUG (ID único)</label>
+            <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
+              className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: valorant" />
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">GÉNERO</label>
+            <input value={form.genre} onChange={e => setForm(f => ({ ...f, genre: e.target.value }))}
+              className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: FPS, MOBA, Battle Royale" />
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">DESCRIPCIÓN</label>
+            <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+              className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Descripción corta" />
+          </div>
+        </div>
+
+        {/* Image uploads */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">PORTADA / BANNER *</label>
+            <div className="flex items-center gap-3">
+              {form.banner && <img src={form.banner} alt="" className="w-16 h-10 object-cover rounded border border-gray-700" />}
+              <label className="cursor-pointer">
+                <div className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 text-gray-400 text-xs font-rajdhani flex items-center gap-2">
+                  {uploading === "banner" ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
+                  {uploading === "banner" ? "Subiendo..." : "Subir imagen"}
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("banner", e.target.files[0])} />
+              </label>
+              {form.banner && <input value={form.banner} onChange={e => setForm(f => ({ ...f, banner: e.target.value }))} className="flex-1 bg-black border border-gray-700 rounded px-2 py-1 text-gray-400 text-xs outline-none" placeholder="O pega URL" />}
+            </div>
+            {!form.banner && <input value={form.banner} onChange={e => setForm(f => ({ ...f, banner: e.target.value }))} className="mt-2 w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-gray-400 text-xs outline-none" placeholder="O pega URL de imagen" />}
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">LOGO (opcional)</label>
+            <div className="flex items-center gap-3">
+              {form.logo && <img src={form.logo} alt="" className="w-10 h-10 object-cover rounded border border-gray-700" />}
+              <label className="cursor-pointer">
+                <div className="bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-lg px-3 py-2 text-gray-400 text-xs font-rajdhani flex items-center gap-2">
+                  {uploading === "logo" ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus className="w-3 h-3" />}
+                  {uploading === "logo" ? "Subiendo..." : "Subir logo"}
+                </div>
+                <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("logo", e.target.files[0])} />
+              </label>
+              {form.logo && <input value={form.logo} onChange={e => setForm(f => ({ ...f, logo: e.target.value }))} className="flex-1 bg-black border border-gray-700 rounded px-2 py-1 text-gray-400 text-xs outline-none" placeholder="O pega URL" />}
+            </div>
+            {!form.logo && <input value={form.logo} onChange={e => setForm(f => ({ ...f, logo: e.target.value }))} className="mt-2 w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-gray-400 text-xs outline-none" placeholder="O pega URL de logo" />}
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <Button onClick={() => upsert.mutate({ name: form.name, slug: form.slug || autoSlug(form.name), banner: form.banner, logo: form.logo, genre: form.genre, description: form.description })} disabled={!form.name || upsert.isPending} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
+            {upsert.isPending ? "Guardando..." : editing ? "ACTUALIZAR" : "AGREGAR JUEGO"}
+          </Button>
+          {editing && <Button variant="outline" onClick={cancelEdit} className="border-gray-700 text-gray-400 font-orbitron text-xs">CANCELAR</Button>}
+        </div>
+      </div>
+
+      {/* Games list */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+        {!games || games.length === 0 ? (
+          <p className="text-gray-500 text-sm col-span-4 text-center py-8 font-rajdhani">Sin juegos registrados</p>
+        ) : games.map((g: any) => (
+          <div key={g.slug} className="relative group rounded-xl overflow-hidden border border-gray-800 bg-gray-900/60">
+            {g.bannerUrl ? (
+              <img src={g.bannerUrl} alt={g.name} className="w-full h-32 object-cover" />
+            ) : (
+              <div className="w-full h-32 bg-gray-800 flex items-center justify-center"><Gamepad2 className="w-8 h-8 text-gray-600" /></div>
+            )}
+            <div className="p-3">
+              <p className="text-white font-rajdhani font-semibold text-sm truncate">{g.name}</p>
+              {g.genre && <p className="text-gray-500 text-xs">{g.genre}</p>}
+            </div>
+            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button onClick={() => startEdit(g)} className="bg-black/80 hover:bg-gray-800 rounded p-1"><Edit3 className="w-3 h-3 text-gray-300" /></button>
+              <button onClick={() => { if (confirm(`¿Eliminar ${g.name}?`)) del.mutate({ slug: g.slug }); }} className="bg-black/80 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab() {
   const { data: stats } = trpc.admin.stats.useQuery();
@@ -891,6 +1021,7 @@ export default function AdminPanel() {
             { value: "rewards", label: "REWARDS", icon: Gift },
             { value: "news", label: "NOTICIAS", icon: Newspaper },
             { value: "creators", label: "CREADORES", icon: Crown },
+            { value: "games", label: "JUEGOS", icon: Gamepad2 },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -909,6 +1040,7 @@ export default function AdminPanel() {
           <TabsContent value="rewards"><RewardsTab /></TabsContent>
           <TabsContent value="news"><NewsTab /></TabsContent>
           <TabsContent value="creators"><CreatorsTab /></TabsContent>
+          <TabsContent value="games"><GamesTab /></TabsContent>
         </div>
       </Tabs>
     </div>

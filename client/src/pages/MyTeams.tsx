@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
 import {
-  Users, PlusCircle, UserPlus, Shield, Gamepad2, Camera, Loader2,
+  Users, PlusCircle, UserPlus, Shield, Gamepad2, Camera, Loader2, Plus,
   ExternalLink, Trophy, CheckCircle, Search, X, Trash2, Crown, UserMinus,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
@@ -281,6 +281,9 @@ export default function MyTeams() {
   const [teamTag, setTeamTag] = useState("");
   const [teamGame, setTeamGame] = useState("");
   const [teamDesc, setTeamDesc] = useState("");
+  const [teamLogo, setTeamLogo] = useState("");
+  const [teamBannerCreate, setTeamBannerCreate] = useState("");
+  const [uploadingCreate, setUploadingCreate] = useState<"logo" | "banner" | null>(null);
   const [teamLogos, setTeamLogos] = useState<Record<number, string>>({});
   const [teamBanners, setTeamBanners] = useState<Record<number, string>>({});
 
@@ -465,6 +468,33 @@ export default function MyTeams() {
               </div>
             </div>
 
+            {/* Logo y Banner */}
+            <div className="grid grid-cols-2 gap-3">
+              {[{ label: "LOGO DEL EQUIPO", field: "logo" as const, val: teamLogo, set: setTeamLogo }, { label: "BANNER DEL EQUIPO", field: "banner" as const, val: teamBannerCreate, set: setTeamBannerCreate }].map(({ label, field, val, set }) => (
+                <div key={field}>
+                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
+                  {val && <img src={val} alt="" className={`w-full ${field === "banner" ? "h-16" : "h-12"} object-cover rounded-lg mb-2 border border-white/10`} />}
+                  <label className="cursor-pointer block">
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-display tracking-wider transition-colors" style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.60 0.005 0)" }}>
+                      {uploadingCreate === field ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus size={12} />}
+                      {uploadingCreate === field ? "SUBIENDO..." : "SUBIR IMAGEN"}
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      setUploadingCreate(field);
+                      try {
+                        const fd = new FormData(); fd.append("file", file);
+                        const res = await fetch("/api/upload", { method: "POST", body: fd });
+                        const { url } = await res.json();
+                        set(url);
+                      } catch { toast.error("Error al subir imagen"); }
+                      finally { setUploadingCreate(null); }
+                    }} />
+                  </label>
+                </div>
+              ))}
+            </div>
+
             <div className="mt-2 p-3 rounded-xl" style={{ background: "oklch(0.55 0.22 25 / 0.05)", border: "1px solid oklch(0.55 0.22 25 / 0.15)" }}>
               <p className="text-xs text-muted-foreground">
                 <span style={{ color: "oklch(0.65 0.22 25)" }}>Tip:</span> Después de crear el equipo, podrás añadir jugadores buscando por su @nickname.
@@ -482,7 +512,7 @@ export default function MyTeams() {
               <button
                 onClick={() => {
                   if (!teamName.trim()) { toast.error("El nombre del equipo es requerido"); return; }
-                  createMutation.mutate({ name: teamName, tag: teamTag || undefined, game: teamGame || undefined, description: teamDesc || undefined });
+                  createMutation.mutate({ name: teamName, tag: teamTag || undefined, game: teamGame || undefined, description: teamDesc || undefined, logo: teamLogo || undefined, banner: teamBannerCreate || undefined });
                 }}
                 disabled={createMutation.isPending}
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
