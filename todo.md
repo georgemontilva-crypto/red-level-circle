@@ -218,3 +218,6 @@
 - [x] Página /community con grid de usuarios registrados + búsqueda + follow
 - [x] Enlace a /community en el sidebar (sección COMUNIDAD)
 - [x] Tests para los nuevos endpoints (29 tests pasando)
+
+## Fix Avatar Perfil V7.1
+- [x] Corregir posición del avatar: debe quedar superpuesto sobre el borde inferior del banner (estilo Discord)

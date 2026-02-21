@@ -86,11 +86,12 @@ export default function UserProfile() {
   return (
     <div className="max-w-2xl mx-auto overflow-x-hidden">
       {/* ── Banner + Avatar (Discord-style) ── */}
+      {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
       <div className="relative">
         {/* Banner */}
         <div
           className="w-full h-36 sm:h-48 rounded-t-2xl overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)" }}
+          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)", position: "relative" }}
         >
           {profile.bannerUrl ? (
             <img
@@ -104,8 +105,8 @@ export default function UserProfile() {
               <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-transparent to-red-900/20" />
             </>
           )}
-          {/* Top-right actions */}
-          <div className="absolute top-3 right-3 flex items-center gap-2">
+          {/* Top-right actions — inside the banner */}
+          <div className="absolute top-3 right-3 flex items-center gap-2" style={{ zIndex: 20 }}>
             {isOwnProfile && (
               <Link href="/settings">
                 <button
@@ -139,27 +140,33 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Avatar — overlapping the banner */}
-        <div className="absolute left-4 sm:left-6" style={{ bottom: "-48px" }}>
-          <div className="relative">
-            {/* Aura glow */}
+        {/* Avatar — absolute, anchored to bottom-left of banner, shifted down 50% of its own height */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            left: "16px",
+            transform: "translateY(50%)",
+            zIndex: 10,
+          }}
+        >
+          <div className="relative inline-block">
             {equippedAura && (
               <div
                 className="absolute inset-0 rounded-full blur-xl opacity-70 scale-150 pointer-events-none"
                 style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
               />
             )}
-            {/* Frame */}
             {equippedFrame?.frameImage && (
               <img
                 src={equippedFrame.frameImage}
                 alt="Frame"
-                className="absolute inset-0 w-full h-full z-10 pointer-events-none"
+                className="absolute inset-0 z-10 pointer-events-none"
                 style={{ width: "88px", height: "88px" }}
               />
             )}
             <div
-              className="w-20 h-20 sm:w-22 sm:h-22 rounded-full overflow-hidden relative z-0"
+              className="rounded-full overflow-hidden relative z-0"
               style={{
                 width: "80px",
                 height: "80px",
@@ -178,10 +185,10 @@ export default function UserProfile() {
           </div>
         </div>
 
-        {/* Rounded bottom card */}
+        {/* Card body — padding-top = half avatar height (40px) + gap (16px) */}
         <div
-          className="rounded-b-2xl pt-14 pb-4 px-4 sm:px-6"
-          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none" }}
+          className="rounded-b-2xl pb-4 px-4 sm:px-6"
+          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)", borderTop: "none", paddingTop: "60px" }}
         >
           {/* Name row */}
           <div className="flex items-start justify-between gap-3 flex-wrap">
