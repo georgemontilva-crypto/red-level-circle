@@ -9,6 +9,7 @@ import {
   Calendar, Gamepad2, Crown, UserPlus, ArrowRight, ExternalLink
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: Date | string | null | undefined) {
@@ -303,7 +304,10 @@ function CreatorCard({ c }: { c: any }) {
         </div>
       </div>
       <div className="pt-8 px-4 pb-4 rounded-b-xl" style={{ background: "oklch(0.12 0.005 0)" }}>
-        <p className="text-white font-bold text-sm truncate">{name}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-white font-bold text-sm truncate">{name}</p>
+          {c.isVerified && <VerifiedBadge size={14} />}
+        </div>
         {c.category && <p className="text-red-400 text-xs font-mono capitalize">{c.category}</p>}
         {c.bio && <p className="text-zinc-500 text-xs mt-1 line-clamp-2">{c.bio}</p>}
         {/* Social links */}
@@ -438,7 +442,7 @@ export default function Home() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
-                  <Star size={18} className="text-yellow-400" /> Creadores Oficiales
+                  Creadores Oficiales
                 </h2>
                 <p className="text-zinc-500 text-xs mt-0.5">Creadores de contenido verificados de la plataforma</p>
               </div>

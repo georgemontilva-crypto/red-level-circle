@@ -74,7 +74,6 @@ function CreatorCard({ c }: { c: any }) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-orbitron font-bold text-white">{name}</h3>
-                <Star size={12} className="text-yellow-400 fill-yellow-400" />
                 {(c as { isVerified?: boolean }).isVerified && <VerifiedBadge size={16} />}
               </div>
               {c.subscribers > 0 && (

@@ -383,3 +383,6 @@
 - [x] Botón "Solicitar verificación" en /settings del usuario
 - [x] Tab VERIFICACIONES en panel admin con lista de solicitudes pendientes
 - [x] Componente VerifiedBadge reutilizable con imagen oficial subida a S3
+
+## Quitar estrella creadores V35
+- [x] Quitar la estrella amarilla en Creators.tsx y Home.tsx, dejar solo VerifiedBadge junto al nombre
