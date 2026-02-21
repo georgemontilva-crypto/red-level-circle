@@ -460,7 +460,7 @@ function AdsTab() {
 // ─── Rewards Tab ──────────────────────────────────────────────────────────────
 function RewardsTab() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", type: "video" as any, rewardAmount: "", contentUrl: "", durationSeconds: "" });
+  const [form, setForm] = useState({ title: "", description: "", type: "video" as any, rewardAmount: "", contentUrl: "", durationSeconds: "", thumbnailUrl: "", sponsorName: "", sponsorLogoUrl: "", expiresAt: "" });
   const { data: rewards, refetch } = trpc.admin.listRewards.useQuery();
   const createReward = trpc.admin.createReward.useMutation({
     onSuccess: () => { toast.success("Reward creado"); setShowForm(false); refetch(); },
@@ -518,6 +518,29 @@ function RewardsTab() {
                 className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
             </div>
             <div className="md:col-span-2">
+              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">URL del Thumbnail (imagen de portada)</label>
+              <input value={form.thumbnailUrl} onChange={e => setForm(f => ({ ...f, thumbnailUrl: e.target.value }))} placeholder="https://cdn.ejemplo.com/thumbnail.jpg"
+                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              {form.thumbnailUrl && (
+                <img src={form.thumbnailUrl} alt="preview" className="mt-2 h-20 rounded-lg object-cover" onError={e => (e.currentTarget.style.display = 'none')} />
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Nombre del Sponsor</label>
+              <input value={form.sponsorName} onChange={e => setForm(f => ({ ...f, sponsorName: e.target.value }))} placeholder="Ej: Blizzard Entertainment"
+                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">URL Logo del Sponsor</label>
+              <input value={form.sponsorLogoUrl} onChange={e => setForm(f => ({ ...f, sponsorLogoUrl: e.target.value }))} placeholder="https://cdn.ejemplo.com/logo.png"
+                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Fecha de Expiración</label>
+              <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
+                className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+            </div>
+            <div className="md:col-span-2">
               <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción</label>
               <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={2}
                 className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none" />
@@ -525,7 +548,7 @@ function RewardsTab() {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => createReward.mutate({ ...form, rewardAmount: parseInt(form.rewardAmount), durationSeconds: parseInt(form.durationSeconds) || undefined })}
+              onClick={() => createReward.mutate({ ...form, rewardAmount: parseInt(form.rewardAmount), durationSeconds: parseInt(form.durationSeconds) || undefined, thumbnailUrl: form.thumbnailUrl || undefined, sponsorName: form.sponsorName || undefined, sponsorLogoUrl: form.sponsorLogoUrl || undefined, expiresAt: form.expiresAt || undefined })}
               disabled={!form.title || !form.rewardAmount || createReward.isPending}
               className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
             >

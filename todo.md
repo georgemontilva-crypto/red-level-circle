@@ -410,3 +410,4 @@
 - [x] Rediseñar QuestCard al estilo Discord: sponsor badge con checkmark verde, título en rojo RLC, botón con tiempo restante (mm:ss), info fuera del thumbnail
 - [x] Botón de acción en tarjeta muestra tiempo restante en formato mm:ss estilo Discord
 - [x] Badge 'Patrocinado por ✅ [Empresa]' visible fuera del thumbnail con checkmark verde
+- [x] Agregar campos thumbnailUrl, sponsorName, sponsorLogoUrl y expiresAt al formulario de creación de tareas en AdminPanel
