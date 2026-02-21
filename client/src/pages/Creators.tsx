@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
@@ -42,9 +42,9 @@ function StatusBadge({ status }: { status: string }) {
 function CreatorCard({ c }: { c: any }) {
   const name = c.nickname ?? c.userName ?? "Creador";
   const cat = CATEGORIES.find(x => x.value === c.category);
+  const [, navigate] = useLocation();
   return (
-    <Link href={`/profile/${c.userId}`}>
-      <div className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group">
+    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group">
         {/* Banner */}
         <div className="relative h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden">
           {c.banner && (
@@ -122,10 +122,8 @@ function CreatorCard({ c }: { c: any }) {
           </div>
         </div>
       </div>
-    </Link>
   );
 }
-
 function ApplicationForm() {
   const { isAuthenticated, user } = useAuth();
   const { data: myApp, refetch } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
