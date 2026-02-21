@@ -34,18 +34,7 @@ export default function Teams() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SectionBanner sectionKey="teams" height="h-40 sm:h-52">
-        <div className="flex flex-col justify-end h-full pb-6 px-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Swords className="w-4 h-4 text-red-500" />
-            <span className="text-xs font-mono text-red-400 tracking-widest">RED LEVEL CIRCLE</span>
-          </div>
-          <h1 className="font-black font-mono text-3xl sm:text-4xl text-white uppercase tracking-tight">
-            EQUIPOS
-          </h1>
-          <p className="text-gray-300 text-sm mt-1">Descubre los equipos competitivos de la plataforma</p>
-        </div>
-      </SectionBanner>
+      <SectionBanner sectionKey="teams" height="h-48 sm:h-64 lg:h-72" />
 
       <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         {/* Filters */}

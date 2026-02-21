@@ -335,18 +335,7 @@ export default function Creators() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       {/* Section Banner */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
-        <SectionBanner sectionKey="creators" height="h-44 sm:h-56">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-              <span className="text-red-400 font-mono text-xs tracking-widest uppercase">Red Level Circle</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-2 leading-none font-orbitron">
-              CREADORES
-            </h1>
-            <p className="text-zinc-300 text-sm max-w-md">Streamers, YouTubers y creadores verificados de la comunidad RLC.</p>
-          </div>
-        </SectionBanner>
+        <SectionBanner sectionKey="creators" height="h-48 sm:h-64 lg:h-72" />
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 space-y-10">

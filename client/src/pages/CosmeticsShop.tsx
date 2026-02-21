@@ -261,25 +261,7 @@ export default function CosmeticsShop() {
     <div className="min-h-screen bg-black text-white">
       {/* Section Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
-        <SectionBanner sectionKey="cosmetics" height="h-44 sm:h-56">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="w-5 h-5 text-red-500" />
-              <span className="text-red-400 font-mono text-xs tracking-widest uppercase">Red Level Circle</span>
-            </div>
-            <h1 className="text-3xl sm:text-5xl font-black tracking-tight mb-2 leading-none" style={{ fontFamily: "Orbitron, monospace" }}>
-              TIENDA DE <span className="text-red-500" style={{ textShadow: "0 0 20px #ff0000" }}>COSMÉTICOS</span>
-            </h1>
-            <p className="text-zinc-300 text-sm max-w-md mb-3">Personaliza tu perfil con marcos, auras e insignias exclusivas.</p>
-            {isAuthenticated && me && (
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-yellow-500/30 bg-yellow-500/10">
-                <Coins className="w-4 h-4 text-yellow-400" />
-                <span className="text-yellow-400 font-bold font-mono text-sm">{userBalance} RLC</span>
-                <span className="text-zinc-400 text-xs">disponibles</span>
-              </div>
-            )}
-          </div>
-        </SectionBanner>
+        <SectionBanner sectionKey="cosmetics" height="h-48 sm:h-64 lg:h-72" />
       </div>
       {/* Purchase confirmation modal */}
       {confirmCosmetic && (
