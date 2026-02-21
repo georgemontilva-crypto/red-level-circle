@@ -138,31 +138,33 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* User info */}
       {isAuthenticated && user && (
         <div className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30">
-          <div className="flex items-center gap-3">
-            <div className="relative w-9 h-9 flex-shrink-0">
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-                ) : (
-                  isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
+          <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
+            <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <div className="relative w-9 h-9 flex-shrink-0">
+                <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                  {user.avatar ? (
+                    <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
+                  ) : (
+                    isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
+                  )}
+                </div>
+                {(activeFrame as any)?.frameImage && (
+                  <img
+                    src={(activeFrame as any).frameImage}
+                    alt="frame"
+                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                    style={{ zIndex: 2 }}
+                  />
                 )}
               </div>
-              {(activeFrame as any)?.frameImage && (
-                <img
-                  src={(activeFrame as any).frameImage}
-                  alt="frame"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                  style={{ zIndex: 2 }}
-                />
-              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
+                <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-zinc-500"}`}>
+                  {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
+                </span>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
-              <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-zinc-500"}`}>
-                {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
-              </span>
-            </div>
-          </div>
+          </Link>
           {wallet && (
             <div className="mt-2 flex items-center gap-1.5 pt-2 border-t border-zinc-700/30">
               <Coins className="w-3.5 h-3.5 text-yellow-400" />

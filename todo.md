@@ -339,3 +339,6 @@
 - [x] En la galería de cosméticos del perfil, mostrar la imagen con sus proporciones reales (aspect-square, object-cover)
 - [x] Tab cosméticos en perfil propio muestra todos los cosméticos con botón de equipar; en perfil ajeno solo los equipados
 - [x] Soporte de ?tab=cosmetics en URL del perfil para abrir directamente ese tab
+
+## Quick Fix V24
+- [x] Foto y nombre del usuario en el sidebar son clickeables y llevan al perfil
