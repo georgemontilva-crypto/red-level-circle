@@ -386,3 +386,8 @@
 
 ## Quitar estrella creadores V35
 - [x] Quitar la estrella amarilla en Creators.tsx y Home.tsx, dejar solo VerifiedBadge junto al nombre
+
+## Botón flotante creadores V36
+- [x] Quitar banner expandible de solicitud de creador en Creators.tsx
+- [x] Agregar botón flotante pequeño en esquina inferior derecha (solo en /creators)
+- [x] Al hacer click, abrir modal con el formulario de solicitud de creador con animación suave

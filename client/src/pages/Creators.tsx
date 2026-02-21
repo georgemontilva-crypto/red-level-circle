@@ -123,13 +123,14 @@ function CreatorCard({ c }: { c: any }) {
       </div>
   );
 }
-function ApplicationForm() {
+function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
   const { isAuthenticated, user } = useAuth();
   const { data: myApp, refetch } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
   const submit = trpc.creators.submitApplication.useMutation({
     onSuccess: () => {
       toast.success("¡Solicitud enviada! La revisaremos pronto.");
       refetch();
+      onSuccess?.();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -348,13 +349,7 @@ export default function Creators() {
           <p className="text-zinc-400 text-lg max-w-xl mx-auto mb-8">
             Conoce a los streamers, YouTubers y creadores verificados que forman parte de la comunidad Red Level Circle.
           </p>
-          <button
-            onClick={() => { setShowForm(true); document.getElementById("apply-section")?.scrollIntoView({ behavior: "smooth" }); }}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white mx-auto transition-all hover:scale-105"
-            style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.3)" }}
-          >
-            <Crown size={16} /> QUIERO SER CREADOR OFICIAL
-          </button>
+
         </div>
       </div>
 
@@ -383,10 +378,9 @@ export default function Creators() {
               >
                 <cat.icon size={12} /> {cat.label} ({count})
               </button>
-            );
-          })}
+              )}
+        )}
         </div>
-
         {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -408,32 +402,57 @@ export default function Creators() {
           </div>
         )}
 
-        {/* Apply section */}
-        <section id="apply-section" className="scroll-mt-8">
-          <div
-            className="rounded-2xl border border-zinc-800/50 overflow-hidden cursor-pointer"
-            onClick={() => setShowForm(s => !s)}
+        {/* Floating button */}
+        <div className="fixed bottom-8 right-8 z-50">
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-3 rounded-2xl font-orbitron font-bold text-sm text-white shadow-2xl transition-all hover:scale-105 active:scale-95"
+            style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
+            title="Solicitar ser Creador Oficial"
           >
-            <div className="flex items-center justify-between p-6 bg-zinc-900/60">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-red-600/20 flex items-center justify-center">
-                  <Crown size={20} className="text-red-400" />
+            <Crown size={16} />
+            <span className="hidden sm:inline">Ser Creador</span>
+          </button>
+        </div>
+        {/* Modal */}
+        {showForm && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ animation: "fadeIn 0.2s ease" }}
+          >
+            <div
+              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              onClick={() => setShowForm(false)}
+            />
+            <div
+              className="relative w-full max-w-lg rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden"
+              style={{ animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
+            >
+              {/* Modal header */}
+              <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-red-600/20 flex items-center justify-center">
+                    <Crown size={18} className="text-red-400" />
+                  </div>
+                  <div>
+                    <h2 className="font-orbitron font-bold text-white text-base">Solicitar Verificación</h2>
+                    <p className="text-zinc-500 text-xs">El equipo revisará tu solicitud</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="font-orbitron font-bold text-white">¿Quieres ser Creador Oficial?</h2>
-                  <p className="text-zinc-500 text-sm">Completa el formulario y el equipo revisará tu solicitud</p>
-                </div>
+                <button
+                  onClick={() => setShowForm(false)}
+                  className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                >
+                  ✕
+                </button>
               </div>
-              <ChevronDown size={20} className={`text-zinc-500 transition-transform ${showForm ? "rotate-180" : ""}`} />
+              {/* Modal body */}
+              <div className="p-6 max-h-[70vh] overflow-y-auto">
+                <ApplicationForm onSuccess={() => setShowForm(false)} />
+              </div>
             </div>
           </div>
-
-          {showForm && (
-            <div className="mt-4 p-6 sm:p-8 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
-              <ApplicationForm />
-            </div>
-          )}
-        </section>
+        )}
 
       </div>
     </div>
