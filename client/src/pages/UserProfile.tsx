@@ -6,8 +6,8 @@ import {
   Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
   Loader2,
 } from "lucide-react";
-import { useParams, Link } from "wouter";
-import { useState } from "react";
+import { useParams, Link, useSearch } from "wouter";
+import { useState, useEffect } from "react";
 
 function ProfileTypeIcon({ type }: { type: string | null }) {
   if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-yellow-400" />;
@@ -50,12 +50,32 @@ export default function UserProfile() {
     onError: (e) => toast.error(e.message),
   });
 
-  const [activeTab, setActiveTab] = useState<"overview" | "cosmetics" | "followers" | "following">("overview");
+  const searchString = useSearch();
+  const tabParam = new URLSearchParams(searchString).get("tab") as "overview" | "cosmetics" | "followers" | "following" | null;
+  const [activeTab, setActiveTab] = useState<"overview" | "cosmetics" | "followers" | "following">(tabParam ?? "overview");
+  useEffect(() => {
+    if (tabParam && ["overview", "cosmetics", "followers", "following"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   const { data: teamMemberships } = trpc.teams.membershipOf.useQuery(
     { userId },
     { enabled: !!userId }
   );
+
+  const { data: myCosmetics = [], refetch: refetchMyCosmetics } = trpc.cosmetics.myCosmetics.useQuery(
+    undefined,
+    { enabled: isOwnProfile && activeTab === "cosmetics" }
+  );
+  const equipMutation = trpc.cosmetics.equip.useMutation({
+    onSuccess: () => {
+      toast.success("¡Cosmético equipado!");
+      refetchMyCosmetics();
+      utils.profile.getWithStats.invalidate({ userId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const { data: followers } = trpc.follows.getFollowers.useQuery(
     { userId },
@@ -163,8 +183,8 @@ export default function UserProfile() {
                 <img
                   src={equippedFrame.frameImage}
                   alt="Frame"
-                  className="absolute inset-0 z-10 pointer-events-none"
-                  style={{ width: "96px", height: "96px", top: "-8px", left: "-8px" }}
+                  className="absolute z-10 pointer-events-none"
+                  style={{ width: "112px", height: "112px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
                 />
               )}
               <div
@@ -387,30 +407,90 @@ export default function UserProfile() {
           {/* Cosmetics tab */}
           {activeTab === "cosmetics" && (
             <div>
-              {!profile.equippedCosmetics || profile.equippedCosmetics.length === 0 ? (
-                <div
-                  className="rounded-xl p-8 text-center"
-                  style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                >
-                  <span className="text-4xl mb-3 block">🎨</span>
-                  <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
-                </div>
+              {isOwnProfile ? (
+                /* Own profile: show all owned cosmetics with equip button */
+                myCosmetics.length === 0 ? (
+                  <div
+                    className="rounded-xl p-8 text-center"
+                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                  >
+                    <span className="text-4xl mb-3 block">🎨</span>
+                    <p className="text-zinc-500 font-mono text-sm">No tienes cosméticos aún</p>
+                    <a href="/shop/cosmetics" className="mt-3 inline-block text-xs text-red-400 hover:text-red-300 font-mono underline">Ir a la tienda</a>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {myCosmetics.map((c) => (
+                      <div
+                        key={c.id}
+                        className={`rounded-xl overflow-hidden transition-all ${
+                          c.isEquipped ? "ring-2 ring-red-500" : ""
+                        }`}
+                        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                      >
+                        {(c as any).previewImage ? (
+                          <div className="w-full aspect-square bg-zinc-900 overflow-hidden">
+                            <img src={(c as any).previewImage} alt={(c as any).name ?? ""} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center">
+                            <span className="text-4xl">🎨</span>
+                          </div>
+                        )}
+                        <div className="p-3 text-center">
+                          <p className="text-sm font-semibold text-zinc-200 truncate font-rajdhani">{(c as any).name}</p>
+                          <p className="text-xs text-zinc-600 font-mono capitalize mt-1">{(c as any).type}</p>
+                          {c.isEquipped ? (
+                            <span className="mt-2 inline-block text-xs text-green-400 font-mono">✓ Equipado</span>
+                          ) : (
+                            <button
+                              onClick={() => equipMutation.mutate({ cosmeticId: c.cosmeticId })}
+                              disabled={equipMutation.isPending}
+                              className="mt-2 px-3 py-1 rounded text-xs font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                            >
+                              Equipar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {profile.equippedCosmetics.map((c) => (
-                    <div
-                      key={c.id}
-                      className="rounded-xl p-4 text-center"
-                      style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                    >
-                      {c.previewImage && (
-                        <img src={c.previewImage} alt={c.name} className="w-16 h-16 object-contain mx-auto mb-2" />
-                      )}
-                      <p className="text-xs font-mono text-zinc-300 truncate">{c.name}</p>
-                      <p className="text-xs text-zinc-600 font-mono capitalize mt-0.5">{c.type}</p>
-                    </div>
-                  ))}
-                </div>
+                /* Other user's profile: show only equipped cosmetics */
+                !profile.equippedCosmetics || profile.equippedCosmetics.length === 0 ? (
+                  <div
+                    className="rounded-xl p-8 text-center"
+                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                  >
+                    <span className="text-4xl mb-3 block">🎨</span>
+                    <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {profile.equippedCosmetics.map((c) => (
+                      <div
+                        key={c.id}
+                        className="rounded-xl overflow-hidden"
+                        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                      >
+                        {c.previewImage ? (
+                          <div className="w-full aspect-square bg-zinc-900 overflow-hidden">
+                            <img src={c.previewImage} alt={c.name} className="w-full h-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center">
+                            <span className="text-4xl">🎨</span>
+                          </div>
+                        )}
+                        <div className="p-3 text-center">
+                          <p className="text-sm font-semibold text-zinc-200 truncate font-rajdhani">{c.name}</p>
+                          <p className="text-xs text-zinc-600 font-mono capitalize mt-0.5">{c.type}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               )}
             </div>
           )}

@@ -332,3 +332,10 @@
 - [x] Galería de cosméticos en el perfil del usuario (sección "MI COLECCIÓN" en /shop/cosmetics)
 - [x] Botón "Equipar" para aplicar marco/aura sobre la foto de perfil
 - [x] Marco/aura (frameImage PNG transparente) visible públicamente en el avatar del usuario en sidebar y perfil público
+
+## Mejoras de Cosméticos V23
+- [x] Al comprar cosmético, redirigir al perfil del usuario en tab "Cosméticos" para equiparlo desde ahí
+- [x] Centrar correctamente el overlay del marco/aura sobre el avatar en el perfil (transform: translate(-50%,-50%))
+- [x] En la galería de cosméticos del perfil, mostrar la imagen con sus proporciones reales (aspect-square, object-cover)
+- [x] Tab cosméticos en perfil propio muestra todos los cosméticos con botón de equipar; en perfil ajeno solo los equipados
+- [x] Soporte de ?tab=cosmetics en URL del perfil para abrir directamente ese tab

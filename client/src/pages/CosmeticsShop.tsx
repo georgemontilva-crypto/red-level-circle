@@ -8,6 +8,7 @@ import {
   Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock, X, AlertCircle, ShoppingCart,
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { useLocation } from "wouter";
 
 const RARITY_COLORS: Record<string, string> = {
   common: "text-gray-400 border-gray-600",
@@ -202,6 +203,7 @@ export default function CosmeticsShop() {
   const [activeCollection, setActiveCollection] = useState<string | undefined>();
   const [confirmCosmetic, setConfirmCosmetic] = useState<any | null>(null);
   const [buyError, setBuyError] = useState<string | null>(null);
+  const [, navigate] = useLocation();
 
   const { data: cosmetics = [], refetch } = trpc.cosmetics.list.useQuery({
     type: activeType === "all" ? undefined : activeType,
@@ -215,7 +217,7 @@ export default function CosmeticsShop() {
 
   const buyMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: (data) => {
-      toast.success(`¡Cosmético adquirido! Nuevo balance: ${data.newBalance} RLC`, {
+      toast.success(`¡Cosmético adquirido! Ve a tu perfil para equiparlo.`, {
         style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
       });
       setConfirmCosmetic(null);
@@ -223,6 +225,10 @@ export default function CosmeticsShop() {
       refetch();
       refetchOwned();
       refetchMe();
+      // Redirect to user profile cosmetics tab
+      if (user?.id) {
+        navigate(`/profile/${user.id}?tab=cosmetics`);
+      }
     },
     onError: (err) => {
       setBuyError(err.message);
