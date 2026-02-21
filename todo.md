@@ -423,3 +423,4 @@
 - [x] Corregir barra roja y botón que no cambia de estado en modal YouTube
 - [x] Eliminar badge de monedas de la esquina superior derecha en Rewards
 - [x] Sincronizar video YouTube y contador: playVideo/pauseVideo via postMessage al hacer clic en overlay
+- [x] Auto-play al abrir modal: ytPlaying=true desde inicio, video arranca automáticamente

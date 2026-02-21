@@ -174,15 +174,15 @@ function VideoPlayerModal({
   const videoRef = useRef<HTMLVideoElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const ytIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const required = task.durationSeconds ?? 30;
+  const isYoutube = task.contentUrl?.includes("youtube") || task.contentUrl?.includes("youtu.be");
+  const isDirectVideo = task.contentUrl && !isYoutube;
   const [elapsed, setElapsed] = useState(0);
   const [muted, setMuted] = useState(false);
   const [videoCompleted, setVideoCompleted] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  // ytPlaying: starts false, user must click play overlay to start
-  const [ytPlaying, setYtPlaying] = useState(false);
-  const required = task.durationSeconds ?? 30;
-  const isYoutube = task.contentUrl?.includes("youtube") || task.contentUrl?.includes("youtu.be");
-  const isDirectVideo = task.contentUrl && !isYoutube;
+  // ytPlaying: starts true — auto-play when modal opens
+  const [ytPlaying, setYtPlaying] = useState(isYoutube ? true : false);
 
   const claimMutation = trpc.rewards.claim.useMutation({
     onSuccess: (data) => {
@@ -250,6 +250,18 @@ function VideoPlayerModal({
       if (ytIntervalRef.current) { clearInterval(ytIntervalRef.current); ytIntervalRef.current = null; }
     };
   }, [isYoutube, ytPlaying, videoCompleted, required]);
+
+  // Auto-send playVideo to iframe after it loads (YouTube needs ~1.5s to accept commands)
+  useEffect(() => {
+    if (!isYoutube) return;
+    const timer = setTimeout(() => {
+      iframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: "command", func: "playVideo", args: [] }),
+        "*"
+      );
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [isYoutube]);
 
   // Send command to YouTube iframe via postMessage
   const ytCommand = (cmd: "playVideo" | "pauseVideo") => {
