@@ -401,3 +401,9 @@
 - [x] Header bar con tabs Todas/Reclamadas y balance de RLC Coins
 - [x] Hero section con título y balance destacado
 - [x] Grid de tarjetas estilo Discord Quests (3 columnas, thumbnail 16:9, sponsor, fecha, CTA)
+
+## VideoPlayerModal Discord Style V38
+- [x] Modal más grande (min(900px, 90vw)), video ocupa todo el ancho
+- [x] Barra de progreso bloqueada (no se puede adelantar con click/drag)
+- [x] Botones con colores RLC rojos (reclamar recompensa usa oklch rojo RLC)
+- [x] Footer con info de la misión y botón de reclamar al estilo Discord

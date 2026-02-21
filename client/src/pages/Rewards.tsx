@@ -253,13 +253,13 @@ function VideoPlayerModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
       style={{ animation: "fadeIn 0.2s ease" }}
     >
       <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={onClose} />
       <div
-        className="relative w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: "#111214", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
+        className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: "#111214", maxWidth: "min(900px, 90vw)", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
       >
         {/* Close */}
         <button
@@ -334,13 +334,13 @@ function VideoPlayerModal({
         </div>
 
         {/* Progress bar */}
-        <div className="w-full h-1" style={{ background: "#1a1a1a" }}>
+        <div className="w-full h-1.5" style={{ background: "#1a1a1a" }}>
           <div
             className="h-full transition-all duration-300"
             style={{
               width: `${progress}%`,
-              background: videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25)",
-              boxShadow: videoCompleted ? "0 0 8px #22c55e" : "0 0 8px oklch(0.55 0.22 25)",
+              background: videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25)",
+              boxShadow: videoCompleted ? "0 0 8px oklch(0.55 0.22 25)" : "0 0 8px oklch(0.55 0.22 25 / 0.7)",
             }}
           />
         </div>
@@ -371,18 +371,18 @@ function VideoPlayerModal({
             <button
               onClick={handleClaim}
               disabled={!videoCompleted || claiming}
-              className="px-4 py-2 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               style={{
-                background: videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25 / 0.3)",
-                color: videoCompleted ? "white" : "oklch(0.55 0.22 25)",
-                border: `1px solid ${videoCompleted ? "#22c55e" : "oklch(0.55 0.22 25 / 0.4)"}`,
-                boxShadow: videoCompleted ? "0 0 16px #22c55e60" : "none",
+                background: videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25 / 0.25)",
+                color: "white",
+                border: `1px solid ${videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25 / 0.4)"}`,
+                boxShadow: videoCompleted ? "0 0 20px oklch(0.55 0.22 25 / 0.5)" : "none",
               }}
             >
               {claiming ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : videoCompleted ? (
-                <><CheckCircle size={14} /> Reclamar +{task.reward} RLC</>
+                <><CheckCircle size={14} /> Reclamar +{task.reward} RLC 🎉</>
               ) : (
                 <><Lock size={14} /> Reclamar recompensa</>
               )}
