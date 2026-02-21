@@ -4,7 +4,9 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock } from "lucide-react";
+import {
+  Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock, X, AlertCircle, ShoppingCart,
+} from "lucide-react";
 import { getLoginUrl } from "@/const";
 
 const RARITY_COLORS: Record<string, string> = {
@@ -13,28 +15,24 @@ const RARITY_COLORS: Record<string, string> = {
   epic: "text-purple-400 border-purple-500",
   legendary: "text-yellow-400 border-yellow-500",
 };
-
 const RARITY_GLOW: Record<string, string> = {
   common: "",
   rare: "shadow-[0_0_20px_rgba(59,130,246,0.3)]",
   epic: "shadow-[0_0_20px_rgba(168,85,247,0.3)]",
   legendary: "shadow-[0_0_20px_rgba(234,179,8,0.5)]",
 };
-
 const RARITY_LABELS: Record<string, string> = {
   common: "Común",
   rare: "Raro",
   epic: "Épico",
   legendary: "Legendario",
 };
-
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   frame: <Shield className="w-4 h-4" />,
   aura: <Sparkles className="w-4 h-4" />,
   badge: <Star className="w-4 h-4" />,
   background: <Zap className="w-4 h-4" />,
 };
-
 const TYPE_LABELS: Record<string, string> = {
   frame: "Marcos",
   aura: "Auras",
@@ -42,62 +40,230 @@ const TYPE_LABELS: Record<string, string> = {
   background: "Fondos",
 };
 
-// Placeholder avatar for preview
 const AVATAR_PLACEHOLDER = "https://api.dicebear.com/7.x/bottts/svg?seed=rlc&backgroundColor=1a1a1a";
 
+// ─── Purchase Confirmation Modal ──────────────────────────────────────────────
+function PurchaseModal({
+  cosmetic,
+  userBalance,
+  onConfirm,
+  onClose,
+  isPending,
+  error,
+}: {
+  cosmetic: any;
+  userBalance: number;
+  onConfirm: () => void;
+  onClose: () => void;
+  isPending: boolean;
+  error: string | null;
+}) {
+  const canAfford = userBalance >= cosmetic.price;
+  const rarityGlow = RARITY_GLOW[cosmetic.rarity] ?? "";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)" }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl overflow-hidden bg-[#111] border border-white/10"
+        style={{
+          animation: "modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
+          boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
+        }}
+      >
+        {/* Header image */}
+        <div className="relative h-44 bg-zinc-900 overflow-hidden">
+          {cosmetic.previewImage ? (
+            <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="relative w-24 h-24">
+                <img src={AVATAR_PLACEHOLDER} alt="avatar" className="w-full h-full rounded-full" />
+                {cosmetic.frameImage && (
+                  <img src={cosmetic.frameImage} alt="frame" className="absolute inset-0 w-full h-full" />
+                )}
+              </div>
+            </div>
+          )}
+          {/* Gradient overlay */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #111 100%)" }} />
+          {/* Close button */}
+          <button
+            onClick={onClose}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-5 pb-5 -mt-2">
+          {/* Insufficient funds error */}
+          {!canAfford && (
+            <div className="flex items-center gap-2 bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 mb-4">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-red-400 text-sm font-rajdhani">Saldo insuficiente. Necesitas {cosmetic.price - userBalance} RLC más.</p>
+            </div>
+          )}
+          {error && canAfford && (
+            <div className="flex items-center gap-2 bg-red-900/30 border border-red-700/50 rounded-lg px-3 py-2 mb-4">
+              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
+              <p className="text-red-400 text-sm font-rajdhani">{error}</p>
+            </div>
+          )}
+
+          <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-widest mb-3">Detalles de la compra</p>
+
+          {/* Item row */}
+          <div className={`flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl p-3 mb-4 ${rarityGlow}`}>
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+              {cosmetic.previewImage ? (
+                <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-gray-500" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm font-rajdhani truncate">{cosmetic.name}</p>
+              <p className={`text-xs font-mono ${RARITY_COLORS[cosmetic.rarity]?.split(" ")[0] ?? "text-gray-400"}`}>
+                {RARITY_LABELS[cosmetic.rarity]} · {TYPE_LABELS[cosmetic.type]}
+              </p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <Coins className="w-4 h-4 text-yellow-400" />
+              <span className="text-yellow-400 font-bold font-mono text-sm">{cosmetic.price}</span>
+            </div>
+          </div>
+
+          {/* Payment method — RLC Coins */}
+          <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-widest mb-2">Paga con</p>
+          <div className="flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 mb-4">
+            <div className="w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center flex-shrink-0">
+              <Coins className="w-4 h-4 text-yellow-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-white text-sm font-rajdhani font-semibold">RLC Coins</p>
+              <p className={`text-xs font-mono ${canAfford ? "text-green-400" : "text-red-400"}`}>
+                Saldo disponible: {userBalance} RLC
+              </p>
+            </div>
+            {canAfford && (
+              <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+            )}
+          </div>
+
+          <p className="text-gray-600 text-xs font-rajdhani mb-4 leading-relaxed">
+            Al hacer clic en "Comprar", el cosmético quedará disponible de inmediato en tu galería de perfil. Esta compra no es reembolsable.
+          </p>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="flex-1 border-white/10 text-gray-400 hover:bg-white/5 font-orbitron text-xs"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={onConfirm}
+              disabled={!canAfford || isPending}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isPending ? (
+                <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-2" />Procesando...</>
+              ) : (
+                <><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Comprar</>
+              )}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.88) translateY(16px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function CosmeticsShop() {
   const { user, isAuthenticated } = useAuth();
   const [activeType, setActiveType] = useState("all");
   const [activeCollection, setActiveCollection] = useState<string | undefined>();
-  const [previewCosmetic, setPreviewCosmetic] = useState<number | null>(null);
+  const [confirmCosmetic, setConfirmCosmetic] = useState<any | null>(null);
+  const [buyError, setBuyError] = useState<string | null>(null);
 
   const { data: cosmetics = [], refetch } = trpc.cosmetics.list.useQuery({
     type: activeType === "all" ? undefined : activeType,
     collection: activeCollection,
   });
-
   const { data: myCosmetics = [], refetch: refetchOwned } = trpc.cosmetics.myCosmetics.useQuery(
     undefined,
     { enabled: isAuthenticated }
   );
-
   const { data: me, refetch: refetchMe } = trpc.auth.me.useQuery();
 
   const buyMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: (data) => {
       toast.success(`¡Cosmético adquirido! Nuevo balance: ${data.newBalance} RLC`, {
-        style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
       });
+      setConfirmCosmetic(null);
+      setBuyError(null);
       refetch();
       refetchOwned();
       refetchMe();
     },
     onError: (err) => {
-      toast.error(err.message, {
-        style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
-      });
+      setBuyError(err.message);
     },
   });
 
   const equipMutation = trpc.cosmetics.equip.useMutation({
     onSuccess: () => {
-      toast.success("¡Cosmético equipado!", {
+      toast.success("¡Cosmético equipado! Visible en tu perfil.", {
         style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
       });
       refetchOwned();
+      refetchMe();
     },
   });
 
   const ownedIds = new Set(myCosmetics.map((c) => c.cosmeticId));
   const equippedIds = new Set(myCosmetics.filter((c) => c.isEquipped).map((c) => c.cosmeticId));
-
-  // Get unique collections
   const collections = Array.from(new Set(cosmetics.map((c) => c.collection).filter(Boolean)));
+  const userBalance = (me as any)?.rlcBalance ?? 0;
 
-  const previewing = cosmetics.find((c) => c.id === previewCosmetic);
+  const handleBuyClick = (cosmetic: any) => {
+    if (!isAuthenticated) { window.location.href = getLoginUrl(); return; }
+    setBuyError(null);
+    setConfirmCosmetic(cosmetic);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
+      {/* Purchase confirmation modal */}
+      {confirmCosmetic && (
+        <PurchaseModal
+          cosmetic={confirmCosmetic}
+          userBalance={userBalance}
+          onConfirm={() => buyMutation.mutate({ cosmeticId: confirmCosmetic.id })}
+          onClose={() => { setConfirmCosmetic(null); setBuyError(null); }}
+          isPending={buyMutation.isPending}
+          error={buyError}
+        />
+      )}
+
       {/* Hero Banner */}
       <div className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0a0a0a 0%, #1a0000 50%, #0a0a0a 100%)" }}>
         <div className="absolute inset-0 pointer-events-none">
@@ -118,7 +284,7 @@ export default function CosmeticsShop() {
           {isAuthenticated && me && (
             <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-yellow-500/30 bg-yellow-500/10">
               <Coins className="w-4 h-4 text-yellow-400" />
-              <span className="text-yellow-400 font-bold font-mono">{(me as { rlcBalance?: number }).rlcBalance ?? 0} RLC</span>
+              <span className="text-yellow-400 font-bold font-mono">{userBalance} RLC</span>
               <span className="text-gray-500 text-sm">disponibles</span>
             </div>
           )}
@@ -191,10 +357,7 @@ export default function CosmeticsShop() {
               return (
                 <div
                   key={cosmetic.id}
-                  className={`relative rounded-xl border bg-zinc-900 overflow-hidden cursor-pointer transition-all hover:scale-105 ${rarityClass} ${glowClass} ${
-                    previewCosmetic === cosmetic.id ? "ring-2 ring-red-500" : ""
-                  }`}
-                  onClick={() => setPreviewCosmetic(previewCosmetic === cosmetic.id ? null : cosmetic.id)}
+                  className={`relative rounded-xl border bg-zinc-900 overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}
                 >
                   {/* Preview Image */}
                   <div className="relative aspect-square bg-zinc-800 flex items-center justify-center overflow-hidden">
@@ -271,7 +434,7 @@ export default function CosmeticsShop() {
 
                       {owned ? (
                         <button
-                          onClick={(e) => { e.stopPropagation(); equipMutation.mutate({ cosmeticId: cosmetic.id }); }}
+                          onClick={() => equipMutation.mutate({ cosmeticId: cosmetic.id })}
                           className={`px-2 py-1 rounded text-xs font-mono font-bold transition-all ${
                             equipped
                               ? "bg-green-500/20 text-green-400 border border-green-500/50"
@@ -282,9 +445,8 @@ export default function CosmeticsShop() {
                         </button>
                       ) : isAuthenticated ? (
                         <button
-                          onClick={(e) => { e.stopPropagation(); buyMutation.mutate({ cosmeticId: cosmetic.id }); }}
-                          disabled={buyMutation.isPending}
-                          className="px-2 py-1 rounded text-xs font-mono font-bold bg-red-500 hover:bg-red-600 text-white transition-all disabled:opacity-50"
+                          onClick={() => handleBuyClick(cosmetic)}
+                          className="px-2 py-1 rounded text-xs font-mono font-bold bg-red-500 hover:bg-red-600 text-white transition-all"
                         >
                           Comprar
                         </button>
@@ -305,9 +467,10 @@ export default function CosmeticsShop() {
         {/* My Collection */}
         {isAuthenticated && myCosmetics.length > 0 && (
           <div className="mt-16">
-            <h2 className="text-2xl font-black mb-6 font-mono tracking-wide">
+            <h2 className="text-2xl font-black mb-2 font-mono tracking-wide">
               MI <span className="text-red-500">COLECCIÓN</span>
             </h2>
+            <p className="text-gray-500 text-sm font-rajdhani mb-6">Los cosméticos equipados se muestran sobre tu foto de perfil en toda la plataforma.</p>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
               {myCosmetics.map((uc) => (
                 <div
@@ -317,20 +480,20 @@ export default function CosmeticsShop() {
                   }`}
                 >
                   <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
-                    {uc.previewImage ? (
-                      <img src={uc.previewImage} alt={uc.name ?? ""} className="w-full h-full object-cover" />
+                    {(uc as any).previewImage ? (
+                      <img src={(uc as any).previewImage} alt={(uc as any).name ?? ""} className="w-full h-full object-cover" />
                     ) : (
                       <Sparkles className="w-6 h-6 text-gray-600" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 truncate">{uc.name}</p>
-                  {uc.isEquipped && (
-                    <span className="text-xs text-green-400 font-mono">✓ Activo</span>
-                  )}
-                  {!uc.isEquipped && (
+                  <p className="text-xs text-gray-400 truncate">{(uc as any).name}</p>
+                  {uc.isEquipped ? (
+                    <span className="text-xs text-green-400 font-mono">✓ Equipado</span>
+                  ) : (
                     <button
                       onClick={() => equipMutation.mutate({ cosmeticId: uc.cosmeticId })}
-                      className="text-xs text-red-400 hover:text-red-300 font-mono mt-1"
+                      disabled={equipMutation.isPending}
+                      className="text-xs text-red-400 hover:text-red-300 font-mono mt-1 disabled:opacity-50"
                     >
                       Equipar
                     </button>

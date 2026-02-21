@@ -325,3 +325,10 @@
 - [x] Agregar tab COSMÉTICOS en panel admin con upload de previewImage y frameImage (PNG transparente)
 - [x] Endpoint admin.uploadImage para subir imágenes desde el admin a S3
 - [x] Endpoints cosmetics.adminCreate/adminUpdate/adminDelete para gestión desde admin
+
+## Flujo de Compra de Cosméticos V22
+- [x] Modal de confirmación de compra estilo Discord con imagen del cosmético, precio en RLC y saldo actual
+- [x] Validación de saldo: si no alcanza mostrar error "Saldo insuficiente", si alcanza debitar y habilitar
+- [x] Galería de cosméticos en el perfil del usuario (sección "MI COLECCIÓN" en /shop/cosmetics)
+- [x] Botón "Equipar" para aplicar marco/aura sobre la foto de perfil
+- [x] Marco/aura (frameImage PNG transparente) visible públicamente en el avatar del usuario en sidebar y perfil público

@@ -139,15 +139,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {isAuthenticated && user && (
         <div className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30">
           <div className="flex items-center gap-3">
-            <div className="relative w-8 h-8 flex-shrink-0">
-              <div className="w-8 h-8 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-                {isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />}
+            <div className="relative w-9 h-9 flex-shrink-0">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
+                ) : (
+                  isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
+                )}
               </div>
-              {activeFrame?.previewImage && (
+              {(activeFrame as any)?.frameImage && (
                 <img
-                  src={activeFrame.previewImage}
+                  src={(activeFrame as any).frameImage}
                   alt="frame"
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  style={{ zIndex: 2 }}
                 />
               )}
             </div>
