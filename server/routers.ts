@@ -201,7 +201,10 @@ export const appRouter = router({
         limit: z.number().optional(),
       }).optional())
       .query(async ({ input }) => {
-        return getTournaments({ ...input, isPublic: true });
+        // Solo torneos aprobados son visibles públicamente
+        const publicStatuses = ["registration_open", "registration_closed", "in_progress", "completed"];
+        const status = input?.status && publicStatuses.includes(input.status) ? input.status : undefined;
+        return getTournaments({ ...input, status, isPublic: true, publicOnly: true });
       }),
 
     myTournaments: premiumProcedure.query(async ({ ctx }) => {

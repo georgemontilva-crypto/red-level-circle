@@ -1,4 +1,4 @@
-import { and, desc, eq, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -210,17 +210,24 @@ export async function createTournament(data: {
   return (result as { insertId: number }).insertId;
 }
 
+const PUBLIC_STATUSES = ["registration_open", "registration_closed", "in_progress", "completed"] as const;
+
 export async function getTournaments(filters?: {
   status?: string;
   game?: string;
   search?: string;
   creatorId?: number;
   isPublic?: boolean;
+  publicOnly?: boolean;
 }) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (filters?.status) conditions.push(eq(tournaments.status, filters.status as any));
+  if (filters?.publicOnly && !filters?.status) {
+    conditions.push(inArray(tournaments.status, [...PUBLIC_STATUSES] as any[]));
+  } else if (filters?.status) {
+    conditions.push(eq(tournaments.status, filters.status as any));
+  }
   if (filters?.game) conditions.push(eq(tournaments.game, filters.game));
   if (filters?.creatorId) conditions.push(eq(tournaments.creatorId, filters.creatorId));
   if (filters?.isPublic !== undefined) conditions.push(eq(tournaments.isPublic, filters.isPublic));
@@ -1514,10 +1521,9 @@ export async function adminListPendingTournaments() {
     })
     .from(tournaments)
     .innerJoin(users, eq(tournaments.creatorId, users.id))
-    .where(eq(tournaments.status, "draft"))
+    .where(eq(tournaments.status, "pending_approval"))
     .orderBy(desc(tournaments.createdAt));
 }
-
 export async function adminApproveTournament(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");

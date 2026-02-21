@@ -254,3 +254,10 @@
 - [x] Enlace a /creators en el sidebar (sección COMUNIDAD)
 - [x] Sección admin para aprobar/rechazar solicitudes de creadores (tab CREADORES en AdminPanel)
 - [x] 29 tests pasando
+
+## Fix Admin Torneos + Banner V10
+- [x] Corregir panel admin: adminListPendingTournaments filtraba por 'draft' en lugar de 'pending_approval'
+- [x] Corregir typo en nombre de función adminApproveTournamentt -> adminApproveTournament
+- [x] Torneos pending_approval/draft NO son visibles públicamente (solo creador y admin)
+- [x] Agregar campo de banner en formulario CreateTournament con preview y subida a S3
+- [x] 29 tests pasando

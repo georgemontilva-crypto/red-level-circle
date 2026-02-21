@@ -53,6 +53,7 @@ interface FormData {
   startDate: string;
   endDate: string;
   isPublic: boolean;
+  banner: string;
 }
 
 const defaultForm: FormData = {
@@ -72,6 +73,7 @@ const defaultForm: FormData = {
   startDate: "",
   endDate: "",
   isPublic: true,
+  banner: "",
 };
 
 function NeonInput({
@@ -173,7 +175,32 @@ export default function CreateTournament() {
   const [, navigate] = useLocation();
   const [form, setForm] = useState<FormData>(defaultForm);
   const [step, setStep] = useState(1);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const totalSteps = 3;
+
+  const uploadImage = trpc.profile.uploadImage.useMutation();
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
+    setUploadingBanner(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp", type: "banner" });
+        set("banner")(result.url);
+        toast.success("Banner subido correctamente");
+        setUploadingBanner(false);
+      };
+      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingBanner(false); };
+      reader.readAsDataURL(file);
+    } catch {
+      toast.error("Error al subir el banner");
+      setUploadingBanner(false);
+    }
+  };
 
   const set = (key: keyof FormData) => (val: string | number | boolean) =>
     setForm((prev) => ({ ...prev, [key]: val }));
@@ -207,6 +234,7 @@ export default function CreateTournament() {
       startDate: form.startDate ? new Date(form.startDate).getTime() : undefined,
       endDate: form.endDate ? new Date(form.endDate).getTime() : undefined,
       isPublic: form.isPublic,
+      banner: form.banner || undefined,
     });
   };
 
@@ -320,6 +348,47 @@ export default function CreateTournament() {
                 placeholder="Reglas del torneo, código de conducta, restricciones..."
                 rows={5}
               />
+
+              {/* Banner upload */}
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">
+                  BANNER DEL TORNEO
+                </label>
+                <div
+                  className="relative w-full h-32 rounded-xl overflow-hidden cursor-pointer group"
+                  style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "oklch(0.09 0.005 0)" }}
+                  onClick={() => document.getElementById("tournament-banner-input")?.click()}
+                >
+                  {form.banner ? (
+                    <img src={form.banner} alt="Banner" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-2">
+                      <Trophy size={24} style={{ color: "oklch(0.40 0.005 0)" }} />
+                      <span className="text-xs text-muted-foreground font-display tracking-wider">
+                        {uploadingBanner ? "SUBIENDO..." : "CLICK PARA SUBIR BANNER"}
+                      </span>
+                      <span className="text-xs" style={{ color: "oklch(0.35 0.005 0)" }}>PNG, JPG · Máx. 5MB</span>
+                    </div>
+                  )}
+                  {form.banner && (
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-white text-xs font-display tracking-wider">CAMBIAR BANNER</span>
+                    </div>
+                  )}
+                  {uploadingBanner && (
+                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                      <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <input
+                  id="tournament-banner-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleBannerUpload}
+                />
+              </div>
 
               <div className="flex items-center gap-3">
                 <button
