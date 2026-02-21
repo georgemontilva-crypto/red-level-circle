@@ -315,3 +315,7 @@
 - [x] Tab JUEGOS en panel admin: crear/editar/eliminar juegos con subida de imagen (portada y logo)
 - [x] Campos de logo y banner en formulario "Crear Equipo" de MyTeams con subida a S3
 - [x] Resolución automática de apuestas al declarar ganador (ya estaba implementada en V2)
+
+## Fix React Hooks Error V20
+- [x] Corregir error "Rendered more hooks than during the previous render" en AdminPanel: hooks useQuery movidos antes del return condicional
+- [x] 29 tests pasando

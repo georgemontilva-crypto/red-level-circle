@@ -976,6 +976,8 @@ function OverviewTab() {
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const { user, isAuthenticated } = useAuth();
+  const { data: stats } = trpc.admin.stats.useQuery();
+  const { data: pending } = trpc.admin.pendingTournaments.useQuery();
 
   if (!isAuthenticated || user?.role !== "admin") {
     return (
@@ -988,9 +990,6 @@ export default function AdminPanel() {
       </div>
     );
   }
-
-  const { data: stats } = trpc.admin.stats.useQuery();
-  const { data: pending } = trpc.admin.pendingTournaments.useQuery();
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 px-4 sm:px-6 py-6 overflow-x-hidden">
