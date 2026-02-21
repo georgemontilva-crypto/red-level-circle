@@ -354,3 +354,8 @@
 
 ## Quick Fix V28
 - [x] Reducir tamaño de las tarjetas de cosméticos en la galería del perfil (grilla 3-5 columnas, tarjetas más pequeñas con proporciones correctas)
+
+## Quick Fix V29
+- [x] Outline del cosmético equipado: más fino y que no se corte (outline 1px en lugar de ring-2)
+- [x] Imagen del cosmético: object-cover para que llene la tarjeta sin espacios negros
+- [x] Rareza mostrada con colores: gris (Común), azul (Raro), morado (Épico), dorado (Legendario)

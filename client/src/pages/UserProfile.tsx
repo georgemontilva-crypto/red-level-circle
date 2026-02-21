@@ -420,40 +420,57 @@ export default function UserProfile() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    {myCosmetics.map((c) => (
-                      <div
-                        key={c.id}
-                        className={`rounded-lg overflow-hidden transition-all ${
-                          c.isEquipped ? "ring-2 ring-red-500" : ""
-                        }`}
-                        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                      >
-                        {(c as any).previewImage ? (
-                          <div className="w-full aspect-square bg-zinc-900 overflow-hidden">
-                            <img src={(c as any).previewImage} alt={(c as any).name ?? ""} className="w-full h-full object-contain" />
+                    {myCosmetics.map((c) => {
+                      const rarity = (c as any).rarity ?? "common";
+                      const rarityColor: Record<string, string> = {
+                        common: "#9ca3af",
+                        rare: "#3b82f6",
+                        epic: "#a855f7",
+                        legendary: "#f59e0b",
+                      };
+                      const rarityLabel: Record<string, string> = {
+                        common: "Común",
+                        rare: "Raro",
+                        epic: "Épico",
+                        legendary: "Legendario",
+                      };
+                      return (
+                        <div
+                          key={c.id}
+                          className="rounded-lg transition-all"
+                          style={{
+                            background: "oklch(0.10 0.005 0)",
+                            outline: c.isEquipped ? `1px solid ${rarityColor[rarity]}` : `1px solid oklch(0.18 0.01 0)`,
+                            outlineOffset: "0px",
+                          }}
+                        >
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-zinc-900">
+                            {(c as any).previewImage ? (
+                              <img src={(c as any).previewImage} alt={(c as any).name ?? ""} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-2xl">🎨</span>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center">
-                            <span className="text-2xl">🎨</span>
+                          <div className="p-2 text-center">
+                            <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{(c as any).name}</p>
+                            <p className="text-[10px] font-mono capitalize mt-0.5" style={{ color: rarityColor[rarity] }}>{rarityLabel[rarity]}</p>
+                            {c.isEquipped ? (
+                              <span className="mt-1 inline-block text-[10px] text-green-400 font-mono">✓ Equipado</span>
+                            ) : (
+                              <button
+                                onClick={() => equipMutation.mutate({ cosmeticId: c.cosmeticId })}
+                                disabled={equipMutation.isPending}
+                                className="mt-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 transition-all disabled:opacity-50"
+                              >
+                                Equipar
+                              </button>
+                            )}
                           </div>
-                        )}
-                        <div className="p-2 text-center">
-                          <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{(c as any).name}</p>
-                          <p className="text-[10px] text-zinc-600 font-mono capitalize mt-0.5">{(c as any).type}</p>
-                          {c.isEquipped ? (
-                            <span className="mt-1 inline-block text-[10px] text-green-400 font-mono">✓ Equipado</span>
-                          ) : (
-                            <button
-                              onClick={() => equipMutation.mutate({ cosmeticId: c.cosmeticId })}
-                              disabled={equipMutation.isPending}
-                              className="mt-1 px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30 transition-all disabled:opacity-50"
-                            >
-                              Equipar
-                            </button>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               ) : (
@@ -468,27 +485,46 @@ export default function UserProfile() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                    {profile.equippedCosmetics.map((c) => (
-                      <div
-                        key={c.id}
-                        className="rounded-lg overflow-hidden ring-2 ring-red-500"
-                        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                      >
-                        {c.previewImage ? (
-                          <div className="w-full aspect-square bg-zinc-900 overflow-hidden">
-                            <img src={c.previewImage} alt={c.name} className="w-full h-full object-contain" />
+                    {profile.equippedCosmetics.map((c) => {
+                      const rarity = (c as any).rarity ?? "common";
+                      const rarityColor: Record<string, string> = {
+                        common: "#9ca3af",
+                        rare: "#3b82f6",
+                        epic: "#a855f7",
+                        legendary: "#f59e0b",
+                      };
+                      const rarityLabel: Record<string, string> = {
+                        common: "Común",
+                        rare: "Raro",
+                        epic: "Épico",
+                        legendary: "Legendario",
+                      };
+                      return (
+                        <div
+                          key={c.id}
+                          className="rounded-lg transition-all"
+                          style={{
+                            background: "oklch(0.10 0.005 0)",
+                            outline: `1px solid ${rarityColor[rarity]}`,
+                            outlineOffset: "0px",
+                          }}
+                        >
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-zinc-900">
+                            {c.previewImage ? (
+                              <img src={c.previewImage} alt={c.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <span className="text-2xl">🎨</span>
+                              </div>
+                            )}
                           </div>
-                        ) : (
-                          <div className="w-full aspect-square bg-zinc-900 flex items-center justify-center">
-                            <span className="text-2xl">🎨</span>
+                          <div className="p-2 text-center">
+                            <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{c.name}</p>
+                            <p className="text-[10px] font-mono capitalize mt-0.5" style={{ color: rarityColor[rarity] }}>{rarityLabel[rarity]}</p>
                           </div>
-                        )}
-                        <div className="p-2 text-center">
-                          <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{c.name}</p>
-                          <p className="text-[10px] text-zinc-600 font-mono capitalize mt-0.5">{c.type}</p>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )
               )}
