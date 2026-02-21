@@ -1059,6 +1059,19 @@ export const appRouter = router({
         if (input.banned) await adminUpdateUserRole(input.userId, "user");
         return { success: true };
       }),
+    uploadImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp"]),
+        folder: z.string().default("admin"),
+      }))
+      .mutation(async ({ input }) => {
+        const ext = input.mimeType.split("/")[1];
+        const key = `${input.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
+      }),
   }),
 
   // ─── Shop ──────────────────────────────────────────────────────────────────
@@ -1100,20 +1113,66 @@ export const appRouter = router({
     list: publicProcedure
       .input(z.object({ type: z.string().optional(), collection: z.string().optional() }))
       .query(async ({ input }) => getCosmetics(input.type, input.collection)),
-
     myCosmetics: protectedProcedure
       .query(async ({ ctx }) => getUserCosmetics(ctx.user.id)),
-
     buy: protectedProcedure
       .input(z.object({ cosmeticId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         return buyCosmetic(ctx.user.id, input.cosmeticId);
       }),
-
     equip: protectedProcedure
       .input(z.object({ cosmeticId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await equipCosmetic(ctx.user.id, input.cosmeticId);
+        return { success: true };
+      }),
+    // ─── Admin ───────────────────────────────────────────────────────────────
+    adminCreate: adminProcedure
+      .input(z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        type: z.enum(["frame", "aura", "badge", "background"]).default("frame"),
+        rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
+        previewImage: z.string().optional(),
+        frameImage: z.string().optional(),
+        price: z.number().int().min(0),
+        originalPrice: z.number().int().optional(),
+        isActive: z.boolean().default(true),
+        isFeatured: z.boolean().default(false),
+        isLimited: z.boolean().default(false),
+        collection: z.string().optional(),
+        sortOrder: z.number().int().default(0),
+      }))
+      .mutation(async ({ input }) => {
+        await adminCreateCosmetic(input as any);
+        return { success: true };
+      }),
+    adminUpdate: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        type: z.enum(["frame", "aura", "badge", "background"]).optional(),
+        rarity: z.enum(["common", "rare", "epic", "legendary"]).optional(),
+        previewImage: z.string().optional(),
+        frameImage: z.string().optional(),
+        price: z.number().int().optional(),
+        originalPrice: z.number().int().optional(),
+        isActive: z.boolean().optional(),
+        isFeatured: z.boolean().optional(),
+        isLimited: z.boolean().optional(),
+        collection: z.string().optional(),
+        sortOrder: z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await adminUpdateCosmetic(id, data as any);
+        return { success: true };
+      }),
+    adminDelete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteCosmetic(input.id);
         return { success: true };
       }),
   }),

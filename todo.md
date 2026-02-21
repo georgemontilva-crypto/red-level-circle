@@ -319,3 +319,9 @@
 ## Fix React Hooks Error V20
 - [x] Corregir error "Rendered more hooks than during the previous render" en AdminPanel: hooks useQuery movidos antes del return condicional
 - [x] 29 tests pasando
+
+## Upload de Imágenes en Tienda y Cosméticos V21
+- [x] Reemplazar campo "URL de imagen" en ShopTab por botón de subida de archivo (imagen del producto)
+- [x] Agregar tab COSMÉTICOS en panel admin con upload de previewImage y frameImage (PNG transparente)
+- [x] Endpoint admin.uploadImage para subir imágenes desde el admin a S3
+- [x] Endpoints cosmetics.adminCreate/adminUpdate/adminDelete para gestión desde admin
