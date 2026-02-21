@@ -433,3 +433,4 @@
 - [ ] Mostrar banners de sección en las páginas correspondientes
 - [x] HeroSection del inicio usa imagen de section_banners[home] en lugar de publicidades
 - [ ] Eliminar bloque de texto/descripción y fondo oscuro debajo del SectionBanner en todas las páginas
+- [x] Texto de cada sección superpuesto sobre la imagen del SectionBanner (título + descripción encima del banner)
