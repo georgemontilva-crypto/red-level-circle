@@ -306,7 +306,7 @@ function VideoPlayerModal({
       <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: "#111214", maxWidth: "min(900px, 90vw)", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
+        style={{ background: "#111214", maxWidth: "min(900px, 95vw)", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
       >
         {/* Close */}
         <button
@@ -420,55 +420,56 @@ function VideoPlayerModal({
         </div>
 
         {/* Bottom bar */}
-        <div className="px-5 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="px-3 sm:px-5 py-3 sm:py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+          {/* Info row */}
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {task.sponsorLogoUrl ? (
-              <img src={task.sponsorLogoUrl} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-700" />
+              <img src={task.sponsorLogoUrl} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-zinc-700 shrink-0" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-zinc-800 flex items-center justify-center">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
                 <Video size={14} className="text-zinc-500" />
               </div>
             )}
-            <div>
-              <p className="text-white text-sm font-bold leading-tight">{task.title}</p>
+            <div className="min-w-0">
+              <p className="text-white text-xs sm:text-sm font-bold leading-tight truncate max-w-[180px] sm:max-w-[300px]">{task.title}</p>
               {task.sponsorName && (
                 <div className="flex items-center gap-1">
-                  <BadgeCheck size={11} className="text-green-400" />
-                  <p className="text-zinc-400 text-xs">{task.sponsorName}</p>
+                  <BadgeCheck size={10} className="text-green-400 shrink-0" />
+                  <p className="text-zinc-400 text-xs truncate">{task.sponsorName}</p>
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={videoCompleted ? handleClaim : undefined}
-              disabled={!videoCompleted || claiming}
-              className="px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5"
-              style={{
-                background: videoCompleted
-                  ? "oklch(0.55 0.22 25)"
-                  : ytPlaying
-                  ? "oklch(0.35 0.22 25 / 0.6)"
-                  : "oklch(0.55 0.22 25 / 0.20)",
-                color: "white",
-                border: `1px solid ${videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25 / 0.35)"}`,
-                boxShadow: videoCompleted ? "0 0 20px oklch(0.55 0.22 25 / 0.5)" : "none",
-                cursor: videoCompleted ? "pointer" : "default",
-                opacity: claiming ? 0.7 : 1,
-              }}
-            >
-              {claiming ? (
-                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : videoCompleted ? (
-                <><CheckCircle size={14} /> Reclamar recompensa +{task.reward} RLC 🎉</>
-              ) : ytPlaying ? (
-                <><span className="w-3 h-3 rounded-full bg-red-500 animate-pulse" /> Viendo... ({formatTime(remaining)} restantes)</>
-              ) : (
-                <><Play size={14} /> Ver video ({formatTime(remaining)} restantes)</>
-              )}
-            </button>
-          </div>
+          {/* Action button */}
+          <button
+            onClick={videoCompleted ? handleClaim : undefined}
+            disabled={!videoCompleted || claiming}
+            className="w-full sm:w-auto shrink-0 px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5"
+            style={{
+              background: videoCompleted
+                ? "oklch(0.55 0.22 25)"
+                : ytPlaying
+                ? "oklch(0.35 0.22 25 / 0.6)"
+                : "oklch(0.55 0.22 25 / 0.20)",
+              color: "white",
+              border: `1px solid ${videoCompleted ? "oklch(0.55 0.22 25)" : "oklch(0.55 0.22 25 / 0.35)"}`,
+              boxShadow: videoCompleted ? "0 0 20px oklch(0.55 0.22 25 / 0.5)" : "none",
+              cursor: videoCompleted ? "pointer" : "default",
+              opacity: claiming ? 0.7 : 1,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {claiming ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : videoCompleted ? (
+              <><CheckCircle size={13} /> <span>Reclamar +{task.reward} RLC 🎉</span></>
+            ) : ytPlaying ? (
+              <><span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" /> <span>Viendo... ({formatTime(remaining)})</span></>
+            ) : (
+              <><Play size={13} /> <span>Ver video ({formatTime(remaining)})</span></>
+            )}
+          </button>
         </div>
       </div>
     </div>
