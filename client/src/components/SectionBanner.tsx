@@ -19,17 +19,18 @@ interface SectionBannerProps {
  * Si no hay banner activo, muestra un fondo degradado oscuro.
  * Los children se renderizan superpuestos sobre la imagen.
  * Los admins ven un botón de edición inline en la esquina superior derecha.
+ * Mientras se edita, el título y subtítulo se previsualiza en tiempo real sobre el banner.
  */
 export function SectionBanner({
   sectionKey,
-  height = "h-40 sm:h-56",
+  height = "h-48 sm:h-64 lg:h-72",
   className = "",
   children,
 }: SectionBannerProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin";
 
-  const { data: banner, refetch } = trpc.banners.getSection.useQuery({ sectionKey });
+  const { data: banner } = trpc.banners.getSection.useQuery({ sectionKey });
   const utils = trpc.useUtils();
 
   const [editing, setEditing] = useState(false);
@@ -88,16 +89,19 @@ export function SectionBanner({
     });
   };
 
-  const imageUrl = banner?.isActive ? banner.imageUrl : null;
+  // When editing: show live preview values; otherwise show saved banner values
+  const displayImageUrl = editing ? (previewUrl ?? (banner?.isActive ? banner?.imageUrl : null)) : (banner?.isActive ? banner?.imageUrl : null);
+  const displayTitle = editing ? title : (banner?.title ?? "");
+  const displaySubtitle = editing ? subtitle : (banner?.subtitle ?? "");
 
   return (
     <>
       <div className={`relative w-full overflow-hidden rounded-xl mb-6 ${height} ${className}`}>
         {/* Background */}
-        {imageUrl ? (
+        {displayImageUrl ? (
           <img
-            src={imageUrl}
-            alt={banner?.title ?? sectionKey}
+            src={displayImageUrl}
+            alt={displayTitle || sectionKey}
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
@@ -105,19 +109,19 @@ export function SectionBanner({
         )}
 
         {/* Gradient overlay for text readability */}
-        {(children || banner?.title || banner?.subtitle) && (
+        {(children || displayTitle || displaySubtitle) && (
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
         {/* Optional link covering entire banner */}
-        {banner?.linkUrl && !children && (
+        {banner?.linkUrl && !children && !editing && (
           <a
             href={banner.linkUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="absolute inset-0"
-            aria-label={banner.title ?? "Ver más"}
+            aria-label={displayTitle || "Ver más"}
           />
         )}
 
@@ -128,18 +132,26 @@ export function SectionBanner({
           </div>
         )}
 
-        {/* Fallback: title/subtitle from admin config (when no children) */}
-        {!children && (banner?.title || banner?.subtitle) && (
+        {/* Title/subtitle — live preview when editing, saved data otherwise */}
+        {!children && (displayTitle || displaySubtitle) && (
           <div className="absolute bottom-0 left-0 p-4 sm:p-6">
-            {banner.title && (
-              <h2 className="font-orbitron font-black text-xl sm:text-3xl text-white tracking-wider drop-shadow-lg">
-                {banner.title}
+            {displayTitle && (
+              <h2 className="font-orbitron font-black text-xl sm:text-3xl text-white tracking-wider drop-shadow-lg transition-all duration-150">
+                {displayTitle}
               </h2>
             )}
-            {banner.subtitle && (
-              <p className="text-zinc-300 text-sm font-rajdhani mt-1 drop-shadow">{banner.subtitle}</p>
+            {displaySubtitle && (
+              <p className="text-zinc-300 text-sm font-rajdhani mt-1 drop-shadow transition-all duration-150">{displaySubtitle}</p>
             )}
           </div>
+        )}
+
+        {/* Editing indicator border */}
+        {editing && (
+          <div
+            className="absolute inset-0 rounded-xl pointer-events-none"
+            style={{ border: "2px solid oklch(0.55 0.22 25 / 0.6)", boxShadow: "inset 0 0 20px oklch(0.55 0.22 25 / 0.1)" }}
+          />
         )}
 
         {/* Admin edit button — inline, top-right corner */}
@@ -148,14 +160,14 @@ export function SectionBanner({
             onClick={openEditor}
             className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200 backdrop-blur-sm"
             style={{
-              background: "rgba(0,0,0,0.55)",
-              border: "1px solid rgba(255,255,255,0.15)",
-              color: "rgba(255,255,255,0.85)",
+              background: editing ? "oklch(0.55 0.22 25 / 0.8)" : "rgba(0,0,0,0.55)",
+              border: `1px solid ${editing ? "oklch(0.65 0.22 25)" : "rgba(255,255,255,0.15)"}`,
+              color: "rgba(255,255,255,0.95)",
             }}
             title="Editar banner"
           >
             <Pencil size={12} />
-            <span className="hidden sm:inline">Editar banner</span>
+            <span className="hidden sm:inline">{editing ? "Editando..." : "Editar banner"}</span>
           </button>
         )}
       </div>
@@ -175,7 +187,7 @@ export function SectionBanner({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-mono font-black text-white text-sm tracking-widest">EDITAR BANNER</h3>
-                <p className="text-xs text-gray-500 font-mono mt-0.5">Sección: {sectionKey}</p>
+                <p className="text-xs text-gray-500 font-mono mt-0.5">Sección: {sectionKey} · Los cambios se previsualiza en vivo</p>
               </div>
               <button onClick={() => setEditing(false)} className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white">
                 <X size={16} />
@@ -185,7 +197,7 @@ export function SectionBanner({
             {/* Image upload */}
             <div
               className="relative rounded-xl overflow-hidden cursor-pointer group"
-              style={{ height: "140px", border: "1px dashed oklch(0.30 0.01 0)", background: "oklch(0.08 0.005 0)" }}
+              style={{ height: "120px", border: "1px dashed oklch(0.30 0.01 0)", background: "oklch(0.08 0.005 0)" }}
               onClick={() => fileRef.current?.click()}
             >
               {previewUrl ? (

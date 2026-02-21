@@ -438,3 +438,4 @@
 - [x] Panel admin para gestionar anuncios por tipo (featured/card/wide) con subida de imagen
 - [x] Agregar Equipos al menú lateral y crear página pública de listado de equipos
 - [x] Edición inline de banners de sección directamente en la página (solo admins)
+- [x] Aumentar altura banner en escritorio y preview en tiempo real del texto
