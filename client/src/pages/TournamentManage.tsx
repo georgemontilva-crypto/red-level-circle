@@ -169,6 +169,19 @@ export default function TournamentManage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
+                <Link href={`/dashboard/edit-tournament/${id}`}>
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
+                    style={{
+                      background: "oklch(0.13 0.005 0)",
+                      border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+                      color: "oklch(0.65 0.22 25)",
+                    }}
+                  >
+                    <Edit size={14} /> EDITAR
+                  </button>
+                </Link>
+
                 <Link href={`/tournaments/${id}`}>
                   <button
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"

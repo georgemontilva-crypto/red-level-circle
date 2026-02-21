@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
-import { Trophy, PlusCircle, ChevronRight, Swords, Users, Settings } from "lucide-react";
+import { Trophy, PlusCircle, ChevronRight, Swords, Users, Settings, Edit } from "lucide-react";
 import { Link } from "wouter";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -167,6 +167,18 @@ export default function MyTournaments() {
                           }}
                         >
                           VER
+                        </button>
+                      </Link>
+                      <Link href={`/dashboard/edit-tournament/${t.id}`}>
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
+                          style={{
+                            background: "oklch(0.13 0.005 0)",
+                            border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+                            color: "oklch(0.65 0.22 25)",
+                          }}
+                        >
+                          <Edit size={12} /> EDITAR
                         </button>
                       </Link>
                       <Link href={`/dashboard/tournament/${t.id}`}>

@@ -261,3 +261,9 @@
 - [x] Torneos pending_approval/draft NO son visibles públicamente (solo creador y admin)
 - [x] Agregar campo de banner en formulario CreateTournament con preview y subida a S3
 - [x] 29 tests pasando
+
+## Edición de Torneos V11
+- [x] Endpoint tournaments.update (solo el creador o admin puede editar)
+- [x] Página /dashboard/edit-tournament/:id con formulario de 3 pasos pre-cargado con datos del torneo
+- [x] Botón "Editar" en TournamentManage y en MyTournaments
+- [x] Soporte para cambiar el banner del torneo en la edición

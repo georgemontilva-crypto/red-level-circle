@@ -14,6 +14,7 @@ import Tournaments from "./pages/Tournaments";
 import TournamentDetail from "./pages/TournamentDetail";
 import Dashboard from "./pages/Dashboard";
 import CreateTournament from "./pages/CreateTournament";
+import EditTournament from "./pages/EditTournament";
 import MyTournaments from "./pages/MyTournaments";
 import TournamentManage from "./pages/TournamentManage";
 import ManageRegistrations from "./pages/ManageRegistrations";
@@ -83,6 +84,7 @@ function Router() {
         {/* Premium dashboard routes */}
         <Route path="/dashboard" component={Dashboard} />
         <Route path="/dashboard/create-tournament" component={CreateTournament} />
+        <Route path="/dashboard/edit-tournament/:id" component={EditTournament} />
         <Route path="/dashboard/tournaments" component={MyTournaments} />
         <Route path="/dashboard/tournament/:id" component={TournamentManage} />
         <Route path="/dashboard/registrations" component={ManageRegistrations} />
