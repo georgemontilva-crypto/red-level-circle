@@ -440,3 +440,24 @@ export const userFollows = mysqlTable("user_follows", {
 });
 export type UserFollow = typeof userFollows.$inferSelect;
 export type InsertUserFollow = typeof userFollows.$inferInsert;
+
+// ─── Content Creators ─────────────────────────────────────────────────────────
+export const contentCreators = mysqlTable("content_creators", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  status: varchar("status", { length: 32 }).default("pending").notNull(), // pending | approved | rejected
+  category: varchar("category", { length: 64 }), // gaming, esports, entertainment, education
+  bio: text("bio"),
+  youtube: varchar("youtube", { length: 256 }),
+  twitch: varchar("twitch", { length: 256 }),
+  twitter: varchar("twitter", { length: 256 }),
+  instagram: varchar("instagram", { length: 256 }),
+  tiktok: varchar("tiktok", { length: 256 }),
+  subscribers: int("subscribers").default(0),
+  adminNote: text("adminNote"), // reason for rejection
+  appliedAt: timestamp("appliedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ContentCreator = typeof contentCreators.$inferSelect;
+export type InsertContentCreator = typeof contentCreators.$inferInsert;

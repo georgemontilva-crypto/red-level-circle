@@ -237,3 +237,20 @@
 - [x] Endpoint admin.stats con 8 métricas globales + usuarios recientes
 - [x] Endpoint admin.listTeams y admin.verifyTeam
 - [x] 29 tests pasando
+
+## Home Epic Games + Creadores V9
+- [x] Tabla content_creators (userId, status: pending/approved/rejected, bio, youtube, twitch, twitter, instagram, tiktok, subscribers, category)
+- [x] Endpoint creators.submitApplication (solicitar ser creador)
+- [x] Endpoint creators.listApproved (público)
+- [x] Endpoint creators.listPending (admin)
+- [x] Endpoint creators.review (aprobar/rechazar con nota admin)
+- [x] Rediseñar Home: hero banner full-width + sidebar derecho con torneos patrocinados (estilo Epic Games)
+- [x] Sección "Noticias Recientes" en Home
+- [x] Sección "Torneos Activos" en Home (carrusel horizontal)
+- [x] Sección "Nuevos Jugadores" en Home (usuarios recientes)
+- [x] Carrusel "Quizás Conozcas" en Home (usuarios con follows en común o recientes)
+- [x] Sección "Creadores Oficiales" en Home con tarjetas y redes sociales
+- [x] Página /creators con grid de creadores aprobados + formulario de registro
+- [x] Enlace a /creators en el sidebar (sección COMUNIDAD)
+- [x] Sección admin para aprobar/rechazar solicitudes de creadores (tab CREADORES en AdminPanel)
+- [x] 29 tests pasando

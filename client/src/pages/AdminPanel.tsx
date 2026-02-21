@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
-  Trash2, Plus, Package, Eye, BarChart3
+  Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock
 } from "lucide-react";
 import { useState } from "react";
 import { Link } from "wouter";
@@ -890,6 +890,7 @@ export default function AdminPanel() {
             { value: "ads", label: "PUBLICIDAD", icon: Megaphone },
             { value: "rewards", label: "REWARDS", icon: Gift },
             { value: "news", label: "NOTICIAS", icon: Newspaper },
+            { value: "creators", label: "CREADORES", icon: Crown },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -907,13 +908,135 @@ export default function AdminPanel() {
           <TabsContent value="ads"><AdsTab /></TabsContent>
           <TabsContent value="rewards"><RewardsTab /></TabsContent>
           <TabsContent value="news"><NewsTab /></TabsContent>
+          <TabsContent value="creators"><CreatorsTab /></TabsContent>
         </div>
       </Tabs>
     </div>
   );
 }
 
-// Need Crown import
-function Crown(props: any) {
-  return <Star {...props} />;
+// ─── Creators Tab ────────────────────────────────────────────────────────────
+function CreatorsTab() {
+  const { data: pending, refetch } = trpc.creators.listPending.useQuery();
+  const review = trpc.creators.review.useMutation({
+    onSuccess: () => { toast.success("Solicitud actualizada"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [note, setNote] = useState<Record<number, string>>({});
+
+  const byStatus = {
+    pending: pending?.filter(c => c.status === "pending") ?? [],
+    approved: pending?.filter(c => c.status === "approved") ?? [],
+    rejected: pending?.filter(c => c.status === "rejected") ?? [],
+  };
+
+  const CreatorRow = ({ c }: { c: any }) => (
+    <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/50">
+      <div className="flex items-start gap-4">
+        {c.avatar ? (
+          <img src={c.avatar} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
+            <span className="text-lg font-black text-red-500">{(c.nickname ?? c.userName ?? "?").charAt(0).toUpperCase()}</span>
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-white">{c.nickname ?? c.userName}</span>
+            {c.category && <span className="text-xs font-mono text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded-full">{c.category}</span>}
+            {c.subscribers > 0 && <span className="text-xs text-zinc-500">{c.subscribers.toLocaleString()} seguidores</span>}
+          </div>
+          {c.bio && <p className="text-zinc-400 text-sm mt-1 line-clamp-2">{c.bio}</p>}
+          <div className="flex items-center gap-3 mt-2">
+            {c.youtube && <span className="text-xs text-zinc-600 flex items-center gap-1"><Youtube size={10} /> {c.youtube}</span>}
+            {c.twitch && <span className="text-xs text-zinc-600 flex items-center gap-1"><Twitch size={10} /> {c.twitch}</span>}
+            {c.twitter && <span className="text-xs text-zinc-600 flex items-center gap-1"><Twitter size={10} /> {c.twitter}</span>}
+            {c.instagram && <span className="text-xs text-zinc-600 flex items-center gap-1"><Instagram size={10} /> {c.instagram}</span>}
+          </div>
+          <p className="text-zinc-700 text-xs mt-1">Aplicó: {new Date(c.appliedAt).toLocaleDateString("es")}</p>
+        </div>
+        {c.status === "pending" && (
+          <div className="flex flex-col gap-2 shrink-0">
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-8"
+              onClick={() => review.mutate({ id: c.id, status: "approved" })}>
+              <CheckCircle size={12} className="mr-1" /> Aprobar
+            </Button>
+            <Button size="sm" variant="outline" className="border-red-600/40 text-red-400 hover:bg-red-600/20 text-xs h-8"
+              onClick={() => review.mutate({ id: c.id, status: "rejected", adminNote: note[c.id] })}>
+              <XCircle size={12} className="mr-1" /> Rechazar
+            </Button>
+            <input
+              type="text"
+              placeholder="Motivo (opcional)"
+              value={note[c.id] ?? ""}
+              onChange={e => setNote(n => ({ ...n, [c.id]: e.target.value }))}
+              className="text-xs bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1 text-zinc-300 placeholder-zinc-600 w-32 focus:outline-none"
+            />
+          </div>
+        )}
+        {c.status === "approved" && (
+          <div className="flex flex-col gap-1 items-end shrink-0">
+            <span className="flex items-center gap-1 text-xs text-green-400 font-mono"><CheckCircle size={10} /> Aprobado</span>
+            <Button size="sm" variant="outline" className="border-red-600/40 text-red-400 hover:bg-red-600/20 text-xs h-7"
+              onClick={() => review.mutate({ id: c.id, status: "rejected" })}>
+              Revocar
+            </Button>
+          </div>
+        )}
+        {c.status === "rejected" && (
+          <div className="flex flex-col gap-1 items-end shrink-0">
+            <span className="flex items-center gap-1 text-xs text-red-400 font-mono"><XCircle size={10} /> Rechazado</span>
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white text-xs h-7"
+              onClick={() => review.mutate({ id: c.id, status: "approved" })}>
+              Aprobar
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon={Crown} title="CREADORES DE CONTENIDO" subtitle="Gestiona las solicitudes de creadores oficiales" />
+      <div className="grid grid-cols-3 gap-3">
+        <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
+          <p className="font-orbitron font-black text-2xl text-yellow-400">{byStatus.pending.length}</p>
+          <p className="text-xs text-zinc-500 mt-1 flex items-center justify-center gap-1"><Clock size={10} /> En revisión</p>
+        </div>
+        <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-center">
+          <p className="font-orbitron font-black text-2xl text-green-400">{byStatus.approved.length}</p>
+          <p className="text-xs text-zinc-500 mt-1 flex items-center justify-center gap-1"><CheckCircle size={10} /> Aprobados</p>
+        </div>
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-center">
+          <p className="font-orbitron font-black text-2xl text-red-400">{byStatus.rejected.length}</p>
+          <p className="text-xs text-zinc-500 mt-1 flex items-center justify-center gap-1"><XCircle size={10} /> Rechazados</p>
+        </div>
+      </div>
+      {byStatus.pending.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-yellow-400 mb-3 flex items-center gap-2"><Clock size={14} /> PENDIENTES ({byStatus.pending.length})</h3>
+          <div className="space-y-3">{byStatus.pending.map(c => <CreatorRow key={c.id} c={c} />)}</div>
+        </div>
+      )}
+      {byStatus.approved.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-green-400 mb-3 flex items-center gap-2"><CheckCircle size={14} /> APROBADOS ({byStatus.approved.length})</h3>
+          <div className="space-y-3">{byStatus.approved.map(c => <CreatorRow key={c.id} c={c} />)}</div>
+        </div>
+      )}
+      {byStatus.rejected.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-red-400 mb-3 flex items-center gap-2"><XCircle size={14} /> RECHAZADOS ({byStatus.rejected.length})</h3>
+          <div className="space-y-3">{byStatus.rejected.map(c => <CreatorRow key={c.id} c={c} />)}</div>
+        </div>
+      )}
+      {(pending?.length ?? 0) === 0 && (
+        <div className="text-center py-12">
+          <Crown size={40} className="text-zinc-700 mx-auto mb-3" />
+          <p className="text-zinc-500 font-mono text-sm">No hay solicitudes de creadores aún</p>
+        </div>
+      )}
+    </div>
+  );
 }

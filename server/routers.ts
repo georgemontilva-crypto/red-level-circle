@@ -111,6 +111,14 @@ import {
   getFollowingCount,
   getFollowers,
   getFollowing,
+  applyAsCreator,
+  getCreatorByUserId,
+  listApprovedCreators,
+  listPendingCreators,
+  reviewCreator,
+  getRecentUsers,
+  getSuggestedUsers,
+  getFeaturedTournaments,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1197,6 +1205,49 @@ export const appRouter = router({
         followers: await getFollowerCount(input.userId),
         following: await getFollowingCount(input.userId),
       })),
+  }),
+
+  // ─── Creators ───────────────────────────────────────────────────────────────
+  creators: router({
+    listApproved: publicProcedure.query(() => listApprovedCreators()),
+    listPending: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      return listPendingCreators();
+    }),
+    getMyApplication: protectedProcedure.query(async ({ ctx }) => {
+      return getCreatorByUserId(ctx.user.id);
+    }),
+    submitApplication: protectedProcedure
+      .input(z.object({
+        bio: z.string().optional(),
+        category: z.string().optional(),
+        youtube: z.string().optional(),
+        twitch: z.string().optional(),
+        twitter: z.string().optional(),
+        instagram: z.string().optional(),
+        tiktok: z.string().optional(),
+        subscribers: z.number().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return applyAsCreator(ctx.user.id, input);
+      }),
+    review: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["approved", "rejected"]),
+        adminNote: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        return reviewCreator(input.id, input.status, input.adminNote);
+      }),
+  }),
+
+  // ─── Home Feed ──────────────────────────────────────────────────────────────
+  home: router({
+    featuredTournaments: publicProcedure.query(() => getFeaturedTournaments(6)),
+    recentUsers: publicProcedure.query(() => getRecentUsers(12)),
+    suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 12)),
   }),
 });
 export type AppRouter = typeof appRouter;

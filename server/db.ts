@@ -25,6 +25,7 @@ import {
   userRewardClaims,
   brandAds,
   userFollows,
+  contentCreators,
   type InsertGame,
   type InsertNews,
   type InsertBet,
@@ -1848,4 +1849,157 @@ export async function adminListTournaments(status?: string) {
     .where(conditions.length ? and(...conditions) : undefined)
     .orderBy(desc(tournaments.createdAt))
     .limit(100);
+}
+
+// ─── Content Creators ─────────────────────────────────────────────────────────
+export async function applyAsCreator(userId: number, data: {
+  bio?: string; category?: string;
+  youtube?: string; twitch?: string; twitter?: string; instagram?: string; tiktok?: string;
+  subscribers?: number;
+}) {
+  const db = await getDb();
+  if (!db) return null;
+  // Check if already applied
+  const existing = await db.select().from(contentCreators).where(eq(contentCreators.userId, userId)).limit(1);
+  if (existing.length > 0) {
+    // Update existing application
+    await db.update(contentCreators).set({ ...data, updatedAt: new Date() }).where(eq(contentCreators.userId, userId));
+    return existing[0];
+  }
+  const [result] = await db.insert(contentCreators).values({ userId, ...data, status: "pending" });
+  return result;
+}
+
+export async function getCreatorByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db.select().from(contentCreators).where(eq(contentCreators.userId, userId)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function listApprovedCreators() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: contentCreators.id,
+      userId: contentCreators.userId,
+      category: contentCreators.category,
+      bio: contentCreators.bio,
+      youtube: contentCreators.youtube,
+      twitch: contentCreators.twitch,
+      twitter: contentCreators.twitter,
+      instagram: contentCreators.instagram,
+      tiktok: contentCreators.tiktok,
+      subscribers: contentCreators.subscribers,
+      appliedAt: contentCreators.appliedAt,
+      // User info
+      userName: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      banner: users.bannerUrl,
+    })
+    .from(contentCreators)
+    .innerJoin(users, eq(contentCreators.userId, users.id))
+    .where(eq(contentCreators.status, "approved"))
+    .orderBy(desc(contentCreators.subscribers));
+}
+
+export async function listPendingCreators() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: contentCreators.id,
+      userId: contentCreators.userId,
+      status: contentCreators.status,
+      category: contentCreators.category,
+      bio: contentCreators.bio,
+      youtube: contentCreators.youtube,
+      twitch: contentCreators.twitch,
+      twitter: contentCreators.twitter,
+      instagram: contentCreators.instagram,
+      tiktok: contentCreators.tiktok,
+      subscribers: contentCreators.subscribers,
+      appliedAt: contentCreators.appliedAt,
+      adminNote: contentCreators.adminNote,
+      userName: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+    })
+    .from(contentCreators)
+    .innerJoin(users, eq(contentCreators.userId, users.id))
+    .orderBy(desc(contentCreators.appliedAt));
+}
+
+export async function reviewCreator(id: number, status: "approved" | "rejected", adminNote?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  await db.update(contentCreators).set({
+    status,
+    adminNote: adminNote ?? null,
+    reviewedAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(contentCreators.id, id));
+  return { success: true };
+}
+
+export async function getRecentUsers(limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .orderBy(desc(users.createdAt))
+    .limit(limit);
+}
+
+export async function getSuggestedUsers(currentUserId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  // Return recent users excluding the current user
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      nickname: users.nickname,
+      avatar: users.avatar,
+      role: users.role,
+      createdAt: users.createdAt,
+    })
+    .from(users)
+    .where(sql`${users.id} != ${currentUserId}`)
+    .orderBy(desc(users.createdAt))
+    .limit(limit);
+}
+
+export async function getFeaturedTournaments(limit = 6) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: tournaments.id,
+      name: tournaments.name,
+      game: tournaments.game,
+      banner: tournaments.banner,
+      prizeAmount: tournaments.prizeAmount,
+      maxTeams: tournaments.maxTeams,
+      startDate: tournaments.startDate,
+      status: tournaments.status,
+      isFeatured: tournaments.isFeatured,
+    })
+    .from(tournaments)
+    .where(and(
+      eq(tournaments.isPublic, true),
+      sql`${tournaments.status} IN ('registration_open', 'in_progress', 'upcoming')`
+    ))
+    .orderBy(desc(tournaments.isFeatured), desc(tournaments.createdAt))
+    .limit(limit);
 }
