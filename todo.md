@@ -441,3 +441,4 @@
 - [x] Aumentar altura banner en escritorio y preview en tiempo real del texto
 - [x] Cambiar tipografía de lectura por una más legible en toda la plataforma
 - [x] Corregir enlaces rotos en Dashboard (Torneos Creados y Ver Todos daban 404)
+- [x] Reemplazar font-mono (Share Tech Mono) por Inter para mejor legibilidad en toda la plataforma
