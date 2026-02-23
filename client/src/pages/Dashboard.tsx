@@ -44,7 +44,7 @@ export default function Dashboard() {
           value: myTournaments?.length ?? 0,
           icon: <Trophy size={22} />,
           color: "oklch(0.55 0.22 25)",
-          href: "/dashboard/my-tournaments",
+          href: "/dashboard/tournaments",
         },
         {
           label: "Inscripciones Pendientes",
@@ -287,7 +287,7 @@ export default function Dashboard() {
               <h3 className="font-display text-sm font-bold tracking-wider text-muted-foreground">
                 MIS TORNEOS RECIENTES
               </h3>
-              <Link href="/dashboard/my-tournaments">
+              <Link href="/dashboard/tournaments">
                 <button
                   className="text-xs font-display tracking-wider flex items-center gap-1 transition-colors"
                   style={{ color: "oklch(0.55 0.22 25)" }}
