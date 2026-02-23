@@ -1,6 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -88,7 +88,9 @@
   }
   html, body {
     @apply bg-background text-foreground;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
@@ -97,6 +99,10 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 0.04em;
+    line-height: 1.2;
+  }
+  p, span, li, td, th, label, input, textarea, select, button {
+    font-family: 'Inter', sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -118,6 +124,7 @@
 @layer utilities {
   .font-display { font-family: 'Orbitron', sans-serif; }
   .font-tech { font-family: 'Share Tech Mono', monospace; }
+  .font-body { font-family: 'Inter', sans-serif; }
 
   .neon-text {
     color: oklch(0.70 0.28 25);

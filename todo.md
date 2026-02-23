@@ -439,3 +439,4 @@
 - [x] Agregar Equipos al menú lateral y crear página pública de listado de equipos
 - [x] Edición inline de banners de sección directamente en la página (solo admins)
 - [x] Aumentar altura banner en escritorio y preview en tiempo real del texto
+- [x] Cambiar tipografía de lectura por una más legible en toda la plataforma
