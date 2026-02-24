@@ -1,0 +1,39 @@
+{
+  "query": "\nSELECT id, name, slug, isActive FROM games ORDER BY name;\nSELECT id, name, game FROM tournaments;\nSELECT id, name, game FROM teams WHERE game IS NOT NULL;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute \nSELECT id, name, slug, isActive FROM games ORDER BY name;\nSELECT id, name, game FROM tournaments;\nSELECT id, name, game FROM teams WHERE game IS NOT NULL;\n",
+  "rows": [
+    {
+      "id": "4",
+      "name": "Honor of Kings",
+      "slug": "honor-of-kings",
+      "isActive": "1"
+    },
+    {
+      "id": "2",
+      "name": "League of Legends",
+      "slug": "league-of-legends",
+      "isActive": "1"
+    },
+    {
+      "id": "3",
+      "name": "Marvel Rivals",
+      "slug": "marvel-rivals",
+      "isActive": "1"
+    },
+    {
+      "id": "1",
+      "name": "Valorant",
+      "slug": "valorant",
+      "isActive": "1"
+    }
+  ],
+  "messages": [
+    "id\tname\tgame",
+    "1\tRed Level Champion Lol\tLeague of Legends",
+    "id\tname\tgame",
+    "1\tGaming Monster\tLeague of Legends"
+  ],
+  "stdout": "id\tname\tslug\tisActive\n4\tHonor of Kings\thonor-of-kings\t1\n2\tLeague of Legends\tleague-of-legends\t1\n3\tMarvel Rivals\tmarvel-rivals\t1\n1\tValorant\tvalorant\t1\nid\tname\tgame\n1\tRed Level Champion Lol\tLeague of Legends\nid\tname\tgame\n1\tGaming Monster\tLeague of Legends\n",
+  "stderr": "",
+  "execution_time_ms": 189
+}

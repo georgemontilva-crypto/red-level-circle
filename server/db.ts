@@ -615,6 +615,24 @@ export async function getGameBySlug(slug: string) {
   return result[0];
 }
 
+/**
+ * Cuenta torneos y equipos que referencian un slug de juego.
+ * Usado para proteger el slug de cambios cuando ya hay registros asociados.
+ */
+export async function countAssociatedByGameSlug(slug: string): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [tCount] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(tournaments)
+    .where(eq(tournaments.gameSlug, slug));
+  const [eCount] = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(teams)
+    .where(eq(teams.gameSlug, slug));
+  return (tCount?.count ?? 0) + (eCount?.count ?? 0);
+}
+
 export async function upsertGame(data: InsertGame) {
   const db = await getDb();
   if (!db) return;

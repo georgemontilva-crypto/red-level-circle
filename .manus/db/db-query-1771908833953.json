@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT 'tournaments' AS source_table, game AS game_value, COUNT(*) AS count\nFROM tournaments\nGROUP BY game\nUNION ALL\nSELECT 'teams' AS source_table, game AS game_value, COUNT(*) AS count\nFROM teams\nWHERE game IS NOT NULL\nGROUP BY game\nORDER BY source_table, count DESC;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute \nSELECT 'tournaments' AS source_table, game AS game_value, COUNT(*) AS count\nFROM tournaments\nGROUP BY game\nUNION ALL\nSELECT 'teams' AS source_table, game AS game_value, COUNT(*) AS count\nFROM teams\nWHERE game IS NOT NULL\nGROUP BY game\nORDER BY source_table, count DESC;\n",
+  "rows": [
+    {
+      "source_table": "teams",
+      "game_value": "League of Legends",
+      "count": "1"
+    },
+    {
+      "source_table": "tournaments",
+      "game_value": "League of Legends",
+      "count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "source_table\tgame_value\tcount\nteams\tLeague of Legends\t1\ntournaments\tLeague of Legends\t1\n",
+  "stderr": "",
+  "execution_time_ms": 93
+}

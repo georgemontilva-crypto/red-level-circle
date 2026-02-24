@@ -1,0 +1,26 @@
+{
+  "query": "\nSELECT name, slug FROM games ORDER BY name;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute \nSELECT name, slug FROM games ORDER BY name;\n",
+  "rows": [
+    {
+      "name": "Honor of Kings",
+      "slug": "honor-of-kings"
+    },
+    {
+      "name": "League of Legends",
+      "slug": "league-of-legends"
+    },
+    {
+      "name": "Marvel Rivals",
+      "slug": "marvel-rivals"
+    },
+    {
+      "name": "Valorant",
+      "slug": "valorant"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tslug\nHonor of Kings\thonor-of-kings\nLeague of Legends\tleague-of-legends\nMarvel Rivals\tmarvel-rivals\nValorant\tvalorant\n",
+  "stderr": "",
+  "execution_time_ms": 59
+}

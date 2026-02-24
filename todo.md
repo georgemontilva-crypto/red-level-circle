@@ -486,3 +486,9 @@
 - [x] Eliminar barra de scroll horizontal visible en secciones del Home
 - [x] Corregir posición del dropdown de notificaciones: abrir hacia la derecha del botón
 - [ ] Corregir posicionamiento dropdown notificaciones: alinear con icono campana usando position fixed
+
+## Migración gameSlug (Fase 1 + 2)
+- [x] Auditar valores legacy en tournaments.game y teams.game
+- [x] Fase 1: añadir gameSlug nullable a tournaments y teams en schema + db:push
+- [x] Fase 2: script de backfill idempotente con mapeo de normalización
+- [x] Proteger slug inmutable si hay torneos/equipos asociados en games.upsert

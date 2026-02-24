@@ -51,6 +51,8 @@ export const teams = mysqlTable("teams", {
   captainId: int("captainId").notNull(),
   description: text("description"),
   game: varchar("game", { length: 64 }),
+  // Fase 1 migración: slug canónico del juego
+  gameSlug: varchar("gameSlug", { length: 128 }),
   country: varchar("country", { length: 64 }),
   points: int("points").default(0).notNull(),
   wins: int("wins").default(0).notNull(),
@@ -98,6 +100,9 @@ export const tournaments = mysqlTable("tournaments", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   game: varchar("game", { length: 64 }).notNull(),
+  // Fase 1 migración: slug canónico del juego (relación débil, sin FK por ahora)
+  // Se considera inmutable si existen torneos asociados.
+  gameSlug: varchar("gameSlug", { length: 128 }),
   description: text("description"),
   rules: text("rules"),
   bracketType: mysqlEnum("bracketType", [
