@@ -485,3 +485,4 @@
 - [x] Ocultar flechas de navegación en móvil en HScrollSection
 - [x] Eliminar barra de scroll horizontal visible en secciones del Home
 - [x] Corregir posición del dropdown de notificaciones: abrir hacia la derecha del botón
+- [ ] Corregir posicionamiento dropdown notificaciones: alinear con icono campana usando position fixed
