@@ -529,10 +529,18 @@ function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] 
   const scrollRef = useRef<HTMLDivElement>(null);
   const scroll = (dir: number) => scrollRef.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
   const [, navigate] = useLocation();
+  const activeAds = ads.filter((a: any) => a.isActive);
+  const [adIndex, setAdIndex] = useState(0);
+  const currentAd = activeAds.length > 0 ? activeAds[adIndex % activeAds.length] : null;
 
-  const sideAd = ads.find((a: any) => a.isActive && (a.adType === "wide" || a.adType === "card")) ?? null;
+  // Auto-scroll entre anuncios cada 5 segundos
+  useEffect(() => {
+    if (activeAds.length <= 1) return;
+    const timer = setInterval(() => setAdIndex(i => i + 1), 5000);
+    return () => clearInterval(timer);
+  }, [activeAds.length]);
 
-  if (creators.length === 0 && !sideAd) return null;
+  if (creators.length === 0 && !currentAd) return null;
 
   return (
     <section>
@@ -619,27 +627,40 @@ function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] 
             })}
           </div>
         </div>
-        {/* Derecha: banner publicitario — solo imagen, ancho completo */}
-        <div className="hidden lg:flex shrink-0 w-72 xl:w-80">
-          {sideAd ? (
+        {/* Derecha: banner publicitario — ancho completo con auto-scroll */}
+        <div className="hidden lg:block shrink-0 w-72 xl:w-80" style={{ alignSelf: "stretch" }}>
+          {currentAd ? (
             <a
-              href={sideAd.destinationUrl || "#"}
-              target={sideAd.destinationUrl ? "_blank" : "_self"}
+              href={currentAd.destinationUrl || "#"}
+              target={currentAd.destinationUrl ? "_blank" : "_self"}
               rel="noopener noreferrer"
-              className="block w-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(220,38,38,0.2)]"
-              style={{ border: "1px solid oklch(0.20 0.01 0)" }}
+              className="block w-full h-full rounded-2xl overflow-hidden group cursor-pointer"
+              style={{ border: "1px solid oklch(0.20 0.01 0)", display: "block", minHeight: "280px" }}
             >
-              <div className="relative w-full h-full min-h-[280px] overflow-hidden">
+              <div className="relative w-full h-full" style={{ minHeight: "280px" }}>
                 <img
-                  src={sideAd.bannerImage}
-                  alt={sideAd.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  style={{ minHeight: "280px" }}
+                  key={currentAd.id}
+                  src={currentAd.bannerImage}
+                  alt={currentAd.title}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  style={{ animation: "fadeIn 0.5s ease" }}
                 />
                 <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono"
                   style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.55 0.01 0)", border: "1px solid oklch(0.30 0.01 0)", backdropFilter: "blur(8px)" }}>
                   Publicidad
                 </div>
+                {activeAds.length > 1 && (
+                  <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5">
+                    {activeAds.map((_: any, i: number) => (
+                      <button
+                        key={i}
+                        onClick={e => { e.preventDefault(); setAdIndex(i); }}
+                        className="w-1.5 h-1.5 rounded-full transition-all"
+                        style={{ background: i === adIndex % activeAds.length ? "white" : "rgba(255,255,255,0.35)" }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </a>
           ) : (
