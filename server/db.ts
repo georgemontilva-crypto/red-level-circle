@@ -254,6 +254,9 @@ export async function getTournaments(filters?: {
       game: tournaments.game,
       description: tournaments.description,
       bracketType: tournaments.bracketType,
+      registrationType: tournaments.registrationType,
+      minPlayersPerTeam: tournaments.minPlayersPerTeam,
+      maxPlayersPerTeam: tournaments.maxPlayersPerTeam,
       maxTeams: tournaments.maxTeams,
       status: tournaments.status,
       startDate: tournaments.startDate,
@@ -263,6 +266,8 @@ export async function getTournaments(filters?: {
       creatorId: tournaments.creatorId,
       banner: tournaments.banner,
       isPublic: tournaments.isPublic,
+      isFeatured: tournaments.isFeatured,
+      isLive: tournaments.isLive,
       createdAt: tournaments.createdAt,
       creatorName: users.name,
     })

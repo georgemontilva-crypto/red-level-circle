@@ -471,3 +471,8 @@
 - [ ] Sección combinada Equipos + Personas: equipos a la izquierda (top 8 con scroll interno), personas a la derecha (top 8 con scroll interno)
 - [ ] Auto-refresh de la sección combinada cada 30 segundos para mostrar nuevos equipos/personas
 - [ ] Click en equipo lleva a /teams/:id, click en persona lleva a /profile/:id
+- [ ] Sección Creadores: layout 2 columnas (scroll horizontal izquierda + banner publicitario derecha)
+- [ ] Componente TournamentCard universal (bracket, formato, slots, organizador, fecha, premio)
+- [ ] Aplicar TournamentCard universal en todas las páginas de torneos
+- [ ] Traducir toda la UI al español
+- [ ] Sección Creadores: layout 2 columnas (scroll horizontal + banner publicitario)

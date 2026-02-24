@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { TournamentCard as UniversalTournamentCard } from "@/components/TournamentCard";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatDate(d: Date | string | null | undefined) {
@@ -128,86 +129,9 @@ function PlatformStats() {
   );
 }
 
-// ─── Tournament Card (estilo communitygaming) ─────────────────────────────────
+// ─── Tournament Card — usa componente universal ────────────────────────────────
 function TournamentCard({ t }: { t: any }) {
-  const st = statusLabel(t.status ?? "");
-  const formatLabel = t.minPlayersPerTeam === t.maxPlayersPerTeam
-    ? `${t.maxPlayersPerTeam}v${t.maxPlayersPerTeam}`
-    : `${t.minPlayersPerTeam}-${t.maxPlayersPerTeam}v${t.maxPlayersPerTeam}`;
-  return (
-    <Link href={`/tournaments/${t.id}`}>
-      <div
-        className="shrink-0 w-64 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-        style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.5)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)"; }}
-      >
-        {/* Banner */}
-        <div className="relative h-36 bg-zinc-900 overflow-hidden">
-          {t.banner ? (
-            <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, oklch(0.12 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}>
-              <Trophy size={36} style={{ color: "oklch(0.55 0.22 25 / 0.3)" }} />
-            </div>
-          )}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.12 0.005 0) 0%, transparent 60%)" }} />
-          {/* Game badge */}
-          {t.game && (
-            <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-xs font-mono font-semibold"
-              style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.75 0.18 80)", border: "1px solid oklch(0.55 0.18 80 / 0.4)", backdropFilter: "blur(8px)" }}>
-              {t.game}
-            </div>
-          )}
-        </div>
-        {/* Body */}
-        <div className="p-4 space-y-3">
-          {/* Title */}
-          <p className="text-white font-bold text-sm leading-snug line-clamp-2">{t.name}</p>
-          {/* Status */}
-          <div className="flex items-center gap-1.5">
-            <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
-            <span className={`text-xs font-semibold ${st.color}`}>{st.text}</span>
-          </div>
-          {/* Meta tags: bracket + format + slots */}
-          <div className="flex flex-wrap gap-1.5">
-            {t.bracketType && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-                style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.65 0.01 0)" }}>
-                <GitBranch size={10} /> {bracketLabel(t.bracketType)}
-              </span>
-            )}
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.65 0.01 0)" }}>
-              <Users size={10} /> {formatLabel}
-            </span>
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.65 0.01 0)" }}>
-              <Hash size={10} /> {t.registeredCount ?? 0} / {t.maxTeams}
-            </span>
-          </div>
-          {/* Organizer */}
-          {t.creatorName && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-zinc-600 text-xs font-mono">Hosted by</span>
-              <span className="text-zinc-400 text-xs font-semibold truncate">{t.creatorName}</span>
-            </div>
-          )}
-          {/* Date + Prize */}
-          <div className="flex items-center justify-between pt-1 border-t border-zinc-800/60">
-            <span className="text-zinc-500 text-xs flex items-center gap-1 font-mono">
-              <Calendar size={10} />{formatDate(t.startDate)}
-            </span>
-            {(t.prizeAmount ?? 0) > 0 && (
-              <span className="flex items-center gap-1 font-orbitron font-bold text-xs" style={{ color: "oklch(0.65 0.18 80)" }}>
-                🪙 {t.prizeAmount} RLC
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
+  return <UniversalTournamentCard tournament={t} />;
 }
 
 // ─── Horizontal Scroll Carousel ───────────────────────────────────────────────
@@ -600,6 +524,156 @@ function TeamsAndPeopleSection() {
   );
 }
 
+// ─── Creators + Ad Banner Section ────────────────────────────────────────────
+function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const scroll = (dir: number) => scrollRef.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
+  const [, navigate] = useLocation();
+
+  const sideAd = ads.find((a: any) => a.isActive && (a.adType === "wide" || a.adType === "card")) ?? null;
+
+  if (creators.length === 0 && !sideAd) return null;
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+          <Star size={18} className="text-purple-400" /> Creadores Oficiales
+        </h2>
+        <div className="flex items-center gap-3">
+          <a href="/creators" className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1">
+            Ver todos <ChevronRight size={12} />
+          </a>
+          <div className="flex gap-1">
+            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 transition-colors">
+              <ChevronLeft size={14} className="text-zinc-400" />
+            </button>
+            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 transition-colors">
+              <ChevronRight size={14} className="text-zinc-400" />
+            </button>
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-4">
+        {/* Izquierda: scroll horizontal de creadores */}
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div
+            ref={scrollRef}
+            className="flex gap-4 overflow-x-auto pb-2"
+            style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
+            {creators.length === 0 ? (
+              <div className="shrink-0 w-60 h-64 rounded-2xl border border-zinc-800/50 flex items-center justify-center"
+                style={{ background: "oklch(0.10 0.005 0)" }}>
+                <p className="text-zinc-600 text-xs font-mono text-center px-4">No hay creadores aprobados aún</p>
+              </div>
+            ) : creators.map((c: any) => {
+              const name = c.nickname ?? c.userName ?? "Creador";
+              return (
+                <div
+                  key={c.id}
+                  className="shrink-0 w-60 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+                  style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+                  onClick={() => navigate(`/profile/${c.userId}`)}
+                >
+                  <div className="h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden relative">
+                    {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
+                    <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, oklch(0.12 0.005 0) 100%)" }} />
+                  </div>
+                  <div className="relative" style={{ height: 0 }}>
+                    <div className="absolute -top-8 left-4" style={{ border: "3px solid oklch(0.12 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
+                      <UserAvatar avatar={c.avatar} name={name} activeFrameImage={c.activeFrameImage} size={56} />
+                    </div>
+                  </div>
+                  <div className="pt-10 px-4 pb-4">
+                    <div className="flex items-center gap-1.5 mb-0.5">
+                      <p className="text-white font-bold text-sm truncate">{name}</p>
+                      {c.isVerified && <VerifiedBadge size={14} />}
+                    </div>
+                    {c.category && <p className="text-red-400 text-xs font-mono capitalize mb-1">{c.category}</p>}
+                    {c.bio && <p className="text-zinc-500 text-xs line-clamp-2 mb-3">{c.bio}</p>}
+                    <div className="flex items-center gap-2.5">
+                      {c.youtube && (
+                        <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-red-500 transition-colors"><Youtube size={15} /></a>
+                      )}
+                      {c.twitch && (
+                        <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-purple-400 transition-colors"><Twitch size={15} /></a>
+                      )}
+                      {c.twitter && (
+                        <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-sky-400 transition-colors"><Twitter size={15} /></a>
+                      )}
+                      {c.instagram && (
+                        <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                          className="text-zinc-500 hover:text-pink-400 transition-colors"><Instagram size={15} /></a>
+                      )}
+                      {c.subscribers && (
+                        <span className="ml-auto text-zinc-600 text-xs font-mono">{formatNumber(c.subscribers)} subs</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Derecha: banner publicitario */}
+        <div className="hidden lg:flex shrink-0 w-72 xl:w-80">
+          {sideAd ? (
+            <a
+              href={sideAd.destinationUrl || "#"}
+              target={sideAd.destinationUrl ? "_blank" : "_self"}
+              rel="noopener noreferrer"
+              className="block w-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
+              style={{ border: "1px solid oklch(0.20 0.01 0)", background: "oklch(0.12 0.005 0)" }}
+            >
+              <div className="relative h-44 overflow-hidden">
+                <img
+                  src={sideAd.bannerImage}
+                  alt={sideAd.title}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.12 0.005 0) 0%, transparent 50%)" }} />
+                <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono"
+                  style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.55 0.01 0)", border: "1px solid oklch(0.30 0.01 0)", backdropFilter: "blur(8px)" }}>
+                  Publicidad
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="text-zinc-500 text-xs font-mono mb-1">{sideAd.brandName}</p>
+                <p className="text-white font-bold text-sm line-clamp-2 mb-3 group-hover:text-red-300 transition-colors">{sideAd.title}</p>
+                {sideAd.tagline && <p className="text-zinc-500 text-xs mb-3 line-clamp-2">{sideAd.tagline}</p>}
+                <div
+                  className="w-full py-2 rounded-lg text-center text-xs font-orbitron font-bold tracking-wider"
+                  style={{
+                    background: "oklch(0.55 0.22 25 / 0.15)",
+                    border: "1px solid oklch(0.55 0.22 25 / 0.40)",
+                    color: "oklch(0.65 0.22 25)",
+                  }}
+                >
+                  {sideAd.ctaLabel ?? "Ver más"}
+                </div>
+              </div>
+            </a>
+          ) : (
+            <div className="w-full rounded-2xl border border-dashed border-zinc-800/50 flex flex-col items-center justify-center gap-3 p-6"
+              style={{ background: "oklch(0.08 0.005 0)" }}>
+              <BarChart3 size={28} className="text-zinc-700" />
+              <div className="text-center">
+                <p className="text-zinc-600 text-xs font-mono">ESPACIO PUBLICITARIO</p>
+                <p className="text-zinc-700 text-xs mt-1">Contacta con nosotros para anunciar aquí</p>
+              </div>
+              <a href="/ads" className="text-xs font-mono text-red-500/70 hover:text-red-400 transition-colors">Ver opciones</a>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Main Home ────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated } = useAuth();
@@ -608,6 +682,7 @@ export default function Home() {
   const { data: news } = trpc.news.list.useQuery({ limit: 10 });
   const { data: creators } = trpc.creators.listApproved.useQuery();
   const { data: missions } = trpc.home.availableMissions.useQuery();
+  const { data: sideAds } = trpc.ads.list.useQuery();
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -645,16 +720,8 @@ export default function Home() {
           </HScrollSection>
         )}
 
-        {/* 6. Creadores de contenido — 4 en escritorio */}
-        {(creators?.length ?? 0) > 0 && (
-          <HScrollSection
-            title="Creadores Oficiales"
-            href="/creators"
-            icon={<Star size={18} className="text-purple-400" />}
-          >
-            {creators!.map(c => <CreatorCard key={c.id} c={c} />)}
-          </HScrollSection>
-        )}
+        {/* 6. Creadores de contenido — layout 2 columnas: scroll horizontal + banner publicitario */}
+        <CreatorsWithAdSection creators={creators ?? []} ads={sideAds ?? []} />
 
         {/* 7. Noticias */}
         {(news?.length ?? 0) > 0 && (

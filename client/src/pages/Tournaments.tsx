@@ -6,6 +6,7 @@ import { useState } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { TournamentCard } from "@/components/TournamentCard";
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -104,48 +105,7 @@ export default function Tournaments() {
             <p className="text-zinc-600 text-xs font-mono mb-4">{tournaments.length} TORNEOS ENCONTRADOS</p>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {tournaments.map((t) => (
-                <Link key={t.id} href={`/tournaments/${t.id}`}>
-                  <div className="group bg-zinc-900/80 border border-zinc-800 hover:border-red-500/50 rounded-xl overflow-hidden transition-all duration-300 cursor-pointer hover:shadow-[0_0_20px_rgba(220,38,38,0.15)]">
-                    <div className="h-36 relative overflow-hidden">
-                      {t.banner ? (
-                        <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-red-950/50 to-zinc-900 flex items-center justify-center">
-                          <Trophy className="w-10 h-10 text-red-500/30" />
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent" />
-                      <div className="absolute top-2 right-2"><StatusBadge status={t.status} /></div>
-                      {(t as any).isLive && (
-                        <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-xs px-2 py-0.5 rounded font-mono animate-pulse">
-                          <Radio className="w-3 h-3" /> EN VIVO
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex items-start justify-between gap-2 mb-2">
-                        <h3 className="font-orbitron font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-1">{t.name}</h3>
-                        <span className="text-xs text-red-400 font-mono shrink-0">{t.game}</span>
-                      </div>
-                      {t.description && <p className="text-xs text-zinc-500 font-rajdhani line-clamp-2 mb-3">{t.description}</p>}
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 text-xs text-zinc-500">
-                          <span className="flex items-center gap-1"><Users className="w-3 h-3" />{t.maxTeams}</span>
-                          {(t.prizeAmount ?? 0) > 0 && (
-                            <span className="flex items-center gap-1 text-yellow-500"><Star className="w-3 h-3" />{(t.prizeAmount ?? 0).toLocaleString()} RLC</span>
-                          )}
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-red-400 transition-colors" />
-                      </div>
-                      {t.startDate && (
-                        <div className="flex items-center gap-1 mt-2 text-xs text-zinc-600">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(t.startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
+                <TournamentCard key={t.id} tournament={t} />
               ))}
             </div>
           </>
