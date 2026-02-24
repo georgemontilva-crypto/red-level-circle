@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -8,7 +8,7 @@ import {
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { NotificationBell } from "./NotificationBell";
+import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
 
 interface NavItem {
   label: string;
@@ -101,6 +101,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [location] = useLocation();
   const { user, isAuthenticated, loading, logout } = useAuth();
 
+  // Ref to the profile card — used by SidebarNotificationBell as anchor
+  const profileCardRef = useRef<HTMLDivElement>(null);
+
   const isPremium = user?.role === "premium" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
 
@@ -119,9 +122,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0);
 
-  const isActive = (href: string) => {
-    return location === href;
-  };
+  const isActive = (href: string) => location === href;
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -136,9 +137,14 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </Link>
       </div>
 
-      {/* User info */}
+      {/* ── Profile card ── position:relative + overflow:visible so the
+           notification dropdown can escape and align to the card's full width */}
       {isAuthenticated && user && (
-        <div className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30 relative overflow-visible">
+        <div
+          ref={profileCardRef}
+          className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30"
+          style={{ position: "relative", overflow: "visible" }}
+        >
           <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="relative w-9 h-9 flex-shrink-0">
@@ -166,6 +172,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               </div>
             </div>
           </Link>
+
           {wallet && (
             <div className="mt-2 flex items-center justify-between pt-2 border-t border-zinc-700/30">
               <div className="flex items-center gap-1.5">
@@ -173,7 +180,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
                 <span className="text-xs text-zinc-600 font-mono">RLC</span>
               </div>
-              <NotificationBell />
+              {/* Bell button + dropdown anchored to this card */}
+              <SidebarNotificationBell cardRef={profileCardRef} />
             </div>
           )}
         </div>
@@ -186,7 +194,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             <p className="text-xs font-mono text-zinc-600 tracking-widest px-2 mb-1.5">{section.title}</p>
             <div className="space-y-0.5">
               {section.items.map((item) => {
-                // Hide auth-required items if not authenticated
                 if (item.requiresAuth && !isAuthenticated) return null;
                 if (item.requiresPremium && !isPremium) return null;
                 if (item.requiresAdmin && !isAdmin) return null;
@@ -199,7 +206,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                         ? "bg-red-500/10 text-white"
                         : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
                     }`}>
-                      {/* Active indicator */}
                       {active && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
                       )}
@@ -218,7 +224,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         ))}
 
-        {/* Login prompt if not authenticated */}
         {!isAuthenticated && !loading && (
           <div className="mt-2">
             <p className="text-xs font-mono text-zinc-600 tracking-widest px-2 mb-1.5">CUENTA</p>
@@ -286,7 +291,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
         </span>
         <div className="flex items-center gap-1">
-          {isAuthenticated && <NotificationBell variant="topbar" />}
+          {isAuthenticated && <TopbarNotificationBell />}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 text-zinc-400 hover:text-white transition-colors"

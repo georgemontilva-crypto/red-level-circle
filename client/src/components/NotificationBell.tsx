@@ -33,31 +33,21 @@ function timeAgo(date: Date | string): string {
   return `${Math.floor(diff / 86400)}d`;
 }
 
-interface NotificationBellProps {
-  /**
-   * "sidebar"  → dropdown position:absolute anclado a la tarjeta de perfil.
-   *              Requiere que el contenedor padre tenga position:relative.
-   * "topbar"   → dropdown position:fixed calculado desde el botón (móvil).
-   */
-  variant?: "sidebar" | "topbar";
+// ─── Shared notification panel (used by both variants) ───────────────────────
+interface NotificationPanelProps {
+  dropdownRef: React.RefObject<HTMLDivElement | null>;
+  style: React.CSSProperties;
+  onClose: () => void;
 }
 
-export function NotificationBell({ variant = "sidebar" }: NotificationBellProps) {
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelProps) {
   const [, navigate] = useLocation();
-  const [fixedPos, setFixedPos] = useState({ top: 0, right: 0 });
-
   const utils = trpc.useUtils();
 
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30_000,
   });
-  const { data: notifications, isLoading } = trpc.notifications.list.useQuery(
-    { limit: 20 },
-    { enabled: open }
-  );
+  const { data: notifications, isLoading } = trpc.notifications.list.useQuery({ limit: 20 });
 
   const markAllRead = trpc.notifications.markAllRead.useMutation({
     onSuccess: () => {
@@ -75,75 +65,16 @@ export function NotificationBell({ variant = "sidebar" }: NotificationBellProps)
 
   const unreadCount = unreadData?.count ?? 0;
 
-  function calcFixedPos() {
-    if (!buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const dropdownWidth = 320;
-    const margin = 8;
-    const right = Math.max(margin, window.innerWidth - rect.right);
-    const top = rect.bottom + margin;
-    setFixedPos({ top, right: Math.min(right, window.innerWidth - dropdownWidth - margin) });
-  }
-
-  function handleToggle() {
-    if (!open && variant === "topbar") calcFixedPos();
-    setOpen((v) => !v);
-  }
-
-  useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (buttonRef.current?.contains(e.target as Node)) return;
-      if (dropdownRef.current?.contains(e.target as Node)) return;
-      setOpen(false);
-    }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  useEffect(() => {
-    if (!open || variant !== "topbar") return;
-    const handler = () => calcFixedPos();
-    window.addEventListener("scroll", handler, true);
-    window.addEventListener("resize", handler);
-    return () => {
-      window.removeEventListener("scroll", handler, true);
-      window.removeEventListener("resize", handler);
-    };
-  }, [open, variant]);
-
   function handleNotificationClick(n: { id: number; isRead: boolean; link?: string | null }) {
     if (!n.isRead) markOneRead.mutate({ id: n.id });
-    if (n.link) { setOpen(false); navigate(n.link); }
+    if (n.link) { onClose(); navigate(n.link); }
   }
 
-  // ── Posición del dropdown según variante ─────────────────────────────────
-  const dropdownStyle: React.CSSProperties =
-    variant === "sidebar"
-      ? {
-          // Anclado al borde inferior de la tarjeta de perfil (position:relative en el padre)
-          position: "absolute",
-          top: "calc(100% + 8px)",
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-        }
-      : {
-          // Topbar móvil: fixed calculado desde el botón
-          position: "fixed",
-          top: fixedPos.top,
-          right: fixedPos.right,
-          width: 320,
-          zIndex: 9999,
-        };
-
-  const dropdownPanel = open ? (
+  return (
     <div
       ref={dropdownRef}
       className="bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl overflow-hidden"
-      style={{
-        ...dropdownStyle,
-        animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both",
-      }}
+      style={{ ...style, animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
@@ -215,7 +146,120 @@ export function NotificationBell({ variant = "sidebar" }: NotificationBellProps)
         }
       `}</style>
     </div>
-  ) : null;
+  );
+}
+
+// ─── Sidebar variant ─────────────────────────────────────────────────────────
+// The profile card in SidebarLayout must have: position:relative; overflow:visible
+// The dropdown will be absolutely positioned relative to that card.
+
+interface SidebarNotificationBellProps {
+  /** Ref to the profile card element (position:relative container) */
+  cardRef: React.RefObject<HTMLDivElement | null>;
+}
+
+export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProps) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
+    refetchInterval: 30_000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (buttonRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // The dropdown is rendered inside the profile card via a portal-like trick:
+  // We pass the style as absolute relative to the card (position:relative on card).
+  const dropdownStyle: React.CSSProperties = {
+    position: "absolute",
+    top: "calc(100% + 6px)",
+    left: 0,
+    right: 0,
+    zIndex: 9999,
+  };
+
+  return (
+    <>
+      <button
+        ref={buttonRef}
+        onClick={() => setOpen((v) => !v)}
+        className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
+        aria-label="Notificaciones"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <NotificationPanel
+          dropdownRef={dropdownRef}
+          style={dropdownStyle}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+// ─── Topbar variant (mobile) ─────────────────────────────────────────────────
+export function TopbarNotificationBell() {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [fixedPos, setFixedPos] = useState({ top: 0, right: 0 });
+
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
+    refetchInterval: 30_000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  function calcPos() {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const w = 320;
+    const m = 8;
+    setFixedPos({
+      top: rect.bottom + m,
+      right: Math.max(m, window.innerWidth - rect.right),
+    });
+  }
+
+  function handleToggle() {
+    if (!open) calcPos();
+    setOpen((v) => !v);
+  }
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (buttonRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = () => calcPos();
+    window.addEventListener("scroll", h, true);
+    window.addEventListener("resize", h);
+    return () => { window.removeEventListener("scroll", h, true); window.removeEventListener("resize", h); };
+  }, [open]);
 
   return (
     <div className="relative">
@@ -233,7 +277,60 @@ export function NotificationBell({ variant = "sidebar" }: NotificationBellProps)
         )}
       </button>
 
-      {dropdownPanel}
+      {open && (
+        <NotificationPanel
+          dropdownRef={dropdownRef}
+          style={{ position: "fixed", top: fixedPos.top, right: fixedPos.right, width: 320, zIndex: 9999 }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── Legacy default export (kept for backward compat) ────────────────────────
+export function NotificationBell({ variant = "sidebar" }: { variant?: "sidebar" | "topbar" }) {
+  if (variant === "topbar") return <TopbarNotificationBell />;
+  // sidebar variant without cardRef — button is the anchor (fallback)
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, { refetchInterval: 30_000 });
+  const unreadCount = unreadData?.count ?? 0;
+
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      if (buttonRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
+      setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={() => setOpen((v) => !v)}
+        className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
+        aria-label="Notificaciones"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </button>
+      {open && (
+        <NotificationPanel
+          dropdownRef={dropdownRef}
+          style={{ position: "absolute", top: "calc(100% + 8px)", right: 0, width: 320, zIndex: 9999 }}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
