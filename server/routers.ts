@@ -54,6 +54,7 @@ import {
   updateUserRole,
   upsertGame,
   deleteGame,
+  auditGameSlugConsistency,
   getGameBySlug,
   countAssociatedByGameSlug,
   createPromotion,
@@ -795,6 +796,10 @@ export const appRouter = router({
         await deleteGame(input.slug);
         return { success: true };
       }),
+
+    auditConsistency: adminProcedure.query(async () => {
+      return auditGameSlugConsistency();
+    }),
   }),
 
   // ─── Promotions ────────────────────────────────────────────────────────────

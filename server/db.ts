@@ -699,6 +699,55 @@ export async function deleteGame(slug: string) {
   await db.delete(games).where(eq(games.slug, slug));
 }
 
+
+// ─── Audit ───────────────────────────────────────────────────────────────────
+export async function auditGameSlugConsistency() {
+  const db = await getDb();
+  if (!db) return { tournaments: [], teams: [], summary: { totalTournaments: 0, inconsistentTournaments: 0, totalTeams: 0, inconsistentTeams: 0 } };
+
+  const allGames = await db.select({ name: games.name, slug: games.slug }).from(games);
+  const nameToSlug = new Map(allGames.map((g) => [g.name.toLowerCase(), g.slug]));
+
+  const allTournaments = await db
+    .select({ id: tournaments.id, name: tournaments.name, game: tournaments.game, gameSlug: tournaments.gameSlug })
+    .from(tournaments);
+
+  const inconsistentTournaments = allTournaments
+    .map((t) => {
+      const expectedSlug = t.game ? nameToSlug.get(t.game.toLowerCase()) : undefined;
+      const hasGameSlug = !!t.gameSlug;
+      const isConsistent = !t.game || (!!expectedSlug && t.gameSlug === expectedSlug);
+      const isOrphan = !!t.game && !expectedSlug;
+      return { ...t, expectedSlug: expectedSlug ?? null, hasGameSlug, isConsistent, isOrphan };
+    })
+    .filter((t) => !t.isConsistent || t.isOrphan || !t.hasGameSlug);
+
+  const allTeams = await db
+    .select({ id: teams.id, name: teams.name, game: teams.game, gameSlug: teams.gameSlug })
+    .from(teams);
+
+  const inconsistentTeams = allTeams
+    .map((t) => {
+      const expectedSlug = t.game ? nameToSlug.get(t.game.toLowerCase()) : undefined;
+      const hasGameSlug = !!t.gameSlug;
+      const isConsistent = !t.game || (!!expectedSlug && t.gameSlug === expectedSlug);
+      const isOrphan = !!t.game && !expectedSlug;
+      return { ...t, expectedSlug: expectedSlug ?? null, hasGameSlug, isConsistent, isOrphan };
+    })
+    .filter((t) => !t.isConsistent || t.isOrphan || !t.hasGameSlug);
+
+  return {
+    tournaments: inconsistentTournaments,
+    teams: inconsistentTeams,
+    summary: {
+      totalTournaments: allTournaments.length,
+      inconsistentTournaments: inconsistentTournaments.length,
+      totalTeams: allTeams.length,
+      inconsistentTeams: inconsistentTeams.length,
+    },
+  };
+}
+
 // ─── News ─────────────────────────────────────────────────────────────────────
 export async function getNews(opts?: { category?: string; limit?: number; publishedOnly?: boolean }) {
   const db = await getDb();
