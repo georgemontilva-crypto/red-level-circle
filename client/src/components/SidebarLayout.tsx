@@ -138,7 +138,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       {/* User info */}
       {isAuthenticated && user && (
-        <div className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30">
+        <div className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30 relative overflow-visible">
           <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
               <div className="relative w-9 h-9 flex-shrink-0">
@@ -286,7 +286,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
         </span>
         <div className="flex items-center gap-1">
-          {isAuthenticated && <NotificationBell />}
+          {isAuthenticated && <NotificationBell variant="topbar" />}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 text-zinc-400 hover:text-white transition-colors"

@@ -1,44 +1,56 @@
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Bell, CheckCheck, Trophy, Zap, ShoppingBag, Users, Star, Info, X } from "lucide-react";
+import {
+  Bell, CheckCheck, Trophy, Zap, ShoppingBag,
+  Users, Star, Info, X,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
-  bracket_ready: <Trophy className="w-4 h-4 text-yellow-400" />,
-  mission_approved: <Zap className="w-4 h-4 text-green-400" />,
-  mission_rejected: <X className="w-4 h-4 text-red-400" />,
-  order_confirmed: <ShoppingBag className="w-4 h-4 text-blue-400" />,
-  team_invite: <Users className="w-4 h-4 text-purple-400" />,
-  team_invite_accepted: <Users className="w-4 h-4 text-green-400" />,
-  team_invite_rejected: <Users className="w-4 h-4 text-red-400" />,
-  creator_verified: <Star className="w-4 h-4 text-yellow-400" />,
-  creator_rejected: <X className="w-4 h-4 text-red-400" />,
-  tournament_full: <Trophy className="w-4 h-4 text-orange-400" />,
-  match_scheduled: <Trophy className="w-4 h-4 text-blue-400" />,
-  match_result: <Trophy className="w-4 h-4 text-yellow-400" />,
-  coins_earned: <Zap className="w-4 h-4 text-yellow-400" />,
-  coins_spent: <ShoppingBag className="w-4 h-4 text-zinc-400" />,
-  general: <Info className="w-4 h-4 text-zinc-400" />,
+  bracket_ready:        <Trophy   className="w-4 h-4 text-yellow-400" />,
+  mission_approved:     <Zap      className="w-4 h-4 text-green-400"  />,
+  mission_rejected:     <X        className="w-4 h-4 text-red-400"    />,
+  order_confirmed:      <ShoppingBag className="w-4 h-4 text-blue-400" />,
+  team_invite:          <Users    className="w-4 h-4 text-purple-400" />,
+  team_invite_accepted: <Users    className="w-4 h-4 text-green-400"  />,
+  team_invite_rejected: <Users    className="w-4 h-4 text-red-400"    />,
+  creator_verified:     <Star     className="w-4 h-4 text-yellow-400" />,
+  creator_rejected:     <X        className="w-4 h-4 text-red-400"    />,
+  tournament_full:      <Trophy   className="w-4 h-4 text-orange-400" />,
+  match_scheduled:      <Trophy   className="w-4 h-4 text-blue-400"   />,
+  match_result:         <Trophy   className="w-4 h-4 text-yellow-400" />,
+  coins_earned:         <Zap      className="w-4 h-4 text-yellow-400" />,
+  coins_spent:          <ShoppingBag className="w-4 h-4 text-zinc-400" />,
+  general:              <Info     className="w-4 h-4 text-zinc-400"   />,
 };
 
 function timeAgo(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date;
   const diff = Math.floor((Date.now() - d.getTime()) / 1000);
-  if (diff < 60) return "ahora";
-  if (diff < 3600) return `${Math.floor(diff / 60)}m`;
+  if (diff < 60)    return "ahora";
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
   return `${Math.floor(diff / 86400)}d`;
 }
 
-export function NotificationBell() {
+interface NotificationBellProps {
+  /**
+   * "sidebar"  → dropdown position:absolute anclado a la tarjeta de perfil.
+   *              Requiere que el contenedor padre tenga position:relative.
+   * "topbar"   → dropdown position:fixed calculado desde el botón (móvil).
+   */
+  variant?: "sidebar" | "topbar";
+}
+
+export function NotificationBell({ variant = "sidebar" }: NotificationBellProps) {
   const [open, setOpen] = useState(false);
-  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [, navigate] = useLocation();
+  const [fixedPos, setFixedPos] = useState({ top: 0, right: 0 });
 
   const utils = trpc.useUtils();
+
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30_000,
   });
@@ -63,80 +75,73 @@ export function NotificationBell() {
 
   const unreadCount = unreadData?.count ?? 0;
 
-  // Calculate dropdown position using fixed coordinates from button rect
-  function calcPosition() {
+  function calcFixedPos() {
     if (!buttonRef.current) return;
     const rect = buttonRef.current.getBoundingClientRect();
     const dropdownWidth = 320;
     const margin = 8;
-
-    // Position below the button, aligned to its left edge
-    let left = rect.left;
-    let top = rect.bottom + margin;
-
-    // If it would go off the right edge of the viewport, shift left
-    if (left + dropdownWidth > window.innerWidth - margin) {
-      left = window.innerWidth - dropdownWidth - margin;
-    }
-    // If it would go off the left edge, clamp
-    if (left < margin) left = margin;
-
-    setDropdownPos({ top, left });
+    const right = Math.max(margin, window.innerWidth - rect.right);
+    const top = rect.bottom + margin;
+    setFixedPos({ top, right: Math.min(right, window.innerWidth - dropdownWidth - margin) });
   }
 
   function handleToggle() {
-    if (!open) {
-      calcPosition();
-    }
+    if (!open && variant === "topbar") calcFixedPos();
     setOpen((v) => !v);
   }
 
-  // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
-      if (
-        buttonRef.current && buttonRef.current.contains(e.target as Node)
-      ) return;
-      if (
-        dropdownRef.current && dropdownRef.current.contains(e.target as Node)
-      ) return;
+      if (buttonRef.current?.contains(e.target as Node)) return;
+      if (dropdownRef.current?.contains(e.target as Node)) return;
       setOpen(false);
     }
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Recalculate on scroll/resize while open
   useEffect(() => {
-    if (!open) return;
-    const handler = () => calcPosition();
+    if (!open || variant !== "topbar") return;
+    const handler = () => calcFixedPos();
     window.addEventListener("scroll", handler, true);
     window.addEventListener("resize", handler);
     return () => {
       window.removeEventListener("scroll", handler, true);
       window.removeEventListener("resize", handler);
     };
-  }, [open]);
+  }, [open, variant]);
 
   function handleNotificationClick(n: { id: number; isRead: boolean; link?: string | null }) {
-    if (!n.isRead) {
-      markOneRead.mutate({ id: n.id });
-    }
-    if (n.link) {
-      setOpen(false);
-      navigate(n.link);
-    }
+    if (!n.isRead) markOneRead.mutate({ id: n.id });
+    if (n.link) { setOpen(false); navigate(n.link); }
   }
 
-  const dropdown = open ? (
+  // ── Posición del dropdown según variante ─────────────────────────────────
+  const dropdownStyle: React.CSSProperties =
+    variant === "sidebar"
+      ? {
+          // Anclado al borde inferior de la tarjeta de perfil (position:relative en el padre)
+          position: "absolute",
+          top: "calc(100% + 8px)",
+          left: 0,
+          right: 0,
+          zIndex: 9999,
+        }
+      : {
+          // Topbar móvil: fixed calculado desde el botón
+          position: "fixed",
+          top: fixedPos.top,
+          right: fixedPos.right,
+          width: 320,
+          zIndex: 9999,
+        };
+
+  const dropdownPanel = open ? (
     <div
       ref={dropdownRef}
-      className="w-80 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl overflow-hidden"
+      className="bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl overflow-hidden"
       style={{
-        position: "fixed",
-        top: dropdownPos.top,
-        left: dropdownPos.left,
-        zIndex: 9999,
+        ...dropdownStyle,
         animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both",
       }}
     >
@@ -154,7 +159,7 @@ export function NotificationBell() {
         )}
       </div>
 
-      {/* List */}
+      {/* Lista */}
       <div className="max-h-80 overflow-y-auto divide-y divide-zinc-800/60">
         {isLoading ? (
           <div className="py-8 text-center text-zinc-500 text-sm">Cargando...</div>
@@ -172,11 +177,9 @@ export function NotificationBell() {
                 !n.isRead ? "bg-red-500/5" : ""
               }`}
             >
-              {/* Icon */}
               <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center">
                 {TYPE_ICONS[n.type] ?? <Info className="w-4 h-4 text-zinc-400" />}
               </div>
-              {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-start justify-between gap-2">
                   <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-zinc-300"}`}>
@@ -188,7 +191,6 @@ export function NotificationBell() {
                 </div>
                 <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
               </div>
-              {/* Unread dot */}
               {!n.isRead && (
                 <div className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-red-500" />
               )}
@@ -209,14 +211,14 @@ export function NotificationBell() {
       <style>{`
         @keyframes notifSlideIn {
           from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-          to { opacity: 1; transform: translateY(0) scale(1); }
+          to   { opacity: 1; transform: translateY(0)   scale(1);    }
         }
       `}</style>
     </div>
   ) : null;
 
   return (
-    <>
+    <div className="relative">
       <button
         ref={buttonRef}
         onClick={handleToggle}
@@ -225,14 +227,13 @@ export function NotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none animate-pulse">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </button>
 
-      {/* Render dropdown via portal to escape overflow:hidden containers */}
-      {typeof document !== "undefined" && createPortal(dropdown, document.body)}
-    </>
+      {dropdownPanel}
+    </div>
   );
 }
