@@ -184,7 +184,7 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
     position: "absolute",
     top: "calc(100% + 6px)",
     left: 0,
-    right: 0,
+    width: 320,
     zIndex: 9999,
   };
 
