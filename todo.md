@@ -503,3 +503,9 @@
 - [x] Añadir helper resolveGameSlug en db.ts
 - [x] Dual-write en createTournament y updateTournament
 - [x] Dual-write en createTeam y updateTeam
+
+## Migración gameSlug Fase 4b (Filtros por slug en equipos)
+- [x] Actualizar getTeamRanking en db.ts con gameSlug + fallback legacy
+- [x] Añadir gameSlug a teams.list, teams.ranking y ranking.teams en routers.ts
+- [x] Actualizar Ranking.tsx para usar gameSlug en el query
+- [x] Actualizar Teams.tsx: reemplazar array hardcodeado GAMES por juegos de la BD con slugs

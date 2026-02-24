@@ -784,11 +784,31 @@ export async function updateStream(id: number, data: Partial<InsertStream>) {
 }
 
 // ─── Ranking ──────────────────────────────────────────────────────────────────
-export async function getTeamRanking(opts?: { game?: string; limit?: number }) {
+export async function getTeamRanking(opts?: { game?: string; gameSlug?: string; limit?: number }) {
   const db = await getDb();
   if (!db) return [];
   const conditions = [];
-  if (opts?.game) conditions.push(eq(teams.game, opts.game));
+  // Filtro por juego: gameSlug tiene prioridad sobre game (legacy)
+  if (opts?.gameSlug) {
+    // Resolver el nombre legacy para cubrir registros sin gameSlug
+    const legacyName = await (async () => {
+      const g = await db.select({ name: games.name }).from(games).where(eq(games.slug, opts.gameSlug!)).limit(1);
+      return g[0]?.name;
+    })();
+    if (legacyName) {
+      conditions.push(
+        or(
+          eq(teams.gameSlug, opts.gameSlug),
+          and(sql`${teams.gameSlug} IS NULL`, eq(teams.game, legacyName))
+        )
+      );
+    } else {
+      conditions.push(eq(teams.gameSlug, opts.gameSlug));
+    }
+  } else if (opts?.game) {
+    // Filtro legacy: solo si no se pasó gameSlug
+    conditions.push(eq(teams.game, opts.game));
+  }
   const q = db.select().from(teams);
   const filtered = conditions.length > 0 ? q.where(and(...conditions)) : q;
   return filtered.orderBy(desc(teams.points)).limit(opts?.limit ?? 50);

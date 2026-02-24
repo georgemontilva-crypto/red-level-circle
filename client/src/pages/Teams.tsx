@@ -4,8 +4,6 @@ import { Link } from "wouter";
 import { Swords, Search, Trophy, Shield, Users, Star, ExternalLink } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 
-const GAMES = ["Todos", "League of Legends", "Valorant", "CS2", "Fortnite", "Rocket League", "FIFA", "Call of Duty"];
-
 const COUNTRY_FLAGS: Record<string, string> = {
   Colombia: "🇨🇴", Venezuela: "🇻🇪", Argentina: "🇦🇷", México: "🇲🇽", Chile: "🇨🇱",
   Perú: "🇵🇪", Ecuador: "🇪🇨", Bolivia: "🇧🇴", Uruguay: "🇺🇾", Paraguay: "🇵🇾",
@@ -14,10 +12,12 @@ const COUNTRY_FLAGS: Record<string, string> = {
 
 export default function Teams() {
   const [search, setSearch] = useState("");
-  const [selectedGame, setSelectedGame] = useState("Todos");
+  const [selectedGame, setSelectedGame] = useState(""); // slug canónico o "" para todos
+
+  const { data: games } = trpc.games.list.useQuery();
 
   const { data: teams, isLoading } = trpc.teams.list.useQuery(
-    { game: selectedGame !== "Todos" ? selectedGame : undefined },
+    { gameSlug: selectedGame || undefined },  // slug canónico principal
     { staleTime: 30_000 }
   );
 
@@ -50,17 +50,28 @@ export default function Teams() {
             />
           </div>
           <div className="flex gap-2 flex-wrap">
-            {GAMES.map((game) => (
+            <button
+              onClick={() => setSelectedGame("")}
+              className={`px-3 py-2 rounded-lg text-xs font-mono font-bold border transition-all ${
+                selectedGame === ""
+                  ? "bg-red-600 border-red-500 text-white"
+                  : "bg-zinc-900 border-zinc-800 text-gray-400 hover:border-zinc-600"
+              }`}
+            >
+              TODOS
+            </button>
+            {games?.map((game) => (
               <button
-                key={game}
-                onClick={() => setSelectedGame(game)}
-                className={`px-3 py-2 rounded-lg text-xs font-mono font-bold border transition-all ${
-                  selectedGame === game
+                key={game.id}
+                onClick={() => setSelectedGame(prev => prev === game.slug ? "" : game.slug)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-mono font-bold border transition-all ${
+                  selectedGame === game.slug
                     ? "bg-red-600 border-red-500 text-white"
                     : "bg-zinc-900 border-zinc-800 text-gray-400 hover:border-zinc-600"
                 }`}
               >
-                {game}
+                {game.logo && <img src={game.logo} alt={game.name} className="w-4 h-4 object-contain" />}
+                {game.name.toUpperCase()}
               </button>
             ))}
           </div>

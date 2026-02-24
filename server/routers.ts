@@ -380,9 +380,13 @@ export const appRouter = router({
   // ─── Teams ─────────────────────────────────────────────────────────────────
   teams: router({
     list: publicProcedure
-      .input(z.object({ game: z.string().optional(), search: z.string().optional() }).optional())
+      .input(z.object({
+        game: z.string().optional(),      // legacy: nombre del juego
+        gameSlug: z.string().optional(),  // canónico: slug del juego
+        search: z.string().optional()
+      }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game });
+        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug });
       }),
 
     myTeams: protectedProcedure.query(async ({ ctx }) => {
@@ -461,9 +465,13 @@ export const appRouter = router({
       }),
 
     ranking: publicProcedure
-      .input(z.object({ game: z.string().optional(), limit: z.number().optional() }).optional())
+      .input(z.object({
+        game: z.string().optional(),      // legacy
+        gameSlug: z.string().optional(),  // canónico
+        limit: z.number().optional()
+      }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game, limit: input?.limit ?? 50 });
+        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
       }),
 
     searchUsers: publicProcedure
@@ -846,9 +854,13 @@ export const appRouter = router({
   // ─── Ranking ───────────────────────────────────────────────────────────────
   ranking: router({
     teams: publicProcedure
-      .input(z.object({ game: z.string().optional(), limit: z.number().optional() }).optional())
+      .input(z.object({
+        game: z.string().optional(),      // legacy
+        gameSlug: z.string().optional(),  // canónico
+        limit: z.number().optional()
+      }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game, limit: input?.limit ?? 50 });
+        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
       }),
   }),
 

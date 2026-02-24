@@ -11,7 +11,7 @@ export default function Ranking() {
   const { isAuthenticated } = useAuth();
 
   const { data: ranking, isLoading } = trpc.ranking.teams.useQuery({
-    game: selectedGame || undefined,
+    gameSlug: selectedGame || undefined,  // slug canónico
     limit: 100,
   });
 
