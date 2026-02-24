@@ -232,9 +232,10 @@ export function TopbarNotificationBell() {
     const rect = buttonRef.current.getBoundingClientRect();
     const w = 320;
     const m = 8;
+    const centeredLeft = Math.max(m, Math.min(window.innerWidth - w - m, (window.innerWidth - w) / 2));
     setFixedPos({
       top: rect.bottom + m,
-      right: Math.max(m, window.innerWidth - rect.right),
+      right: window.innerWidth - centeredLeft - w,
     });
   }
 
@@ -280,7 +281,7 @@ export function TopbarNotificationBell() {
       {open && (
         <NotificationPanel
           dropdownRef={dropdownRef}
-          style={{ position: "fixed", top: fixedPos.top, right: fixedPos.right, width: 320, zIndex: 9999 }}
+          style={{ position: "fixed", top: fixedPos.top, right: fixedPos.right, width: 320, zIndex: 9999, maxWidth: "calc(100vw - 16px)" }}
           onClose={() => setOpen(false)}
         />
       )}
