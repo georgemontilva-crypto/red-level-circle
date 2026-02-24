@@ -135,8 +135,8 @@ import {
 } from "./db";
 import { storagePut } from "./storage";
 import { getDb } from "./db";
-import { eq } from "drizzle-orm";
-import { sectionBanners } from "../drizzle/schema";
+import { eq, inArray, sql } from "drizzle-orm";
+import { sectionBanners, tournaments, teams, users } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
 import { eventBus } from "./eventBus";
 
@@ -1472,6 +1472,38 @@ export const appRouter = router({
     featuredTournaments: publicProcedure.query(() => getFeaturedTournaments(6)),
     recentUsers: publicProcedure.query(() => getRecentUsers(12)),
     suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 12)),
+    // Platform stats (public)
+    stats: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { totalUsers: 0, totalTeams: 0, totalTournaments: 0, activeTournaments: 0 };
+      const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
+      const [totalTeams] = await db.select({ count: sql<number>`count(*)` }).from(teams);
+      const [totalTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments);
+      const [activeTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments)
+        .where(inArray(tournaments.status, ["registration_open", "in_progress"]));
+      return {
+        totalUsers: Number(totalUsers.count),
+        totalTeams: Number(totalTeams.count),
+        totalTournaments: Number(totalTournaments.count),
+        activeTournaments: Number(activeTournaments.count),
+      };
+    }),
+    // Top teams for leaderboard
+    topTeams: publicProcedure.query(() => getTeamRanking({ limit: 5 })),
+    // Recent news
+    recentNews: publicProcedure.query(() => getNews({ publishedOnly: true, limit: 3 })),
+    // Featured creators
+    featuredCreators: publicProcedure.query(async () => {
+      const all = await listApprovedCreators();
+      return all.slice(0, 4);
+    }),
+    // Available missions (public preview)
+    availableMissions: publicProcedure.query(() => getRewardTasks()),
+    // Featured ads for home (featured type only)
+    featuredAds: publicProcedure.query(async () => {
+      const all = await getBrandAds(true);
+      return all.filter((a: any) => a.adType === "featured").slice(0, 3);
+    }),
   }),
   // ─── Section Banners ─────────────────────────────────────────────────────────
   // ─── Notifications ─────────────────────────────────────────────────────────

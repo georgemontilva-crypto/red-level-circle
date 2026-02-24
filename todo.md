@@ -442,7 +442,22 @@
 - [x] Cambiar tipografía de lectura por una más legible en toda la plataforma
 - [x] Corregir enlaces rotos en Dashboard (Torneos Creados y Ver Todos daban 404)
 - [x] Reemplazar font-mono (Share Tech Mono) por Inter para mejor legibilidad en toda la plataforma
-- [ ] Event Bus interno para desacoplar lógica (tournament.full, mission.approved, creator.verified, etc.)
-- [ ] Tabla notifications en BD para notificaciones de usuarios
-- [ ] Automatización de torneos: brackets auto al llenarse + notificar equipos
-- [ ] UI de notificaciones: campana en header con badge de no leídas
+- [x] Event Bus interno para desacoplar lógica (tournament.full, mission.approved, creator.verified, etc.)
+- [x] Tabla notifications en BD para notificaciones de usuarios
+- [x] Automatización de torneos: brackets auto al llenarse + notificar equipos
+- [x] UI de notificaciones: campana en header con badge de no leídas
+- [ ] Rediseñar Home con sección de estadísticas de plataforma
+- [ ] Agregar sección de actividad reciente al inicio
+- [ ] Agregar top jugadores/equipos al inicio
+- [x] Agregar sección de creadores destacados al inicio
+- [x] Agregar sección de misiones disponibles al inicio
+- [x] Agregar sección de noticias recientes al inicio
+- [x] Endpoints tRPC para estadísticas, actividad reciente y top jugadores
+
+## Rediseño Home Completo V_Next
+- [x] Rediseñar Home con sección de estadísticas de plataforma (4 stat cards)
+- [x] Agregar sección de actividad reciente al inicio (torneos, equipos, usuarios)
+- [x] Agregar top jugadores/equipos al inicio (leaderboard)
+- [x] Agregar sección de creadores destacados al inicio
+- [x] Agregar sección de misiones disponibles al inicio
+- [x] Agregar sección de noticias recientes al inicio
