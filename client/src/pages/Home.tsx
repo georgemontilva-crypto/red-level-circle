@@ -548,8 +548,8 @@ function AdBannerSection({ ads }: { ads: any[] }) {
           key={currentAd.id}
           src={currentAd.bannerImage}
           alt={currentAd.title}
-          className="w-full block group-hover:scale-[1.01] transition-transform duration-500"
-          style={{ animation: "fadeIn 0.5s ease", height: "200px", objectFit: "cover", objectPosition: "center" }}
+          className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
+          style={{ animation: "fadeIn 0.5s ease" }}
         />
       </a>
       <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono pointer-events-none"
