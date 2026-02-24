@@ -575,7 +575,7 @@ function AdBannerSection({ ads }: { ads: any[] }) {
 // ─── Main Home ────────────────────────────────────────────────────────────────
 export default function Home() {
   const { isAuthenticated } = useAuth();
-  const { data: allTournaments } = trpc.tournaments.list.useQuery({ status: undefined, game: undefined });
+  const { data: allTournaments } = trpc.tournaments.list.useQuery({ status: undefined });
   const { data: featuredTournaments } = trpc.home.featuredTournaments.useQuery();
   const { data: news } = trpc.news.list.useQuery({ limit: 10 });
   const { data: creators } = trpc.creators.listApproved.useQuery();

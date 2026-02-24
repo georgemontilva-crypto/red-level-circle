@@ -213,8 +213,7 @@ export const appRouter = router({
     list: publicProcedure
       .input(z.object({
         status: z.string().optional(),
-        game: z.string().optional(),       // legacy: nombre del juego (compatibilidad con URLs antiguas)
-        gameSlug: z.string().optional(),   // canónico: slug del juego (ej: "league-of-legends")
+        gameSlug: z.string().optional(),   // slug canónico (Fase 5a: única fuente de verdad)
         search: z.string().optional(),
         featured: z.boolean().optional(),
         limit: z.number().optional(),
@@ -223,7 +222,7 @@ export const appRouter = router({
         // Solo torneos aprobados son visibles públicamente
         const publicStatuses = ["registration_open", "registration_closed", "in_progress", "completed"];
         const status = input?.status && publicStatuses.includes(input.status) ? input.status : undefined;
-        return getTournaments({ ...input, status, isPublic: true, publicOnly: true });
+        return getTournaments({ status, gameSlug: input?.gameSlug, search: input?.search, isPublic: true, publicOnly: true });
       }),
 
     myTournaments: premiumProcedure.query(async ({ ctx }) => {
@@ -382,12 +381,11 @@ export const appRouter = router({
   teams: router({
     list: publicProcedure
       .input(z.object({
-        game: z.string().optional(),      // legacy: nombre del juego
-        gameSlug: z.string().optional(),  // canónico: slug del juego
+        gameSlug: z.string().optional(),  // slug canónico (Fase 5a)
         search: z.string().optional()
       }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug });
+        return getTeamRanking({ gameSlug: input?.gameSlug });
       }),
 
     myTeams: protectedProcedure.query(async ({ ctx }) => {
@@ -467,12 +465,11 @@ export const appRouter = router({
 
     ranking: publicProcedure
       .input(z.object({
-        game: z.string().optional(),      // legacy
-        gameSlug: z.string().optional(),  // canónico
+        gameSlug: z.string().optional(),  // slug canónico (Fase 5a)
         limit: z.number().optional()
       }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
+        return getTeamRanking({ gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
       }),
 
     searchUsers: publicProcedure
@@ -860,12 +857,11 @@ export const appRouter = router({
   ranking: router({
     teams: publicProcedure
       .input(z.object({
-        game: z.string().optional(),      // legacy
-        gameSlug: z.string().optional(),  // canónico
+        gameSlug: z.string().optional(),  // slug canónico (Fase 5a)
         limit: z.number().optional()
       }).optional())
       .query(async ({ input }) => {
-        return getTeamRanking({ game: input?.game, gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
+        return getTeamRanking({ gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
       }),
   }),
 
