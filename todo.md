@@ -484,3 +484,4 @@
 - [x] Banner publicitario: altura fija que respete el alto de la imagen
 - [x] Ocultar flechas de navegación en móvil en HScrollSection
 - [x] Eliminar barra de scroll horizontal visible en secciones del Home
+- [x] Corregir posición del dropdown de notificaciones: abrir hacia la derecha del botón
