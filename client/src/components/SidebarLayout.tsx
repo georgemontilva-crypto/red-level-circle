@@ -8,6 +8,7 @@ import {
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavItem {
   label: string;
@@ -166,10 +167,13 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             </div>
           </Link>
           {wallet && (
-            <div className="mt-2 flex items-center gap-1.5 pt-2 border-t border-zinc-700/30">
-              <Coins className="w-3.5 h-3.5 text-yellow-400" />
-              <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
-              <span className="text-xs text-zinc-600 font-mono">RLC</span>
+            <div className="mt-2 flex items-center justify-between pt-2 border-t border-zinc-700/30">
+              <div className="flex items-center gap-1.5">
+                <Coins className="w-3.5 h-3.5 text-yellow-400" />
+                <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
+                <span className="text-xs text-zinc-600 font-mono">RLC</span>
+              </div>
+              <NotificationBell />
             </div>
           )}
         </div>
@@ -281,12 +285,15 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         <span className="font-orbitron font-black text-base tracking-widest">
           <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
         </span>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 text-zinc-400 hover:text-white transition-colors"
-        >
-          {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          {isAuthenticated && <NotificationBell />}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 text-zinc-400 hover:text-white transition-colors"
+          >
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
 
       {/* Main content */}

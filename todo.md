@@ -442,3 +442,7 @@
 - [x] Cambiar tipografía de lectura por una más legible en toda la plataforma
 - [x] Corregir enlaces rotos en Dashboard (Torneos Creados y Ver Todos daban 404)
 - [x] Reemplazar font-mono (Share Tech Mono) por Inter para mejor legibilidad en toda la plataforma
+- [ ] Event Bus interno para desacoplar lógica (tournament.full, mission.approved, creator.verified, etc.)
+- [ ] Tabla notifications en BD para notificaciones de usuarios
+- [ ] Automatización de torneos: brackets auto al llenarse + notificar equipos
+- [ ] UI de notificaciones: campana en header con badge de no leídas

@@ -502,3 +502,36 @@ export const sectionBanners = mysqlTable("section_banners", {
 });
 export type SectionBanner = typeof sectionBanners.$inferSelect;
 export type InsertSectionBanner = typeof sectionBanners.$inferInsert;
+
+// ─── User Notifications ───────────────────────────────────────────────────────
+// In-app notifications for users (event-driven)
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", [
+    "bracket_ready",
+    "mission_approved",
+    "mission_rejected",
+    "order_confirmed",
+    "team_invite",
+    "team_invite_accepted",
+    "team_invite_rejected",
+    "creator_verified",
+    "creator_rejected",
+    "tournament_full",
+    "match_scheduled",
+    "match_result",
+    "coins_earned",
+    "coins_spent",
+    "general",
+  ]).notNull(),
+  title: varchar("title", { length: 256 }).notNull(),
+  message: text("message").notNull(),
+  link: text("link"),         // optional deep link
+  isRead: boolean("isRead").default(false).notNull(),
+  referenceId: int("referenceId"), // tournamentId, missionId, orderId, etc.
+  referenceType: varchar("referenceType", { length: 64 }), // "tournament" | "mission" | "order" etc.
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;

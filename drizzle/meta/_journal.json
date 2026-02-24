@@ -92,6 +92,13 @@
       "when": 1771686560869,
       "tag": "0012_third_scorpion",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1771899140145,
+      "tag": "0013_closed_pepper_potts",
+      "breakpoints": true
     }
   ]
 }

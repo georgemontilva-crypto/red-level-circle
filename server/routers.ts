@@ -137,6 +137,8 @@ import { storagePut } from "./storage";
 import { getDb } from "./db";
 import { eq } from "drizzle-orm";
 import { sectionBanners } from "../drizzle/schema";
+import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
+import { eventBus } from "./eventBus";
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
 const premiumProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -564,10 +566,27 @@ export const appRouter = router({
         if (members.length < t.minPlayersPerTeam) {
           throw new TRPCError({ code: "BAD_REQUEST", message: `El equipo necesita al menos ${t.minPlayersPerTeam} jugador(es).` });
         }
-        const id = await createRegistration(input);
+         const id = await createRegistration(input);
+
+        // Auto-generate brackets if tournament is now full
+        try {
+          const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+          if (t.maxTeams && approvedRegs.length >= t.maxTeams) {
+            // Generate brackets automatically
+            const teamIds = approvedRegs.map((r) => r.teamId);
+            await generateBracket(input.tournamentId, teamIds);
+            await updateTournamentStatus(input.tournamentId, "in_progress");
+            // Emit events
+            eventBus.emit("tournament.full", { tournamentId: input.tournamentId });
+            eventBus.emit("tournament.brackets_generated", { tournamentId: input.tournamentId });
+          }
+        } catch (e) {
+          // Non-critical: log but don't fail the registration
+          console.error("[AutoBracket] Failed to auto-generate brackets:", e);
+        }
+
         return { id };
       }),
-
     updateStatus: premiumProcedure
       .input(z.object({
         id: z.number(),
@@ -1401,11 +1420,27 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
-        return reviewCreator(input.id, input.status, input.adminNote);
+        // Get creator to find userId before reviewing
+        const db = await getDb();
+        let creatorUserId: number | null = null;
+        if (db) {
+          const { contentCreators: cc } = await import("../drizzle/schema");
+          const rows = await db.select({ userId: cc.userId }).from(cc).where(eq(cc.id, input.id)).limit(1);
+          creatorUserId = rows[0]?.userId ?? null;
+        }
+        const result = await reviewCreator(input.id, input.status, input.adminNote);
+        // Emit event for notifications
+        if (creatorUserId) {
+          if (input.status === "approved") {
+            eventBus.emit("creator.verified", { userId: creatorUserId });
+          } else {
+            eventBus.emit("creator.rejected", { userId: creatorUserId });
+          }
+        }
+        return result;
       }),
   }),
-
-  // ─── Verification ────────────────────────────────────────────────────────────
+  // ─── Verification ─────────────────────────────────────────────────────────────
   verification: router({
     request: protectedProcedure
       .input(z.object({ reason: z.string().min(10).max(500) }))
@@ -1439,6 +1474,35 @@ export const appRouter = router({
     suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 12)),
   }),
   // ─── Section Banners ─────────────────────────────────────────────────────────
+  // ─── Notifications ─────────────────────────────────────────────────────────
+  notifications: router({
+    // Get all notifications for the current user
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).optional() }))
+      .query(async ({ ctx, input }) => {
+        return getUserNotifications(ctx.user.id, input.limit ?? 30);
+      }),
+    // Get unread count (for badge)
+    unreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        const count = await getUnreadCount(ctx.user.id);
+        return { count };
+      }),
+    // Mark all as read
+    markAllRead: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await markAllRead(ctx.user.id);
+        return { success: true };
+      }),
+    // Mark one as read
+    markOneRead: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await markOneRead(input.id, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
   banners: router({
     // Public: get banner for a specific section
     getSection: publicProcedure
@@ -1497,3 +1561,4 @@ export const appRouter = router({
   }),
 });
 export type AppRouter = typeof appRouter;
+

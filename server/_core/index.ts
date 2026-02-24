@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import { registerNotificationListeners } from "../notifications";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -61,5 +62,8 @@ async function startServer() {
     console.log(`Server running on http://localhost:${port}/`);
   });
 }
+
+// Register event-driven notification listeners
+registerNotificationListeners();
 
 startServer().catch(console.error);
