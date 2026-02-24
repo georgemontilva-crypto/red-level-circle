@@ -1470,8 +1470,8 @@ export const appRouter = router({
   // ─── Home Feed ──────────────────────────────────────────────────────────────
   home: router({
     featuredTournaments: publicProcedure.query(() => getFeaturedTournaments(6)),
-    recentUsers: publicProcedure.query(() => getRecentUsers(12)),
-    suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 12)),
+    recentUsers: publicProcedure.query(() => getRecentUsers(20)),
+    suggestedUsers: protectedProcedure.query(async ({ ctx }) => getSuggestedUsers(ctx.user.id, 20)),
     // Platform stats (public)
     stats: publicProcedure.query(async () => {
       const db = await getDb();
@@ -1489,7 +1489,7 @@ export const appRouter = router({
       };
     }),
     // Top teams for leaderboard
-    topTeams: publicProcedure.query(() => getTeamRanking({ limit: 5 })),
+    topTeams: publicProcedure.query(() => getTeamRanking({ limit: 20 })),
     // Recent news
     recentNews: publicProcedure.query(() => getNews({ publishedOnly: true, limit: 3 })),
     // Featured creators

@@ -2032,7 +2032,7 @@ export async function getSuggestedUsers(currentUserId: number, limit = 10) {
 export async function getFeaturedTournaments(limit = 6) {
   const db = await getDb();
   if (!db) return [];
-  return db
+  const rows = await db
     .select({
       id: tournaments.id,
       name: tournaments.name,
@@ -2043,14 +2043,33 @@ export async function getFeaturedTournaments(limit = 6) {
       startDate: tournaments.startDate,
       status: tournaments.status,
       isFeatured: tournaments.isFeatured,
+      bracketType: tournaments.bracketType,
+      registrationType: tournaments.registrationType,
+      minPlayersPerTeam: tournaments.minPlayersPerTeam,
+      maxPlayersPerTeam: tournaments.maxPlayersPerTeam,
+      creatorName: users.name,
+      creatorId: tournaments.creatorId,
     })
     .from(tournaments)
+    .leftJoin(users, eq(tournaments.creatorId, users.id))
     .where(and(
       eq(tournaments.isPublic, true),
       sql`${tournaments.status} IN ('registration_open', 'in_progress', 'upcoming')`
     ))
     .orderBy(desc(tournaments.isFeatured), desc(tournaments.createdAt))
     .limit(limit);
+  // Attach registered team count for each tournament
+  const withCounts = await Promise.all(rows.map(async (t) => {
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(tournamentRegistrations)
+      .where(and(
+        eq(tournamentRegistrations.tournamentId, t.id),
+        eq(tournamentRegistrations.status, 'Aprobado')
+      ));
+    return { ...t, registeredCount: Number(countRow?.count ?? 0) };
+  }));
+  return withCounts;
 }
 
 // ─── Search users by nickname ─────────────────────────────────────────────────

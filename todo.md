@@ -461,3 +461,13 @@
 - [x] Agregar sección de creadores destacados al inicio
 - [x] Agregar sección de misiones disponibles al inicio
 - [x] Agregar sección de noticias recientes al inicio
+
+## Reorganización Home V_Community
+- [ ] Banner hero sin textos superpuestos (limpio)
+- [ ] Tarjeta de torneo con info estilo communitygaming: tipo bracket, formato (1v1/5v5), slots (11/64), organizador, fecha y premio
+- [ ] Lista de juegos solo MOBAs/team vs team (League of Legends, Valorant, Honor of Kings, Marvel Rivals, etc.)
+- [ ] Misiones disponibles en scroll horizontal completo (recuadro completo visible)
+- [ ] Creadores de contenido: tarjetas más grandes, scroll horizontal, 4 en escritorio
+- [ ] Sección combinada Equipos + Personas: equipos a la izquierda (top 8 con scroll interno), personas a la derecha (top 8 con scroll interno)
+- [ ] Auto-refresh de la sección combinada cada 30 segundos para mostrar nuevos equipos/personas
+- [ ] Click en equipo lleva a /teams/:id, click en persona lleva a /profile/:id
