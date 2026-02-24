@@ -231,7 +231,7 @@ function MissionCard({ m }: { m: any }) {
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)"; }}
       >
         {/* Thumbnail */}
-        <div className="relative h-36 bg-zinc-900 overflow-hidden">
+        <div className="relative h-44 bg-zinc-900 overflow-hidden">
           {m.thumbnailUrl ? (
             <img src={m.thumbnailUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : m.sponsorLogoUrl ? (
@@ -563,7 +563,7 @@ function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] 
             style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
           >
             {creators.length === 0 ? (
-              <div className="shrink-0 w-60 h-64 rounded-2xl border border-zinc-800/50 flex items-center justify-center"
+              <div className="shrink-0 w-72 h-72 rounded-2xl border border-zinc-800/50 flex items-center justify-center"
                 style={{ background: "oklch(0.10 0.005 0)" }}>
                 <p className="text-zinc-600 text-xs font-mono text-center px-4">No hay creadores aprobados aún</p>
               </div>
@@ -572,11 +572,11 @@ function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] 
               return (
                 <div
                   key={c.id}
-                  className="shrink-0 w-60 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+                  className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
                   style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
                   onClick={() => navigate(`/profile/${c.userId}`)}
                 >
-                  <div className="h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden relative">
+                  <div className="h-44 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden relative">
                     {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
                     <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, oklch(0.12 0.005 0) 100%)" }} />
                   </div>
@@ -619,47 +619,32 @@ function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] 
             })}
           </div>
         </div>
-        {/* Derecha: banner publicitario */}
+        {/* Derecha: banner publicitario — solo imagen, ancho completo */}
         <div className="hidden lg:flex shrink-0 w-72 xl:w-80">
           {sideAd ? (
             <a
               href={sideAd.destinationUrl || "#"}
               target={sideAd.destinationUrl ? "_blank" : "_self"}
               rel="noopener noreferrer"
-              className="block w-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-0.5"
-              style={{ border: "1px solid oklch(0.20 0.01 0)", background: "oklch(0.12 0.005 0)" }}
+              className="block w-full rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(220,38,38,0.2)]"
+              style={{ border: "1px solid oklch(0.20 0.01 0)" }}
             >
-              <div className="relative h-44 overflow-hidden">
+              <div className="relative w-full h-full min-h-[280px] overflow-hidden">
                 <img
                   src={sideAd.bannerImage}
                   alt={sideAd.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  style={{ minHeight: "280px" }}
                 />
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.12 0.005 0) 0%, transparent 50%)" }} />
                 <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono"
                   style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.55 0.01 0)", border: "1px solid oklch(0.30 0.01 0)", backdropFilter: "blur(8px)" }}>
                   Publicidad
                 </div>
               </div>
-              <div className="p-4">
-                <p className="text-zinc-500 text-xs font-mono mb-1">{sideAd.brandName}</p>
-                <p className="text-white font-bold text-sm line-clamp-2 mb-3 group-hover:text-red-300 transition-colors">{sideAd.title}</p>
-                {sideAd.tagline && <p className="text-zinc-500 text-xs mb-3 line-clamp-2">{sideAd.tagline}</p>}
-                <div
-                  className="w-full py-2 rounded-lg text-center text-xs font-orbitron font-bold tracking-wider"
-                  style={{
-                    background: "oklch(0.55 0.22 25 / 0.15)",
-                    border: "1px solid oklch(0.55 0.22 25 / 0.40)",
-                    color: "oklch(0.65 0.22 25)",
-                  }}
-                >
-                  {sideAd.ctaLabel ?? "Ver más"}
-                </div>
-              </div>
             </a>
           ) : (
             <div className="w-full rounded-2xl border border-dashed border-zinc-800/50 flex flex-col items-center justify-center gap-3 p-6"
-              style={{ background: "oklch(0.08 0.005 0)" }}>
+              style={{ background: "oklch(0.08 0.005 0)", minHeight: "280px" }}>
               <BarChart3 size={28} className="text-zinc-700" />
               <div className="text-center">
                 <p className="text-zinc-600 text-xs font-mono">ESPACIO PUBLICITARIO</p>

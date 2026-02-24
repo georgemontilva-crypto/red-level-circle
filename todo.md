@@ -476,3 +476,5 @@
 - [ ] Aplicar TournamentCard universal en todas las páginas de torneos
 - [ ] Traducir toda la UI al español
 - [ ] Sección Creadores: layout 2 columnas (scroll horizontal + banner publicitario)
+- [x] Tarjetas de creadores y misiones: mismo tamaño que el banner publicitario
+- [x] Banner publicitario: ancho completo de su espacio, solo imagen sin cuerpo de texto
