@@ -99,9 +99,10 @@ export function NotificationBell() {
       {/* Dropdown */}
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-1rem)] bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl z-50 overflow-hidden"
           style={{
             animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both",
+            right: "max(-0.5rem, calc(-100vw + 100% + 0.5rem))",
           }}
         >
           {/* Header */}

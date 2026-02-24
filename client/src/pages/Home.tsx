@@ -524,156 +524,50 @@ function TeamsAndPeopleSection() {
   );
 }
 
-// ─── Creators + Ad Banner Section ────────────────────────────────────────────
-function CreatorsWithAdSection({ creators, ads }: { creators: any[]; ads: any[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const scroll = (dir: number) => scrollRef.current?.scrollBy({ left: dir * 280, behavior: "smooth" });
-  const [, navigate] = useLocation();
+// ─── Ad Banner Section (full width, auto-scroll) ─────────────────────────────
+function AdBannerSection({ ads }: { ads: any[] }) {
   const activeAds = ads.filter((a: any) => a.isActive);
   const [adIndex, setAdIndex] = useState(0);
   const currentAd = activeAds.length > 0 ? activeAds[adIndex % activeAds.length] : null;
-
-  // Auto-scroll entre anuncios cada 5 segundos
   useEffect(() => {
     if (activeAds.length <= 1) return;
     const timer = setInterval(() => setAdIndex(i => i + 1), 5000);
     return () => clearInterval(timer);
   }, [activeAds.length]);
-
-  if (creators.length === 0 && !currentAd) return null;
-
+  if (!currentAd) return null;
   return (
-    <section>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
-          <Star size={18} className="text-purple-400" /> Creadores Oficiales
-        </h2>
-        <div className="flex items-center gap-3">
-          <a href="/creators" className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1">
-            Ver todos <ChevronRight size={12} />
-          </a>
-          <div className="flex gap-1">
-            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 transition-colors">
-              <ChevronLeft size={14} className="text-zinc-400" />
-            </button>
-            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 transition-colors">
-              <ChevronRight size={14} className="text-zinc-400" />
-            </button>
-          </div>
-        </div>
+    <section className="relative w-full rounded-2xl overflow-hidden"
+      style={{ border: "1px solid oklch(0.20 0.01 0)" }}>
+      <a
+        href={currentAd.destinationUrl || "#"}
+        target={currentAd.destinationUrl ? "_blank" : "_self"}
+        rel="noopener noreferrer"
+        className="block w-full group"
+      >
+        <img
+          key={currentAd.id}
+          src={currentAd.bannerImage}
+          alt={currentAd.title}
+          className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
+          style={{ animation: "fadeIn 0.5s ease", maxHeight: "280px", objectFit: "cover" }}
+        />
+      </a>
+      <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono pointer-events-none"
+        style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.55 0.01 0)", border: "1px solid oklch(0.30 0.01 0)", backdropFilter: "blur(8px)" }}>
+        Publicidad
       </div>
-      <div className="flex gap-4">
-        {/* Izquierda: scroll horizontal de creadores */}
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div
-            ref={scrollRef}
-            className="flex gap-4 overflow-x-auto pb-2"
-            style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {creators.length === 0 ? (
-              <div className="shrink-0 w-72 h-72 rounded-2xl border border-zinc-800/50 flex items-center justify-center"
-                style={{ background: "oklch(0.10 0.005 0)" }}>
-                <p className="text-zinc-600 text-xs font-mono text-center px-4">No hay creadores aprobados aún</p>
-              </div>
-            ) : creators.map((c: any) => {
-              const name = c.nickname ?? c.userName ?? "Creador";
-              return (
-                <div
-                  key={c.id}
-                  className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-                  style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
-                  onClick={() => navigate(`/profile/${c.userId}`)}
-                >
-                  <div className="h-44 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden relative">
-                    {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
-                    <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, oklch(0.12 0.005 0) 100%)" }} />
-                  </div>
-                  <div className="relative" style={{ height: 0 }}>
-                    <div className="absolute -top-8 left-4" style={{ border: "3px solid oklch(0.12 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
-                      <UserAvatar avatar={c.avatar} name={name} activeFrameImage={c.activeFrameImage} size={56} />
-                    </div>
-                  </div>
-                  <div className="pt-10 px-4 pb-4">
-                    <div className="flex items-center gap-1.5 mb-0.5">
-                      <p className="text-white font-bold text-sm truncate">{name}</p>
-                      {c.isVerified && <VerifiedBadge size={14} />}
-                    </div>
-                    {c.category && <p className="text-red-400 text-xs font-mono capitalize mb-1">{c.category}</p>}
-                    {c.bio && <p className="text-zinc-500 text-xs line-clamp-2 mb-3">{c.bio}</p>}
-                    <div className="flex items-center gap-2.5">
-                      {c.youtube && (
-                        <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="text-zinc-500 hover:text-red-500 transition-colors"><Youtube size={15} /></a>
-                      )}
-                      {c.twitch && (
-                        <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="text-zinc-500 hover:text-purple-400 transition-colors"><Twitch size={15} /></a>
-                      )}
-                      {c.twitter && (
-                        <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="text-zinc-500 hover:text-sky-400 transition-colors"><Twitter size={15} /></a>
-                      )}
-                      {c.instagram && (
-                        <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-                          className="text-zinc-500 hover:text-pink-400 transition-colors"><Instagram size={15} /></a>
-                      )}
-                      {c.subscribers && (
-                        <span className="ml-auto text-zinc-600 text-xs font-mono">{formatNumber(c.subscribers)} subs</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+      {activeAds.length > 1 && (
+        <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5">
+          {activeAds.map((_: any, i: number) => (
+            <button
+              key={i}
+              onClick={() => setAdIndex(i)}
+              className="w-2 h-2 rounded-full transition-all"
+              style={{ background: i === adIndex % activeAds.length ? "white" : "rgba(255,255,255,0.35)" }}
+            />
+          ))}
         </div>
-        {/* Derecha: banner publicitario — ancho natural de la imagen */}
-        <div className="hidden lg:block shrink-0" style={{ alignSelf: "flex-start" }}>
-          {currentAd ? (
-            <a
-              href={currentAd.destinationUrl || "#"}
-              target={currentAd.destinationUrl ? "_blank" : "_self"}
-              rel="noopener noreferrer"
-              className="relative block rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_24px_rgba(220,38,38,0.2)]"
-              style={{ border: "1px solid oklch(0.20 0.01 0)" }}
-            >
-              <img
-                key={currentAd.id}
-                src={currentAd.bannerImage}
-                alt={currentAd.title}
-                className="block w-auto max-h-[420px] group-hover:scale-105 transition-transform duration-500"
-                style={{ animation: "fadeIn 0.5s ease", display: "block" }}
-              />
-              <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono"
-                style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.55 0.01 0)", border: "1px solid oklch(0.30 0.01 0)", backdropFilter: "blur(8px)" }}>
-                Publicidad
-              </div>
-              {activeAds.length > 1 && (
-                <div className="absolute bottom-2.5 left-0 right-0 flex justify-center gap-1.5">
-                  {activeAds.map((_: any, i: number) => (
-                    <button
-                      key={i}
-                      onClick={e => { e.preventDefault(); setAdIndex(i); }}
-                      className="w-1.5 h-1.5 rounded-full transition-all"
-                      style={{ background: i === adIndex % activeAds.length ? "white" : "rgba(255,255,255,0.35)" }}
-                    />
-                  ))}
-                </div>
-              )}
-            </a>
-          ) : (
-            <div className="w-72 rounded-2xl border border-dashed border-zinc-800/50 flex flex-col items-center justify-center gap-3 p-6"
-              style={{ background: "oklch(0.08 0.005 0)", minHeight: "280px" }}>
-              <BarChart3 size={28} className="text-zinc-700" />
-              <div className="text-center">
-                <p className="text-zinc-600 text-xs font-mono">ESPACIO PUBLICITARIO</p>
-                <p className="text-zinc-700 text-xs mt-1">Contacta con nosotros para anunciar aquí</p>
-              </div>
-              <a href="/ads" className="text-xs font-mono text-red-500/70 hover:text-red-400 transition-colors">Ver opciones</a>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </section>
   );
 }
@@ -724,10 +618,21 @@ export default function Home() {
           </HScrollSection>
         )}
 
-        {/* 6. Creadores de contenido — layout 2 columnas: scroll horizontal + banner publicitario */}
-        <CreatorsWithAdSection creators={creators ?? []} ads={sideAds ?? []} />
+        {/* 6. Banner publicitario — ancho completo */}
+        <AdBannerSection ads={sideAds ?? []} />
+        {/* 7. Creadores de contenido — scroll horizontal */}
+        {(creators?.length ?? 0) > 0 && (
+          <HScrollSection
+            title="Creadores Oficiales"
+            href="/creators"
+            icon={<Star size={18} className="text-purple-400" />}
+            viewAllLabel="Ver todos"
+          >
+            {creators!.map((c: any) => <CreatorCard key={c.id} c={c} />)}
+          </HScrollSection>
+        )}
 
-        {/* 7. Noticias */}
+        {/* 8. Noticias */}
         {(news?.length ?? 0) > 0 && (
           <HScrollSection
             title="Últimas Noticias"
@@ -738,10 +643,10 @@ export default function Home() {
           </HScrollSection>
         )}
 
-        {/* 8. Equipos + Personas (sección combinada con scroll interno y auto-refresh) */}
+        {/* 9. Equipos + Personas (sección combinada con scroll interno y auto-refresh) */}
         <TeamsAndPeopleSection />
 
-        {/* 9. CTA para no autenticados */}
+        {/* 10. CTA para no autenticados */}
         {!isAuthenticated && (
           <section className="relative rounded-2xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-red-950/60 via-black to-black" />

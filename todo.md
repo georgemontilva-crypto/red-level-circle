@@ -478,3 +478,5 @@
 - [ ] Sección Creadores: layout 2 columnas (scroll horizontal + banner publicitario)
 - [x] Tarjetas de creadores y misiones: mismo tamaño que el banner publicitario
 - [x] Banner publicitario: ancho completo de su espacio, solo imagen sin cuerpo de texto
+- [x] Banner publicitario de ancho completo separado de Creadores
+- [x] Corregir desplegable campanita que se sale del ancho de la pantalla
