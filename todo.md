@@ -492,3 +492,8 @@
 - [x] Fase 1: añadir gameSlug nullable a tournaments y teams en schema + db:push
 - [x] Fase 2: script de backfill idempotente con mapeo de normalización
 - [x] Proteger slug inmutable si hay torneos/equipos asociados en games.upsert
+
+## Migración gameSlug Fase 3 (Dual-write)
+- [x] Añadir helper resolveGameSlug en db.ts
+- [x] Dual-write en createTournament y updateTournament
+- [x] Dual-write en createTeam y updateTeam

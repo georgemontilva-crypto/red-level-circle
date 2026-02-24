@@ -111,7 +111,9 @@ export async function createTeam(data: {
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  const [result] = await db.insert(teams).values(data);
+  // Fase 3 dual-write: resolver gameSlug a partir del nombre del juego
+  const gameSlug = await resolveGameSlug(data.game);
+  const [result] = await db.insert(teams).values({ ...data, gameSlug: gameSlug ?? null });
   const teamId = (result as { insertId: number }).insertId;
   // Add captain as team member
   await db.insert(teamMembers).values({ teamId, userId: data.captainId, role: "captain" });
@@ -204,9 +206,12 @@ export async function createTournament(data: {
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  // Fase 3 dual-write: resolver gameSlug a partir del nombre del juego
+  const gameSlug = await resolveGameSlug(data.game);
   const { status, streamPlatform, ...rest } = data;
   const [result] = await db.insert(tournaments).values({
     ...rest,
+    gameSlug: gameSlug ?? null,
     status: (status ?? "draft") as any,
     streamPlatform: streamPlatform as any,
     maxTeams: data.maxTeams ?? 16,
@@ -323,7 +328,13 @@ export async function updateTournament(
 ) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.update(tournaments).set(data).where(eq(tournaments.id, id));
+  // Fase 3 dual-write: si se actualiza el campo game, recalcular gameSlug
+  let payload = { ...data };
+  if (data.game !== undefined) {
+    const resolvedSlug = await resolveGameSlug(data.game);
+    payload.gameSlug = resolvedSlug ?? null;
+  }
+  await db.update(tournaments).set(payload).where(eq(tournaments.id, id));
 }
 
 export async function updateTournamentStatus(
@@ -613,6 +624,26 @@ export async function getGameBySlug(slug: string) {
   if (!db) return undefined;
   const result = await db.select().from(games).where(eq(games.slug, slug)).limit(1);
   return result[0];
+}
+
+/**
+ * Resuelve el slug canónico de un juego a partir de su nombre (campo legacy).
+ * Busca coincidencia exacta, luego case-insensitive.
+ * Retorna undefined si el juego no existe en la tabla games.
+ * Usado en dual-write al crear/editar torneos y equipos.
+ */
+export async function resolveGameSlug(gameName: string | undefined | null): Promise<string | undefined> {
+  if (!gameName) return undefined;
+  const db = await getDb();
+  if (!db) return undefined;
+  // Coincidencia exacta por nombre
+  const exact = await db.select({ slug: games.slug }).from(games).where(eq(games.name, gameName)).limit(1);
+  if (exact[0]) return exact[0].slug;
+  // Coincidencia case-insensitive como fallback
+  const allGames = await db.select({ name: games.name, slug: games.slug }).from(games);
+  const lower = gameName.toLowerCase();
+  const match = allGames.find((g) => g.name.toLowerCase() === lower);
+  return match?.slug;
 }
 
 /**
@@ -924,6 +955,7 @@ export async function updateTeam(teamId: number, data: Partial<{
   banner: string;
   description: string;
   game: string;
+  gameSlug: string;
   country: string;
   socialDiscord: string;
   socialTwitch: string;
@@ -931,7 +963,13 @@ export async function updateTeam(teamId: number, data: Partial<{
 }>) {
   const db = await getDb();
   if (!db) return;
-  await db.update(teams).set(data).where(eq(teams.id, teamId));
+  // Fase 3 dual-write: si se actualiza el campo game, recalcular gameSlug
+  const payload: Record<string, unknown> = { ...data };
+  if (data.game !== undefined) {
+    const resolvedSlug = await resolveGameSlug(data.game);
+    payload.gameSlug = resolvedSlug ?? null;
+  }
+  await db.update(teams).set(payload as any).where(eq(teams.id, teamId));
 }
 
 // ─── Shop Items ────────────────────────────────────────────────────────────────
