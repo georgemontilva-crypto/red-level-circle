@@ -226,7 +226,8 @@ const PUBLIC_STATUSES = ["registration_open", "registration_closed", "in_progres
 
 export async function getTournaments(filters?: {
   status?: string;
-  game?: string;
+  game?: string;       // campo legacy: nombre del juego (ej: "League of Legends")
+  gameSlug?: string;  // campo canónico: slug del juego (ej: "league-of-legends") — tiene prioridad sobre game
   search?: string;
   creatorId?: number;
   isPublic?: boolean;
@@ -240,7 +241,29 @@ export async function getTournaments(filters?: {
   } else if (filters?.status) {
     conditions.push(eq(tournaments.status, filters.status as any));
   }
-  if (filters?.game) conditions.push(eq(tournaments.game, filters.game));
+  // Filtro por juego: gameSlug tiene prioridad sobre game (legacy)
+  if (filters?.gameSlug) {
+    // Filtro primario: registros con gameSlug poblado que coincida
+    // + fallback: registros legacy sin gameSlug pero con game coincidente (por nombre)
+    // Esto garantiza compatibilidad durante la transición
+    const legacyName = await (async () => {
+      const g = await db.select({ name: games.name }).from(games).where(eq(games.slug, filters.gameSlug!)).limit(1);
+      return g[0]?.name;
+    })();
+    if (legacyName) {
+      conditions.push(
+        or(
+          eq(tournaments.gameSlug, filters.gameSlug),
+          and(sql`${tournaments.gameSlug} IS NULL`, eq(tournaments.game, legacyName))
+        )
+      );
+    } else {
+      conditions.push(eq(tournaments.gameSlug, filters.gameSlug));
+    }
+  } else if (filters?.game) {
+    // Filtro legacy: solo si no se pasó gameSlug
+    conditions.push(eq(tournaments.game, filters.game));
+  }
   if (filters?.creatorId) conditions.push(eq(tournaments.creatorId, filters.creatorId));
   if (filters?.isPublic !== undefined) conditions.push(eq(tournaments.isPublic, filters.isPublic));
   if (filters?.search) {

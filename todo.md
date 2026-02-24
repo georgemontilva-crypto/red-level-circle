@@ -493,6 +493,12 @@
 - [x] Fase 2: script de backfill idempotente con mapeo de normalización
 - [x] Proteger slug inmutable si hay torneos/equipos asociados en games.upsert
 
+## Migración gameSlug Fase 4 (Filtros por slug)
+- [x] Actualizar getTournaments en db.ts con gameSlug + fallback legacy
+- [x] Añadir gameSlug al input de tournaments.list en routers.ts
+- [x] Actualizar Tournaments.tsx para usar slug en filtros y URLs
+- [x] Actualizar Home.tsx para generar URLs con slug en lugar de nombre
+
 ## Migración gameSlug Fase 3 (Dual-write)
 - [x] Añadir helper resolveGameSlug en db.ts
 - [x] Dual-write en createTournament y updateTournament

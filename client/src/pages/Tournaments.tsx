@@ -24,18 +24,41 @@ function StatusBadge({ status }: { status: string }) {
 export default function Tournaments() {
   const search = useSearch();
   const params = new URLSearchParams(search);
-  const [searchText, setSearchText] = useState("");
-  const [selectedGame, setSelectedGame] = useState(params.get("game") ?? "");  // can be game name or slug
+  const { data: games } = trpc.games.list.useQuery();
+
+  // Resolver el parámetro ?game= de la URL: puede ser un slug canónico o un nombre legacy
+  // Si coincide con un slug conocido → usar como gameSlug
+  // Si coincide con un nombre conocido → resolver a su slug
+  // Si no coincide con nada → tratar como nombre legacy (compatibilidad)
+  const rawGameParam = params.get("game") ?? "";
+  const resolveInitialSlug = (raw: string): string => {
+    if (!raw || !games) return "";
+    const bySlug = games.find((g) => g.slug === raw);
+    if (bySlug) return bySlug.slug;
+    const byName = games.find((g) => g.name.toLowerCase() === raw.toLowerCase());
+    if (byName) return byName.slug;
+    return ""; // valor desconocido: no filtrar
+  };
+
+  const [selectedGame, setSelectedGame] = useState(""); // almacena slug canónico
   const [selectedStatus, setSelectedStatus] = useState("");
+  const [searchText, setSearchText] = useState("");
   const { isAuthenticated } = useAuth();
 
+  // Resolver el parámetro inicial de la URL una vez que los juegos estén cargados
+  // Usamos un efecto para evitar referencias inestables en el render
+  const [urlParamResolved, setUrlParamResolved] = useState(false);
+  if (!urlParamResolved && games && rawGameParam) {
+    const resolved = resolveInitialSlug(rawGameParam);
+    if (resolved !== selectedGame) setSelectedGame(resolved);
+    setUrlParamResolved(true);
+  }
+
   const { data: tournaments, isLoading } = trpc.tournaments.list.useQuery({
-    game: selectedGame || undefined,
+    gameSlug: selectedGame || undefined,  // filtro canónico principal
     status: selectedStatus || undefined,
     search: searchText || undefined,
   });
-
-  const { data: games } = trpc.games.list.useQuery();
 
   const statuses = [
     { value: "", label: "TODOS" },
@@ -80,9 +103,9 @@ export default function Tournaments() {
               TODOS
             </button>
             {games.map((game) => (
-              <button key={game.id} onClick={() => setSelectedGame(prev => prev === game.name ? "" : game.name)}
+              <button key={game.id} onClick={() => setSelectedGame(prev => prev === game.slug ? "" : game.slug)}
                 className={`flex items-center gap-1.5 text-xs font-mono px-3 py-1.5 rounded border transition-all ${
-                  selectedGame === game.name || selectedGame === game.slug
+                  selectedGame === game.slug
                     ? "bg-red-600 border-red-600 text-white"
                     : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"
                 }`}>

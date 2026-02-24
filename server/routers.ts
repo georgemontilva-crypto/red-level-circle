@@ -212,7 +212,8 @@ export const appRouter = router({
     list: publicProcedure
       .input(z.object({
         status: z.string().optional(),
-        game: z.string().optional(),
+        game: z.string().optional(),       // legacy: nombre del juego (compatibilidad con URLs antiguas)
+        gameSlug: z.string().optional(),   // canónico: slug del juego (ej: "league-of-legends")
         search: z.string().optional(),
         featured: z.boolean().optional(),
         limit: z.number().optional(),

@@ -189,7 +189,7 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         {gamesList.map(g => (
-          <Link key={g.id} href={`/tournaments?game=${encodeURIComponent(g.name)}`}>
+          <Link key={g.id} href={`/tournaments?game=${g.slug}`}>
             <div className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[3/4] bg-zinc-900"
               style={{ border: "1px solid oklch(0.18 0.01 0)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
               {(g.banner || g.logo) ? (
