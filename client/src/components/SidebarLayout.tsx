@@ -268,7 +268,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   return (
     <div className="min-h-screen bg-black text-white flex overflow-x-hidden">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 bg-zinc-950 border-r border-zinc-800/50 flex-col fixed h-full z-40 overflow-hidden">
+      <aside className="hidden md:flex w-60 bg-zinc-950 border-r border-zinc-800/50 flex-col fixed h-full z-40 overflow-visible">
         <SidebarContent />
       </aside>
 
