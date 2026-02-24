@@ -480,3 +480,5 @@
 - [x] Banner publicitario: ancho completo de su espacio, solo imagen sin cuerpo de texto
 - [x] Banner publicitario de ancho completo separado de Creadores
 - [x] Corregir desplegable campanita que se sale del ancho de la pantalla
+- [x] Eliminar sección Creadores Oficiales del Home
+- [x] Banner publicitario: altura fija que respete el alto de la imagen

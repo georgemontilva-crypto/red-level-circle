@@ -548,8 +548,8 @@ function AdBannerSection({ ads }: { ads: any[] }) {
           key={currentAd.id}
           src={currentAd.bannerImage}
           alt={currentAd.title}
-          className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
-          style={{ animation: "fadeIn 0.5s ease", maxHeight: "280px", objectFit: "cover" }}
+          className="w-full block group-hover:scale-[1.01] transition-transform duration-500"
+          style={{ animation: "fadeIn 0.5s ease", height: "200px", objectFit: "cover", objectPosition: "center" }}
         />
       </a>
       <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono pointer-events-none"
@@ -620,17 +620,7 @@ export default function Home() {
 
         {/* 6. Banner publicitario — ancho completo */}
         <AdBannerSection ads={sideAds ?? []} />
-        {/* 7. Creadores de contenido — scroll horizontal */}
-        {(creators?.length ?? 0) > 0 && (
-          <HScrollSection
-            title="Creadores Oficiales"
-            href="/creators"
-            icon={<Star size={18} className="text-purple-400" />}
-            viewAllLabel="Ver todos"
-          >
-            {creators!.map((c: any) => <CreatorCard key={c.id} c={c} />)}
-          </HScrollSection>
-        )}
+
 
         {/* 8. Noticias */}
         {(news?.length ?? 0) > 0 && (
