@@ -482,3 +482,5 @@
 - [x] Corregir desplegable campanita que se sale del ancho de la pantalla
 - [x] Eliminar sección Creadores Oficiales del Home
 - [x] Banner publicitario: altura fija que respete el alto de la imagen
+- [x] Ocultar flechas de navegación en móvil en HScrollSection
+- [x] Eliminar barra de scroll horizontal visible en secciones del Home
