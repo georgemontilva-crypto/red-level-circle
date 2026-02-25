@@ -206,8 +206,8 @@ export default function Tournaments() {
           <div className="mb-5">
             <div
               ref={scrollRef}
-              className="flex gap-2 overflow-x-auto pb-1"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+              className="flex gap-2 overflow-x-auto"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingTop: "6px", paddingBottom: "6px" }}
             >
               <AllGamesChip active={selectedGame === ""} onClick={() => setSelectedGame("")} />
               {games.map((game) => (
