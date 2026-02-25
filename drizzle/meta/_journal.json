@@ -113,6 +113,13 @@
       "when": 1772039256218,
       "tag": "0015_clammy_wiccan",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1772044311207,
+      "tag": "0016_futuristic_chronomancer",
+      "breakpoints": true
     }
   ]
 }

@@ -470,6 +470,106 @@ function RankingRow({
   );
 }
 
+// ─── TOP 5 Cards ─────────────────────────────────────────────────────────────
+const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32", "#a1a1aa", "#71717a"];
+const MEDAL_LABELS = ["1°", "2°", "3°", "4°", "5°"];
+function Top5Cards({ teams, onSelect, selectedTeamId }: { teams: any[]; onSelect: (t: any) => void; selectedTeamId?: number }) {
+  const top5 = teams.slice(0, 5);
+  if (top5.length === 0) return null;
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <Trophy size={14} className="text-yellow-400" />
+        <h2 className="font-orbitron font-bold text-sm text-white uppercase tracking-wider">TOP 5 EQUIPOS</h2>
+        <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        {top5.map((team, i) => {
+          const c = getGameColor(team.gameSlug);
+          const medal = MEDAL_COLORS[i];
+          const isFirst = i === 0;
+          const wr = winRate(team.wins ?? 0, team.losses ?? 0);
+          const isSelected = selectedTeamId === team.id;
+          return (
+            <button
+              key={team.id}
+              onClick={() => onSelect(team)}
+              className="relative rounded-2xl overflow-hidden text-left transition-all duration-300 group w-full"
+              style={{
+                background: isFirst
+                  ? `linear-gradient(160deg, ${c.from} 0%, oklch(0.09 0.005 0) 100%)`
+                  : "oklch(0.09 0.005 0)",
+                border: `1px solid ${isSelected ? medal + "aa" : medal + "33"}`,
+                boxShadow: isFirst ? `0 0 24px ${medal}22` : isSelected ? `0 0 12px ${medal}18` : "none",
+                transform: isSelected ? "translateY(-3px)" : "none",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = `${medal}66`;
+                (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-3px)";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 8px 24px ${medal}18`;
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.borderColor = isSelected ? `${medal}aa` : `${medal}33`;
+                (e.currentTarget as HTMLButtonElement).style.transform = isSelected ? "translateY(-3px)" : "none";
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = isFirst ? `0 0 24px ${medal}22` : isSelected ? `0 0 12px ${medal}18` : "none";
+              }}
+            >
+              <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${medal}, transparent)` }} />
+              <div className="flex flex-col items-center gap-2 p-4 pb-3">
+                <div className="relative">
+                  <div
+                    className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center"
+                    style={{ background: "oklch(0.14 0.005 0)", border: `2px solid ${medal}44` }}
+                  >
+                    {team.logo ? (
+                      <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <Users size={20} style={{ color: medal }} />
+                    )}
+                  </div>
+                  <div
+                    className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black font-mono shadow-lg"
+                    style={{ background: "oklch(0.09 0.005 0)", border: `1.5px solid ${medal}`, color: medal }}
+                  >
+                    {MEDAL_LABELS[i]}
+                  </div>
+                </div>
+                <div className="text-center min-w-0 w-full">
+                  <p className="font-orbitron font-bold text-xs text-white truncate">{team.name}</p>
+                  {team.tag && <p className="text-zinc-600 text-xs font-mono">[{team.tag}]</p>}
+                </div>
+              </div>
+              <div className="px-3 pb-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-600 text-xs font-mono">Pts</span>
+                  <span className="font-orbitron font-black text-xs" style={{ color: medal }}>
+                    {(team.points ?? 0).toLocaleString()}
+                  </span>
+                </div>
+                {wr !== null && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-600 text-xs font-mono">WR</span>
+                    <span className="text-xs font-mono font-bold" style={{ color: wr >= 60 ? "#4ade80" : wr >= 40 ? "#facc15" : "#f87171" }}>
+                      {wr}%
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-600 text-xs font-mono">V/D</span>
+                  <span className="text-xs font-mono">
+                    <span className="text-green-400">{team.wins ?? 0}</span>
+                    <span className="text-zinc-700">/</span>
+                    <span className="text-red-400">{team.losses ?? 0}</span>
+                  </span>
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 // ─── Sidebar de fuerza por juego ──────────────────────────────────────────────
 function GameStrengthSidebar({ data }: { data: { gameSlug: string; avgPoints: number; teamCount: number }[] }) {
   const maxPts = Math.max(...data.map((d) => d.avgPoints), 1);
@@ -963,6 +1063,14 @@ export default function Ranking() {
               </div>
             )}
 
+            {/* TOP 5 Cards — solo cuando hay resultados reales y al menos 2 equipos */}
+            {!isLoading && highlights?.rankingStatus !== "no_results" && teams.length >= 2 && (
+              <Top5Cards
+                teams={teams}
+                onSelect={handleSelectTeam}
+                selectedTeamId={selectedTeam?.id}
+              />
+            )}
             {/* Tabla */}
             {isLoading ? (
               <div className="space-y-1.5">

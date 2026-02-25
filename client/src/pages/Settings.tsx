@@ -158,6 +158,98 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
   );
 }
 
+function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const { data: hasApproved, isLoading: checkingTeam } = trpc.profile.hasApprovedTeam.useQuery();
+  const uploadMutation = trpc.profile.uploadRosterPhoto.useMutation({
+    onSuccess: ({ url }) => {
+      setPreview(url);
+      toast.success("Foto de roster actualizada");
+      setUploading(false);
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setUploading(false);
+    },
+  });
+  const handleFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten im\u00e1genes"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10MB"); return; }
+    setUploading(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      const mimeType = file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+      await uploadMutation.mutateAsync({ base64, mimeType });
+    };
+    reader.readAsDataURL(file);
+  };
+  const displayUrl = preview || currentUrl;
+  const canUpload = hasApproved?.canUpload;
+  return (
+    <div className="space-y-4">
+      <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
+        <Shield className="w-4 h-4" /> FOTO DE ROSTER COMPETITIVO
+      </h2>
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
+        <p className="text-zinc-400 text-sm">
+          La foto de roster se muestra en formato carta en el perfil del equipo, ranking y brackets.
+          Solo disponible si perteneces a un equipo con inscripci\u00f3n aprobada en un torneo.
+        </p>
+        {checkingTeam ? (
+          <div className="flex items-center gap-2 text-zinc-500 text-sm font-mono">
+            <Loader2 className="w-4 h-4 animate-spin" /> Verificando membres\u00eda...
+          </div>
+        ) : !canUpload ? (
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-800/60 border border-zinc-700">
+            <Shield className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-mono text-zinc-400">Funci\u00f3n bloqueada</p>
+              <p className="text-xs text-zinc-600 mt-0.5">Necesitas pertenecer a un equipo con inscripci\u00f3n aprobada en un torneo para subir tu foto de roster.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row items-start gap-5">
+            <div
+              className="relative flex-shrink-0 cursor-pointer group rounded-xl overflow-hidden border-2 border-zinc-700 hover:border-red-500 transition-colors"
+              style={{ width: 120, aspectRatio: "2/3" }}
+              onClick={() => inputRef.current?.click()}
+            >
+              {displayUrl ? (
+                <img src={displayUrl} alt="Foto de roster" className="w-full h-full object-cover" style={{ aspectRatio: "2/3" }} />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex flex-col items-center justify-center gap-2" style={{ aspectRatio: "2/3" }}>
+                  <User className="w-8 h-8 text-zinc-600" />
+                  <span className="text-xs text-zinc-600 font-mono text-center px-2">Sin foto</span>
+                </div>
+              )}
+              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+              </div>
+            </div>
+            <div className="flex-1 space-y-2">
+              <p className="text-sm text-white font-bold">Foto de carta competitiva</p>
+              <p className="text-xs text-zinc-500">Formato vertical (2:3) \u00b7 M\u00e1x. 10MB</p>
+              <p className="text-xs text-zinc-500">Se muestra en el perfil del equipo, ranking y brackets.</p>
+              <button
+                onClick={() => inputRef.current?.click()}
+                disabled={uploading}
+                className="mt-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-mono text-xs font-bold transition-colors flex items-center gap-2"
+              >
+                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                {uploading ? "SUBIENDO..." : "SUBIR FOTO"}
+              </button>
+            </div>
+            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function VerificationSection() {
   const { data: myRequest, refetch } = trpc.verification.myRequest.useQuery();
   const requestMutation = trpc.verification.request.useMutation({
@@ -569,6 +661,8 @@ export default function Settings() {
           </div>
         </div>
 
+        {/* Roster Photo */}
+        <RosterPhotoUpload currentUrl={(me as { rosterPhoto?: string })?.rosterPhoto ?? null} />
         {/* Verification */}
         <VerificationSection />
         {/* Save Button */}

@@ -173,11 +173,11 @@ export default function UserProfile() {
           style={{ background: "oklch(0.10 0.005 0)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px" }}
         >
           {/* Avatar row — pulled up to overlap the banner */}
-          <div className="flex items-end justify-between mb-3" style={{ marginTop: "-48px" }}>
+          <div className="flex items-end justify-between mb-3" style={{ marginTop: "-72px" }}>
             <div className="relative inline-block" style={{ zIndex: 10 }}>
               {equippedAura && (
                 <div
-                  className="absolute inset-0 rounded-full blur-xl opacity-70 scale-150 pointer-events-none"
+                  className="absolute inset-0 rounded-full blur-2xl opacity-60 scale-150 pointer-events-none"
                   style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
                 />
               )}
@@ -186,21 +186,21 @@ export default function UserProfile() {
                   src={equippedFrame.frameImage}
                   alt="Frame"
                   className="absolute z-10 pointer-events-none"
-                  style={{ width: "112px", height: "112px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+                  style={{ width: "160px", height: "160px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
                 />
               )}
               <div
                 className="relative z-0"
                 style={{
-                  width: "88px",
-                  height: "88px",
+                  width: "128px",
+                  height: "128px",
                   borderRadius: "50%",
                   border: "4px solid oklch(0.10 0.005 0)",
-                  boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6)",
+                  boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
                   overflow: "hidden",
                 }}
               >
-                <UserAvatar avatar={profile.avatar} name={profile.name} size={88} />
+                <UserAvatar avatar={profile.avatar} name={profile.name} size={128} />
               </div>
             </div>
           </div>
@@ -412,6 +412,74 @@ export default function UserProfile() {
                 </div>
               )}
 
+              {/* Ficha de jugador competitivo */}
+              {((profile as any).rosterPhoto || (profile as any).gameRole || (profile as any).elo || (profile as any).competitiveRegion) && (
+                <div
+                  className="rounded-2xl overflow-hidden"
+                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                >
+                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                    <Swords className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                    <span className="text-xs font-mono tracking-wider text-zinc-400 uppercase">Ficha Competitiva</span>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-4 p-4">
+                    {/* Foto de roster formato carta */}
+                    {(profile as any).rosterPhoto && (
+                      <div
+                        className="shrink-0 rounded-xl overflow-hidden"
+                        style={{
+                          width: "120px",
+                          aspectRatio: "2/3",
+                          border: "2px solid oklch(0.55 0.22 25 / 0.4)",
+                          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+                        }}
+                      >
+                        <img
+                          src={(profile as any).rosterPhoto}
+                          alt={`${profile.nickname ?? profile.name} roster`}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    {/* Datos competitivos */}
+                    <div className="flex-1 space-y-3">
+                      {(profile as any).gameRole && (
+                        <div>
+                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">Rol</p>
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
+                            style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.75 0.15 25)" }}
+                          >
+                            🎮 {(profile as any).gameRole}
+                          </span>
+                        </div>
+                      )}
+                      {(profile as any).elo && (
+                        <div>
+                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">ELO / Rango</p>
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
+                            style={{ background: "oklch(0.65 0.18 80 / 0.15)", border: "1px solid oklch(0.65 0.18 80 / 0.3)", color: "oklch(0.75 0.18 80)" }}
+                          >
+                            ⚡ {(profile as any).elo}
+                          </span>
+                        </div>
+                      )}
+                      {(profile as any).competitiveRegion && (
+                        <div>
+                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">Región</p>
+                          <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
+                            style={{ background: "oklch(0.45 0.15 220 / 0.15)", border: "1px solid oklch(0.45 0.15 220 / 0.3)", color: "oklch(0.70 0.15 220)" }}
+                          >
+                            🌐 {(profile as any).competitiveRegion}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* No activity placeholder */}
               <div
                 className="rounded-xl p-6 text-center"

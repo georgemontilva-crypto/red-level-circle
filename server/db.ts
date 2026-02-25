@@ -867,6 +867,7 @@ export async function updateUserProfile(userId: number, data: {
   socialTwitter?: string;
   avatar?: string;
   bannerUrl?: string;
+  rosterPhoto?: string;
 }) {
   const db = await getDb();
   if (!db) return;
@@ -1403,6 +1404,7 @@ export async function getUserPublicProfile(userId: number) {
       nickname: users.nickname,
       avatar: users.avatar,
       bannerUrl: users.bannerUrl,
+      rosterPhoto: users.rosterPhoto,
       bio: users.bio,
       role: users.role,
       profileType: users.profileType,
@@ -1415,7 +1417,7 @@ export async function getUserPublicProfile(userId: number) {
       socialTwitch: users.socialTwitch,
       socialTwitter: users.socialTwitter,
       rlcBalance: users.rlcBalance,
-       createdAt: users.createdAt,
+      createdAt: users.createdAt,
       isVerified: users.isVerified,
     })
     .from(users)
@@ -1848,6 +1850,7 @@ export async function getTeamPublicProfile(teamId: number) {
       gameRole: users.gameRole,
       elo: users.elo,
       competitiveRegion: users.competitiveRegion,
+      rosterPhoto: users.rosterPhoto,
       activeFrameImage: cosmetics.frameImage,
     })
     .from(teamMembers)
@@ -2262,6 +2265,34 @@ export async function getTeamsByMembership(userId: number) {
     .from(teamMembers)
     .leftJoin(teams, eq(teamMembers.teamId, teams.id))
     .where(eq(teamMembers.userId, userId));
+}
+
+/**
+ * Verifica si un usuario pertenece a un equipo que tiene al menos una inscripción aprobada en algún torneo.
+ * Esto se usa para validar si puede subir su foto de roster.
+ */
+export async function hasApprovedTeamMembership(userId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  // Obtener los equipos del usuario
+  const memberships = await db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, userId));
+  if (memberships.length === 0) return false;
+  const teamIds = memberships.map((m) => m.teamId);
+  // Verificar si alguno de esos equipos tiene inscripción aprobada
+  const approved = await db
+    .select({ id: tournamentRegistrations.id })
+    .from(tournamentRegistrations)
+    .where(
+      and(
+        inArray(tournamentRegistrations.teamId, teamIds),
+        eq(tournamentRegistrations.status, "Aprobado")
+      )
+    )
+    .limit(1);
+  return approved.length > 0;
 }
 
 // ─── Verification Requests ────────────────────────────────────────────────────

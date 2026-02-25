@@ -86,70 +86,87 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
     <Link href={`/profile/${member.userId}`}>
       <div
         className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
-        style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+        style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${isCapt ? accent + "33" : "oklch(0.16 0.01 0)"}` }}
         onMouseEnter={(e) => {
           const el = e.currentTarget as HTMLDivElement;
-          el.style.borderColor = `${accent}44`;
-          el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.5)";
-          el.style.transform = "translateY(-2px)";
+          el.style.borderColor = `${accent}55`;
+          el.style.boxShadow = `0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px ${accent}22`;
+          el.style.transform = "translateY(-4px)";
         }}
         onMouseLeave={(e) => {
           const el = e.currentTarget as HTMLDivElement;
-          el.style.borderColor = "oklch(0.16 0.01 0)";
+          el.style.borderColor = isCapt ? `${accent}33` : "oklch(0.16 0.01 0)";
           el.style.boxShadow = "none";
           el.style.transform = "none";
         }}
       >
-        <div className="h-0.5 w-full" style={{ background: isCapt ? `linear-gradient(90deg, ${accent}, transparent)` : "transparent" }} />
-        <div className="p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="relative shrink-0">
+        {/* Captain accent top bar */}
+        {isCapt && <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />}
+        {/* Roster photo (carta format) or avatar fallback */}
+        <div className="relative" style={{ aspectRatio: "2/3", background: "oklch(0.07 0.005 0)" }}>
+          {member.rosterPhoto ? (
+            <img
+              src={member.rosterPhoto}
+              alt={member.nickname ?? member.userName}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3"
+              style={{ background: `linear-gradient(160deg, ${accent}08 0%, oklch(0.07 0.005 0) 100%)` }}>
               <div
                 style={{
-                  border: `2px solid ${isCapt ? accent : "oklch(0.20 0.01 0)"}`,
+                  border: `3px solid ${isCapt ? accent : "oklch(0.22 0.01 0)"}`,
                   borderRadius: "50%",
                   overflow: "hidden",
-                  width: 56,
-                  height: 56,
+                  width: 72,
+                  height: 72,
                   flexShrink: 0,
+                  boxShadow: isCapt ? `0 0 20px ${accent}44` : "none",
                 }}
               >
-                <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={56} />
+                <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={72} />
               </div>
-              {isCapt && (
-                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
-                  style={{ background: "#fbbf24", border: "2px solid oklch(0.09 0.005 0)" }}>
-                  <Crown size={10} className="text-black" />
-                </div>
-              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-0.5">
-                <p className="font-mono font-bold text-white text-sm truncate">{member.nickname ?? member.userName}</p>
-                <ExternalLink size={10} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </div>
-              <p className="text-xs text-zinc-500 font-mono truncate">{member.userName}</p>
-              {member.country && (
-                <p className="text-xs text-zinc-600 font-mono mt-0.5">{COUNTRY_FLAGS[member.country] ?? ""} {member.country}</p>
-              )}
+          )}
+          {/* Captain crown badge */}
+          {isCapt && (
+            <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-lg"
+              style={{ background: "#fbbf24", border: "2px solid oklch(0.09 0.005 0)" }}>
+              <Crown size={13} className="text-black" />
             </div>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-semibold px-2 py-1 rounded-lg"
-              style={{ background: `${roleInfo.color}15`, border: `1px solid ${roleInfo.color}30`, color: roleInfo.color }}>
+          )}
+          {/* Role badge bottom-left */}
+          <div className="absolute bottom-2 left-2">
+            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
+              style={{ background: `${roleInfo.color}22`, border: `1px solid ${roleInfo.color}44`, color: roleInfo.color, backdropFilter: "blur(4px)" }}>
               {roleInfo.label}
             </span>
-            {member.gameRole ? (
+          </div>
+          {/* Game role badge bottom-right */}
+          {member.gameRole && (
+            <div className="absolute bottom-2 right-2">
               <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
-                style={{ background: `${accent}10`, border: `1px solid ${accent}25`, color: accent }}>
+                style={{ background: `${accent}22`, border: `1px solid ${accent}44`, color: accent, backdropFilter: "blur(4px)" }}>
                 {member.gameRole}
               </span>
-            ) : member.mainGame ? (
-              <span className="text-xs font-mono text-zinc-600 truncate max-w-[100px]">{member.mainGame}</span>
-            ) : null}
+            </div>
+          )}
+          {/* Gradient overlay at bottom */}
+          <div className="absolute inset-x-0 bottom-0 h-16"
+            style={{ background: "linear-gradient(to top, oklch(0.09 0.005 0) 0%, transparent 100%)" }} />
+        </div>
+        {/* Info section */}
+        <div className="p-3">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <p className="font-mono font-bold text-white text-sm truncate">{member.nickname ?? member.userName}</p>
+            <ExternalLink size={10} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
           </div>
+          <p className="text-xs text-zinc-500 font-mono truncate mb-1">{member.userName}</p>
+          {member.country && (
+            <p className="text-xs text-zinc-600 font-mono">{COUNTRY_FLAGS[member.country] ?? ""} {member.country}</p>
+          )}
           {(member.elo || member.competitiveRegion) && (
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
               {member.elo && (
                 <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
                   style={{ background: "oklch(0.65 0.18 80 / 0.10)", border: "1px solid oklch(0.65 0.18 80 / 0.20)", color: "oklch(0.70 0.18 80)" }}>
@@ -162,7 +179,7 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
             </div>
           )}
           {member.stats && (
-            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.14 0.01 0)" }}>
+            <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: "1px solid oklch(0.14 0.01 0)" }}>
               <div className="flex items-center gap-1 text-xs font-mono">
                 <Trophy size={10} className="text-yellow-500" />
                 <span className="text-zinc-400">{member.stats.tournamentsWon}</span>

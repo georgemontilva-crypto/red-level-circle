@@ -509,3 +509,35 @@
 - [x] Añadir gameSlug a teams.list, teams.ranking y ranking.teams en routers.ts
 - [x] Actualizar Ranking.tsx para usar gameSlug en el query
 - [x] Actualizar Teams.tsx: reemplazar array hardcodeado GAMES por juegos de la BD con slugs
+
+## Sistema de Fichas de Jugador y Roster Competitivo V-Roster
+
+- [ ] Añadir campo rosterPhoto a tabla users en schema.ts y migrar con pnpm db:push
+- [ ] Endpoint profile.uploadRosterPhoto: subir foto de roster solo si usuario tiene equipo aprobado
+- [ ] Exponer rosterPhoto en getTeamPublicProfile y getUserPublicProfile
+- [ ] Settings.tsx: sección de foto de roster con validación de equipo aprobado
+- [ ] PlayerCard en TeamProfile.tsx: foto de roster formato carta (aspect-ratio 2/3), fallback a avatar
+- [ ] PlayerCard: mostrar rol dinámico según juego del equipo
+- [ ] PlayerCard: mostrar elo y región competitiva del jugador
+- [ ] Ranking.tsx: TOP 5 equipos como cards visuales cuando hay datos
+- [ ] Ranking.tsx: confirmar que no muestra campeón/posiciones con status no_results
+- [ ] TeamProfile.tsx: banner full-width sin margen lateral
+- [ ] UserProfile.tsx: avatar circular 288x288px en vista de perfil público
+- [ ] Tests vitest para uploadRosterPhoto y validación de membresía aprobada
+
+## Sistema de Fichas de Jugador y Roster Competitivo
+
+- [x] Añadir campo rosterPhoto (text) a la tabla users en schema.ts y migrar con pnpm db:push
+- [x] Añadir función hasApprovedTeamMembership en db.ts (verifica inscripción aprobada en torneo)
+- [x] Actualizar updateUserProfile en db.ts para aceptar rosterPhoto
+- [x] Añadir rosterPhoto a getUserPublicProfile en db.ts
+- [x] Añadir rosterPhoto a getTeamPublicProfile en db.ts (miembros del equipo)
+- [x] Añadir endpoint profile.uploadRosterPhoto en routers.ts (protegido, valida equipo aprobado)
+- [x] Añadir endpoint profile.hasApprovedTeam en routers.ts
+- [x] Actualizar profile.updateMine para aceptar gameRole, elo, competitiveRegion, rosterPhoto
+- [x] Añadir componente RosterPhotoUpload en Settings.tsx con validación de equipo aprobado
+- [x] Rediseñar PlayerCard en TeamProfile.tsx: foto de roster formato carta (2:3), rol/elo/región
+- [x] Añadir componente Top5Cards en Ranking.tsx (solo cuando rankingStatus !== no_results y >=2 equipos)
+- [x] Aumentar avatar en UserProfile.tsx a 128px (circular, con frame/aura escalados)
+- [x] Añadir sección "Ficha Competitiva" en overview de UserProfile.tsx (foto roster + rol + elo + región)
+- [x] Escribir tests de vitest para hasApprovedTeamMembership, rosterPhoto, TOP5, winRate (17 tests)

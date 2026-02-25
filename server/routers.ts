@@ -135,6 +135,7 @@ import {
   searchUsersByNickname,
   removeTeamMember,
   getTeamsByMembership,
+  hasApprovedTeamMembership,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -1435,6 +1436,32 @@ export const appRouter = router({
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
+    uploadRosterPhoto: protectedProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Validar que el usuario pertenece a un equipo con inscripción aprobada
+        const canUpload = await hasApprovedTeamMembership(ctx.user.id);
+        if (!canUpload) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Solo puedes subir una foto de roster si perteneces a un equipo con inscripción aprobada en un torneo.",
+          });
+        }
+        const ext = input.mimeType.split("/")[1];
+        const key = `profiles/${ctx.user.id}/roster-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        // Guardar la URL en el perfil del usuario
+        await updateUserProfile(ctx.user.id, { rosterPhoto: url });
+        return { url };
+      }),
+    hasApprovedTeam: protectedProcedure.query(async ({ ctx }) => {
+      const canUpload = await hasApprovedTeamMembership(ctx.user.id);
+      return { canUpload };
+    }),
     getPublic: publicProcedure
       .input(z.object({ userId: z.number() }))
       .query(async ({ input }) => {
@@ -1452,6 +1479,9 @@ export const appRouter = router({
         avatar: z.string().url().optional(),
         bannerUrl: z.string().url().optional(),
         mainGame: z.string().max(64).optional(),
+        gameRole: z.string().max(64).optional(),
+        elo: z.string().max(64).optional(),
+        competitiveRegion: z.string().max(32).optional(),
         country: z.string().max(64).optional(),
         profileType: z.enum(["player", "team_captain", "event_creator"]).optional(),
         socialDiscord: z.string().max(128).optional(),
