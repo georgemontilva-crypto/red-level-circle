@@ -65,7 +65,7 @@ function HighlightCard({
       </div>
       <div className="flex items-center gap-3">
         <div
-          className="w-10 h-10 rounded-xl overflow-hidden shrink-0 flex items-center justify-center"
+          className="w-10 h-10 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
           style={{ background: "oklch(0.14 0.005 0)", border: `1px solid ${accent}33` }}
         >
           {team.logo ? (
@@ -132,7 +132,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
           </button>
           <div className="flex items-center gap-4">
             <div
-              className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 flex items-center justify-center"
+              className="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
               style={{
                 background: "oklch(0.12 0.005 0)",
                 border: `2px solid ${c.accent}44`,
@@ -398,7 +398,7 @@ function RankingRow({
       {/* Team */}
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+          className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
           style={{
             border: isTop3 ? `1px solid ${medalColors[rank - 1]}44` : "1px solid oklch(0.20 0.01 0)",
             background: "oklch(0.12 0.005 0)",
@@ -900,7 +900,7 @@ export default function Ranking() {
                             {/* Team A */}
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <div
-                                className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+                                className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
                                 style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
                               >
                                 {match.team1Logo ? (
@@ -923,7 +923,7 @@ export default function Ranking() {
                             {/* Team B */}
                             <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
                               <div
-                                className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+                                className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
                                 style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
                               >
                                 {match.team2Logo ? (

@@ -337,7 +337,7 @@ export default function TeamProfile() {
 
       <div className="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shrink-0 shadow-2xl"
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
             style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
             {team.logo ? (
               <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />

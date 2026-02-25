@@ -41,15 +41,15 @@ function TeamImageUpload({
 
   if (type === "logo") {
     return (
-      <div className="relative w-16 h-16 rounded-xl cursor-pointer group shrink-0" onClick={() => inputRef.current?.click()}>
+      <div className="relative w-16 h-16 rounded-full cursor-pointer group shrink-0" onClick={() => inputRef.current?.click()}>
         {displayUrl ? (
-          <img src={displayUrl} alt="Logo" className="w-16 h-16 rounded-xl object-cover" style={{ border: "2px solid oklch(0.55 0.22 25 / 0.5)" }} />
+          <img src={displayUrl} alt="Logo" className="w-16 h-16 rounded-full object-cover" style={{ border: "2px solid oklch(0.55 0.22 25 / 0.5)" }} />
         ) : (
-          <div className="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-black" style={{ background: "oklch(0.13 0.005 0)", border: "2px solid oklch(0.22 0.01 0)", color: "oklch(0.55 0.22 25)" }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black" style={{ background: "oklch(0.13 0.005 0)", border: "2px solid oklch(0.22 0.01 0)", color: "oklch(0.55 0.22 25)" }}>
             <Shield size={24} />
           </div>
         )}
-        <div className="absolute inset-0 rounded-xl bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           {uploading ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Camera className="w-4 h-4 text-white" />}
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />

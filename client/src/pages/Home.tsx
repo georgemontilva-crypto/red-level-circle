@@ -495,7 +495,7 @@ function TeamsAndPeopleSection() {
                     {i < 3 ? medals[i] : `#${teamOffset + i + 1}`}
                   </div>
                   {/* Logo */}
-                  <div className="w-9 h-9 rounded-xl overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
                     {team.logo ? (
                       <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
                     ) : (

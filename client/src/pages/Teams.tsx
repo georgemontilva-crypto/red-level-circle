@@ -129,7 +129,7 @@ function TeamCard({ team }: { team: any }) {
         {/* Content */}
         <div className="p-4 -mt-6 relative">
           <div className="flex items-end gap-3 mb-3">
-            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 shadow-lg" style={{ border: `2px solid ${c.accent}33`, background: "oklch(0.12 0.005 0)" }}>
+            <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-lg" style={{ border: `2px solid ${c.accent}33`, background: "oklch(0.12 0.005 0)" }}>
               {team.logo ? (
                 <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
               ) : (

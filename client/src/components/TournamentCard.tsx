@@ -109,7 +109,7 @@ export function TournamentCard({
         onClick={onClick}
       >
         {/* Thumbnail */}
-        <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
           {t.banner ? (
             <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
           ) : (
