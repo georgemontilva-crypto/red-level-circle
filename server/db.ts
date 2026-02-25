@@ -2412,7 +2412,24 @@ export async function getTeamTournamentHistory(teamId: number) {
 // ─── GPR: Highlights del ranking ──────────────────────────────────────────────
 export async function getRankingHighlights(gameSlug?: string) {
   const db = await getDb();
-  if (!db) return { champion: null, biggestRise: null, bestWinRate: null };
+  if (!db) return { champion: null, biggestRise: null, bestWinRate: null, hasRealResults: false, rankingStatus: "no_results" as const };
+
+  // Verificar si existen combates finalizados (fuente de verdad para resultados reales)
+  const completedMatchesQuery = db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(tournamentMatches)
+    .where(eq(tournamentMatches.status, "completed"));
+  const [matchCount] = await completedMatchesQuery;
+  const hasRealResults = Number(matchCount?.count ?? 0) > 0;
+
+  // Verificar si existe algún torneo finalizado
+  const completedTournamentsQuery = db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(tournaments)
+    .where(eq(tournaments.status, "completed"));
+  const [tourneyCount] = await completedTournamentsQuery;
+  const hasCompletedTournament = Number(tourneyCount?.count ?? 0) > 0;
+
   // Obtener todos los equipos ordenados por puntos
   const allTeams = await db
     .select({
@@ -2432,13 +2449,28 @@ export async function getRankingHighlights(gameSlug?: string) {
     .where(gameSlug ? eq(teams.gameSlug, gameSlug) : undefined)
     .orderBy(sql`${teams.points} DESC`);
 
-  if (allTeams.length === 0) return { champion: null, biggestRise: null, bestWinRate: null };
+  if (allTeams.length === 0) {
+    return { champion: null, biggestRise: null, bestWinRate: null, hasRealResults: false, rankingStatus: "no_results" as const };
+  }
 
-  // Campeón: equipo con más puntos Y más torneos ganados
-  const champion = allTeams.find(t => (t.tournamentsWon ?? 0) > 0) ?? allTeams[0];
+  // Determinar el estado del ranking
+  // "no_results": sin combates finalizados → no mostrar posiciones ni campeón
+  // "provisional": hay combates finalizados pero ningún torneo completado → clasificación provisional
+  // "official": al menos un torneo completado → ranking oficial con campeón
+  const rankingStatus: "no_results" | "provisional" | "official" =
+    !hasRealResults ? "no_results" :
+    !hasCompletedTournament ? "provisional" :
+    "official";
 
-  // Mejor win rate (mínimo 3 torneos jugados)
-  const withEnoughGames = allTeams.filter(t => (t.wins + t.losses) >= 3);
+  // Campeón: SOLO si el ranking es oficial (torneo completado) Y el equipo tiene torneos ganados
+  const champion = rankingStatus === "official"
+    ? (allTeams.find(t => (t.tournamentsWon ?? 0) > 0) ?? null)
+    : null;
+
+  // Mejor win rate: solo si hay resultados reales (mínimo 3 combates jugados)
+  const withEnoughGames = hasRealResults
+    ? allTeams.filter(t => (t.wins + t.losses) >= 3)
+    : [];
   const bestWinRate = withEnoughGames.length > 0
     ? withEnoughGames.reduce((best, t) => {
         const wr = t.wins / (t.wins + t.losses);
@@ -2447,16 +2479,18 @@ export async function getRankingHighlights(gameSlug?: string) {
       })
     : null;
 
-  // Mayor ascenso: equipo con más victorias recientes (aproximado por wins/tournamentsPlayed ratio)
-  const biggestRise = allTeams
-    .filter(t => (t.tournamentsPlayed ?? 0) >= 1 && (t.wins ?? 0) > 0)
-    .sort((a, b) => {
-      const aRatio = (a.wins ?? 0) / Math.max(1, a.tournamentsPlayed ?? 1);
-      const bRatio = (b.wins ?? 0) / Math.max(1, b.tournamentsPlayed ?? 1);
-      return bRatio - aRatio;
-    })[0] ?? null;
+  // Mayor ascenso: solo si hay resultados reales
+  const biggestRise = hasRealResults
+    ? (allTeams
+        .filter(t => (t.tournamentsPlayed ?? 0) >= 1 && (t.wins ?? 0) > 0)
+        .sort((a, b) => {
+          const aRatio = (a.wins ?? 0) / Math.max(1, a.tournamentsPlayed ?? 1);
+          const bRatio = (b.wins ?? 0) / Math.max(1, b.tournamentsPlayed ?? 1);
+          return bRatio - aRatio;
+        })[0] ?? null)
+    : null;
 
-  return { champion, biggestRise, bestWinRate };
+  return { champion, biggestRise, bestWinRate, hasRealResults, rankingStatus };
 }
 
 // ─── GPR: Fuerza por juego ────────────────────────────────────────────────────

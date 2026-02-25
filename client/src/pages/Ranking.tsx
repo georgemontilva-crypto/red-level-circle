@@ -611,43 +611,117 @@ export default function Ranking() {
       </div>
 
       <div className="container py-6">
-        {/* Highlights */}
-        {highlights && (highlights.champion || highlights.bestWinRate || highlights.biggestRise) && (
-          <div className="flex gap-3 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
-            <HighlightCard
-              icon={<Trophy size={14} />}
-              label="Campeón actual"
-              team={highlights.champion}
-              sublabel={`${(highlights.champion?.points ?? 0).toLocaleString()} pts · ${highlights.champion?.tournamentsWon ?? 0} torneos ganados`}
-              accent="#FFD700"
-              onClick={() => highlights.champion && handleSelectTeam(highlights.champion)}
-            />
-            <HighlightCard
-              icon={<TrendingUp size={14} />}
-              label="Mejor win rate"
-              team={highlights.bestWinRate}
-              sublabel={
-                highlights.bestWinRate
-                  ? `${winRate(highlights.bestWinRate.wins ?? 0, highlights.bestWinRate.losses ?? 0)}% WR · ${(highlights.bestWinRate.wins ?? 0) + (highlights.bestWinRate.losses ?? 0)} partidas`
-                  : "—"
-              }
-              accent="#22c55e"
-              onClick={() => highlights.bestWinRate && handleSelectTeam(highlights.bestWinRate)}
-            />
-            <HighlightCard
-              icon={<Award size={14} />}
-              label="Mayor ascenso"
-              team={highlights.biggestRise}
-              sublabel={
-                highlights.biggestRise
-                  ? `${highlights.biggestRise.wins ?? 0}W · ${highlights.biggestRise.tournamentsPlayed ?? 0} torneos`
-                  : "—"
-              }
-              accent={activeColor.accent}
-              onClick={() => highlights.biggestRise && handleSelectTeam(highlights.biggestRise)}
-            />
-          </div>
-        )}
+        {/* Highlights — condicionales según rankingStatus */}
+        {highlights && (() => {
+          const status = highlights.rankingStatus ?? "no_results";
+          if (status === "no_results") {
+            // Sin combates finalizados: mostrar banner informativo
+            return (
+              <div
+                className="flex items-center gap-4 px-5 py-4 rounded-2xl mb-6"
+                style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${activeColor.accent}18` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `${activeColor.accent}15`, border: `1px solid ${activeColor.accent}30` }}
+                >
+                  <Trophy size={18} style={{ color: activeColor.accent }} />
+                </div>
+                <div>
+                  <p className="font-orbitron font-bold text-sm text-white">Sin clasificación aún</p>
+                  <p className="text-zinc-500 text-xs font-mono mt-0.5">
+                    El ranking se actualizará automáticamente cuando se completen los primeros combates.
+                  </p>
+                </div>
+                <div
+                  className="ml-auto shrink-0 px-3 py-1 rounded-lg text-xs font-mono font-bold"
+                  style={{ background: `${activeColor.accent}15`, color: activeColor.accent, border: `1px solid ${activeColor.accent}30` }}
+                >
+                  PENDIENTE
+                </div>
+              </div>
+            );
+          }
+          if (status === "provisional") {
+            // Hay combates pero ningún torneo finalizado: mostrar top equipos con etiqueta provisional
+            return (
+              <>
+                <div
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-xl mb-4"
+                  style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+                >
+                  <Zap size={12} className="text-yellow-500" />
+                  <p className="text-yellow-500 text-xs font-mono">
+                    Clasificación provisional — los torneos activos aún no han finalizado
+                  </p>
+                </div>
+                {(highlights.bestWinRate || highlights.biggestRise) && (
+                  <div className="flex gap-3 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                    <HighlightCard
+                      icon={<TrendingUp size={14} />}
+                      label="Mejor win rate"
+                      team={highlights.bestWinRate}
+                      sublabel={
+                        highlights.bestWinRate
+                          ? `${winRate(highlights.bestWinRate.wins ?? 0, highlights.bestWinRate.losses ?? 0)}% WR · ${(highlights.bestWinRate.wins ?? 0) + (highlights.bestWinRate.losses ?? 0)} partidas`
+                          : "—"
+                      }
+                      accent="#22c55e"
+                      onClick={() => highlights.bestWinRate && handleSelectTeam(highlights.bestWinRate)}
+                    />
+                    <HighlightCard
+                      icon={<Award size={14} />}
+                      label="Mayor ascenso"
+                      team={highlights.biggestRise}
+                      sublabel={
+                        highlights.biggestRise
+                          ? `${highlights.biggestRise.wins ?? 0}W · ${highlights.biggestRise.tournamentsPlayed ?? 0} torneos`
+                          : "—"
+                      }
+                      accent={activeColor.accent}
+                      onClick={() => highlights.biggestRise && handleSelectTeam(highlights.biggestRise)}
+                    />
+                  </div>
+                )}
+              </>
+            );
+          }
+          // status === "official": ranking oficial con campeón
+          return (
+            <div className="flex gap-3 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+              {highlights.champion && (
+                <HighlightCard
+                  icon={<Trophy size={14} />}
+                  label="Campeón actual"
+                  team={highlights.champion}
+                  sublabel={`${(highlights.champion?.points ?? 0).toLocaleString()} pts · ${highlights.champion?.tournamentsWon ?? 0} torneos ganados`}
+                  accent="#FFD700"
+                  onClick={() => highlights.champion && handleSelectTeam(highlights.champion)}
+                />
+              )}
+              {highlights.bestWinRate && (
+                <HighlightCard
+                  icon={<TrendingUp size={14} />}
+                  label="Mejor win rate"
+                  team={highlights.bestWinRate}
+                  sublabel={`${winRate(highlights.bestWinRate.wins ?? 0, highlights.bestWinRate.losses ?? 0)}% WR · ${(highlights.bestWinRate.wins ?? 0) + (highlights.bestWinRate.losses ?? 0)} partidas`}
+                  accent="#22c55e"
+                  onClick={() => highlights.bestWinRate && handleSelectTeam(highlights.bestWinRate)}
+                />
+              )}
+              {highlights.biggestRise && (
+                <HighlightCard
+                  icon={<Award size={14} />}
+                  label="Mayor ascenso"
+                  team={highlights.biggestRise}
+                  sublabel={`${highlights.biggestRise.wins ?? 0}W · ${highlights.biggestRise.tournamentsPlayed ?? 0} torneos`}
+                  accent={activeColor.accent}
+                  onClick={() => highlights.biggestRise && handleSelectTeam(highlights.biggestRise)}
+                />
+              )}
+            </div>
+          );
+        })()}
 
         <div className="flex gap-6 items-start">
           {/* Main content */}
