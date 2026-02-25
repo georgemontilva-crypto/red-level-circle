@@ -195,19 +195,17 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
-            style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Anterior"
           >
-            <ChevronLeft size={14} className="text-zinc-400" />
+            <ChevronLeft size={14} />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
-            style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Siguiente"
           >
-            <ChevronRight size={14} className="text-zinc-400" />
+            <ChevronRight size={14} />
           </button>
           <Link href="/tournaments" className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors ml-1">
             Ver torneos <ArrowRight size={14} />
