@@ -155,7 +155,15 @@ export default function TournamentDetail() {
                 style={{ background: "oklch(0.55 0.22 25 / 0.8)", color: "white" }}>
                 {tournament.creatorName.charAt(0).toUpperCase()}
               </div>
-              <span className="text-xs text-zinc-300 font-mono">Organizado por <span className="text-white font-semibold">{tournament.creatorName}</span></span>
+              <span className="text-xs text-zinc-300 font-mono">Organizado por{" "}
+                {tournament.creatorId ? (
+                  <Link href={`/profile/${tournament.creatorId}`} className="text-white font-semibold hover:text-red-400 transition-colors">
+                    {tournament.creatorName}
+                  </Link>
+                ) : (
+                  <span className="text-white font-semibold">{tournament.creatorName}</span>
+                )}
+              </span>
             </div>
           )}
 
@@ -352,21 +360,39 @@ export default function TournamentDetail() {
               <h3 className="font-display text-sm font-bold tracking-wider text-foreground mb-3">
                 ORGANIZADOR
               </h3>
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
-                  style={{
-                    background: "oklch(0.55 0.22 25 / 0.2)",
-                    border: "1px solid oklch(0.55 0.22 25 / 0.5)",
-                    color: "oklch(0.70 0.28 25)",
-                  }}
-                >
-                  {tournament.creatorName?.charAt(0)?.toUpperCase() ?? "O"}
+              {tournament.creatorId ? (
+                <Link href={`/profile/${tournament.creatorId}`} className="flex items-center gap-3 group">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-colors"
+                    style={{
+                      background: "oklch(0.55 0.22 25 / 0.2)",
+                      border: "1px solid oklch(0.55 0.22 25 / 0.5)",
+                      color: "oklch(0.70 0.28 25)",
+                    }}
+                  >
+                    {tournament.creatorName?.charAt(0)?.toUpperCase() ?? "O"}
+                  </div>
+                  <span className="text-sm text-foreground font-display tracking-wide group-hover:text-red-400 transition-colors">
+                    {tournament.creatorName ?? "Organizador"}
+                  </span>
+                </Link>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold"
+                    style={{
+                      background: "oklch(0.55 0.22 25 / 0.2)",
+                      border: "1px solid oklch(0.55 0.22 25 / 0.5)",
+                      color: "oklch(0.70 0.28 25)",
+                    }}
+                  >
+                    {tournament.creatorName?.charAt(0)?.toUpperCase() ?? "O"}
+                  </div>
+                  <span className="text-sm text-foreground font-display tracking-wide">
+                    {tournament.creatorName ?? "Organizador"}
+                  </span>
                 </div>
-                <span className="text-sm text-foreground font-display tracking-wide">
-                  {tournament.creatorName ?? "Organizador"}
-                </span>
-              </div>
+              )}
             </div>
 
             {/* Register CTA */}
