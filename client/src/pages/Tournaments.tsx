@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Trophy, Users, Search, Star, Radio, Calendar, ChevronRight } from "lucide-react";
+import { Trophy, Users, Search, Star, Radio, Calendar, ChevronRight, Shield } from "lucide-react";
 import { Link, useSearch } from "wouter";
 import { useState } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
@@ -116,6 +116,19 @@ export default function Tournaments() {
           </div>
         )}
 
+        {/* Cross-filter link: ver equipos del juego seleccionado */}
+        {selectedGame && (
+          <div className="flex items-center gap-2 mb-5 text-xs font-mono">
+            <Shield className="w-3.5 h-3.5 text-zinc-500" />
+            <span className="text-zinc-500">Ver también:</span>
+            <Link
+              href={`/teams?game=${selectedGame}`}
+              className="text-red-400 hover:text-red-300 transition-colors underline underline-offset-2"
+            >
+              Equipos de {games?.find((g) => g.slug === selectedGame)?.name ?? selectedGame} →
+            </Link>
+          </div>
+        )}
         {/* Grid */}
         {isLoading ? (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { Swords, Search, Trophy, Shield, Users, Star, ExternalLink } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 
@@ -11,10 +11,24 @@ const COUNTRY_FLAGS: Record<string, string> = {
 };
 
 export default function Teams() {
+  const searchStr = useSearch();
+  const urlParams = new URLSearchParams(searchStr);
+  const rawGameParam = urlParams.get("game") ?? "";
+
   const [search, setSearch] = useState("");
   const [selectedGame, setSelectedGame] = useState(""); // slug canónico o "" para todos
+  const [urlParamResolved, setUrlParamResolved] = useState(false);
 
   const { data: games } = trpc.games.list.useQuery();
+
+  // Resolver el parámetro inicial de la URL una vez que los juegos estén cargados
+  if (!urlParamResolved && games && rawGameParam) {
+    const bySlug = games.find((g) => g.slug === rawGameParam);
+    const byName = games.find((g) => g.name.toLowerCase() === rawGameParam.toLowerCase());
+    const resolved = bySlug?.slug ?? byName?.slug ?? "";
+    if (resolved !== selectedGame) setSelectedGame(resolved);
+    setUrlParamResolved(true);
+  }
 
   const { data: teams, isLoading } = trpc.teams.list.useQuery(
     { gameSlug: selectedGame || undefined },  // slug canónico principal
@@ -76,6 +90,20 @@ export default function Teams() {
             ))}
           </div>
         </div>
+
+        {/* Cross-filter link: ver torneos del juego seleccionado */}
+        {selectedGame && (
+          <div className="flex items-center gap-2 text-xs font-mono">
+            <Trophy className="w-3.5 h-3.5 text-zinc-500" />
+            <span className="text-zinc-500">Ver también:</span>
+            <Link
+              href={`/tournaments?game=${selectedGame}`}
+              className="text-red-400 hover:text-red-300 transition-colors underline underline-offset-2"
+            >
+              Torneos de {games?.find((g) => g.slug === selectedGame)?.name ?? selectedGame} →
+            </Link>
+          </div>
+        )}
 
         {/* Stats bar */}
         <div className="flex items-center gap-4 text-sm text-gray-500">
