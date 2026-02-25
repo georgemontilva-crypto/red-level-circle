@@ -860,6 +860,8 @@ export async function updateUserProfile(userId: number, data: {
   gameRole?: string;
   elo?: string;
   competitiveRegion?: string;
+  gameId?: string | null;
+  competitiveScore?: number | null;
   country?: string;
   profileType?: "player" | "team_captain" | "event_creator";
   socialDiscord?: string;
@@ -1414,6 +1416,8 @@ export async function getUserPublicProfile(userId: number) {
       gameRole: users.gameRole,
       elo: users.elo,
       competitiveRegion: users.competitiveRegion,
+      gameId: users.gameId,
+      competitiveScore: users.competitiveScore,
       country: users.country,
       socialDiscord: users.socialDiscord,
       socialTwitch: users.socialTwitch,
@@ -1854,6 +1858,8 @@ export async function getTeamPublicProfile(teamId: number) {
       competitiveRegion: users.competitiveRegion,
       rosterPhoto: users.rosterPhoto,
       rosterImageUrl: users.rosterImageUrl,
+      userGameId: users.gameId,
+      competitiveScore: users.competitiveScore,
       activeFrameImage: cosmetics.frameImage,
     })
     .from(teamMembers)

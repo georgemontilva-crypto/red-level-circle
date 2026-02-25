@@ -28,6 +28,8 @@ export const users = mysqlTable("users", {
   gameRole: varchar("gameRole", { length: 64 }),
   elo: varchar("elo", { length: 64 }),
   competitiveRegion: varchar("competitiveRegion", { length: 32 }),
+  gameId: varchar("gameId", { length: 128 }), // ID del jugador en el juego (ej: SummonerName#EUW)
+  competitiveScore: int("competitiveScore").default(0), // Puntaje competitivo acumulado
   country: varchar("country", { length: 64 }),
   socialDiscord: varchar("socialDiscord", { length: 128 }),
   socialTwitch: varchar("socialTwitch", { length: 128 }),

@@ -552,3 +552,16 @@
 - [x] TeamProfile.tsx PlayerCard: usa rosterImageUrl con fallback a rosterPhoto
 - [x] UserProfile.tsx ficha competitiva: usa rosterImageUrl con fallback a rosterPhoto
 - [x] 19 tests de vitest pasando para el sistema de roster card
+
+## Perfil Competitivo (Tab FICHA)
+- [x] Añadir campos gameId y competitiveScore al schema (users)
+- [x] Migrar schema con pnpm db:push
+- [x] Actualizar db.ts: getUserPublicProfile, updateUserProfile, getTeamPublicProfile con gameId y competitiveScore
+- [x] Actualizar routers.ts: profile.updateMine acepta gameId y competitiveScore
+- [x] Añadir tab "FICHA" en UserProfile.tsx con botón EDITAR para perfil propio
+- [x] Componente RosterTab: formulario de edición inline (juego, rol, elo, región, gameId, puntaje)
+- [x] RosterTab: badge de rol como fuente de verdad (sin duplicar texto)
+- [x] RosterTab: uploader de foto de roster integrado con preview de card generada
+- [x] RosterTab: vista pública con badges visuales de rol, elo, región, gameId, puntaje
+- [x] Actualizar Settings.tsx: añadir inputs de gameId y competitiveScore al formulario competitivo
+- [x] 65 tests pasando, 0 errores TypeScript

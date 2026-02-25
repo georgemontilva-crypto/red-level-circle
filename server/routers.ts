@@ -1526,6 +1526,8 @@ export const appRouter = router({
         gameRole: z.string().max(64).optional(),
         elo: z.string().max(64).optional(),
         competitiveRegion: z.string().max(32).optional(),
+        gameId: z.string().max(128).nullish(),
+        competitiveScore: z.number().int().min(0).nullish(),
         country: z.string().max(64).optional(),
         profileType: z.enum(["player", "team_captain", "event_creator"]).optional(),
         socialDiscord: z.string().max(128).optional(),

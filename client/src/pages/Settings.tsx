@@ -386,6 +386,8 @@ export default function Settings() {
     gameRole: "",
     elo: "",
     competitiveRegion: "",
+    gameId: "",
+    competitiveScore: 0,
     country: "",
     profileType: "player" as "player" | "team_captain" | "event_creator",
     socialDiscord: "",
@@ -401,7 +403,7 @@ export default function Settings() {
   if (me && !initialized) {
     const u = me as {
       nickname?: string; bio?: string; mainGame?: string; gameRole?: string;
-      elo?: string; competitiveRegion?: string; country?: string;
+      elo?: string; competitiveRegion?: string; gameId?: string; competitiveScore?: number; country?: string;
       profileType?: string; socialDiscord?: string; socialTwitch?: string;
       socialTwitter?: string; avatar?: string; bannerUrl?: string;
     };
@@ -412,6 +414,8 @@ export default function Settings() {
       gameRole: u.gameRole ?? "",
       elo: u.elo ?? "",
       competitiveRegion: u.competitiveRegion ?? "",
+      gameId: u.gameId ?? "",
+      competitiveScore: u.competitiveScore ?? 0,
       country: u.country ?? "",
       profileType: (u.profileType as "player" | "team_captain" | "event_creator") ?? "player",
       socialDiscord: u.socialDiscord ?? "",
@@ -469,6 +473,8 @@ export default function Settings() {
     updateMutation.mutate({
       ...payload,
       profileType: form.profileType,
+      gameId: form.gameId || null,
+      competitiveScore: form.competitiveScore || null,
     });
   };
 
@@ -613,6 +619,31 @@ export default function Settings() {
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ID EN EL JUEGO</label>
+                  <input
+                    type="text"
+                    value={form.gameId}
+                    onChange={(e) => setForm((f) => ({ ...f, gameId: e.target.value }))}
+                    placeholder="Ej: SummonerName#EUW"
+                    maxLength={128}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                  />
+                  <p className="text-[10px] text-zinc-600 font-mono mt-1">Tu nombre de usuario en el juego</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">PUNTAJE COMPETITIVO</label>
+                  <input
+                    type="number"
+                    value={form.competitiveScore || ""}
+                    onChange={(e) => setForm((f) => ({ ...f, competitiveScore: parseInt(e.target.value) || 0 }))}
+                    placeholder="0"
+                    min={0}
+                    max={99999}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                  />
+                  <p className="text-[10px] text-zinc-600 font-mono mt-1">Puntos RLC acumulados en torneos</p>
                 </div>
               </div>
             </div>
