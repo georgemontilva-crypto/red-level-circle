@@ -38,6 +38,9 @@ import {
   getRankingHighlights,
   getGameStrength,
   getTeamTournamentPositions,
+  getUpcomingMatchesByTournament,
+  getActiveTournamentsByGame,
+  getTeamRankingByTournament,
   getTeamsByUser,
   getTournamentById,
   getTournaments,
@@ -921,6 +924,21 @@ export const appRouter = router({
       .input(z.object({ teamId: z.number() }))
       .query(async ({ input }) => {
         return getTeamTournamentPositions(input.teamId);
+      }),
+    activeTournaments: publicProcedure
+      .input(z.object({ gameSlug: z.string().optional() }).optional())
+      .query(async ({ input }) => {
+        return getActiveTournamentsByGame(input?.gameSlug);
+      }),
+    upcomingMatches: publicProcedure
+      .input(z.object({ tournamentId: z.number(), limit: z.number().optional() }))
+      .query(async ({ input }) => {
+        return getUpcomingMatchesByTournament(input.tournamentId, input.limit ?? 4);
+      }),
+    tournamentRanking: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamRankingByTournament(input.tournamentId);
       }),
   }),
 

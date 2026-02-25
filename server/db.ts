@@ -2538,3 +2538,141 @@ export async function getTeamTournamentPositions(teamId: number) {
     };
   }));
 }
+
+// ─── Upcoming Matches (para Ranking GPR) ─────────────────────────────────────
+/**
+ * Devuelve los próximos combates de un torneo (status pending o in_progress),
+ * incluyendo logos y nombres de ambos equipos, ordenados por scheduledAt asc.
+ */
+export async function getUpcomingMatchesByTournament(tournamentId: number, limit = 4) {
+  const db = await getDb();
+  if (!db) return [];
+  const team1 = alias(teams, "team1");
+  const team2 = alias(teams, "team2");
+  const rows = await db
+    .select({
+      id: tournamentMatches.id,
+      round: tournamentMatches.round,
+      matchNumber: tournamentMatches.matchNumber,
+      status: tournamentMatches.status,
+      scheduledAt: tournamentMatches.scheduledAt,
+      team1Id: tournamentMatches.team1Id,
+      team2Id: tournamentMatches.team2Id,
+      winnerId: tournamentMatches.winnerId,
+      team1Score: tournamentMatches.team1Score,
+      team2Score: tournamentMatches.team2Score,
+      team1Name: team1.name,
+      team2Name: team2.name,
+      team1Logo: team1.logo,
+      team2Logo: team2.logo,
+      team1Tag: team1.tag,
+      team2Tag: team2.tag,
+    })
+    .from(tournamentMatches)
+    .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
+    .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
+    .where(
+      and(
+        eq(tournamentMatches.tournamentId, tournamentId),
+        inArray(tournamentMatches.status, ["pending", "in_progress"])
+      )
+    )
+    .orderBy(tournamentMatches.round, tournamentMatches.matchNumber)
+    .limit(limit);
+  return rows;
+}
+
+/**
+ * Devuelve los torneos activos (in_progress) filtrados opcionalmente por gameSlug.
+ * Usado para el selector de torneo en el Ranking.
+ */
+export async function getActiveTournamentsByGame(gameSlug?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(tournaments.status, "in_progress")];
+  if (gameSlug) conditions.push(eq(tournaments.gameSlug, gameSlug));
+  return db
+    .select({
+      id: tournaments.id,
+      name: tournaments.name,
+      gameSlug: tournaments.gameSlug,
+      status: tournaments.status,
+      banner: tournaments.banner,
+      startDate: tournaments.startDate,
+      endDate: tournaments.endDate,
+      bracketType: tournaments.bracketType,
+      maxTeams: tournaments.maxTeams,
+    })
+    .from(tournaments)
+    .where(and(...conditions))
+    .orderBy(desc(tournaments.startDate));
+}
+
+/**
+ * Devuelve el ranking de equipos de un torneo específico,
+ * calculado desde los resultados de matches del torneo.
+ */
+export async function getTeamRankingByTournament(tournamentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Get all approved registrations for this tournament
+  const regs = await db
+    .select({
+      teamId: tournamentRegistrations.teamId,
+      teamName: teams.name,
+      teamLogo: teams.logo,
+      teamTag: teams.tag,
+      teamGameSlug: teams.gameSlug,
+      teamIsVerified: teams.isVerified,
+    })
+    .from(tournamentRegistrations)
+    .leftJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .where(
+      and(
+        eq(tournamentRegistrations.tournamentId, tournamentId),
+        eq(tournamentRegistrations.status, "Aprobado")
+      )
+    );
+
+  if (regs.length === 0) return [];
+
+  // Get all completed matches for this tournament
+  const matches = await db
+    .select({
+      team1Id: tournamentMatches.team1Id,
+      team2Id: tournamentMatches.team2Id,
+      winnerId: tournamentMatches.winnerId,
+      round: tournamentMatches.round,
+    })
+    .from(tournamentMatches)
+    .where(
+      and(
+        eq(tournamentMatches.tournamentId, tournamentId),
+        eq(tournamentMatches.status, "completed")
+      )
+    );
+
+  // Calculate W/L per team
+  return regs.map((reg) => {
+    const teamId = reg.teamId!;
+    const teamMatches = matches.filter((m) => m.team1Id === teamId || m.team2Id === teamId);
+    const wins = teamMatches.filter((m) => m.winnerId === teamId).length;
+    const losses = teamMatches.filter((m) => m.winnerId !== null && m.winnerId !== teamId).length;
+    const maxRound = teamMatches.length > 0 ? Math.max(...teamMatches.map((m) => m.round)) : 0;
+    // Points: 3 per win + 1 per round reached (simple formula)
+    const points = wins * 3 + maxRound;
+    return {
+      id: teamId,
+      name: reg.teamName ?? "Equipo",
+      logo: reg.teamLogo ?? null,
+      tag: reg.teamTag ?? null,
+      gameSlug: reg.teamGameSlug ?? null,
+      isVerified: reg.teamIsVerified ?? false,
+      wins,
+      losses,
+      points,
+      tournamentsPlayed: teamMatches.length > 0 ? 1 : 0,
+      tournamentsWon: 0,
+    };
+  }).sort((a, b) => b.points - a.points || b.wins - a.wins);
+}

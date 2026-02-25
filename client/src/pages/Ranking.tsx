@@ -9,7 +9,8 @@
 import { trpc } from "@/lib/trpc";
 import {
   Trophy, Users, TrendingUp, Star, ChevronDown,
-  Gamepad2, Shield, X, ExternalLink, Swords, Target, Award
+  Gamepad2, Shield, X, ExternalLink, Swords, Target, Award,
+  Zap, Calendar, Clock, ChevronRight
 } from "lucide-react";
 import { Link } from "wouter";
 import { useState, useRef, useEffect } from "react";
@@ -512,22 +513,56 @@ function GameStrengthSidebar({ data }: { data: { gameSlug: string; avgPoints: nu
 export default function Ranking() {
   const [selectedGame, setSelectedGame] = useState("");
   const [selectedTeam, setSelectedTeam] = useState<any | null>(null);
+  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
   const chipsScrollRef = useRef<HTMLDivElement>(null);
-
   const scrollChips = (dir: "left" | "right") => {
     chipsScrollRef.current?.scrollBy({ left: dir === "left" ? -240 : 240, behavior: "smooth" });
   };
 
-  const { data: ranking, isLoading } = trpc.ranking.teams.useQuery({
-    gameSlug: selectedGame || undefined,
-    limit: 100,
-  });
   const { data: games } = trpc.games.list.useQuery();
   const { data: highlights } = trpc.ranking.highlights.useQuery({ gameSlug: selectedGame || undefined });
   const { data: gameStrength } = trpc.ranking.gameStrength.useQuery();
 
-  const teams = ranking ?? [];
+  // Torneos activos (para el selector)
+  const { data: activeTournaments } = trpc.ranking.activeTournaments.useQuery(
+    { gameSlug: selectedGame || undefined },
+    { enabled: true }
+  );
+
+  // Cuando cambia el juego, resetear torneo seleccionado
+  const handleGameChange = (slug: string) => {
+    setSelectedGame(slug);
+    setSelectedTournamentId(null);
+    setSelectedTeam(null);
+  };
+
+  // Cuando hay torneos activos y no hay torneo seleccionado, auto-seleccionar el primero
+  useEffect(() => {
+    if (activeTournaments && activeTournaments.length > 0 && selectedTournamentId === null) {
+      // No auto-seleccionar: dejar que el usuario elija
+    }
+  }, [activeTournaments, selectedTournamentId]);
+
+  // Próximos combates del torneo seleccionado
+  const { data: upcomingMatches, isLoading: loadingMatches } = trpc.ranking.upcomingMatches.useQuery(
+    { tournamentId: selectedTournamentId!, limit: 4 },
+    { enabled: selectedTournamentId !== null }
+  );
+
+  // Ranking del torneo seleccionado o ranking global
+  const { data: tournamentRanking, isLoading: loadingTournamentRanking } = trpc.ranking.tournamentRanking.useQuery(
+    { tournamentId: selectedTournamentId! },
+    { enabled: selectedTournamentId !== null }
+  );
+  const { data: globalRanking, isLoading: loadingGlobalRanking } = trpc.ranking.teams.useQuery(
+    { gameSlug: selectedGame || undefined, limit: 100 },
+    { enabled: selectedTournamentId === null }
+  );
+
+  const isLoading = selectedTournamentId !== null ? loadingTournamentRanking : loadingGlobalRanking;
+  const teams = selectedTournamentId !== null ? (tournamentRanking ?? []) : (globalRanking ?? []);
   const activeColor = getGameColor(selectedGame || null);
+  const selectedTournament = activeTournaments?.find((t) => t.id === selectedTournamentId) ?? null;
 
   const handleSelectTeam = (team: any) => {
     setSelectedTeam((prev: any) => (prev?.id === team.id ? null : team));
@@ -635,7 +670,7 @@ export default function Ranking() {
                   style={{ scrollBehavior: "smooth", scrollbarWidth: "none" }}
                 >
                   <button
-                    onClick={() => { setSelectedGame(""); setSelectedTeam(null); }}
+                    onClick={() => handleGameChange("")}
                     className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-xs font-semibold shrink-0 transition-all duration-300"
                     style={{
                       background: !selectedGame ? "oklch(0.18 0.03 25)" : "oklch(0.12 0.005 0)",
@@ -651,10 +686,7 @@ export default function Ranking() {
                       key={game.id}
                       game={game}
                       active={selectedGame === game.slug}
-                      onClick={() => {
-                        setSelectedGame((prev) => prev === game.slug ? "" : game.slug);
-                        setSelectedTeam(null);
-                      }}
+                      onClick={() => handleGameChange(selectedGame === game.slug ? "" : game.slug)}
                     />
                   ))}
                 </div>
@@ -667,6 +699,182 @@ export default function Ranking() {
                 >
                   <ChevronDown size={14} className="text-zinc-400 -rotate-90" />
                 </button>
+              </div>
+            )}
+
+            {/* Selector de torneo activo */}
+            {activeTournaments && activeTournaments.length > 0 && (
+              <div className="mb-5">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap size={12} style={{ color: activeColor.accent }} />
+                  <p className="text-xs font-mono uppercase tracking-widest" style={{ color: activeColor.accent }}>
+                    Torneos en curso
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  <button
+                    onClick={() => setSelectedTournamentId(null)}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-200"
+                    style={{
+                      background: selectedTournamentId === null ? `${activeColor.accent}20` : "oklch(0.11 0.005 0)",
+                      border: selectedTournamentId === null ? `1px solid ${activeColor.accent}55` : "1px solid oklch(0.18 0.01 0)",
+                      color: selectedTournamentId === null ? activeColor.accent : "oklch(0.50 0.01 0)",
+                    }}
+                  >
+                    <Target size={10} /> Ranking global
+                  </button>
+                  {activeTournaments.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => setSelectedTournamentId((prev) => prev === t.id ? null : t.id)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-mono text-xs transition-all duration-200"
+                      style={{
+                        background: selectedTournamentId === t.id ? `${activeColor.accent}20` : "oklch(0.11 0.005 0)",
+                        border: selectedTournamentId === t.id ? `1px solid ${activeColor.accent}55` : "1px solid oklch(0.18 0.01 0)",
+                        color: selectedTournamentId === t.id ? activeColor.accent : "oklch(0.50 0.01 0)",
+                      }}
+                    >
+                      <Trophy size={10} /> {t.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Próximos Combates */}
+            {selectedTournamentId !== null && (
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Zap size={14} style={{ color: activeColor.accent }} />
+                    <h2 className="font-orbitron font-bold text-sm text-white uppercase tracking-wider">Próximos Combates</h2>
+                    {selectedTournament && (
+                      <span className="text-xs font-mono text-zinc-600">· {selectedTournament.name}</span>
+                    )}
+                  </div>
+                  {selectedTournament && (
+                    <Link href={`/tournaments/${selectedTournament.id}`}>
+                      <span className="flex items-center gap-1 text-xs font-mono cursor-pointer transition-colors" style={{ color: activeColor.accent }}>
+                        Ver bracket <ChevronRight size={12} />
+                      </span>
+                    </Link>
+                  )}
+                </div>
+                {loadingMatches ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[1,2,3,4].map((i) => (
+                      <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
+                    ))}
+                  </div>
+                ) : !upcomingMatches || upcomingMatches.length === 0 ? (
+                  <div
+                    className="flex items-center gap-3 px-4 py-5 rounded-xl"
+                    style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${activeColor.accent}18` }}
+                  >
+                    <Clock size={16} className="text-zinc-600" />
+                    <div>
+                      <p className="text-zinc-500 text-sm font-mono">Sin combates pendientes</p>
+                      <p className="text-zinc-700 text-xs font-mono mt-0.5">Todos los combates de este torneo han sido completados o aún no están programados.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {upcomingMatches.map((match) => {
+                      const isLive = match.status === "in_progress";
+                      return (
+                        <div
+                          key={match.id}
+                          className="relative rounded-xl overflow-hidden"
+                          style={{
+                            background: "oklch(0.09 0.005 0)",
+                            border: isLive ? `1px solid ${activeColor.accent}55` : "1px solid oklch(0.16 0.01 0)",
+                            boxShadow: isLive ? `0 0 16px ${activeColor.glow}` : "none",
+                          }}
+                        >
+                          {/* Fase / Round badge */}
+                          <div
+                            className="flex items-center justify-between px-3 py-1.5"
+                            style={{ borderBottom: "1px solid oklch(0.14 0.01 0)" }}
+                          >
+                            <span className="text-zinc-600 text-xs font-mono uppercase tracking-wider">
+                              Ronda {match.round} · Combate {match.matchNumber}
+                            </span>
+                            {isLive ? (
+                              <span className="flex items-center gap-1 text-xs font-mono font-bold" style={{ color: activeColor.accent }}>
+                                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: activeColor.accent }} />
+                                EN VIVO
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1 text-zinc-600 text-xs font-mono">
+                                <Clock size={10} /> PRÓXIMO
+                              </span>
+                            )}
+                          </div>
+                          {/* Teams VS */}
+                          <div className="flex items-center justify-between px-4 py-3 gap-2">
+                            {/* Team A */}
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <div
+                                className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+                                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                              >
+                                {match.team1Logo ? (
+                                  <img src={match.team1Logo || undefined} alt={match.team1Name ?? ""} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users size={14} className="text-zinc-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-rajdhani font-bold text-sm text-white truncate">
+                                  {match.team1Name ?? "TBD"}
+                                </p>
+                                {match.team1Tag && <p className="text-zinc-600 text-xs font-mono">[{match.team1Tag}]</p>}
+                              </div>
+                            </div>
+                            {/* VS */}
+                            <div className="shrink-0 text-center px-2">
+                              <span className="font-orbitron font-black text-xs" style={{ color: activeColor.accent }}>VS</span>
+                            </div>
+                            {/* Team B */}
+                            <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
+                              <div
+                                className="w-9 h-9 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
+                                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                              >
+                                {match.team2Logo ? (
+                                  <img src={match.team2Logo || undefined} alt={match.team2Name ?? ""} className="w-full h-full object-cover" />
+                                ) : (
+                                  <Users size={14} className="text-zinc-600" />
+                                )}
+                              </div>
+                              <div className="min-w-0 text-right">
+                                <p className="font-rajdhani font-bold text-sm text-white truncate">
+                                  {match.team2Name ?? "TBD"}
+                                </p>
+                                {match.team2Tag && <p className="text-zinc-600 text-xs font-mono">[{match.team2Tag}]</p>}
+                              </div>
+                            </div>
+                          </div>
+                          {/* Fecha */}
+                          {match.scheduledAt && (
+                            <div
+                              className="flex items-center gap-1.5 px-3 py-1.5"
+                              style={{ borderTop: "1px solid oklch(0.12 0.01 0)" }}
+                            >
+                              <Calendar size={10} className="text-zinc-700" />
+                              <span className="text-zinc-600 text-xs font-mono">
+                                {new Date(match.scheduledAt).toLocaleString("es", {
+                                  month: "short", day: "numeric",
+                                  hour: "2-digit", minute: "2-digit",
+                                })}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
