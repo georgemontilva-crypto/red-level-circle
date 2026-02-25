@@ -11,7 +11,7 @@ import {
   Gamepad2, Shield, CheckCircle2, XCircle, Minus, ExternalLink, Star
 } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useRef } from "react";
 
 // ─── Colores temáticos por juego ──────────────────────────────────────────────
 const GAME_COLORS: Record<string, { from: string; to: string; glow: string; accent: string }> = {
@@ -388,9 +388,12 @@ function GameChip({ game, active, onClick }: { game: any; active: boolean; onCli
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function Ranking() {
-  const [selectedGame, setSelectedGame] = useState("");
+   const [selectedGame, setSelectedGame] = useState("");
   const [expandedTeamId, setExpandedTeamId] = useState<number | null>(null);
-
+  const chipsScrollRef = useRef<HTMLDivElement>(null);
+  const scrollChips = (dir: "left" | "right") => {
+    chipsScrollRef.current?.scrollBy({ left: dir === "left" ? -240 : 240, behavior: "smooth" });
+  };
   const { data: ranking, isLoading } = trpc.ranking.teams.useQuery({
     gameSlug: selectedGame || undefined,
     limit: 100,
@@ -420,35 +423,58 @@ export default function Ranking() {
         {/* Game filter chips */}
         {games && games.length > 0 && (
           <div className="mb-6">
-            <div
-              className="flex gap-2 overflow-x-auto pb-1"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingTop: "4px", paddingBottom: "4px" }}
-            >
+            <div className="flex items-center gap-2">
+              {/* Flecha izquierda */}
               <button
-                onClick={() => { setSelectedGame(""); setExpandedTeamId(null); }}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-xs font-semibold shrink-0 transition-all duration-300"
-                style={{
-                  background: selectedGame === "" ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)" : "oklch(0.12 0.005 0)",
-                  border: selectedGame === "" ? "1px solid rgba(220,38,38,0.5)" : "1px solid oklch(0.20 0.01 0)",
-                  color: selectedGame === "" ? "#ef4444" : "oklch(0.55 0.01 0)",
-                  boxShadow: selectedGame === "" ? "0 0 14px rgba(220,38,38,0.3)" : "none",
-                  transform: selectedGame === "" ? "translateY(-1px)" : "none",
-                }}
+                onClick={() => scrollChips("left")}
+                className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
               >
-                <Trophy size={13} /> Todos los juegos
+                <ChevronDown size={14} className="text-zinc-400 rotate-90" />
               </button>
-              {games.map((game) => (
-                <GameChip
-                  key={game.id}
-                  game={game}
-                  active={selectedGame === game.slug}
-                  onClick={() => { setSelectedGame((prev) => prev === game.slug ? "" : game.slug); setExpandedTeamId(null); }}
-                />
-              ))}
+              {/* Scroll container */}
+              <div
+                ref={chipsScrollRef}
+                className="flex gap-2 overflow-x-auto flex-1"
+                style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingTop: "6px", paddingBottom: "6px" }}
+              >
+                <button
+                  onClick={() => { setSelectedGame(""); setExpandedTeamId(null); }}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl font-mono text-xs font-semibold shrink-0 transition-all duration-300"
+                  style={{
+                    background: selectedGame === "" ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)" : "oklch(0.12 0.005 0)",
+                    border: selectedGame === "" ? "1px solid rgba(220,38,38,0.5)" : "1px solid oklch(0.20 0.01 0)",
+                    color: selectedGame === "" ? "#ef4444" : "oklch(0.55 0.01 0)",
+                    boxShadow: selectedGame === "" ? "0 0 14px rgba(220,38,38,0.3)" : "none",
+                    transform: selectedGame === "" ? "translateY(-1px)" : "none",
+                  }}
+                >
+                  <Trophy size={13} /> Todos los juegos
+                </button>
+                {games.map((game) => (
+                  <GameChip
+                    key={game.id}
+                    game={game}
+                    active={selectedGame === game.slug}
+                    onClick={() => { setSelectedGame((prev) => prev === game.slug ? "" : game.slug); setExpandedTeamId(null); }}
+                  />
+                ))}
+              </div>
+              {/* Flecha derecha */}
+              <button
+                onClick={() => scrollChips("right")}
+                className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
+                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
+              >
+                <ChevronDown size={14} className="text-zinc-400 -rotate-90" />
+              </button>
             </div>
           </div>
         )}
-
         {/* Top 3 Podio */}
         {!isLoading && top3.length >= 3 && (
           <div className="mb-6">
