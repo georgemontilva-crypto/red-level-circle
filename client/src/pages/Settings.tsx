@@ -592,7 +592,7 @@ export default function Settings() {
                   >
                     <option value="">{form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}</option>
                     {getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => (
-                      <option key={r.value} value={r.value}>{r.icon} {r.label}</option>
+                      <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
                 </div>

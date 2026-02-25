@@ -10,7 +10,9 @@ import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { getRolesForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
+import { getRolesForGame, getRanksForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
+import { RoleSelector } from "@/components/RoleSelector";
+import { RankSelector } from "@/components/RankSelector";
 
 const GAME_SLUG_MAP: Record<string, string> = {
   "League of Legends": "league-of-legends",
@@ -268,18 +270,35 @@ export default function UserProfile() {
                 {profile.mainGame}
               </span>
             )}
-            {(profile as { gameRole?: string | null }).gameRole && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
-                🎮 {(profile as { gameRole?: string | null }).gameRole}
-              </span>
-            )}
-            {(profile as { elo?: string | null }).elo && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                style={{ background: "oklch(0.65 0.18 80 / 0.12)", border: "1px solid oklch(0.65 0.18 80 / 0.25)", color: "oklch(0.75 0.18 80)" }}>
-                ⚡ {(profile as { elo?: string | null }).elo}
-              </span>
-            )}
+            {(profile as { gameRole?: string | null }).gameRole && (() => {
+              const _vGameSlug = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
+              const _vRoles = getRolesForGame(_vGameSlug);
+              const _vRoleData = _vRoles.find((r) => r.value === (profile as { gameRole?: string | null }).gameRole);
+              return (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                  style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
+                  {_vRoleData?.svgPath ? (
+                    <img src={_vRoleData.svgPath} alt={_vRoleData.label} className="w-3.5 h-3.5" style={{ filter: "invert(1) sepia(1) saturate(2) hue-rotate(320deg)" }} />
+                  ) : <span>🎮</span>}
+                  {_vRoleData?.label ?? (profile as { gameRole?: string | null }).gameRole}
+                </span>
+              );
+            })()}
+            {(profile as { elo?: string | null }).elo && (() => {
+              const _vGameSlug2 = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
+              const _vRanks = getRanksForGame(_vGameSlug2);
+              const _vRankData = _vRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
+              return (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                  style={_vRankData
+                    ? { background: `${_vRankData.color}18`, border: `1px solid ${_vRankData.color}44`, color: _vRankData.color }
+                    : { background: "oklch(0.65 0.18 80 / 0.12)", border: "1px solid oklch(0.65 0.18 80 / 0.25)", color: "oklch(0.75 0.18 80)" }
+                  }>
+                  {_vRankData && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: _vRankData.color }} />}
+                  {_vRankData?.label ?? (profile as { elo?: string | null }).elo}
+                </span>
+              );
+            })()}
             {(profile as { competitiveRegion?: string | null }).competitiveRegion && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
                 style={{ background: "oklch(0.45 0.15 220 / 0.12)", border: "1px solid oklch(0.45 0.15 220 / 0.25)", color: "oklch(0.70 0.15 220)" }}>
@@ -755,11 +774,14 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
   const gameSlug = GAME_SLUG_MAP[form.mainGame] ?? null;
   const roles = getRolesForGame(gameSlug);
   const roleData = roles.find((r) => r.value === form.gameRole);
-
+  const ranks = getRanksForGame(gameSlug);
+  const rankData = ranks.find((r) => r.value === form.elo);
   // View-only: resolve from profile
   const viewGameSlug = GAME_SLUG_MAP[profile.mainGame ?? ""] ?? null;
   const viewRoles = getRolesForGame(viewGameSlug);
   const viewRoleData = viewRoles.find((r) => r.value === profile.gameRole);
+  const viewRanks = getRanksForGame(viewGameSlug);
+  const viewRankData = viewRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
 
   const inputClass = "w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600";
   const labelClass = "block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest";
@@ -815,7 +837,14 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 className="absolute bottom-0 left-0 right-0 px-2 py-1.5 flex items-center justify-center gap-1"
                 style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%)" }}
               >
-                <span className="text-sm">{(isOwnProfile ? roleData : viewRoleData)?.icon}</span>
+                {(isOwnProfile ? roleData : viewRoleData)?.svgPath ? (
+                  <img
+                    src={(isOwnProfile ? roleData : viewRoleData)!.svgPath!}
+                    alt={(isOwnProfile ? roleData : viewRoleData)!.label}
+                    className="w-4 h-4 object-contain"
+                    style={{ filter: "invert(1)" }}
+                  />
+                ) : null}
                 <span className="text-xs font-mono font-bold text-white">{(isOwnProfile ? roleData : viewRoleData)?.label}</span>
               </div>
             )}
@@ -881,7 +910,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                     <label className={labelClass}>JUEGO PRINCIPAL</label>
                     <select
                       value={form.mainGame}
-                      onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "" }))}
+                      onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "", elo: "" }))}
                       className={inputClass}
                     >
                       <option value="">Seleccionar juego</option>
@@ -890,28 +919,13 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                   </div>
                   <div>
                     <label className={labelClass}>ROL PRINCIPAL</label>
-                    <select
+                    <RoleSelector
+                      roles={roles}
                       value={form.gameRole}
-                      onChange={(e) => setForm((f) => ({ ...f, gameRole: e.target.value }))}
+                      onChange={(v) => setForm((f) => ({ ...f, gameRole: v }))}
                       disabled={!form.mainGame}
-                      className={inputClass + (form.mainGame ? "" : " opacity-40")}
-                    >
-                      <option value="">{form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}</option>
-                      {getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => (
-                        <option key={r.value} value={r.value}>{r.icon} {r.label}</option>
-                      ))}
-                    </select>
-                    {/* Role badge preview */}
-                    {roleData && (
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <span
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-mono font-bold"
-                          style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.75 0.15 25)" }}
-                        >
-                          {roleData.icon} {roleData.label}
-                        </span>
-                      </div>
-                    )}
+                      placeholder={form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}
+                    />
                   </div>
                 </div>
               </div>
@@ -927,13 +941,12 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>ELO / RANGO</label>
-                    <input
-                      type="text"
+                    <RankSelector
+                      ranks={ranks}
                       value={form.elo}
-                      onChange={(e) => setForm((f) => ({ ...f, elo: e.target.value }))}
-                      placeholder="Ej: Diamond II, Radiant..."
-                      maxLength={64}
-                      className={inputClass}
+                      onChange={(v) => setForm((f) => ({ ...f, elo: v }))}
+                      disabled={!form.mainGame}
+                      placeholder={form.mainGame ? "Seleccionar rango" : "Elige un juego primero"}
                     />
                   </div>
                   <div>
@@ -991,7 +1004,9 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-base font-mono font-bold"
                       style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.35)", color: "oklch(0.80 0.15 25)" }}
                     >
-                      <span className="text-xl">{viewRoleData.icon}</span>
+                      {viewRoleData.svgPath ? (
+                        <img src={viewRoleData.svgPath} alt={viewRoleData.label} className="w-5 h-5 object-contain" style={{ filter: "invert(1)" }} />
+                      ) : null}
                       {viewRoleData.label}
                     </span>
                   ) : (
@@ -1009,14 +1024,20 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
               )}
 
               <div className="grid grid-cols-2 gap-4">
-                {profile.elo && (
+                {(profile as { elo?: string | null }).elo && (
                   <div>
                     <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1.5">ELO / Rango</p>
                     <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                      style={{ background: "oklch(0.65 0.18 80 / 0.15)", border: "1px solid oklch(0.65 0.18 80 / 0.3)", color: "oklch(0.75 0.18 80)" }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
+                      style={viewRankData
+                        ? { background: `${viewRankData.color}22`, border: `1px solid ${viewRankData.color}55`, color: viewRankData.color }
+                        : { background: "oklch(0.65 0.18 80 / 0.15)", border: "1px solid oklch(0.65 0.18 80 / 0.3)", color: "oklch(0.75 0.18 80)" }
+                      }
                     >
-                      ⚡ {profile.elo}
+                      {viewRankData && (
+                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: viewRankData.color }} />
+                      )}
+                      {viewRankData?.label ?? (profile as { elo?: string | null }).elo}
                     </span>
                   </div>
                 )}
@@ -1038,7 +1059,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono"
                       style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)" }}
                     >
-                      🎮 {profile.gameId}
+                      <Gamepad2 className="w-3.5 h-3.5 text-white" /> {profile.gameId}
                     </span>
                   </div>
                 )}

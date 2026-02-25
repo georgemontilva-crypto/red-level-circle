@@ -565,3 +565,15 @@
 - [x] RosterTab: vista pública con badges visuales de rol, elo, región, gameId, puntaje
 - [x] Actualizar Settings.tsx: añadir inputs de gameId y competitiveScore al formulario competitivo
 - [x] 65 tests pasando, 0 errores TypeScript
+
+## Selectores Dinámicos de Rol/Rango V18
+- [x] Actualizar shared/gameRoles.ts: añadir svgPath a roles, añadir rangos por juego (GameRankData, GAME_RANKS, getRanksForGame)
+- [x] Crear componente RoleSelector.tsx: dropdown custom con iconos SVG, pill rojo, panel flotante animado
+- [x] Crear componente RankSelector.tsx: dropdown custom con puntos de color por rango, panel flotante animado
+- [x] Reemplazar select nativo de ROL en tab FICHA de UserProfile.tsx con RoleSelector
+- [x] Reemplazar input de texto de ELO/RANGO con RankSelector (opciones dinámicas por juego)
+- [x] Reset de rol y rango al cambiar de juego principal
+- [x] Actualizar badges de rol/rango en vista pública del tab FICHA con colores de rango
+- [x] Actualizar badge de rol en barra de meta-info del perfil con icono SVG
+- [x] Actualizar badge de rango en barra de meta-info con color del rango
+- [x] 65 tests pasando, 0 errores TypeScript
