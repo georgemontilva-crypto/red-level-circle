@@ -102,11 +102,11 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
       >
         {/* Captain accent top bar */}
         {isCapt && <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />}
-        {/* Roster photo (carta format) or avatar fallback */}
+        {/* Roster card (generated 600x900) or avatar fallback */}
         <div className="relative" style={{ aspectRatio: "2/3", background: "oklch(0.07 0.005 0)" }}>
-          {member.rosterPhoto ? (
+          {(member.rosterImageUrl || member.rosterPhoto) ? (
             <img
-              src={member.rosterPhoto}
+              src={member.rosterImageUrl ?? member.rosterPhoto ?? ""}
               alt={member.nickname ?? member.userName}
               className="w-full h-full object-cover"
             />

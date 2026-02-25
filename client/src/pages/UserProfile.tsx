@@ -413,7 +413,7 @@ export default function UserProfile() {
               )}
 
               {/* Ficha de jugador competitivo */}
-              {((profile as any).rosterPhoto || (profile as any).gameRole || (profile as any).elo || (profile as any).competitiveRegion) && (
+              {((profile as any).rosterImageUrl || (profile as any).rosterPhoto || (profile as any).gameRole || (profile as any).elo || (profile as any).competitiveRegion) && (
                 <div
                   className="rounded-2xl overflow-hidden"
                   style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
@@ -423,8 +423,8 @@ export default function UserProfile() {
                     <span className="text-xs font-mono tracking-wider text-zinc-400 uppercase">Ficha Competitiva</span>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-4 p-4">
-                    {/* Foto de roster formato carta */}
-                    {(profile as any).rosterPhoto && (
+                    {/* Roster card generada (600x900) con fallback a foto anterior */}
+                    {((profile as any).rosterImageUrl || (profile as any).rosterPhoto) && (
                       <div
                         className="shrink-0 rounded-xl overflow-hidden"
                         style={{
@@ -435,7 +435,7 @@ export default function UserProfile() {
                         }}
                       >
                         <img
-                          src={(profile as any).rosterPhoto}
+                          src={(profile as any).rosterImageUrl ?? (profile as any).rosterPhoto}
                           alt={`${profile.nickname ?? profile.name} roster`}
                           className="w-full h-full object-cover"
                         />

@@ -867,7 +867,8 @@ export async function updateUserProfile(userId: number, data: {
   socialTwitter?: string;
   avatar?: string;
   bannerUrl?: string;
-  rosterPhoto?: string;
+  rosterPhoto?: string | null;
+  rosterImageUrl?: string | null;
 }) {
   const db = await getDb();
   if (!db) return;
@@ -1405,6 +1406,7 @@ export async function getUserPublicProfile(userId: number) {
       avatar: users.avatar,
       bannerUrl: users.bannerUrl,
       rosterPhoto: users.rosterPhoto,
+      rosterImageUrl: users.rosterImageUrl,
       bio: users.bio,
       role: users.role,
       profileType: users.profileType,
@@ -1851,6 +1853,7 @@ export async function getTeamPublicProfile(teamId: number) {
       elo: users.elo,
       competitiveRegion: users.competitiveRegion,
       rosterPhoto: users.rosterPhoto,
+      rosterImageUrl: users.rosterImageUrl,
       activeFrameImage: cosmetics.frameImage,
     })
     .from(teamMembers)

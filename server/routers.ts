@@ -147,6 +147,7 @@ import {
   reviewVerificationRequest,
 } from "./db";
 import { storagePut } from "./storage";
+import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users } from "../drizzle/schema";
@@ -1436,13 +1437,57 @@ export const appRouter = router({
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
+    uploadRosterCard: protectedProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/avif", "image/bmp", "image/tiff"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // 1. Validar que el usuario pertenece a un equipo con rol PLAYER y con inscripción aprobada
+        const canUpload = await hasApprovedTeamMembership(ctx.user.id);
+        if (!canUpload) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "Solo puedes subir una foto de roster si perteneces a un equipo con inscripción aprobada en un torneo.",
+          });
+        }
+        // 2. Obtener datos del usuario y su equipo
+        const memberships = await getTeamsByMembership(ctx.user.id);
+        const primaryTeam = memberships[0]; // Usar el primer equipo
+        const userProfile = await getUserPublicProfile(ctx.user.id);
+        if (!userProfile) throw new TRPCError({ code: "NOT_FOUND", message: "Perfil no encontrado" });
+        // 3. Guardar la foto original del jugador en S3
+        const ext = input.mimeType.split("/")[1] || "jpg";
+        const rawKey = `profiles/${ctx.user.id}/roster-raw-${Date.now()}.${ext}`;
+        const rawBuffer = Buffer.from(input.base64, "base64");
+        const { url: rawUrl } = await storagePut(rawKey, rawBuffer, input.mimeType);
+        // 4. Generar la roster card compuesta (600×900)
+        const cardBuffer = await generateRosterCard({
+          playerPhotoBuffer: rawBuffer,
+          nickname: userProfile.nickname ?? userProfile.name ?? "Jugador",
+          teamRole: primaryTeam?.role ?? "player",
+          gameRole: userProfile.gameRole,
+          teamLogoUrl: primaryTeam?.teamLogo ?? null,
+          teamTag: primaryTeam?.teamTag ?? null,
+        });
+        // 5. Subir la card compuesta a S3
+        const cardKey = `profiles/${ctx.user.id}/roster-card-${Date.now()}.jpg`;
+        const { url: cardUrl } = await storagePut(cardKey, cardBuffer, "image/jpeg");
+        // 6. Guardar ambas URLs en el perfil del usuario
+        await updateUserProfile(ctx.user.id, {
+          rosterPhoto: rawUrl,       // URL de la foto original en S3
+          rosterImageUrl: cardUrl,   // URL de la card compuesta (usada en UI)
+        });
+        return { url: cardUrl };
+      }),
+    // Mantener compatibilidad con el endpoint anterior
     uploadRosterPhoto: protectedProcedure
       .input(z.object({
         base64: z.string(),
         mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif", "image/svg+xml", "image/bmp", "image/tiff"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        // Validar que el usuario pertenece a un equipo con inscripción aprobada
+        // Redirigir al nuevo endpoint uploadRosterCard
         const canUpload = await hasApprovedTeamMembership(ctx.user.id);
         if (!canUpload) {
           throw new TRPCError({
@@ -1454,7 +1499,6 @@ export const appRouter = router({
         const key = `profiles/${ctx.user.id}/roster-${Date.now()}.${ext}`;
         const buffer = Buffer.from(input.base64, "base64");
         const { url } = await storagePut(key, buffer, input.mimeType);
-        // Guardar la URL en el perfil del usuario
         await updateUserProfile(ctx.user.id, { rosterPhoto: url });
         return { url };
       }),

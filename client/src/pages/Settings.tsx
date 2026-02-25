@@ -159,14 +159,16 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
 }
 
 function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
-  const [preview, setPreview] = useState<string | null>(null);
+  const [generatedCardUrl, setGeneratedCardUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: hasApproved, isLoading: checkingTeam } = trpc.profile.hasApprovedTeam.useQuery();
-  const uploadMutation = trpc.profile.uploadRosterPhoto.useMutation({
+
+  // Nuevo endpoint que genera la card compuesta automáticamente en servidor
+  const uploadMutation = trpc.profile.uploadRosterCard.useMutation({
     onSuccess: ({ url }) => {
-      setPreview(url);
-      toast.success("Foto de roster actualizada");
+      setGeneratedCardUrl(url);
+      toast.success("Ficha competitiva generada y guardada");
       setUploading(false);
     },
     onError: (err) => {
@@ -174,75 +176,109 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
       setUploading(false);
     },
   });
+
   const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten im\u00e1genes"); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
     if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10MB"); return; }
+    const supportedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/bmp", "image/tiff"];
+    if (!supportedTypes.includes(file.type)) { toast.error("Formato no soportado. Usa JPG, PNG o WEBP."); return; }
     setUploading(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
-      const mimeType = file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
+      const mimeType = file.type as "image/jpeg" | "image/png" | "image/webp";
       await uploadMutation.mutateAsync({ base64, mimeType });
     };
     reader.readAsDataURL(file);
   };
-  const displayUrl = preview || currentUrl;
+
+  const displayUrl = generatedCardUrl || currentUrl;
   const canUpload = hasApproved?.canUpload;
+
   return (
     <div className="space-y-4">
       <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
-        <Shield className="w-4 h-4" /> FOTO DE ROSTER COMPETITIVO
+        <Shield className="w-4 h-4" /> FICHA COMPETITIVA (ROSTER CARD)
       </h2>
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
         <p className="text-zinc-400 text-sm">
-          La foto de roster se muestra en formato carta en el perfil del equipo, ranking y brackets.
-          Solo disponible si perteneces a un equipo con inscripci\u00f3n aprobada en un torneo.
+          Sube tu foto y el sistema generará automáticamente tu ficha competitiva con el diseño oficial.
+          No editas colores ni texto — el sistema los aplica por ti.
         </p>
         {checkingTeam ? (
           <div className="flex items-center gap-2 text-zinc-500 text-sm font-mono">
-            <Loader2 className="w-4 h-4 animate-spin" /> Verificando membres\u00eda...
+            <Loader2 className="w-4 h-4 animate-spin" /> Verificando membresía...
           </div>
         ) : !canUpload ? (
           <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-800/60 border border-zinc-700">
             <Shield className="w-5 h-5 text-zinc-500 flex-shrink-0" />
             <div>
-              <p className="text-sm font-mono text-zinc-400">Funci\u00f3n bloqueada</p>
-              <p className="text-xs text-zinc-600 mt-0.5">Necesitas pertenecer a un equipo con inscripci\u00f3n aprobada en un torneo para subir tu foto de roster.</p>
+              <p className="text-sm font-mono text-zinc-400">Función bloqueada</p>
+              <p className="text-xs text-zinc-600 mt-0.5">Necesitas pertenecer a un equipo con inscripción aprobada en un torneo para generar tu ficha competitiva.</p>
             </div>
           </div>
         ) : (
-          <div className="flex flex-col sm:flex-row items-start gap-5">
-            <div
-              className="relative flex-shrink-0 cursor-pointer group rounded-xl overflow-hidden border-2 border-zinc-700 hover:border-red-500 transition-colors"
-              style={{ width: 120, aspectRatio: "2/3" }}
-              onClick={() => inputRef.current?.click()}
-            >
-              {displayUrl ? (
-                <img src={displayUrl} alt="Foto de roster" className="w-full h-full object-cover" style={{ aspectRatio: "2/3" }} />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex flex-col items-center justify-center gap-2" style={{ aspectRatio: "2/3" }}>
-                  <User className="w-8 h-8 text-zinc-600" />
-                  <span className="text-xs text-zinc-600 font-mono text-center px-2">Sin foto</span>
+          <div className="flex flex-col sm:flex-row items-start gap-6">
+            {/* Preview de la card generada */}
+            <div className="flex-shrink-0">
+              <div
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-zinc-700 hover:border-red-500 transition-colors shadow-xl"
+                style={{ width: 140, aspectRatio: "2/3" }}
+                onClick={() => inputRef.current?.click()}
+              >
+                {displayUrl ? (
+                  <img src={displayUrl} alt="Ficha competitiva" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex flex-col items-center justify-center gap-2">
+                    <User className="w-10 h-10 text-zinc-600" />
+                    <span className="text-xs text-zinc-600 font-mono text-center px-2">Sin ficha</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                  {uploading ? (
+                    <Loader2 className="w-8 h-8 text-white animate-spin" />
+                  ) : (
+                    <>
+                      <Camera className="w-8 h-8 text-white" />
+                      <span className="text-xs text-white font-mono">CAMBIAR</span>
+                    </>
+                  )}
                 </div>
+              </div>
+              {displayUrl && (
+                <p className="text-xs text-zinc-600 font-mono text-center mt-2">600 × 900 px</p>
               )}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                {uploading ? <Loader2 className="w-6 h-6 text-white animate-spin" /> : <Camera className="w-6 h-6 text-white" />}
+            </div>
+            {/* Instrucciones */}
+            <div className="flex-1 space-y-3">
+              <div>
+                <p className="text-sm text-white font-bold mb-1">Cómo funciona</p>
+                <ul className="space-y-1.5 text-xs text-zinc-500 font-mono">
+                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">1.</span><span>Sube una foto tuya (cualquier proporción)</span></li>
+                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">2.</span><span>El sistema recorta a 2:3 y aplica el diseño oficial oscuro</span></li>
+                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">3.</span><span>Tu nick, rol y logo del equipo se añaden automáticamente</span></li>
+                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">4.</span><span>La ficha aparece en perfil de equipo, ranking y brackets</span></li>
+                </ul>
+              </div>
+              <div className="pt-1">
+                <p className="text-xs text-zinc-600 mb-2">Formatos: JPG, PNG, WEBP · Máx. 10MB</p>
+                <button
+                  onClick={() => inputRef.current?.click()}
+                  disabled={uploading}
+                  className="px-5 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-mono text-xs font-bold tracking-widest transition-colors flex items-center gap-2"
+                >
+                  {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
+                  {uploading ? "GENERANDO FICHA..." : displayUrl ? "ACTUALIZAR FOTO" : "SUBIR FOTO"}
+                </button>
               </div>
             </div>
-            <div className="flex-1 space-y-2">
-              <p className="text-sm text-white font-bold">Foto de carta competitiva</p>
-              <p className="text-xs text-zinc-500">Formato vertical (2:3) \u00b7 M\u00e1x. 10MB</p>
-              <p className="text-xs text-zinc-500">Se muestra en el perfil del equipo, ranking y brackets.</p>
-              <button
-                onClick={() => inputRef.current?.click()}
-                disabled={uploading}
-                className="mt-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-mono text-xs font-bold transition-colors flex items-center gap-2"
-              >
-                {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                {uploading ? "SUBIENDO..." : "SUBIR FOTO"}
-              </button>
-            </div>
-            <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
+            <input
+              ref={inputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/avif,image/bmp"
+              className="hidden"
+              onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+            />
           </div>
         )}
       </div>

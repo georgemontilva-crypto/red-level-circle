@@ -541,3 +541,14 @@
 - [x] Aumentar avatar en UserProfile.tsx a 128px (circular, con frame/aura escalados)
 - [x] Añadir sección "Ficha Competitiva" en overview de UserProfile.tsx (foto roster + rol + elo + región)
 - [x] Escribir tests de vitest para hasApprovedTeamMembership, rosterPhoto, TOP5, winRate (17 tests)
+
+## Roster Card Generada Automáticamente (Feb 2026)
+- [x] Campo rosterImageUrl añadido al schema de users y migrado
+- [x] Sharp instalado para composición de imágenes en servidor
+- [x] Módulo rosterCard.ts: genera card 600x900 con foto, overlay, nick, rol, logo y tag del equipo
+- [x] Endpoint profile.uploadRosterCard: valida membresía aprobada, genera card y guarda en S3
+- [x] URL de foto original guardada en rosterPhoto; URL de card compuesta en rosterImageUrl
+- [x] Settings.tsx: uploader simplificado (solo foto), muestra preview de la card generada
+- [x] TeamProfile.tsx PlayerCard: usa rosterImageUrl con fallback a rosterPhoto
+- [x] UserProfile.tsx ficha competitiva: usa rosterImageUrl con fallback a rosterPhoto
+- [x] 19 tests de vitest pasando para el sistema de roster card

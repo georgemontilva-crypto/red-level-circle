@@ -34,6 +34,7 @@ export const users = mysqlTable("users", {
   socialTwitter: varchar("socialTwitter", { length: 128 }),
   bannerUrl: text("bannerUrl"),
   rosterPhoto: text("rosterPhoto"),
+  rosterImageUrl: text("rosterImageUrl"),
   isVerified: boolean("isVerified").default(false).notNull(),
   // RLC Coins wallet
   rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
