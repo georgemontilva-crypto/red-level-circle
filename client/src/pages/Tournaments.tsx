@@ -181,7 +181,7 @@ export default function Tournaments() {
         <SectionBanner sectionKey="tournaments" height="h-48 sm:h-64 lg:h-72" />
 
         {/* ── Fila 1: Búsqueda ──────────────────────────────────────────────── */}
-        <div className="mt-6 mb-5">
+        <div className="mt-8 mb-5">
           <div className="relative max-w-xl">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
             <input
@@ -204,7 +204,6 @@ export default function Tournaments() {
         {/* ── Fila 2: Chips de juegos ────────────────────────────────────────── */}
         {games && games.length > 0 && (
           <div className="mb-5">
-            <p className="text-zinc-600 text-xs font-mono mb-2.5 uppercase tracking-widest">Filtrar por juego</p>
             <div
               ref={scrollRef}
               className="flex gap-2 overflow-x-auto pb-1"
@@ -225,7 +224,7 @@ export default function Tournaments() {
 
         {/* ── Fila 3: Estado ────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <p className="text-zinc-600 text-xs font-mono mb-2.5 uppercase tracking-widest">Estado</p>
+          <p className="text-zinc-600 text-xs font-mono mb-2 uppercase tracking-widest">Estado</p>
           <div className="flex flex-wrap gap-2">
             {STATUS_CONFIG.map((s) => (
               <button
