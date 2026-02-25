@@ -580,12 +580,24 @@ function TeamsAndPeopleSection() {
 function AdBannerSection({ ads }: { ads: any[] }) {
   const activeAds = ads.filter((a: any) => a.isActive);
   const [adIndex, setAdIndex] = useState(0);
-  const currentAd = activeAds.length > 0 ? activeAds[adIndex % activeAds.length] : null;
+  const [visible, setVisible] = useState(true);
+  const currentIdx = adIndex % (activeAds.length || 1);
+  const currentAd = activeAds.length > 0 ? activeAds[currentIdx] : null;
+
+  const goTo = useCallback((next: number) => {
+    setVisible(false);
+    setTimeout(() => {
+      setAdIndex(next);
+      setVisible(true);
+    }, 420);
+  }, []);
+
   useEffect(() => {
     if (activeAds.length <= 1) return;
-    const timer = setInterval(() => setAdIndex(i => i + 1), 5000);
+    const timer = setInterval(() => goTo(adIndex + 1), 5000);
     return () => clearInterval(timer);
-  }, [activeAds.length]);
+  }, [activeAds.length, adIndex, goTo]);
+
   if (!currentAd) return null;
   return (
     <section className="relative w-full rounded-2xl overflow-hidden"
@@ -594,14 +606,20 @@ function AdBannerSection({ ads }: { ads: any[] }) {
         href={currentAd.destinationUrl || "#"}
         target={currentAd.destinationUrl ? "_blank" : "_self"}
         rel="noopener noreferrer"
-        className="block w-full group"
+        className="block w-full"
+        style={{
+          display: "block",
+          transition: "opacity 700ms cubic-bezier(0.4,0,0.2,1), transform 700ms cubic-bezier(0.4,0,0.2,1), filter 700ms cubic-bezier(0.4,0,0.2,1)",
+          opacity: visible ? 1 : 0,
+          transform: visible ? "scale(1)" : "scale(0.98)",
+          filter: visible ? "blur(0px)" : "blur(3px)",
+          willChange: "opacity, transform, filter",
+        }}
       >
         <img
-          key={currentAd.id}
           src={currentAd.bannerImage}
           alt={currentAd.title}
-          className="w-full h-auto block group-hover:scale-[1.01] transition-transform duration-500"
-          style={{ animation: "fadeIn 0.5s ease" }}
+          className="w-full h-auto block"
         />
       </a>
       <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono pointer-events-none"
@@ -613,9 +631,13 @@ function AdBannerSection({ ads }: { ads: any[] }) {
           {activeAds.map((_: any, i: number) => (
             <button
               key={i}
-              onClick={() => setAdIndex(i)}
-              className="w-2 h-2 rounded-full transition-all"
-              style={{ background: i === adIndex % activeAds.length ? "white" : "rgba(255,255,255,0.35)" }}
+              onClick={() => goTo(i)}
+              className="rounded-full transition-all duration-300"
+              style={{
+                width: i === currentIdx ? "20px" : "8px",
+                height: "8px",
+                background: i === currentIdx ? "white" : "rgba(255,255,255,0.35)",
+              }}
             />
           ))}
         </div>
