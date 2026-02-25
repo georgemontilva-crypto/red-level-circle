@@ -9,7 +9,7 @@ import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
-  BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown
+  BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { Link } from "wouter";
@@ -1140,6 +1140,165 @@ function GamesTab() {
   );
 }
 
+// ─── Audit Tab ───────────────────────────────────────────────────────────────
+function AuditTab() {
+  const [enabled, setEnabled] = useState(false);
+  const { data, isFetching, refetch } = trpc.games.auditConsistency.useQuery(undefined, {
+    enabled,
+    staleTime: 0,
+  });
+
+  const handleRun = () => {
+    if (!enabled) {
+      setEnabled(true);
+    } else {
+      refetch();
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader
+        icon={Database}
+        title="AUDITORÍA DE CONSISTENCIA"
+        subtitle="Verifica que gameSlug esté correctamente poblado en torneos y equipos"
+      />
+
+      {/* Run button */}
+      <div className="flex items-center gap-4">
+        <button
+          onClick={handleRun}
+          disabled={isFetching}
+          className="flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-orbitron rounded-lg transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin" : ""}`} />
+          {isFetching ? "EJECUTANDO..." : enabled ? "VOLVER A EJECUTAR" : "EJECUTAR AUDITORÍA"}
+        </button>
+        {data && !isFetching && (
+          <span className="text-xs text-gray-400">
+            Última ejecución completada
+          </span>
+        )}
+      </div>
+
+      {/* Results */}
+      {data && !isFetching && (
+        <div className="space-y-6">
+          {/* Summary cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Total Torneos", value: data.summary.totalTournaments, color: "text-white" },
+              { label: "Torneos Inconsistentes", value: data.summary.inconsistentTournaments, color: data.summary.inconsistentTournaments > 0 ? "text-red-400" : "text-green-400" },
+              { label: "Total Equipos", value: data.summary.totalTeams, color: "text-white" },
+              { label: "Equipos Inconsistentes", value: data.summary.inconsistentTeams, color: data.summary.inconsistentTeams > 0 ? "text-red-400" : "text-green-400" },
+            ].map(({ label, value, color }) => (
+              <div key={label} className="bg-gray-900/60 border border-red-900/20 rounded-xl p-4 text-center">
+                <div className={`text-3xl font-orbitron font-bold ${color}`}>{value}</div>
+                <div className="text-xs text-gray-400 mt-1">{label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Global status badge */}
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${
+            data.summary.inconsistentTournaments === 0 && data.summary.inconsistentTeams === 0
+              ? "bg-green-900/20 border-green-700/40 text-green-400"
+              : "bg-red-900/20 border-red-700/40 text-red-400"
+          }`}>
+            {data.summary.inconsistentTournaments === 0 && data.summary.inconsistentTeams === 0 ? (
+              <><CheckCircle2 className="w-5 h-5" /><span className="text-sm font-semibold">Sin inconsistencias — todos los registros tienen gameSlug correcto</span></>
+            ) : (
+              <><AlertTriangle className="w-5 h-5" /><span className="text-sm font-semibold">Se encontraron inconsistencias. Revisar los detalles abajo.</span></>
+            )}
+          </div>
+
+          {/* Inconsistent tournaments */}
+          {data.tournaments.length > 0 && (
+            <div>
+              <h3 className="text-sm font-orbitron text-red-400 mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> TORNEOS INCONSISTENTES ({data.tournaments.length})
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-red-900/30 text-gray-400 text-xs">
+                      <th className="text-left py-2 pr-4">ID</th>
+                      <th className="text-left py-2 pr-4">Nombre</th>
+                      <th className="text-left py-2 pr-4">game (legacy)</th>
+                      <th className="text-left py-2 pr-4">gameSlug actual</th>
+                      <th className="text-left py-2">gameSlug esperado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.tournaments.map((t: any) => (
+                      <tr key={t.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td className="py-2 pr-4 text-gray-400">{t.id}</td>
+                        <td className="py-2 pr-4 text-white">{t.name}</td>
+                        <td className="py-2 pr-4 text-yellow-400">{t.game ?? "—"}</td>
+                        <td className="py-2 pr-4 text-red-400">{t.gameSlug ?? <span className="text-gray-500">NULL</span>}</td>
+                        <td className="py-2 text-green-400">{t.expectedSlug ?? <span className="text-gray-500">sin juego registrado</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Inconsistent teams */}
+          {data.teams.length > 0 && (
+            <div>
+              <h3 className="text-sm font-orbitron text-red-400 mb-3 flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" /> EQUIPOS INCONSISTENTES ({data.teams.length})
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-red-900/30 text-gray-400 text-xs">
+                      <th className="text-left py-2 pr-4">ID</th>
+                      <th className="text-left py-2 pr-4">Nombre</th>
+                      <th className="text-left py-2 pr-4">game (legacy)</th>
+                      <th className="text-left py-2 pr-4">gameSlug actual</th>
+                      <th className="text-left py-2">gameSlug esperado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.teams.map((t: any) => (
+                      <tr key={t.id} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td className="py-2 pr-4 text-gray-400">{t.id}</td>
+                        <td className="py-2 pr-4 text-white">{t.name}</td>
+                        <td className="py-2 pr-4 text-yellow-400">{t.game ?? "—"}</td>
+                        <td className="py-2 pr-4 text-red-400">{t.gameSlug ?? <span className="text-gray-500">NULL</span>}</td>
+                        <td className="py-2 text-green-400">{t.expectedSlug ?? <span className="text-gray-500">sin juego registrado</span>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* All clean */}
+          {data.tournaments.length === 0 && data.teams.length === 0 && (
+            <div className="text-center py-8 text-gray-500">
+              <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-500/40" />
+              <p className="text-sm">No hay registros inconsistentes. La base de datos está limpia.</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Empty state before first run */}
+      {!data && !isFetching && (
+        <div className="text-center py-12 text-gray-500">
+          <Database className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">Haz clic en "Ejecutar Auditoría" para analizar la consistencia de gameSlug.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab() {
   const { data: stats } = trpc.admin.stats.useQuery();
@@ -1250,6 +1409,7 @@ export default function AdminPanel() {
             { value: "cosmetics", label: "COSMÉTICOS", icon: Star },
             { value: "verifications", label: "VERIFICACIONES", icon: BadgeCheck },
             { value: "banners", label: "BANNERS", icon: Layout },
+            { value: "audit", label: "AUDITORÍA", icon: Database },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -1272,6 +1432,7 @@ export default function AdminPanel() {
           <TabsContent value="cosmetics"><CosmeticsAdminTab /></TabsContent>
           <TabsContent value="verifications"><VerificationsTab /></TabsContent>
           <TabsContent value="banners"><BannersTab /></TabsContent>
+          <TabsContent value="audit"><AuditTab /></TabsContent>
         </div>
       </Tabs>
     </div>
