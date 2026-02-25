@@ -1443,12 +1443,12 @@ export const appRouter = router({
         mimeType: z.enum(["image/jpeg", "image/png", "image/webp", "image/avif", "image/bmp", "image/tiff"]),
       }))
       .mutation(async ({ ctx, input }) => {
-        // 1. Validar que el usuario pertenece a un equipo con rol PLAYER y con inscripción aprobada
+        // 1. Validar que el usuario pertenece a al menos un equipo activo
         const canUpload = await hasApprovedTeamMembership(ctx.user.id);
         if (!canUpload) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Solo puedes subir una foto de roster si perteneces a un equipo con inscripción aprobada en un torneo.",
+            message: "Debes pertenecer a un equipo para generar tu ficha competitiva.",
           });
         }
         // 2. Obtener datos del usuario y su equipo
@@ -1492,7 +1492,7 @@ export const appRouter = router({
         if (!canUpload) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "Solo puedes subir una foto de roster si perteneces a un equipo con inscripción aprobada en un torneo.",
+            message: "Debes pertenecer a un equipo para generar tu ficha competitiva.",
           });
         }
         const ext = input.mimeType.split("/")[1];

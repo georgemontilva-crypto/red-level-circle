@@ -214,7 +214,7 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
             <Shield className="w-5 h-5 text-zinc-500 flex-shrink-0" />
             <div>
               <p className="text-sm font-mono text-zinc-400">Función bloqueada</p>
-              <p className="text-xs text-zinc-600 mt-0.5">Necesitas pertenecer a un equipo con inscripción aprobada en un torneo para generar tu ficha competitiva.</p>
+              <p className="text-xs text-zinc-600 mt-0.5">Debes pertenecer a un equipo para generar tu ficha competitiva. Pide a un capitán que te añada a su equipo.</p>
             </div>
           </div>
         ) : (
