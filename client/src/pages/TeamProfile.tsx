@@ -1,33 +1,222 @@
 import { trpc } from "@/lib/trpc";
-import { Users, Trophy, Swords, Star, Shield, ChevronLeft, Crown, UserPlus, CheckCircle, Gamepad2, Globe, Calendar, Target, TrendingUp, Award, Twitter, MessageSquare } from "lucide-react";
+import { useState } from "react";
 import { Link, useParams } from "wouter";
+import {
+  ChevronLeft, Shield, Trophy, Swords, Star, Users,
+  ExternalLink, Twitter, MessageSquare, Tv2,
+  CheckCircle, Crown, TrendingUp, Target, Calendar,
+  Globe, Award, Hash,
+} from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { UserAvatar } from "@/components/UserAvatar";
 
-const ROLE_LABELS: Record<string, string> = {
-  captain: "Capitán",
-  player: "Jugador",
-  substitute: "Suplente",
-  coach: "Coach",
+const GAME_COLORS: Record<string, { from: string; to: string; glow: string; accent: string; mid: string }> = {
+  "league-of-legends": { from: "#0a1628", to: "#0d2444", glow: "rgba(0,120,255,0.4)",  accent: "#4a9eff", mid: "#1a3a6a" },
+  "valorant":          { from: "#1a0a0a", to: "#2d0f0f", glow: "rgba(255,70,85,0.4)",   accent: "#ff4655", mid: "#4a1a1a" },
+  "counter-strike":    { from: "#0a1a0a", to: "#0d2a0d", glow: "rgba(255,165,0,0.4)",   accent: "#f5a623", mid: "#2a1a0a" },
+  "dota-2":            { from: "#0a0a1a", to: "#0f0f2a", glow: "rgba(180,0,255,0.4)",   accent: "#b400ff", mid: "#1a0a2a" },
+  "fortnite":          { from: "#0a1a1a", to: "#0d2a2a", glow: "rgba(0,220,255,0.4)",   accent: "#00dcff", mid: "#0a2a2a" },
+  "apex-legends":      { from: "#1a0a0a", to: "#2a0d0d", glow: "rgba(255,60,0,0.4)",    accent: "#ff3c00", mid: "#3a1a0a" },
+  "overwatch":         { from: "#0a0f1a", to: "#0d1a2a", glow: "rgba(250,180,0,0.4)",   accent: "#fab400", mid: "#1a1a0a" },
+  "rocket-league":     { from: "#0a0a1a", to: "#0d0d2a", glow: "rgba(0,160,255,0.4)",   accent: "#00a0ff", mid: "#0a1a2a" },
+};
+const DEFAULT_COLOR = { from: "#0d0d0d", to: "#1a0505", glow: "rgba(220,38,38,0.3)", accent: "#dc2626", mid: "#2a0a0a" };
+function getGameColor(slug?: string | null): { from: string; to: string; glow: string; accent: string; mid: string } { return (slug ? GAME_COLORS[slug] : undefined) ?? DEFAULT_COLOR; }
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  Colombia: "🇨🇴", Venezuela: "🇻🇪", Argentina: "🇦🇷", México: "🇲🇽", Chile: "🇨🇱",
+  Perú: "🇵🇪", Ecuador: "🇪🇨", Bolivia: "🇧🇴", Uruguay: "🇺🇾", Paraguay: "🇵🇾",
+  España: "🇪🇸", Brasil: "🇧🇷",
 };
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  completed: { label: "Completado", color: "text-green-400" },
-  in_progress: { label: "En curso", color: "text-yellow-400" },
-  registration_open: { label: "Inscripciones abiertas", color: "text-blue-400" },
-  cancelled: { label: "Cancelado", color: "text-zinc-500" },
+const ROLE_LABELS: Record<string, { label: string; color: string }> = {
+  captain:    { label: "Capitán",  color: "#fbbf24" },
+  player:     { label: "Jugador",  color: "#a1a1aa" },
+  substitute: { label: "Suplente", color: "#6366f1" },
+  coach:      { label: "Coach",    color: "#22c55e" },
 };
 
-function StatCard({ icon, value, label, color = "text-red-400" }: {
-  icon: React.ReactNode; value: number | string; label: string; color?: string;
-}) {
+const TOURNAMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  completed:         { label: "Finalizado",    color: "#a1a1aa", bg: "rgba(161,161,170,0.08)" },
+  in_progress:       { label: "En curso",      color: "#facc15", bg: "rgba(250,204,21,0.08)"  },
+  registration_open: { label: "Inscripciones", color: "#60a5fa", bg: "rgba(96,165,250,0.08)"  },
+  cancelled:         { label: "Cancelado",     color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
+};
+
+function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value: string | number; label: string; accent: string }) {
   return (
-    <div className="flex flex-col items-center gap-1 p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/50">
-      <div className={`${color} mb-1`}>{icon}</div>
-      <span className={`text-2xl font-black font-display ${color}`}>{value}</span>
-      <span className="text-xs text-zinc-500 font-mono uppercase tracking-wider">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 p-4 rounded-2xl text-center"
+      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      <div style={{ color: accent }}>{icon}</div>
+      <span className="text-2xl font-black font-mono" style={{ color: accent }}>{value}</span>
+      <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">{label}</span>
     </div>
+  );
+}
+
+function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; accent: string }) {
+  const total = wins + losses;
+  const rate = total > 0 ? Math.round((wins / total) * 100) : null;
+  const color = rate === null ? "#52525b" : rate >= 60 ? "#4ade80" : rate >= 40 ? "#facc15" : "#f87171";
+  return (
+    <div className="flex flex-col gap-1.5 p-4 rounded-2xl"
+      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Win Rate</span>
+        <span className="text-lg font-black font-mono" style={{ color }}>{rate !== null ? `${rate}%` : "—"}</span>
+      </div>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.16 0.01 0)" }}>
+        {rate !== null && (
+          <div className="h-full rounded-full transition-all duration-700" style={{ width: `${rate}%`, background: color }} />
+        )}
+      </div>
+      <div className="flex justify-between text-xs font-mono mt-0.5">
+        <span style={{ color: "#4ade80" }}>{wins}V</span>
+        <span style={{ color: "#f87171" }}>{losses}D</span>
+      </div>
+    </div>
+  );
+}
+
+function PlayerCard({ member, accent, captainId }: { member: any; accent: string; captainId: number }) {
+  const roleInfo = ROLE_LABELS[member.role] ?? { label: member.role, color: "#a1a1aa" };
+  const isCapt = member.userId === captainId;
+  return (
+    <Link href={`/profile/${member.userId}`}>
+      <div
+        className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
+        style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+        onMouseEnter={(e) => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.borderColor = `${accent}44`;
+          el.style.boxShadow = "0 8px 24px rgba(0,0,0,0.5)";
+          el.style.transform = "translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          const el = e.currentTarget as HTMLDivElement;
+          el.style.borderColor = "oklch(0.16 0.01 0)";
+          el.style.boxShadow = "none";
+          el.style.transform = "none";
+        }}
+      >
+        <div className="h-0.5 w-full" style={{ background: isCapt ? `linear-gradient(90deg, ${accent}, transparent)` : "transparent" }} />
+        <div className="p-4">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="relative shrink-0">
+              <div className="w-14 h-14 rounded-xl overflow-hidden"
+                style={{ border: `2px solid ${isCapt ? accent : "oklch(0.20 0.01 0)"}` }}>
+                {member.avatar ? (
+                  <img src={member.avatar || undefined} alt={member.nickname ?? member.userName} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center" style={{ background: "oklch(0.14 0.005 0)" }}>
+                    <Users size={20} className="text-zinc-600" />
+                  </div>
+                )}
+              </div>
+              {isCapt && (
+                <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ background: "#fbbf24", border: "2px solid oklch(0.09 0.005 0)" }}>
+                  <Crown size={10} className="text-black" />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <p className="font-mono font-bold text-white text-sm truncate">{member.nickname ?? member.userName}</p>
+                <ExternalLink size={10} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+              </div>
+              <p className="text-xs text-zinc-500 font-mono truncate">{member.userName}</p>
+              {member.country && (
+                <p className="text-xs text-zinc-600 font-mono mt-0.5">{COUNTRY_FLAGS[member.country] ?? ""} {member.country}</p>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-semibold px-2 py-1 rounded-lg"
+              style={{ background: `${roleInfo.color}15`, border: `1px solid ${roleInfo.color}30`, color: roleInfo.color }}>
+              {roleInfo.label}
+            </span>
+            {member.mainGame && (
+              <span className="text-xs font-mono text-zinc-600 truncate max-w-[100px]">{member.mainGame}</span>
+            )}
+          </div>
+          {member.stats && (
+            <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.14 0.01 0)" }}>
+              <div className="flex items-center gap-1 text-xs font-mono">
+                <Trophy size={10} className="text-yellow-500" />
+                <span className="text-zinc-400">{member.stats.tournamentsWon}</span>
+                <span className="text-zinc-700">títulos</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs font-mono">
+                <Swords size={10} className="text-zinc-600" />
+                <span className="text-zinc-400">{member.stats.tournamentsPlayed}</span>
+                <span className="text-zinc-700">torneos</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; teamId: number }) {
+  const isWinner = reg.tournamentWinnerId === teamId && reg.tournamentStatus === "completed";
+  const isActive = reg.tournamentStatus === "in_progress";
+  const statusInfo = TOURNAMENT_STATUS[reg.tournamentStatus ?? ""] ?? { label: reg.tournamentStatus, color: "#a1a1aa", bg: "rgba(161,161,170,0.08)" };
+  return (
+    <Link href={`/tournaments/${reg.tournamentId}`}>
+      <div
+        className="flex items-center gap-3 p-3.5 rounded-xl cursor-pointer transition-all duration-200 group mb-2"
+        style={{
+          background: isWinner ? "rgba(250,204,21,0.05)" : isActive ? "rgba(250,204,21,0.04)" : "oklch(0.09 0.005 0)",
+          border: `1px solid ${isWinner ? "rgba(250,204,21,0.2)" : isActive ? "rgba(250,204,21,0.15)" : "oklch(0.16 0.01 0)"}`,
+        }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = isWinner ? "rgba(250,204,21,0.4)" : "oklch(0.25 0.01 0)"; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = isWinner ? "rgba(250,204,21,0.2)" : isActive ? "rgba(250,204,21,0.15)" : "oklch(0.16 0.01 0)"; }}
+      >
+        <div className="shrink-0">
+          {isWinner ? (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(250,204,21,0.15)" }}>
+              <Trophy size={16} className="text-yellow-400" />
+            </div>
+          ) : isActive ? (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "rgba(250,204,21,0.1)" }}>
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "oklch(0.12 0.005 0)" }}>
+              <Swords size={14} className="text-zinc-600" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-mono font-semibold text-white truncate group-hover:text-zinc-200 transition-colors">
+            {reg.tournamentName}
+          </p>
+          <div className="flex items-center gap-2 mt-0.5">
+            {reg.tournamentGame && <span className="text-xs font-mono text-zinc-600">{reg.tournamentGame}</span>}
+            {reg.tournamentStartDate && (
+              <span className="text-xs font-mono text-zinc-700">· {new Date(reg.tournamentStartDate).getFullYear()}</span>
+            )}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isWinner ? (
+            <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg"
+              style={{ background: "rgba(250,204,21,0.15)", border: "1px solid rgba(250,204,21,0.3)", color: "#fbbf24" }}>
+              CAMPEÓN
+            </span>
+          ) : (
+            <span className="text-xs font-mono px-2.5 py-1 rounded-lg"
+              style={{ background: statusInfo.bg, color: statusInfo.color }}>
+              {statusInfo.label}
+            </span>
+          )}
+          <ExternalLink size={12} className="text-zinc-700 group-hover:text-zinc-500 transition-colors" />
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -35,10 +224,18 @@ export default function TeamProfile() {
   const { id } = useParams<{ id: string }>();
   const teamId = parseInt(id ?? "0");
   const { isAuthenticated, user } = useAuth();
+  const [activeTab, setActiveTab] = useState<"roster" | "history" | "achievements">("roster");
 
-  // Use publicProfile for rich data including stats, members with avatars, tournament history
   const { data: team, isLoading, refetch } = trpc.teams.publicProfile.useQuery(
     { id: teamId },
+    { enabled: !!teamId }
+  );
+  const { data: rankPos } = trpc.teams.rankPosition.useQuery(
+    { id: teamId },
+    { enabled: !!teamId }
+  );
+  const { data: tournamentHistory } = trpc.ranking.teamHistory.useQuery(
+    { teamId },
     { enabled: !!teamId }
   );
 
@@ -63,9 +260,9 @@ export default function TeamProfile() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500/30 mx-auto mb-4" />
-          <p className="font-orbitron text-xl mb-2">Equipo no encontrado</p>
+          <p className="font-mono text-xl mb-2 text-white">Equipo no encontrado</p>
           <Link href="/ranking">
-            <button className="mt-4 px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-mono text-sm transition-colors">
+            <button className="mt-4 px-6 py-2 rounded-lg font-mono text-sm transition-colors" style={{ background: "#dc2626" }}>
               ← Ver Ranking
             </button>
           </Link>
@@ -74,338 +271,286 @@ export default function TeamProfile() {
     );
   }
 
+  const c = getGameColor(team.gameSlug);
   const isCaptain = user?.id === team.captainId;
   const isMember = team.members?.some((m: any) => m.userId === user?.id);
-  const wonTournaments = team.registrations.filter((r: any) => r.tournamentWinnerId === teamId && r.tournamentStatus === "completed");
-  const lostTournaments = team.registrations.filter((r: any) => r.tournamentWinnerId !== teamId && r.tournamentStatus === "completed");
-  const activeTournaments = team.registrations.filter((r: any) => r.tournamentStatus === "in_progress" || r.tournamentStatus === "registration_open");
+  const wonTournaments = (tournamentHistory ?? []).filter((r: any) => r.isWinner);
+  const activeTournaments = (tournamentHistory ?? []).filter((r: any) => r.tournamentStatus === "in_progress" || r.tournamentStatus === "registration_open");
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      {/* Back button */}
-      <div className="absolute top-4 left-4 z-20">
-        <button onClick={() => window.history.back()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur border border-zinc-700/50 text-zinc-400 hover:text-white text-xs font-mono transition-colors">
+    <div className="min-h-screen text-white" style={{ background: "oklch(0.06 0.005 0)" }}>
+      <div className="relative w-full overflow-hidden" style={{ height: "280px" }}>
+        {team.banner ? (
+          <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
+            style={{ filter: "brightness(0.4) saturate(1.2)" }} />
+        ) : (
+          <div className="w-full h-full"
+            style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 50%, ${c.to} 100%)` }} />
+        )}
+        <div className="absolute inset-0"
+          style={{ background: `radial-gradient(ellipse at 30% 50%, ${c.glow} 0%, transparent 60%)` }} />
+        <div className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.06 0.005 0) 100%)" }} />
+        <div className="absolute inset-0 opacity-5"
+          style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
+        <button
+          onClick={() => window.history.back()}
+          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
+        >
           <ChevronLeft size={14} /> Volver
         </button>
-      </div>
-
-      {/* Captain actions */}
-      {isCaptain && (
-        <div className="absolute top-4 right-4 z-20">
-          <Link href="/dashboard/teams">
-            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur border border-red-600/40 text-red-400 hover:text-red-300 text-xs font-mono transition-colors">
-              <Shield size={14} /> Gestionar
-            </button>
-          </Link>
-        </div>
-      )}
-
-      {/* Banner */}
-      <div className="relative w-full h-52 sm:h-64 overflow-hidden">
-        {team.banner ? (
-          <img src={team.banner} alt="Banner" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-zinc-900 via-red-950/20 to-black" />
+        {isCaptain && (
+          <div className="absolute top-4 right-4 z-20">
+            <Link href="/dashboard/teams">
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
+                <Shield size={14} /> Gestionar
+              </button>
+            </Link>
+          </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
       </div>
 
-      {/* Logo + Name header */}
-      <div className="relative px-4 sm:px-6 -mt-12 pb-4">
-        <div className="flex items-end gap-4">
-          {/* Logo */}
-          <div className="relative shrink-0">
+      <div className="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden shrink-0 shadow-2xl"
+            style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
             {team.logo ? (
-              <img
-                src={team.logo}
-                alt={team.name}
-                className="w-24 h-24 rounded-2xl object-cover border-4 border-black shadow-2xl"
-                style={{ boxShadow: "0 0 30px oklch(0.55 0.22 25 / 0.4)" }}
-              />
+              <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
             ) : (
-              <div
-                className="w-24 h-24 rounded-2xl border-4 border-black flex items-center justify-center text-4xl font-black"
-                style={{ background: "oklch(0.55 0.22 25 / 0.2)", boxShadow: "0 0 30px oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}
-              >
-                {team.name.charAt(0).toUpperCase()}
+              <div className="w-full h-full flex items-center justify-center">
+                <Shield size={40} style={{ color: c.accent, opacity: 0.5 }} />
               </div>
             )}
           </div>
-
-          {/* Name & badges */}
-          <div className="pb-2 flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="font-orbitron font-black text-2xl sm:text-3xl text-white">{team.name}</h1>
+          <div className="flex-1 min-w-0 pb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h1 className="font-mono font-black text-3xl sm:text-4xl text-white tracking-tight">{team.name}</h1>
               {team.tag && (
-                <span className="px-2 py-0.5 rounded text-sm font-mono bg-red-950/50 text-red-400 border border-red-800/40">
+                <span className="text-sm font-mono font-bold px-2 py-0.5 rounded-lg"
+                  style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>
                   [{team.tag}]
                 </span>
               )}
-              {team.isVerified && <CheckCircle size={20} className="text-blue-400 shrink-0" />}
             </div>
-            <div className="flex items-center gap-3 mt-1 flex-wrap">
-              {team.game && (
-                <div className="flex items-center gap-1">
-                  <Gamepad2 size={13} className="text-zinc-500" />
-                  <span className="text-sm text-zinc-400">{team.game}</span>
-                </div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              {team.isVerified && (
+                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                  style={{ background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.3)", color: "#fbbf24" }}>
+                  <CheckCircle size={11} /> EQUIPO OFICIAL
+                </span>
+              )}
+              {wonTournaments.length > 0 && (
+                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                  style={{ background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", color: "#fbbf24" }}>
+                  <Crown size={11} /> {wonTournaments.length}x CAMPEÓN
+                </span>
+              )}
+              {activeTournaments.length > 0 && (
+                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                  style={{ background: "rgba(250,204,21,0.06)", border: "1px solid rgba(250,204,21,0.15)", color: "#facc15" }}>
+                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /> EN COMPETICIÓN
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-zinc-500">
+              {(team.game || team.gameSlug) && (
+                <span className="flex items-center gap-1.5" style={{ color: c.accent }}>
+                  <Target size={13} /> {team.game ?? team.gameSlug}
+                </span>
               )}
               {team.country && (
-                <div className="flex items-center gap-1">
-                  <Globe size={13} className="text-zinc-500" />
-                  <span className="text-sm text-zinc-400">{team.country}</span>
-                </div>
-              )}
-              <div className="flex items-center gap-1">
-                <Calendar size={13} className="text-zinc-500" />
-                <span className="text-sm text-zinc-500">
-                  Desde {new Date(team.createdAt).toLocaleDateString("es", { month: "long", year: "numeric" })}
+                <span className="flex items-center gap-1.5">
+                  <Globe size={13} /> {COUNTRY_FLAGS[team.country] ?? ""} {team.country}
                 </span>
+              )}
+              {rankPos && (
+                <span className="flex items-center gap-1.5">
+                  <Hash size={13} /> #{rankPos.globalPosition} Global
+                </span>
+              )}
+              {team.createdAt && (
+                <span className="flex items-center gap-1.5">
+                  <Calendar size={13} /> Desde {new Date(team.createdAt).getFullYear()}
+                </span>
+              )}
+            </div>
+            {(team.socialDiscord || team.socialTwitch || team.socialTwitter) && (
+              <div className="flex items-center gap-3 mt-3">
+                {team.socialDiscord && (
+                  <a href={team.socialDiscord} target="_blank" rel="noopener noreferrer"
+                    className="text-zinc-600 hover:text-indigo-400 transition-colors">
+                    <MessageSquare size={16} />
+                  </a>
+                )}
+                {team.socialTwitch && (
+                  <a href={team.socialTwitch} target="_blank" rel="noopener noreferrer"
+                    className="text-zinc-600 hover:text-purple-400 transition-colors">
+                    <Tv2 size={16} />
+                  </a>
+                )}
+                {team.socialTwitter && (
+                  <a href={team.socialTwitter} target="_blank" rel="noopener noreferrer"
+                    className="text-zinc-600 hover:text-sky-400 transition-colors">
+                    <Twitter size={16} />
+                  </a>
+                )}
               </div>
-            </div>
+            )}
           </div>
-
-          {/* Join button */}
           {isAuthenticated && !isMember && !isCaptain && (
-            <div className="pb-2 shrink-0">
-              <button
-                onClick={() => user && joinTeam.mutate({ teamId, userId: user.id })}
-                disabled={joinTeam.isPending}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl font-mono text-sm transition-all"
-                style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
-              >
-                <UserPlus size={14} /> Unirse
-              </button>
-            </div>
+            <button
+              onClick={() => joinTeam.mutate({ teamId, userId: user!.id, role: "player" })}
+              disabled={joinTeam.isPending}
+              className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold transition-all duration-200"
+              style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 100%)`, border: `1px solid ${c.accent}55`, color: c.accent }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 20px ${c.glow}`; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+            >
+              <Users size={15} /> {joinTeam.isPending ? "Enviando..." : "Unirse al equipo"}
+            </button>
           )}
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+          <StatCard icon={<TrendingUp size={20} />} value={rankPos ? `#${rankPos.globalPosition}` : "—"} label="Ranking Global" accent={c.accent} />
+          <StatCard icon={<Trophy size={20} />} value={team.stats?.tournamentsPlayed ?? 0} label="Torneos" accent={c.accent} />
+          <StatCard icon={<Crown size={20} />} value={wonTournaments.length} label="Títulos" accent="#fbbf24" />
+          <StatCard icon={<Star size={20} />} value={team.points ?? 0} label="Puntos RLC" accent={c.accent} />
+        </div>
+        <div className="mb-8">
+          <WinRateBar wins={team.wins ?? 0} losses={team.losses ?? 0} accent={c.accent} />
         </div>
 
         {team.description && (
-          <p className="mt-4 text-zinc-400 text-sm leading-relaxed max-w-2xl">{team.description}</p>
-        )}
-
-        {/* Social links */}
-        {(team.socialDiscord || team.socialTwitch || team.socialTwitter) && (
-          <div className="flex items-center gap-3 mt-3">
-            {team.socialDiscord && (
-              <a href={`https://discord.gg/${team.socialDiscord}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-indigo-400 transition-colors font-mono">
-                <MessageSquare size={13} /> Discord
-              </a>
-            )}
-            {team.socialTwitter && (
-              <a href={`https://twitter.com/${team.socialTwitter}`} target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-sky-400 transition-colors font-mono">
-                <Twitter size={13} /> Twitter
-              </a>
-            )}
+          <div className="mb-8 p-4 rounded-2xl"
+            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+            <p className="text-zinc-400 text-sm font-mono leading-relaxed">{team.description}</p>
           </div>
         )}
-      </div>
 
-      {/* Stats Overview */}
-      <div className="px-4 sm:px-6 pb-6">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard icon={<Trophy size={20} />} value={team.stats.tournamentsWon} label="Victorias" color="text-yellow-400" />
-          <StatCard icon={<Swords size={20} />} value={team.stats.tournamentsPlayed} label="Torneos" color="text-red-400" />
-          <StatCard icon={<Target size={20} />} value={team.stats.tournamentsLost} label="Derrotas" color="text-zinc-400" />
-          <StatCard icon={<Users size={20} />} value={team.members.length} label="Jugadores" color="text-blue-400" />
+        <div className="flex gap-1 mb-6 p-1 rounded-xl"
+          style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
+          {([
+            { key: "roster",       label: "Roster",  icon: <Users size={14} />,  count: team.members?.length },
+            { key: "history",      label: "Torneos", icon: <Trophy size={14} />, count: tournamentHistory?.length },
+            { key: "achievements", label: "Logros",  icon: <Award size={14} />,  count: team.achievements?.length },
+          ] as const).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200"
+              style={{
+                background: activeTab === tab.key ? c.accent + "18" : "transparent",
+                color: activeTab === tab.key ? c.accent : "#71717a",
+                border: activeTab === tab.key ? `1px solid ${c.accent}33` : "1px solid transparent",
+              }}
+            >
+              {tab.icon}
+              {tab.label}
+              {(tab.count ?? 0) > 0 && (
+                <span className="text-xs px-1.5 py-0.5 rounded-full"
+                  style={{ background: "oklch(0.14 0.005 0)", color: "#71717a" }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-4 sm:px-6 pb-12 space-y-8 max-w-4xl mx-auto">
-
-        {/* Achievements */}
-        {team.achievements.length > 0 && (
-          <section>
-            <h2 className="font-orbitron text-sm tracking-widest text-red-400 mb-4 flex items-center gap-2">
-              <Award size={16} /> LOGROS
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {team.achievements.map((ach: any) => (
-                <div key={ach.id} className="flex items-start gap-3 p-3 rounded-xl bg-zinc-900/60 border border-yellow-500/20">
-                  <Trophy size={18} className="text-yellow-400 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-sm font-bold text-white">{ach.title}</p>
-                    {ach.description && <p className="text-xs text-zinc-500 mt-0.5">{ach.description}</p>}
-                    <p className="text-xs text-zinc-600 mt-1">{new Date(ach.awardedAt).toLocaleDateString("es")}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+        {activeTab === "roster" && (
+          <section className="mb-12">
+            {!team.members || team.members.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
+                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+                <Users size={36} className="text-zinc-700 mb-3" />
+                <p className="font-mono text-zinc-500">Sin jugadores registrados aún</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {team.members.map((member: any) => (
+                  <PlayerCard key={member.id} member={member} accent={c.accent} captainId={team.captainId} />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
-        {/* Players */}
-        <section>
-          <h2 className="font-orbitron text-sm tracking-widest text-red-400 mb-4 flex items-center gap-2">
-            <Users size={16} /> ROSTER ({team.members.length})
-          </h2>
-          {team.members.length === 0 ? (
-            <div className="text-center py-10 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
-              <Users size={32} className="mx-auto mb-3 text-zinc-700" />
-              <p className="text-zinc-500 font-mono text-sm">Sin jugadores registrados</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {team.members.map((member: any) => (
-                <Link key={member.id} href={`/profile/${member.userId}`}>
-                  <div
-                    className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all duration-200"
-                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                    onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.4)"; }}
-                    onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.18 0.01 0)"; }}
-                  >
-                    {/* Avatar with role crown */}
-                    <div className="relative shrink-0">
-                      <UserAvatar
-                        avatar={member.avatar}
-                        name={member.nickname ?? member.userName}
-                        activeFrameImage={member.activeFrameImage}
-                        size={56}
-                        className="rounded-xl"
-                      />
-                      {member.role === "captain" && (
-                        <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "oklch(0.65 0.18 80)", border: "2px solid oklch(0.07 0.005 0)" }}>
-                          <Crown size={10} style={{ color: "oklch(0.07 0.005 0)" }} />
-                        </div>
-                      )}
-                    </div>
+        {activeTab === "history" && (
+          <section className="mb-12">
+            {!tournamentHistory || tournamentHistory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
+                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+                <Trophy size={36} className="text-zinc-700 mb-3" />
+                <p className="font-mono text-zinc-500">Sin torneos registrados aún</p>
+              </div>
+            ) : (
+              <div>
+                {activeTournaments.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-mono text-yellow-400 mb-2 tracking-widest uppercase">En curso</p>
+                    {activeTournaments.map((reg: any) => (
+                      <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
+                    ))}
+                  </div>
+                )}
+                {wonTournaments.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-mono text-yellow-400 mb-2 tracking-widest uppercase">Títulos</p>
+                    {wonTournaments.map((reg: any) => (
+                      <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
+                    ))}
+                  </div>
+                )}
+                {tournamentHistory.filter((r: any) => !r.isWinner && r.tournamentStatus !== "in_progress" && r.tournamentStatus !== "registration_open").length > 0 && (
+                  <div>
+                    <p className="text-xs font-mono text-zinc-600 mb-2 tracking-widest uppercase">Participaciones</p>
+                    {tournamentHistory
+                      .filter((r: any) => !r.isWinner && r.tournamentStatus !== "in_progress" && r.tournamentStatus !== "registration_open")
+                      .map((reg: any) => (
+                        <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
+        {activeTab === "achievements" && (
+          <section className="mb-12">
+            {!team.achievements || team.achievements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
+                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+                <Award size={36} className="text-zinc-700 mb-3" />
+                <p className="font-mono text-zinc-500">Sin logros registrados aún</p>
+                <p className="font-mono text-zinc-700 text-xs mt-1">Los logros se otorgan al ganar torneos</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {team.achievements.map((ach: any) => (
+                  <div key={ach.id} className="flex items-start gap-3 p-4 rounded-2xl"
+                    style={{ background: "oklch(0.09 0.005 0)", border: "1px solid rgba(250,204,21,0.15)" }}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ background: "rgba(250,204,21,0.1)" }}>
+                      <Trophy size={18} className="text-yellow-400" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      {/* Nickname */}
-                      <p className="font-bold text-sm text-white truncate">
-                        {member.nickname ? `@${member.nickname}` : (member.userName || "Jugador")}
+                      <p className="font-mono font-bold text-white text-sm">{ach.title}</p>
+                      {ach.description && <p className="text-xs text-zinc-500 mt-0.5">{ach.description}</p>}
+                      <p className="text-xs font-mono text-zinc-700 mt-1">
+                        {new Date(ach.awardedAt).toLocaleDateString("es-ES", { year: "numeric", month: "short" })}
                       </p>
-                      {/* Role badge + country */}
-                      <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span
-                          className="text-xs font-display tracking-wider px-1.5 py-0.5 rounded"
-                          style={member.role === "captain"
-                            ? { background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)" }
-                            : member.role === "coach"
-                            ? { background: "oklch(0.65 0.18 145 / 0.15)", color: "oklch(0.65 0.18 145)" }
-                            : member.role === "substitute"
-                            ? { background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.55 0.18 220)" }
-                            : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
-                          }
-                        >
-                          {ROLE_LABELS[member.role] ?? member.role}
-                        </span>
-                        {member.country && <span className="text-xs text-zinc-500">{member.country}</span>}
-                      </div>
-                      {/* Game info */}
-                      {(member.mainGame || member.gameId) && (
-                        <div className="flex items-center gap-2 mt-1.5">
-                          {member.mainGame && (
-                            <div className="flex items-center gap-1">
-                              <Gamepad2 size={10} className="text-zinc-600" />
-                              <span className="text-xs text-zinc-500">{member.mainGame}</span>
-                            </div>
-                          )}
-                          {member.gameId && (
-                            <span className="text-xs font-mono text-zinc-600">ID: {member.gameId}</span>
-                          )}
-                        </div>
-                      )}
-                      {/* Mini stats */}
-                      <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: "1px solid oklch(0.15 0.005 0)" }}>
-                        <div className="flex items-center gap-1">
-                          <TrendingUp size={10} className="text-green-500" />
-                          <span className="text-xs text-green-400">{member.stats?.tournamentsWon ?? 0}V</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Swords size={10} className="text-zinc-500" />
-                          <span className="text-xs text-zinc-500">{member.stats?.tournamentsPlayed ?? 0} torneos</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Star size={10} className="text-yellow-500/70" />
-                          <span className="text-xs text-zinc-500">{member.stats?.tournamentsLost ?? 0}D</span>
-                        </div>
-                      </div>
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* Tournament History */}
-        <section>
-          <h2 className="font-orbitron text-sm tracking-widest text-red-400 mb-4 flex items-center gap-2">
-            <Trophy size={16} /> HISTORIAL DE TORNEOS
-          </h2>
-
-          {team.registrations.length === 0 ? (
-            <div className="text-center py-12 rounded-xl bg-zinc-900/40 border border-zinc-800/50">
-              <Trophy size={32} className="mx-auto mb-3 text-zinc-700" />
-              <p className="text-zinc-500 font-mono text-sm">Sin torneos registrados aún</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {/* Active */}
-              {activeTournaments.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-mono text-yellow-400 mb-2 tracking-wider">EN CURSO</p>
-                  {activeTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-950/20 border border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer mb-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{reg.tournamentName}</p>
-                          <p className="text-xs text-zinc-500">{reg.tournamentGame}</p>
-                        </div>
-                        <span className={`text-xs font-mono ${STATUS_LABELS[reg.tournamentStatus ?? ""]?.color ?? "text-zinc-500"}`}>
-                          {STATUS_LABELS[reg.tournamentStatus ?? ""]?.label ?? reg.tournamentStatus}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {/* Won */}
-              {wonTournaments.length > 0 && (
-                <div className="mb-4">
-                  <p className="text-xs font-mono text-yellow-400 mb-2 tracking-wider">VICTORIAS</p>
-                  {wonTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-yellow-950/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-colors cursor-pointer mb-2">
-                        <Trophy size={16} className="text-yellow-400 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-bold text-white truncate">{reg.tournamentName}</p>
-                          <p className="text-xs text-zinc-500">{reg.tournamentGame}</p>
-                        </div>
-                        <span className="text-xs font-mono text-yellow-400">CAMPEÓN</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-              {/* Participated */}
-              {lostTournaments.length > 0 && (
-                <div>
-                  <p className="text-xs font-mono text-zinc-500 mb-2 tracking-wider">PARTICIPACIONES</p>
-                  {lostTournaments.map((reg: any) => (
-                    <Link key={reg.id} href={`/tournaments/${reg.tournamentId}`}>
-                      <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/50 hover:border-zinc-700 transition-colors cursor-pointer mb-2">
-                        <Swords size={16} className="text-zinc-600 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-zinc-300 truncate">{reg.tournamentName}</p>
-                          <p className="text-xs text-zinc-600">{reg.tournamentGame}</p>
-                        </div>
-                        <span className="text-xs font-mono text-zinc-600">PARTICIPÓ</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </section>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

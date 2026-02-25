@@ -2710,3 +2710,26 @@ export async function getTeamRankingByTournament(tournamentId: number) {
     };
   }).sort((a, b) => b.points - a.points || b.wins - a.wins);
 }
+
+// ─── Team Rank Position ────────────────────────────────────────────────────────
+export async function getTeamRankPosition(teamId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  // Obtener todos los equipos ordenados por puntos para calcular la posición
+  const allTeams = await db
+    .select({ id: teams.id, points: teams.points, gameSlug: teams.gameSlug })
+    .from(teams)
+    .orderBy(desc(teams.points));
+  const globalPos = allTeams.findIndex((t) => t.id === teamId);
+  const team = allTeams.find((t) => t.id === teamId);
+  if (!team) return null;
+  // Posición en su juego
+  const gameTeams = allTeams.filter((t) => t.gameSlug === team.gameSlug);
+  const gamePos = gameTeams.findIndex((t) => t.id === teamId);
+  return {
+    globalPosition: globalPos + 1,
+    globalTotal: allTeams.length,
+    gamePosition: gamePos + 1,
+    gameTotal: gameTeams.length,
+  };
+}

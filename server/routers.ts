@@ -86,6 +86,7 @@ import {
   getUserEquippedCosmetics,
   adminListUsers,
   getTeamPublicProfile,
+  getTeamRankPosition,
   updateTeamImages,
   getAdminStats,
   adminListTeams,
@@ -514,6 +515,11 @@ export const appRouter = router({
         const profile = await getTeamPublicProfile(input.id);
         if (!profile) throw new TRPCError({ code: "NOT_FOUND", message: "Equipo no encontrado" });
         return profile;
+      }),
+    rankPosition: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamRankPosition(input.id);
       }),
 
     uploadImage: protectedProcedure
