@@ -253,6 +253,24 @@ export default function UserProfile() {
                 {profile.mainGame}
               </span>
             )}
+            {(profile as { gameRole?: string | null }).gameRole && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
+                🎮 {(profile as { gameRole?: string | null }).gameRole}
+              </span>
+            )}
+            {(profile as { elo?: string | null }).elo && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                style={{ background: "oklch(0.65 0.18 80 / 0.12)", border: "1px solid oklch(0.65 0.18 80 / 0.25)", color: "oklch(0.75 0.18 80)" }}>
+                ⚡ {(profile as { elo?: string | null }).elo}
+              </span>
+            )}
+            {(profile as { competitiveRegion?: string | null }).competitiveRegion && (
+              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                style={{ background: "oklch(0.45 0.15 220 / 0.12)", border: "1px solid oklch(0.45 0.15 220 / 0.25)", color: "oklch(0.70 0.15 220)" }}>
+                🌐 {(profile as { competitiveRegion?: string | null }).competitiveRegion}
+              </span>
+            )}
             {profile.country && (
               <span className="flex items-center gap-1">🌍 {profile.country}</span>
             )}

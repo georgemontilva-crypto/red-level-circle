@@ -136,10 +136,28 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
               style={{ background: `${roleInfo.color}15`, border: `1px solid ${roleInfo.color}30`, color: roleInfo.color }}>
               {roleInfo.label}
             </span>
-            {member.mainGame && (
+            {member.gameRole ? (
+              <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
+                style={{ background: `${accent}10`, border: `1px solid ${accent}25`, color: accent }}>
+                {member.gameRole}
+              </span>
+            ) : member.mainGame ? (
               <span className="text-xs font-mono text-zinc-600 truncate max-w-[100px]">{member.mainGame}</span>
-            )}
+            ) : null}
           </div>
+          {(member.elo || member.competitiveRegion) && (
+            <div className="flex items-center gap-2 mt-2">
+              {member.elo && (
+                <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
+                  style={{ background: "oklch(0.65 0.18 80 / 0.10)", border: "1px solid oklch(0.65 0.18 80 / 0.20)", color: "oklch(0.70 0.18 80)" }}>
+                  ⚡ {member.elo}
+                </span>
+              )}
+              {member.competitiveRegion && (
+                <span className="text-xs font-mono text-zinc-600">{member.competitiveRegion}</span>
+              )}
+            </div>
+          )}
           {member.stats && (
             <div className="flex items-center gap-3 mt-3 pt-3" style={{ borderTop: "1px solid oklch(0.14 0.01 0)" }}>
               <div className="flex items-center gap-1 text-xs font-mono">

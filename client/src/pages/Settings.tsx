@@ -9,6 +9,20 @@ import {
   BadgeCheck, Clock, XCircle
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { getRolesForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
+
+const GAME_SLUG_MAP: Record<string, string> = {
+  "League of Legends": "league-of-legends",
+  "Valorant": "valorant",
+  "CS2": "counter-strike",
+  "Dota 2": "dota-2",
+  "Fortnite": "fortnite",
+  "Apex Legends": "apex-legends",
+  "Overwatch 2": "overwatch",
+  "Rocket League": "rocket-league",
+  "Honor of Kings": "honor-of-kings",
+  "Mobile Legends": "mobile-legends",
+};
 
 const GAMES = [
   "League of Legends", "Valorant", "CS2", "Dota 2", "Fortnite",
@@ -261,6 +275,9 @@ export default function Settings() {
     nickname: "",
     bio: "",
     mainGame: "",
+    gameRole: "",
+    elo: "",
+    competitiveRegion: "",
     country: "",
     profileType: "player" as "player" | "team_captain" | "event_creator",
     socialDiscord: "",
@@ -275,7 +292,8 @@ export default function Settings() {
   // Initialize form from user data
   if (me && !initialized) {
     const u = me as {
-      nickname?: string; bio?: string; mainGame?: string; country?: string;
+      nickname?: string; bio?: string; mainGame?: string; gameRole?: string;
+      elo?: string; competitiveRegion?: string; country?: string;
       profileType?: string; socialDiscord?: string; socialTwitch?: string;
       socialTwitter?: string; avatar?: string; bannerUrl?: string;
     };
@@ -283,6 +301,9 @@ export default function Settings() {
       nickname: u.nickname ?? "",
       bio: u.bio ?? "",
       mainGame: u.mainGame ?? "",
+      gameRole: u.gameRole ?? "",
+      elo: u.elo ?? "",
+      competitiveRegion: u.competitiveRegion ?? "",
       country: u.country ?? "",
       profileType: (u.profileType as "player" | "team_captain" | "event_creator") ?? "player",
       socialDiscord: u.socialDiscord ?? "",
@@ -328,6 +349,9 @@ export default function Settings() {
     if (form.nickname) payload.nickname = form.nickname;
     if (form.bio) payload.bio = form.bio;
     if (form.mainGame) payload.mainGame = form.mainGame;
+    if (form.gameRole) payload.gameRole = form.gameRole;
+    if (form.elo) payload.elo = form.elo;
+    if (form.competitiveRegion) payload.competitiveRegion = form.competitiveRegion;
     if (form.country) payload.country = form.country;
     if (form.socialDiscord) payload.socialDiscord = form.socialDiscord;
     if (form.socialTwitch) payload.socialTwitch = form.socialTwitch;
@@ -417,7 +441,7 @@ export default function Settings() {
                 <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
                 <select
                   value={form.mainGame}
-                  onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value }))}
+                  onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "" }))}
                   className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                 >
                   <option value="">Seleccionar juego</option>
@@ -436,6 +460,52 @@ export default function Settings() {
                   <option value="">Seleccionar país</option>
                   {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
+              </div>
+            </div>
+            {/* Competitive profile fields */}
+            <div className="pt-2 border-t border-zinc-800/60">
+              <h3 className="font-orbitron text-xs tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+                <Gamepad2 className="w-3.5 h-3.5" /> PERFIL COMPETITIVO
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ROL PRINCIPAL</label>
+                  <select
+                    value={form.gameRole}
+                    onChange={(e) => setForm((f) => ({ ...f, gameRole: e.target.value }))}
+                    disabled={!form.mainGame}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors disabled:opacity-40"
+                  >
+                    <option value="">{form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}</option>
+                    {getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => (
+                      <option key={r.value} value={r.value}>{r.icon} {r.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ELO / RANGO</label>
+                  <input
+                    type="text"
+                    value={form.elo}
+                    onChange={(e) => setForm((f) => ({ ...f, elo: e.target.value }))}
+                    placeholder="Ej: Diamond II, Radiant..."
+                    maxLength={64}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
+                  <select
+                    value={form.competitiveRegion}
+                    onChange={(e) => setForm((f) => ({ ...f, competitiveRegion: e.target.value }))}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                  >
+                    <option value="">Seleccionar región</option>
+                    {COMPETITIVE_REGIONS.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           </div>
