@@ -619,7 +619,7 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
 export async function getGames() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(games).where(eq(games.isActive, true)).orderBy(games.name);
+  return db.select().from(games).where(eq(games.isActive, true)).orderBy(games.sortOrder, games.name);
 }
 
 export async function getGameBySlug(slug: string) {
@@ -667,6 +667,19 @@ export async function countAssociatedByGameSlug(slug: string): Promise<number> {
   return (tCount?.count ?? 0) + (eCount?.count ?? 0);
 }
 
+/**
+ * Actualiza el sortOrder de múltiples juegos en una sola transacción.
+ * Recibe un array de { slug, sortOrder } y aplica cada actualización.
+ */
+export async function updateGamesSortOrder(items: { slug: string; sortOrder: number }[]) {
+  const db = await getDb();
+  if (!db || items.length === 0) return;
+  await Promise.all(
+    items.map((item) =>
+      db.update(games).set({ sortOrder: item.sortOrder }).where(eq(games.slug, item.slug))
+    )
+  );
+}
 export async function upsertGame(data: InsertGame) {
   const db = await getDb();
   if (!db) return;

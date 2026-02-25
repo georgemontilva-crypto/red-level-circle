@@ -55,6 +55,7 @@ import {
   upsertGame,
   deleteGame,
   auditGameSlugConsistency,
+  updateGamesSortOrder,
   getGameBySlug,
   countAssociatedByGameSlug,
   createPromotion,
@@ -821,6 +822,17 @@ export const appRouter = router({
     auditConsistency: adminProcedure.query(async () => {
       return auditGameSlugConsistency();
     }),
+    reorder: adminProcedure
+      .input(z.object({
+        items: z.array(z.object({
+          slug: z.string(),
+          sortOrder: z.number().int(),
+        })).min(1),
+      }))
+      .mutation(async ({ input }) => {
+        await updateGamesSortOrder(input.items);
+        return { success: true };
+      }),
   }),
 
   // ─── Promotions ────────────────────────────────────────────────────────────

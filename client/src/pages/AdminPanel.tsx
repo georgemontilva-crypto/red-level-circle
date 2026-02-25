@@ -11,7 +11,24 @@ import {
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
   BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  arrayMove,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { GripVertical } from "lucide-react";
 import { Link } from "wouter";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -1006,13 +1023,46 @@ function TeamsTab() {
 }
 
 // ─── Games Tab ───────────────────────────────────────────────────────────────
+// ─── Sortable game card ──────────────────────────────────────────────────────
+function SortableGameCard({ g, onEdit, onDelete }: { g: any; onEdit: (g: any) => void; onDelete: (g: any) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: g.slug });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative group rounded-xl overflow-hidden border border-gray-800 bg-gray-900/60">
+      {/* Drag handle */}
+      <div {...attributes} {...listeners} className="absolute top-2 left-2 z-10 cursor-grab active:cursor-grabbing bg-black/60 rounded p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <GripVertical className="w-3 h-3 text-gray-400" />
+      </div>
+      {g.bannerUrl ? (
+        <img src={g.bannerUrl} alt={g.name} className="w-full h-32 object-cover" />
+      ) : (
+        <div className="w-full h-32 bg-gray-800 flex items-center justify-center"><Gamepad2 className="w-8 h-8 text-gray-600" /></div>
+      )}
+      <div className="p-3">
+        <p className="text-white font-rajdhani font-semibold text-sm truncate">{g.name}</p>
+        {g.genre && <p className="text-gray-500 text-xs">{g.genre}</p>}
+        <p className="text-gray-700 text-xs mt-0.5">Orden: {g.sortOrder ?? 0}</p>
+      </div>
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button onClick={() => onEdit(g)} className="bg-black/80 hover:bg-gray-800 rounded p-1"><Edit3 className="w-3 h-3 text-gray-300" /></button>
+        <button onClick={() => onDelete(g)} className="bg-black/80 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+      </div>
+    </div>
+  );
+}
+
 function GamesTab() {
   const { data: games, refetch } = trpc.games.list.useQuery();
+  const [localGames, setLocalGames] = useState<any[]>([]);
   const [form, setForm] = useState({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"banner" | "logo" | null>(null);
   const uploadImage = trpc.profile.uploadImage.useMutation();
-
   const upsert = trpc.games.upsert.useMutation({
     onSuccess: () => { toast.success("Juego guardado"); refetch(); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); setEditing(null); },
     onError: e => toast.error(e.message),
@@ -1021,7 +1071,26 @@ function GamesTab() {
     onSuccess: () => { toast.success("Juego eliminado"); refetch(); },
     onError: e => toast.error(e.message),
   });
-
+  const reorder = trpc.games.reorder.useMutation({
+    onSuccess: () => { toast.success("Orden guardado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+  useEffect(() => {
+    if (games) setLocalGames(games);
+  }, [games]);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = localGames.findIndex((g: any) => g.slug === active.id);
+    const newIndex = localGames.findIndex((g: any) => g.slug === over.id);
+    const reordered = arrayMove(localGames, oldIndex, newIndex);
+    setLocalGames(reordered);
+    reorder.mutate({ items: reordered.map((g: any, i: number) => ({ slug: g.slug, sortOrder: i })) });
+  };
   const handleUpload = async (field: "banner" | "logo", file: File) => {
     if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
     setUploading(field);
@@ -1037,11 +1106,9 @@ function GamesTab() {
       reader.readAsDataURL(file);
     } catch { toast.error("Error al subir imagen"); setUploading(null); }
   };
-
   const startEdit = (g: any) => { setEditing(g.slug); setForm({ name: g.name, slug: g.slug, banner: g.bannerUrl ?? "", logo: g.logo ?? "", genre: g.genre ?? "", description: g.description ?? "" }); };
   const cancelEdit = () => { setEditing(null); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); };
   const autoSlug = (name: string) => name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-
   return (
     <div className="space-y-6">
       <SectionHeader icon={Gamepad2} title="GESTIÓN DE JUEGOS" subtitle="Agrega y administra los juegos disponibles en la plataforma" />
@@ -1114,28 +1181,30 @@ function GamesTab() {
         </div>
       </div>
 
-      {/* Games list */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {!games || games.length === 0 ? (
-          <p className="text-gray-500 text-sm col-span-4 text-center py-8 font-rajdhani">Sin juegos registrados</p>
-        ) : games.map((g: any) => (
-          <div key={g.slug} className="relative group rounded-xl overflow-hidden border border-gray-800 bg-gray-900/60">
-            {g.bannerUrl ? (
-              <img src={g.bannerUrl} alt={g.name} className="w-full h-32 object-cover" />
-            ) : (
-              <div className="w-full h-32 bg-gray-800 flex items-center justify-center"><Gamepad2 className="w-8 h-8 text-gray-600" /></div>
-            )}
-            <div className="p-3">
-              <p className="text-white font-rajdhani font-semibold text-sm truncate">{g.name}</p>
-              {g.genre && <p className="text-gray-500 text-xs">{g.genre}</p>}
-            </div>
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEdit(g)} className="bg-black/80 hover:bg-gray-800 rounded p-1"><Edit3 className="w-3 h-3 text-gray-300" /></button>
-              <button onClick={() => { if (confirm(`¿Eliminar ${g.name}?`)) del.mutate({ slug: g.slug }); }} className="bg-black/80 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
-            </div>
-          </div>
-        ))}
+      {/* Games list with drag-and-drop */}
+      <div className="flex items-center gap-2 mb-2">
+        <GripVertical className="w-4 h-4 text-gray-500" />
+        <p className="text-gray-500 text-xs font-rajdhani">Arrastra las tarjetas para reordenar. El orden se guarda automáticamente.</p>
+        {reorder.isPending && <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" />}
       </div>
+      {!localGames || localGames.length === 0 ? (
+        <p className="text-gray-500 text-sm text-center py-8 font-rajdhani">Sin juegos registrados</p>
+      ) : (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={localGames.map((g: any) => g.slug)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+              {localGames.map((g: any) => (
+                <SortableGameCard
+                  key={g.slug}
+                  g={g}
+                  onEdit={startEdit}
+                  onDelete={(g) => { if (confirm(`¿Eliminar ${g.name}?`)) del.mutate({ slug: g.slug }); }}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }
