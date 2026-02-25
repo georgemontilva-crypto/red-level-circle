@@ -337,6 +337,8 @@ function GameChip({ game, active, onClick }: { game: any; active: boolean; onCli
         color: active ? c.accent : "oklch(0.55 0.01 0)",
         boxShadow: active ? `0 0 14px ${c.glow}` : "none",
         transform: active ? "translateY(-1px)" : "none",
+        position: "relative",
+        zIndex: active ? 2 : 1,
       }}
     >
       {(game.logo || game.banner) && (
@@ -728,7 +730,7 @@ export default function Ranking() {
           <div className="flex-1 min-w-0">
             {/* Filtro por juego */}
             {games && games.length > 0 && (
-              <div className="flex items-center gap-2 mb-5" style={{ paddingTop: "6px", paddingBottom: "6px" }}>
+              <div className="flex items-center gap-2 mb-5" style={{ paddingTop: "8px", paddingBottom: "8px", overflowY: "visible" }}>
                 <button
                   onClick={() => scrollChips("left")}
                   className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
@@ -740,8 +742,15 @@ export default function Ranking() {
                 </button>
                 <div
                   ref={chipsScrollRef}
-                  className="flex gap-2 overflow-x-auto flex-1"
-                  style={{ scrollBehavior: "smooth", scrollbarWidth: "none" }}
+                  className="flex gap-2 flex-1"
+                  style={{
+                    overflowX: "auto",
+                    overflowY: "visible",
+                    scrollBehavior: "smooth",
+                    scrollbarWidth: "none",
+                    paddingTop: "4px",
+                    paddingBottom: "4px",
+                  }}
                 >
                   <button
                     onClick={() => handleGameChange("")}
@@ -751,6 +760,8 @@ export default function Ranking() {
                       border: !selectedGame ? "1px solid rgba(220,38,38,0.5)" : "1px solid oklch(0.20 0.01 0)",
                       color: !selectedGame ? "#dc2626" : "oklch(0.55 0.01 0)",
                       boxShadow: !selectedGame ? "0 0 14px rgba(220,38,38,0.25)" : "none",
+                      position: "relative",
+                      zIndex: !selectedGame ? 2 : 1,
                     }}
                   >
                     <Swords size={12} /> Todos los juegos

@@ -40,6 +40,8 @@ function GameChip({ game, active, onClick }: { game: any; active: boolean; onCli
         color: active ? c.accent : "oklch(0.55 0.01 0)",
         boxShadow: active ? `0 0 16px ${c.glow}, 0 2px 8px rgba(0,0,0,0.5)` : "none",
         transform: active ? "translateY(-1px)" : "none",
+        position: "relative",
+        zIndex: active ? 2 : 1,
       }}
     >
       {(game.logo || game.banner) ? (
@@ -70,6 +72,8 @@ function AllGamesChip({ active, onClick }: { active: boolean; onClick: () => voi
         color: active ? "#ef4444" : "oklch(0.55 0.01 0)",
         boxShadow: active ? "0 0 16px rgba(220,38,38,0.3), 0 2px 8px rgba(0,0,0,0.5)" : "none",
         transform: active ? "translateY(-1px)" : "none",
+        position: "relative",
+        zIndex: active ? 2 : 1,
       }}
     >
       <Trophy size={14} />
@@ -203,11 +207,18 @@ export default function Tournaments() {
 
         {/* ── Fila 2: Chips de juegos ────────────────────────────────────────── */}
         {games && games.length > 0 && (
-          <div className="mb-5">
+          <div className="mb-5" style={{ overflowY: "visible" }}>
             <div
               ref={scrollRef}
-              className="flex gap-2 overflow-x-auto"
-              style={{ scrollbarWidth: "none", msOverflowStyle: "none", paddingTop: "6px", paddingBottom: "6px" }}
+              className="flex gap-2"
+              style={{
+                overflowX: "auto",
+                overflowY: "visible",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                paddingTop: "8px",
+                paddingBottom: "8px",
+              }}
             >
               <AllGamesChip active={selectedGame === ""} onClick={() => setSelectedGame("")} />
               {games.map((game) => (
