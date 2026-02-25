@@ -576,8 +576,32 @@ export const appRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: `El equipo necesita al menos ${t.minPlayersPerTeam} jugador(es).` });
         }
          const id = await createRegistration(input);
-
-        // Auto-generate brackets if tournament is now full
+        // Notify tournament organizer (in-app) and platform owner
+        try {
+          const { createNotification } = await import("./notifications");
+          const { notifyOwner } = await import("./_core/notification");
+          const inscribedName = ctx.user.nickname ?? ctx.user.name ?? `Usuario #${ctx.user.id}`;
+          const tournamentUrl = `/tournaments/${input.tournamentId}`;
+          // In-app notification to the tournament creator
+          await createNotification({
+            userId: t.creatorId,
+            type: "general",
+            title: "Nueva solicitud de inscripción",
+            message: `${inscribedName} ha solicitado inscribir el equipo "${team.name}" en tu torneo "${t.name}".`,
+            link: tournamentUrl,
+            referenceId: input.tournamentId,
+            referenceType: "tournament",
+          });
+          // Platform owner alert via Manus notification service
+          await notifyOwner({
+            title: `Nueva inscripción: ${t.name}`,
+            content: `${inscribedName} (equipo: ${team.name}) se ha inscrito en el torneo "${t.name}". Ver: ${tournamentUrl}`,
+          });
+        } catch (e) {
+          // Non-critical: log but don't fail the registration
+          console.error("[Registration] Failed to send notifications:", e);
+        }
+        // Auto-generate brackets if tournament is now fulll
         try {
           const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
           if (t.maxTeams && approvedRegs.length >= t.maxTeams) {
