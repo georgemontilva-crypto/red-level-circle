@@ -89,6 +89,24 @@
   display: none;
 }
 
+/* Cards del carrusel de juegos: 2 visibles en móvil, 4 en desktop */
+.games-card {
+  flex: 0 0 calc((100% - 1 * 1rem) / 2);
+  min-width: calc((100% - 1 * 1rem) / 2);
+}
+@media (min-width: 640px) {
+  .games-card {
+    flex: 0 0 calc((100% - 2 * 1rem) / 3);
+    min-width: calc((100% - 2 * 1rem) / 3);
+  }
+}
+@media (min-width: 1024px) {
+  .games-card {
+    flex: 0 0 calc((100% - 3 * 1rem) / 4);
+    min-width: calc((100% - 3 * 1rem) / 4);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

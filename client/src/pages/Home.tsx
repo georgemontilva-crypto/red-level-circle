@@ -206,16 +206,14 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
           <Link
             key={g.id}
             href={`/tournaments?game=${g.slug}`}
-            style={{
-              flex: "0 0 160px",
-              scrollSnapAlign: "start",
-            }}
+            className="games-card"
+            style={{ scrollSnapAlign: "start" }}
           >
             <div
               className="group relative rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
               style={{
-                width: "160px",
-                height: "213px", /* aspect 3/4 */
+                width: "100%",
+                aspectRatio: "3 / 4",
                 border: "1px solid oklch(0.18 0.01 0)",
                 boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
               }}
