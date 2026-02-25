@@ -172,6 +172,15 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
 // ─── Games List (solo MOBAs / team vs team) ───────────────────────────────────
 function GamesSection({ allTournaments }: { allTournaments: any[] }) {
   const { data: gamesList } = trpc.games.list.useQuery();
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = el.firstElementChild ? (el.firstElementChild as HTMLElement).offsetWidth + 16 : 200;
+    el.scrollBy({ left: dir === "right" ? cardWidth * 2 : -cardWidth * 2, behavior: "smooth" });
+  };
+
   if (!gamesList || gamesList.length === 0) return null;
   const countByGame = allTournaments.reduce((acc: Record<string, number>, t: any) => {
     if (t.game) acc[t.game] = (acc[t.game] ?? 0) + 1;
@@ -183,11 +192,30 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
         <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
           <Gamepad2 size={18} className="text-red-500" /> Juegos
         </h2>
-        <Link href="/tournaments" className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
-          Ver torneos <ArrowRight size={14} />
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => scroll("left")}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+            style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            aria-label="Anterior"
+          >
+            <ChevronLeft size={14} className="text-zinc-400" />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+            style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            aria-label="Siguiente"
+          >
+            <ChevronRight size={14} className="text-zinc-400" />
+          </button>
+          <Link href="/tournaments" className="flex items-center gap-1.5 text-xs font-mono text-red-400 hover:text-red-300 transition-colors ml-1">
+            Ver torneos <ArrowRight size={14} />
+          </Link>
+        </div>
       </div>
       <div
+        ref={scrollRef}
         className="games-scroll flex flex-row gap-4 pb-3"
         style={{
           overflowX: "auto",
