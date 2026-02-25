@@ -13,6 +13,7 @@ import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getRolesForGame, getRanksForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
 import { RoleSelector } from "@/components/RoleSelector";
 import { RankSelector } from "@/components/RankSelector";
+import { GameDropdown, DropdownOption } from "@/components/GameDropdown";
 
 const GAME_SLUG_MAP: Record<string, string> = {
   "League of Legends": "league-of-legends",
@@ -783,7 +784,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
   const viewRanks = getRanksForGame(viewGameSlug);
   const viewRankData = viewRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
 
-  const inputClass = "w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600";
+  const inputClass = "w-full bg-zinc-950/80 border border-red-700/50 rounded-full px-4 py-2.5 text-white text-sm font-mono tracking-wide focus:outline-none focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)] transition-all duration-200 placeholder-white/30";
   const labelClass = "block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest";
 
   return (
@@ -908,14 +909,14 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className={labelClass}>JUEGO PRINCIPAL</label>
-                    <select
+                    <GameDropdown
+                      options={GAMES.map((g): DropdownOption => ({ value: g, label: g }))}
                       value={form.mainGame}
-                      onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "", elo: "" }))}
-                      className={inputClass}
-                    >
-                      <option value="">Seleccionar juego</option>
-                      {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-                    </select>
+                      onChange={(v) => setForm((f) => ({ ...f, mainGame: v, gameRole: "", elo: "" }))}
+                      placeholder="Seleccionar juego"
+                      ariaLabel="Seleccionar juego principal"
+                      minPanelWidth="220px"
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>ROL PRINCIPAL</label>
@@ -951,16 +952,18 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                   </div>
                   <div>
                     <label className={labelClass}>REGIÓN COMPETITIVA</label>
-                    <select
+                    <GameDropdown
+                      options={COMPETITIVE_REGIONS.map((r): DropdownOption => ({
+                        value: r.value,
+                        label: r.value,
+                        hint: r.label.replace(`${r.value} — `, ""),
+                      }))}
                       value={form.competitiveRegion}
-                      onChange={(e) => setForm((f) => ({ ...f, competitiveRegion: e.target.value }))}
-                      className={inputClass}
-                    >
-                      <option value="">Seleccionar región</option>
-                      {COMPETITIVE_REGIONS.map((r) => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
-                      ))}
-                    </select>
+                      onChange={(v) => setForm((f) => ({ ...f, competitiveRegion: v }))}
+                      placeholder="Seleccionar región"
+                      ariaLabel="Seleccionar región competitiva"
+                      minPanelWidth="220px"
+                    />
                   </div>
                   <div>
                     <label className={labelClass}>ID EN EL JUEGO</label>
@@ -976,15 +979,12 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                   </div>
                   <div>
                     <label className={labelClass}>PUNTAJE COMPETITIVO</label>
-                    <input
-                      type="number"
-                      value={form.competitiveScore || ""}
-                      onChange={(e) => setForm((f) => ({ ...f, competitiveScore: parseInt(e.target.value) || 0 }))}
-                      placeholder="0"
-                      min={0}
-                      max={99999}
-                      className={inputClass}
-                    />
+                    <div
+                      className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/40 border border-white/8 text-sm font-mono tracking-wide text-white/40 cursor-not-allowed select-none"
+                    >
+                      <Trophy className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
+                      <span>{form.competitiveScore > 0 ? `${form.competitiveScore.toLocaleString()} pts` : "Auto-calculado"}</span>
+                    </div>
                     <p className="text-[10px] text-zinc-600 font-mono mt-1">Puntos RLC acumulados en torneos</p>
                   </div>
                 </div>

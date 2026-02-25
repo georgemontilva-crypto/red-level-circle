@@ -577,3 +577,10 @@
 - [x] Actualizar badge de rol en barra de meta-info del perfil con icono SVG
 - [x] Actualizar badge de rango en barra de meta-info con color del rango
 - [x] 65 tests pasando, 0 errores TypeScript
+
+## Unificación Visual Dropdowns Perfil Competitivo V19
+- [x] Crear componente genérico GameDropdown con estilo pill rojo, panel flotante animado
+- [x] Refactorizar RoleSelector y RankSelector para usar GameDropdown como base
+- [x] Reemplazar select nativo de Juego principal con GameDropdown
+- [x] Reemplazar select nativo de Región competitiva con GameDropdown
+- [x] Todos los 4 dropdowns con altura, padding y tipografía consistentes
