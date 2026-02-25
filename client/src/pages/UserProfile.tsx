@@ -31,9 +31,9 @@ const GAMES = [
 ];
 
 function ProfileTypeIcon({ type }: { type: string | null }) {
-  if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-yellow-400" />;
-  if (type === "event_creator") return <Swords className="w-3.5 h-3.5 text-red-400" />;
-  return <Shield className="w-3.5 h-3.5 text-blue-400" />;
+  if (type === "team_captain") return <Crown className="w-3.5 h-3.5 text-white" />;
+  if (type === "event_creator") return <Swords className="w-3.5 h-3.5 text-white" />;
+  return <Shield className="w-3.5 h-3.5 text-white" />;
 }
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
@@ -110,7 +110,7 @@ export default function UserProfile() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+        <Loader2 className="w-8 h-8 text-white animate-spin" />
       </div>
     );
   }
@@ -264,7 +264,7 @@ export default function UserProfile() {
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-zinc-500">
             {profile.mainGame && (
               <span className="flex items-center gap-1">
-                <Gamepad2 className="w-3.5 h-3.5 text-red-500" />
+                <Gamepad2 className="w-3.5 h-3.5 text-white" />
                 {profile.mainGame}
               </span>
             )}
@@ -440,80 +440,13 @@ export default function UserProfile() {
                 </div>
               )}
 
-              {/* Ficha de jugador competitivo */}
-              {((profile as any).rosterImageUrl || (profile as any).rosterPhoto || (profile as any).gameRole || (profile as any).elo || (profile as any).competitiveRegion) && (
-                <div
-                  className="rounded-2xl overflow-hidden"
-                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
-                >
-                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
-                    <Swords className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-                    <span className="text-xs font-mono tracking-wider text-zinc-400 uppercase">Ficha Competitiva</span>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-4 p-4">
-                    {/* Roster card generada (600x900) con fallback a foto anterior */}
-                    {((profile as any).rosterImageUrl || (profile as any).rosterPhoto) && (
-                      <div
-                        className="shrink-0 rounded-xl overflow-hidden"
-                        style={{
-                          width: "120px",
-                          aspectRatio: "2/3",
-                          border: "2px solid oklch(0.55 0.22 25 / 0.4)",
-                          boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
-                        }}
-                      >
-                        <img
-                          src={(profile as any).rosterImageUrl ?? (profile as any).rosterPhoto}
-                          alt={`${profile.nickname ?? profile.name} roster`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    {/* Datos competitivos */}
-                    <div className="flex-1 space-y-3">
-                      {(profile as any).gameRole && (
-                        <div>
-                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">Rol</p>
-                          <span
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                            style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.75 0.15 25)" }}
-                          >
-                            🎮 {(profile as any).gameRole}
-                          </span>
-                        </div>
-                      )}
-                      {(profile as any).elo && (
-                        <div>
-                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">ELO / Rango</p>
-                          <span
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                            style={{ background: "oklch(0.65 0.18 80 / 0.15)", border: "1px solid oklch(0.65 0.18 80 / 0.3)", color: "oklch(0.75 0.18 80)" }}
-                          >
-                            ⚡ {(profile as any).elo}
-                          </span>
-                        </div>
-                      )}
-                      {(profile as any).competitiveRegion && (
-                        <div>
-                          <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1">Región</p>
-                          <span
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                            style={{ background: "oklch(0.45 0.15 220 / 0.15)", border: "1px solid oklch(0.45 0.15 220 / 0.3)", color: "oklch(0.70 0.15 220)" }}
-                          >
-                            🌐 {(profile as any).competitiveRegion}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+
               {/* No activity placeholder */}
               <div
                 className="rounded-xl p-6 text-center"
                 style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
-                <Trophy className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+                <Trophy className="w-8 h-8 text-white/30 mx-auto mb-2" />
                 <p className="text-zinc-500 text-sm font-mono">Historial de torneos próximamente</p>
               </div>
             </div>
@@ -679,7 +612,7 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
         className="rounded-xl p-8 text-center"
         style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
       >
-        <Users className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
+        <Users className="w-8 h-8 text-white/30 mx-auto mb-2" />
         <p className="text-zinc-500 font-mono text-sm">{emptyText}</p>
       </div>
     );
@@ -989,7 +922,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
                 <h3 className="font-orbitron text-xs tracking-widest text-zinc-500 flex items-center gap-2">
-                  <Star className="w-3.5 h-3.5" /> RANGO Y ESTADÍSTICAS
+                  <Star className="w-3.5 h-3.5 text-white" /> RANGO Y ESTADÍSTICAS
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
