@@ -346,7 +346,7 @@ export default function UserProfile() {
       <div className="mt-4 max-w-5xl mx-auto px-4 sm:px-6">
         {/* Tab bar */}
         <div className="flex border-b overflow-x-auto" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
-          {(["overview", "roster", "cosmetics", "followers", "following"] as const).map((tab) => (
+          {(["overview", "cosmetics", "followers", "following", "roster"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
