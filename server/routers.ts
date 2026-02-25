@@ -34,6 +34,7 @@ import {
   getTeamById,
   getTeamMembers,
   getTeamRanking,
+  getTeamTournamentHistory,
   getTeamsByUser,
   getTournamentById,
   getTournaments,
@@ -898,6 +899,11 @@ export const appRouter = router({
       }).optional())
       .query(async ({ input }) => {
         return getTeamRanking({ gameSlug: input?.gameSlug, limit: input?.limit ?? 50 });
+      }),
+    teamHistory: publicProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        return getTeamTournamentHistory(input.teamId);
       }),
   }),
 

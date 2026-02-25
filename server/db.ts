@@ -2341,3 +2341,69 @@ export async function reviewVerificationRequest(
     .where(eq(users.id, userId));
   return { success: true };
 }
+
+// ─── Team Tournament History (para Ranking detallado) ─────────────────────────
+export async function getTeamTournamentHistory(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Obtener todas las inscripciones aprobadas con info del torneo
+  const registrations = await db
+    .select({
+      tournamentId: tournamentRegistrations.tournamentId,
+      registeredAt: tournamentRegistrations.registeredAt,
+      tournamentName: tournaments.name,
+      tournamentStatus: tournaments.status,
+      tournamentWinnerId: tournaments.winnerId,
+      tournamentStartDate: tournaments.startDate,
+      tournamentBanner: tournaments.banner,
+      tournamentGame: tournaments.game,
+      tournamentGameSlug: tournaments.gameSlug,
+      tournamentMaxTeams: tournaments.maxTeams,
+      tournamentPrize: tournaments.prizeAmount,
+    })
+    .from(tournamentRegistrations)
+    .leftJoin(tournaments, eq(tournamentRegistrations.tournamentId, tournaments.id))
+    .where(and(
+      eq(tournamentRegistrations.teamId, teamId),
+      eq(tournamentRegistrations.status, "Aprobado")
+    ))
+    .orderBy(desc(tournamentRegistrations.registeredAt));
+
+  // Para cada torneo, calcular W/L del equipo en ese torneo
+  const history = await Promise.all(registrations.map(async (reg) => {
+    const matches = await db
+      .select({
+        winnerId: tournamentMatches.winnerId,
+        team1Id: tournamentMatches.team1Id,
+        team2Id: tournamentMatches.team2Id,
+        status: tournamentMatches.status,
+      })
+      .from(tournamentMatches)
+      .where(and(
+        eq(tournamentMatches.tournamentId, reg.tournamentId),
+        eq(tournamentMatches.status, "completed"),
+      ));
+
+    const teamMatches = matches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
+    const wins = teamMatches.filter(m => m.winnerId === teamId).length;
+    const losses = teamMatches.filter(m => m.winnerId !== null && m.winnerId !== teamId).length;
+    const isWinner = reg.tournamentWinnerId === teamId;
+
+    return {
+      tournamentId: reg.tournamentId,
+      tournamentName: reg.tournamentName ?? "Torneo",
+      tournamentStatus: reg.tournamentStatus ?? "unknown",
+      tournamentGame: reg.tournamentGame ?? null,
+      tournamentGameSlug: reg.tournamentGameSlug ?? null,
+      tournamentBanner: reg.tournamentBanner ?? null,
+      tournamentStartDate: reg.tournamentStartDate ?? null,
+      tournamentPrize: reg.tournamentPrize ?? null,
+      wins,
+      losses,
+      isWinner,
+      registeredAt: reg.registeredAt,
+    };
+  }));
+
+  return history;
+}
