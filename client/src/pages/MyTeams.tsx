@@ -346,9 +346,9 @@ export default function MyTeams() {
                 />
 
                 <div className="p-5">
-                  <div className="flex items-start gap-4">
+                  <div className="flex items-center gap-4">
                     {/* Logo */}
-                    <div className="relative -mt-10 shrink-0">
+                    <div className="relative shrink-0">
                       <TeamImageUpload
                         teamId={team.id}
                         type="logo"
@@ -357,7 +357,7 @@ export default function MyTeams() {
                       />
                     </div>
 
-                    <div className="flex-1 min-w-0 pt-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-display text-lg font-bold tracking-wide text-foreground">{team.name}</h3>
                         {(team as any).tag && (
