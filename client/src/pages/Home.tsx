@@ -187,11 +187,39 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
           Ver torneos <ArrowRight size={14} />
         </Link>
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div
+        className="games-scroll flex flex-row gap-4 pb-3"
+        style={{
+          overflowX: "auto",
+          overflowY: "hidden",
+          scrollBehavior: "smooth",
+          scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          /* hide scrollbar cross-browser */
+          msOverflowStyle: "none",
+          scrollbarWidth: "none",
+        }}
+        onMouseEnter={e => (e.currentTarget.style.cursor = "grab")}
+        onMouseLeave={e => (e.currentTarget.style.cursor = "default")}
+      >
         {gamesList.map(g => (
-          <Link key={g.id} href={`/tournaments?game=${g.slug}`}>
-            <div className="group relative rounded-2xl overflow-hidden cursor-pointer aspect-[3/4] bg-zinc-900"
-              style={{ border: "1px solid oklch(0.18 0.01 0)", boxShadow: "0 4px 20px rgba(0,0,0,0.5)" }}>
+          <Link
+            key={g.id}
+            href={`/tournaments?game=${g.slug}`}
+            style={{
+              flex: "0 0 160px",
+              scrollSnapAlign: "start",
+            }}
+          >
+            <div
+              className="group relative rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
+              style={{
+                width: "160px",
+                height: "213px", /* aspect 3/4 */
+                border: "1px solid oklch(0.18 0.01 0)",
+                boxShadow: "0 4px 20px rgba(0,0,0,0.5)",
+              }}
+            >
               {(g.banner || g.logo) ? (
                 <img src={g.banner ?? g.logo ?? ""} alt={g.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
               ) : (

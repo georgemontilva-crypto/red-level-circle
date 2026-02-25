@@ -84,6 +84,11 @@
 
 /* Dark mode = same as root since we use dark theme by default */
 
+/* ── Horizontal scroll carrusel: ocultar scrollbar ── */
+.games-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
