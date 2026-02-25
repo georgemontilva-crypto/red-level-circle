@@ -2384,9 +2384,10 @@ export async function getTeamTournamentHistory(teamId: number) {
         eq(tournamentMatches.status, "completed"),
       ));
 
-    const teamMatches = matches.filter(m => m.team1Id === teamId || m.team2Id === teamId);
-    const wins = teamMatches.filter(m => m.winnerId === teamId).length;
-    const losses = teamMatches.filter(m => m.winnerId !== null && m.winnerId !== teamId).length;
+    type MatchRow = typeof matches[0];
+    const teamMatches = matches.filter((m: MatchRow) => m.team1Id === teamId || m.team2Id === teamId);
+    const wins = teamMatches.filter((m: MatchRow) => m.winnerId === teamId).length;
+    const losses = teamMatches.filter((m: MatchRow) => m.winnerId !== null && m.winnerId !== teamId).length;
     const isWinner = reg.tournamentWinnerId === teamId;
 
     return {
@@ -2406,4 +2407,134 @@ export async function getTeamTournamentHistory(teamId: number) {
   }));
 
   return history;
+}
+
+// ─── GPR: Highlights del ranking ──────────────────────────────────────────────
+export async function getRankingHighlights(gameSlug?: string) {
+  const db = await getDb();
+  if (!db) return { champion: null, biggestRise: null, bestWinRate: null };
+  // Obtener todos los equipos ordenados por puntos
+  const allTeams = await db
+    .select({
+      id: teams.id,
+      name: teams.name,
+      tag: teams.tag,
+      logo: teams.logo,
+      points: teams.points,
+      wins: teams.wins,
+      losses: teams.losses,
+      tournamentsPlayed: teams.tournamentsPlayed,
+      tournamentsWon: teams.tournamentsWon,
+      gameSlug: teams.gameSlug,
+      isVerified: teams.isVerified,
+    })
+    .from(teams)
+    .where(gameSlug ? eq(teams.gameSlug, gameSlug) : undefined)
+    .orderBy(sql`${teams.points} DESC`);
+
+  if (allTeams.length === 0) return { champion: null, biggestRise: null, bestWinRate: null };
+
+  // Campeón: equipo con más puntos Y más torneos ganados
+  const champion = allTeams.find(t => (t.tournamentsWon ?? 0) > 0) ?? allTeams[0];
+
+  // Mejor win rate (mínimo 3 torneos jugados)
+  const withEnoughGames = allTeams.filter(t => (t.wins + t.losses) >= 3);
+  const bestWinRate = withEnoughGames.length > 0
+    ? withEnoughGames.reduce((best, t) => {
+        const wr = t.wins / (t.wins + t.losses);
+        const bestWr = best.wins / (best.wins + best.losses);
+        return wr > bestWr ? t : best;
+      })
+    : null;
+
+  // Mayor ascenso: equipo con más victorias recientes (aproximado por wins/tournamentsPlayed ratio)
+  const biggestRise = allTeams
+    .filter(t => (t.tournamentsPlayed ?? 0) >= 1 && (t.wins ?? 0) > 0)
+    .sort((a, b) => {
+      const aRatio = (a.wins ?? 0) / Math.max(1, a.tournamentsPlayed ?? 1);
+      const bRatio = (b.wins ?? 0) / Math.max(1, b.tournamentsPlayed ?? 1);
+      return bRatio - aRatio;
+    })[0] ?? null;
+
+  return { champion, biggestRise, bestWinRate };
+}
+
+// ─── GPR: Fuerza por juego ────────────────────────────────────────────────────
+export async function getGameStrength() {
+  const db = await getDb();
+  if (!db) return [];
+  const result = await db
+    .select({
+      gameSlug: teams.gameSlug,
+      avgPoints: sql<number>`AVG(${teams.points})`,
+      teamCount: sql<number>`COUNT(*)`,
+    })
+    .from(teams)
+    .where(sql`${teams.gameSlug} IS NOT NULL AND ${teams.points} > 0`)
+    .groupBy(teams.gameSlug)
+    .orderBy(sql`AVG(${teams.points}) DESC`);
+
+  return result.map(r => ({
+    gameSlug: r.gameSlug ?? "unknown",
+    avgPoints: Math.round(Number(r.avgPoints) || 0),
+    teamCount: Number(r.teamCount) || 0,
+  }));
+}
+
+// ─── GPR: Posición de un equipo en cada torneo ────────────────────────────────
+export async function getTeamTournamentPositions(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Obtener registraciones del equipo con info del torneo
+  const regs = await db
+    .select({
+      tournamentId: tournamentRegistrations.tournamentId,
+      tournamentName: tournaments.name,
+      tournamentStatus: tournaments.status,
+      tournamentBanner: tournaments.banner,
+      tournamentGameSlug: tournaments.gameSlug,
+      tournamentStartDate: tournaments.startDate,
+      winnerId: tournaments.winnerId,
+    })
+    .from(tournamentRegistrations)
+    .innerJoin(tournaments, eq(tournamentRegistrations.tournamentId, tournaments.id))
+    .where(and(
+      eq(tournamentRegistrations.teamId, teamId),
+    ))
+    .orderBy(sql`${tournaments.startDate} DESC`)
+    .limit(10);
+
+  return Promise.all(regs.map(async (reg) => {
+    const db2 = await getDb();
+    if (!db2) return null;
+    // Calcular W/L del equipo en este torneo
+    const matches = await db2
+      .select({
+        team1Id: tournamentMatches.team1Id,
+        team2Id: tournamentMatches.team2Id,
+        winnerId: tournamentMatches.winnerId,
+      })
+      .from(tournamentMatches)
+      .where(and(
+        eq(tournamentMatches.tournamentId, reg.tournamentId),
+        eq(tournamentMatches.status, "completed"),
+      ));
+    type MatchRow = typeof matches[0];
+    const teamMatches = matches.filter((m: MatchRow) => m.team1Id === teamId || m.team2Id === teamId);
+    const wins = teamMatches.filter((m: MatchRow) => m.winnerId === teamId).length;
+    const losses = teamMatches.filter((m: MatchRow) => m.winnerId !== null && m.winnerId !== teamId).length;
+    const isChampion = reg.winnerId === teamId;
+
+    return {
+      tournamentId: reg.tournamentId,
+      tournamentName: reg.tournamentName ?? "Torneo",
+      tournamentStatus: reg.tournamentStatus ?? "unknown",
+      tournamentBanner: reg.tournamentBanner ?? null,
+      tournamentGameSlug: reg.tournamentGameSlug ?? null,
+      tournamentStartDate: reg.tournamentStartDate ?? null,
+      wins,
+      losses,
+      isChampion,
+    };
+  }));
 }
