@@ -147,11 +147,6 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
           {icon}{title}
         </h2>
         <div className="flex items-center gap-2">
-          {href && (
-            <Link href={href} className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
-              {viewAllLabel} <ArrowRight size={13} />
-            </Link>
-          )}
           <div className="hidden sm:flex gap-1">
             <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
               <ChevronLeft size={14} />
@@ -160,6 +155,11 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
               <ChevronRight size={14} />
             </button>
           </div>
+          {href && (
+            <Link href={href} className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+              {viewAllLabel} <ArrowRight size={13} />
+            </Link>
+          )}
         </div>
       </div>
       <div ref={ref} className="flex gap-3 overflow-x-auto pb-2" style={{ scrollSnapType: "x mandatory", scrollbarWidth: "none", msOverflowStyle: "none" }}>
