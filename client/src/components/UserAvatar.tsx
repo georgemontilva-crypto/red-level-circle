@@ -1,38 +1,71 @@
 import React from "react";
 
+/**
+ * Semantic size tokens for avatars across the platform.
+ * All avatars are stored at 288x288 px; CSS controls the display size.
+ */
+export const AVATAR_SIZES = {
+  xs: 24,
+  sm: 32,
+  md: 40,
+  lg: 56,
+  xl: 80,
+  "2xl": 96,
+  "3xl": 128,
+} as const;
+
+export type AvatarSizeToken = keyof typeof AVATAR_SIZES;
+
 interface UserAvatarProps {
   avatar?: string | null;
   name?: string | null;
   activeFrameImage?: string | null;
-  size?: number; // px
+  /** Numeric pixel size OR a semantic token */
+  size?: number | AvatarSizeToken;
   className?: string;
 }
 
 /**
- * UserAvatar — Shows a user's avatar with an optional cosmetic frame overlay.
- * The frame PNG is rendered as an absolute overlay on top of the avatar image.
+ * UserAvatar — Single source of truth for all profile pictures.
+ * - Always circular (border-radius: 50%)
+ * - Source images are 288x288 px; CSS controls display size
+ * - Optional cosmetic frame overlay
  */
-export function UserAvatar({ avatar, name, activeFrameImage, size = 40, className = "" }: UserAvatarProps) {
+export function UserAvatar({
+  avatar,
+  name,
+  activeFrameImage,
+  size = "md",
+  className = "",
+}: UserAvatarProps) {
+  const px = typeof size === "number" ? size : AVATAR_SIZES[size];
+  const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+
   return (
     <div
       className={`relative shrink-0 ${className}`}
-      style={{ width: size, height: size }}
+      style={{ width: px, height: px }}
     >
-      {/* Base avatar */}
+      {/* Base avatar — always circular */}
       <div
-        className="w-full h-full rounded-full overflow-hidden bg-zinc-800"
-        style={{ width: size, height: size }}
+        className="w-full h-full overflow-hidden bg-zinc-800 flex items-center justify-center"
+        style={{ borderRadius: "50%", width: px, height: px }}
       >
         {avatar ? (
           <img
-            src={avatar}
+            src={avatar || undefined}
             alt={name ?? "avatar"}
             className="w-full h-full object-cover"
+            style={{ borderRadius: "50%" }}
+            draggable={false}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-zinc-400 font-bold text-sm">
-            {name ? name.charAt(0).toUpperCase() : "?"}
-          </div>
+          <span
+            className="font-bold text-zinc-400 select-none"
+            style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
+          >
+            {initials}
+          </span>
         )}
       </div>
 

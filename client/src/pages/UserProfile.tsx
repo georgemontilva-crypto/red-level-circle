@@ -190,21 +190,17 @@ export default function UserProfile() {
                 />
               )}
               <div
-                className="rounded-full overflow-hidden relative z-0"
+                className="relative z-0"
                 style={{
                   width: "88px",
                   height: "88px",
+                  borderRadius: "50%",
                   border: "4px solid oklch(0.10 0.005 0)",
                   boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6)",
+                  overflow: "hidden",
                 }}
               >
-                {profile.avatar ? (
-                  <img src={profile.avatar} alt={profile.name ?? "Avatar"} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-900 to-black">
-                    <User className="w-10 h-10 text-red-400" />
-                  </div>
-                )}
+                <UserAvatar avatar={profile.avatar} name={profile.name} size={88} />
               </div>
             </div>
           </div>

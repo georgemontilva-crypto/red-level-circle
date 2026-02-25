@@ -9,6 +9,7 @@ import {
   BadgeCheck, Clock, XCircle
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import { getRolesForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
 
 const GAME_SLUG_MAP: Record<string, string> = {
@@ -38,55 +39,35 @@ const COUNTRIES = [
 ];
 
 function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; onUpload: (url: string) => void }) {
-  const [preview, setPreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const uploadMutation = trpc.profile.uploadImage.useMutation();
-
-  const handleFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("Solo se permiten imágenes");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("La imagen no puede superar 5MB");
-      return;
-    }
-    setUploading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = (e.target?.result as string).split(",")[1];
-        const mimeType = file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp";
-        const { url } = await uploadMutation.mutateAsync({ base64, mimeType, type: "avatar" });
-        setPreview(url);
-        onUpload(url);
-        toast.success("Avatar actualizado");
-        setUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch {
-      toast.error("Error al subir la imagen");
-      setUploading(false);
-    }
-  };
-
+  const { uploading, preview, handleFile } = useAvatarUpload({ onSuccess: onUpload });
   const displayUrl = preview || currentUrl;
-
   return (
     <div className="flex flex-col items-center gap-3">
       <div
-        className="relative w-24 h-24 rounded-full cursor-pointer group"
+        className="relative w-24 h-24 cursor-pointer group"
+        style={{ borderRadius: "50%" }}
         onClick={() => inputRef.current?.click()}
       >
         {displayUrl ? (
-          <img src={displayUrl} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-2 border-red-600" />
+          <img
+            src={displayUrl}
+            alt="Avatar"
+            className="w-24 h-24 object-cover border-2 border-red-600"
+            style={{ borderRadius: "50%" }}
+          />
         ) : (
-          <div className="w-24 h-24 rounded-full bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center">
+          <div
+            className="w-24 h-24 bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center"
+            style={{ borderRadius: "50%" }}
+          >
             <User className="w-10 h-10 text-zinc-600" />
           </div>
         )}
-        <div className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div
+          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+          style={{ borderRadius: "50%" }}
+        >
           {uploading ? (
             <Loader2 className="w-6 h-6 text-white animate-spin" />
           ) : (
@@ -94,7 +75,7 @@ function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
           )}
         </div>
       </div>
-      <p className="text-xs text-zinc-500 font-mono">Haz clic para cambiar (máx. 5MB)</p>
+      <p className="text-xs text-zinc-500 font-mono">Haz clic para cambiar · Se recorta a 288×288 px</p>
       <input
         ref={inputRef}
         type="file"
@@ -105,7 +86,6 @@ function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
     </div>
   );
 }
-
 function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; onUpload: (url: string) => void }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);

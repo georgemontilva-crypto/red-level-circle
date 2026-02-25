@@ -1,3 +1,4 @@
+import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { Link, useParams } from "wouter";
@@ -103,15 +104,17 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
         <div className="p-4">
           <div className="flex items-center gap-3 mb-3">
             <div className="relative shrink-0">
-              <div className="w-14 h-14 rounded-xl overflow-hidden"
-                style={{ border: `2px solid ${isCapt ? accent : "oklch(0.20 0.01 0)"}` }}>
-                {member.avatar ? (
-                  <img src={member.avatar || undefined} alt={member.nickname ?? member.userName} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ background: "oklch(0.14 0.005 0)" }}>
-                    <Users size={20} className="text-zinc-600" />
-                  </div>
-                )}
+              <div
+                style={{
+                  border: `2px solid ${isCapt ? accent : "oklch(0.20 0.01 0)"}`,
+                  borderRadius: "50%",
+                  overflow: "hidden",
+                  width: 56,
+                  height: 56,
+                  flexShrink: 0,
+                }}
+              >
+                <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={56} />
               </div>
               {isCapt && (
                 <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"

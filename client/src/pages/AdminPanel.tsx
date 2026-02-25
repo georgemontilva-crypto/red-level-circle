@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { UserAvatar } from "@/components/UserAvatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -93,7 +94,7 @@ function UsersTab() {
         {users?.map(u => (
           <div key={u.id} className="bg-gray-900/60 border border-gray-800 rounded-xl p-4 flex items-center gap-4 flex-wrap">
             <div className="w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0">
-              {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : <Users className="w-5 h-5 text-gray-500" />}
+              <UserAvatar avatar={u.avatar} name={u.name} size={32} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-rajdhani font-semibold truncate">{u.nickname ?? u.name ?? "Sin nombre"}</p>
@@ -1401,7 +1402,7 @@ function OverviewTab() {
           {stats.recentUsers?.map((u: any) => (
             <div key={u.id} className="bg-gray-900/60 border border-gray-800 rounded-xl p-3 flex items-center gap-3">
               <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                {u.avatar ? <img src={u.avatar} alt="" className="w-full h-full rounded-full object-cover" /> : <Users className="w-4 h-4 text-gray-500" />}
+                <UserAvatar avatar={u.avatar} name={u.name} size={28} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-rajdhani font-semibold truncate">{u.nickname ?? u.name ?? "Sin nombre"}</p>
@@ -1527,7 +1528,7 @@ function CreatorsTab() {
     <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/50">
       <div className="flex items-start gap-4">
         {c.avatar ? (
-          <img src={c.avatar} alt="" className="w-12 h-12 rounded-full object-cover shrink-0" />
+          <UserAvatar avatar={c.avatar} name={c.name} size={48} />
         ) : (
           <div className="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
             <span className="text-lg font-black text-red-500">{(c.nickname ?? c.userName ?? "?").charAt(0).toUpperCase()}</span>
