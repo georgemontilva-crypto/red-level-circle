@@ -111,7 +111,7 @@ export function TournamentCard({
         {/* Thumbnail */}
         <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
           {t.banner ? (
-            <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
+            <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
           ) : (
             <Trophy size={16} className="text-red-500/40" />
           )}
@@ -153,7 +153,7 @@ export function TournamentCard({
         {/* Banner lateral */}
         <div className="w-28 h-24 shrink-0 bg-zinc-900 overflow-hidden relative">
           {t.banner ? (
-            <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
+            <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-950/30 to-zinc-900">
               <Trophy size={24} className="text-red-500/30" />
@@ -213,7 +213,7 @@ export function TournamentCard({
       {/* Banner */}
       <div className="relative h-36 bg-zinc-900 overflow-hidden">
         {t.banner ? (
-          <img src={t.banner} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
           <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, oklch(0.12 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}>
             <Trophy size={36} style={{ color: "oklch(0.55 0.22 25 / 0.3)" }} />

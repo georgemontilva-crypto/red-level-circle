@@ -42,14 +42,14 @@ function GameChip({ game, active, onClick }: { game: any; active: boolean; onCli
         transform: active ? "translateY(-1px)" : "none",
       }}
     >
-      {(game.logo || game.banner) && (
+      {(game.logo || game.banner) ? (
         <img
-          src={game.logo ?? game.banner}
+          src={(game.logo || game.banner) as string}
           alt={game.name}
           className="w-5 h-5 object-contain rounded"
           style={{ filter: active ? "none" : "grayscale(60%) opacity(0.6)" }}
         />
-      )}
+      ) : null}
       <span style={{ letterSpacing: "0.05em" }}>{game.name}</span>
       {active && (
         <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ background: c.accent }} />
@@ -96,7 +96,7 @@ function EmptyState({ selectedGame, selectedStatus, games, onClear }: {
         }}
       >
         {game?.logo ? (
-          <img src={game.logo} alt={game.name} className="w-12 h-12 object-contain opacity-60" />
+          <img src={game.logo || undefined} alt={game.name} className="w-12 h-12 object-contain opacity-60" />
         ) : (
           <Trophy size={40} style={{ color: c.accent, opacity: 0.5 }} />
         )}
