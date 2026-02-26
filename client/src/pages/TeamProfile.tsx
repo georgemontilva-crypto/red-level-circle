@@ -142,28 +142,25 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
               <Crown size={13} className="text-black" />
             </div>
           )}
-          {/* Role badge bottom-left */}
-          <div className="absolute bottom-2 left-2">
-            <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
-              style={{ background: `${roleInfo.color}22`, border: `1px solid ${roleInfo.color}44`, color: roleInfo.color, backdropFilter: "blur(4px)" }}>
-              {roleInfo.label}
-            </span>
-          </div>
-          {/* Game role icon — esquina superior derecha (si no es capitán) */}
-          {gameRoleData?.svgPath && !isCapt && (
-            <div
-              className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(0,0,0,0.65)", border: `1px solid ${accent}44`, backdropFilter: "blur(6px)" }}
-            >
-              <img
-                src={gameRoleData.svgPath}
-                alt={gameRoleData.label}
-                className="w-4 h-4 object-contain"
-                style={{ filter: "invert(1)" }}
-              />
+          {/* Role badge bottom-left — solo para no-capitán */}
+          {!isCapt && (
+            <div className="absolute bottom-2 left-2">
+              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
+                style={{ background: `${roleInfo.color}22`, border: `1px solid ${roleInfo.color}44`, color: roleInfo.color, backdropFilter: "blur(4px)" }}>
+                {roleInfo.label}
+              </span>
             </div>
           )}
-          {/* Game role badge bottom-right */}
+          {/* Avatar circular — esquina superior derecha (solo si no hay roster card) */}
+          {!(member.rosterImageUrl || member.rosterPhoto) && (
+            <div
+              className="absolute top-2 right-2 w-9 h-9 rounded-full overflow-hidden"
+              style={{ border: `2px solid ${isCapt ? "#fbbf24" : accent}`, boxShadow: isCapt ? "0 0 12px #fbbf2466" : `0 0 8px ${accent}44` }}
+            >
+              <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={36} />
+            </div>
+          )}
+          {/* Game role badge bottom-right — solo texto + icono SVG */}
           {gameRoleData && (
             <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-lg"
               style={{ background: `${accent}22`, border: `1px solid ${accent}44`, backdropFilter: "blur(4px)" }}>
