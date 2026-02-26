@@ -215,25 +215,30 @@ export default function TeamProfile() {
           style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.06 0.005 0) 100%)" }} />
         <div className="absolute inset-0 opacity-5"
           style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
-        <button
-          onClick={() => window.history.back()}
-          className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
-        >
-          <ChevronLeft size={14} /> Volver
-        </button>
-        {isCaptain && (
-          <div className="absolute top-4 right-4 z-20">
-            <Link href="/dashboard/teams">
-              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
-                <Shield size={14} /> Gestionar
-              </button>
-            </Link>
+        {/* Botones alineados al contenedor estándar */}
+        <div className="absolute inset-0 z-20 pointer-events-none">
+          <div className="max-w-6xl mx-auto px-4 h-full relative">
+            <button
+              onClick={() => window.history.back()}
+              className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
+            >
+              <ChevronLeft size={14} /> Volver
+            </button>
+            {isCaptain && (
+              <div className="absolute top-4 right-4 pointer-events-auto">
+                <Link href="/dashboard/teams">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
+                    <Shield size={14} /> Gestionar
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
