@@ -346,14 +346,6 @@ export default function TeamProfile() {
         <div className="mb-8">
           <WinRateBar wins={team.wins ?? 0} losses={team.losses ?? 0} accent={c.accent} />
         </div>
-
-        {team.description && (
-          <div className="mb-8 p-4 rounded-2xl"
-            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
-            <p className="text-zinc-400 text-sm font-mono leading-relaxed">{team.description}</p>
-          </div>
-        )}
-
         <div className="flex gap-1 mb-6 p-1 rounded-xl"
           style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
           {([
