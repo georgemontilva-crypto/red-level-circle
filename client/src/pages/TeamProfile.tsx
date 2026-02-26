@@ -201,7 +201,7 @@ export default function TeamProfile() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: "oklch(0.06 0.005 0)" }}>
-      <div className="relative w-full overflow-hidden" style={{ height: "280px" }}>
+      <div className="relative overflow-hidden" style={{ height: "280px" }}>
         {team.banner ? (
           <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
             style={{ filter: "brightness(0.4) saturate(1.2)" }} />
@@ -217,7 +217,7 @@ export default function TeamProfile() {
           style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
         {/* Botones alineados al contenedor estándar */}
         <div className="absolute inset-0 z-20 pointer-events-none">
-          <div className="max-w-6xl mx-auto px-4 h-full relative">
+          <div className="container h-full relative">
             <button
               onClick={() => window.history.back()}
               className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
@@ -241,7 +241,7 @@ export default function TeamProfile() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 -mt-20 relative z-10">
+      <div className="container -mt-20 relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
           <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
             style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
