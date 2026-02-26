@@ -81,7 +81,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   );
 }
 
-function PlayerCard({ member, teamLogo, teamName, captainId }: { member: any; teamLogo?: string | null; teamName?: string | null; captainId: number }) {
+function PlayerCard({ member, teamLogo, teamName, captainId, accentColor }: { member: any; teamLogo?: string | null; teamName?: string | null; captainId: number; accentColor?: string }) {
   const isCapt = member.userId === captainId;
   // Obtener el icono SVG del rol del juego
   const gameSlug = member.mainGame
@@ -107,6 +107,7 @@ function PlayerCard({ member, teamLogo, teamName, captainId }: { member: any; te
       teamLogo={teamLogo ?? null}
       teamName={teamName ?? null}
       isCaptain={isCapt}
+      accentColor={accentColor}
       scale={0.55}
     />
   );
@@ -424,7 +425,7 @@ export default function TeamProfile() {
             ) : (
               <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
                 {team.members.map((member: any) => (
-                  <PlayerCard key={member.id} member={member} teamLogo={team.logo} teamName={team.name} captainId={team.captainId} />
+                  <PlayerCard key={member.id} member={member} teamLogo={team.logo} teamName={team.name} captainId={team.captainId} accentColor={c.accent} />
                 ))}
               </div>
             )}
