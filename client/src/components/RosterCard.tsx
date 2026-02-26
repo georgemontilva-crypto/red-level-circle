@@ -1,78 +1,63 @@
 /**
- * RosterCard — Tarjeta de jugador esports premium.
+ * RosterCard — Layout horizontal esports premium.
  *
- * Props compatibles con la estructura del usuario:
- *   playerName, realName, role, region, game, photoUrl, team, stats
+ * Referencia visual:
+ *   - Foto a la izquierda (55% del ancho), ocupa toda la altura
+ *   - Panel derecho oscuro con info estructurada en filas
+ *   - Badge circular del rol en la esquina superior de la foto (overlap)
+ *   - Borde exterior con color de acento (dorado para capitán, color del rol para otros)
+ *   - Nick grande + nombre real + separador + región + juego + equipo + stats W/L KDA
  */
 
 import { Link } from "wouter";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
-type Role = "top" | "jungle" | "mid" | "adc" | "support";
-type Region = "NA" | "EU" | "KR" | "CN" | "BR" | "LAN" | "LAS" | string;
-
 export interface RosterCardProps {
-  /** Nickname del jugador */
   playerName: string;
-  /** Nombre real */
   realName?: string;
-  /** Rol del jugador */
-  role?: Role | string;
-  /** Región competitiva */
-  region?: Region;
-  /** Juego */
+  role?: string;
+  region?: string;
   game?: string;
-  /** URL de la foto del jugador */
   photoUrl?: string | null;
-  /** Nombre del equipo */
   team?: string | null;
-  /** Logo del equipo */
   teamLogo?: string | null;
-  /** Stats del jugador */
-  stats?: {
-    wins?: number;
-    losses?: number;
-    kda?: number;
-  };
-  /** ID del usuario para hacer la tarjeta clickeable */
+  stats?: { wins?: number; losses?: number; kda?: number };
   userId?: number;
-  /** Si el jugador es capitán */
   isCaptain?: boolean;
-  /** Color de acento (hex) */
   accentColor?: string;
-  /** Rango / ELO */
   rank?: string | null;
-  /** Color del rango */
   rankColor?: string;
-  /** Escala visual (1 = 320px ancho) */
+  /** Escala visual (1 = 380px ancho, 240px alto) */
   scale?: number;
 }
 
 // ─── Mapeo de roles ───────────────────────────────────────────────────────────
 
 const ROLE_META: Record<string, { label: string; icon: string; color: string }> = {
-  top:     { label: "TOP",     icon: "/role-top.svg",     color: "#f97316" },
-  jungle:  { label: "JGL",     icon: "/role-jungle.svg",  color: "#22c55e" },
-  mid:     { label: "MID",     icon: "/role-mid.svg",     color: "#3b82f6" },
-  adc:     { label: "ADC",     icon: "/role-adc.svg",     color: "#ef4444" },
-  support: { label: "SUP",     icon: "/role-support.svg", color: "#a855f7" },
-  // Valorant
+  top:        { label: "TOP",  icon: "/role-top.svg",     color: "#f97316" },
+  jungle:     { label: "JGL",  icon: "/role-jungle.svg",  color: "#22c55e" },
+  mid:        { label: "MID",  icon: "/role-mid.svg",     color: "#facc15" },
+  adc:        { label: "ADC",  icon: "/role-adc.svg",     color: "#ef4444" },
+  support:    { label: "SUP",  icon: "/role-support.svg", color: "#a855f7" },
   duelist:    { label: "DUE",  icon: "/role-adc.svg",     color: "#ef4444" },
   initiator:  { label: "INI",  icon: "/role-mid.svg",     color: "#3b82f6" },
   controller: { label: "CTR",  icon: "/role-jungle.svg",  color: "#22c55e" },
   sentinel:   { label: "SEN",  icon: "/role-support.svg", color: "#a855f7" },
   flex:       { label: "FLX",  icon: "/role-top.svg",     color: "#f97316" },
-  // CS
-  entry:   { label: "ENT",     icon: "/role-adc.svg",     color: "#ef4444" },
-  awper:   { label: "AWP",     icon: "/role-mid.svg",     color: "#3b82f6" },
-  lurker:  { label: "LRK",     icon: "/role-jungle.svg",  color: "#22c55e" },
-  igl:     { label: "IGL",     icon: "/role-top.svg",     color: "#f97316" },
+  entry:      { label: "ENT",  icon: "/role-adc.svg",     color: "#ef4444" },
+  awper:      { label: "AWP",  icon: "/role-mid.svg",     color: "#3b82f6" },
+  lurker:     { label: "LRK",  icon: "/role-jungle.svg",  color: "#22c55e" },
+  igl:        { label: "IGL",  icon: "/role-top.svg",     color: "#f97316" },
 };
 
 function getRoleMeta(role?: string) {
   if (!role) return null;
-  return ROLE_META[role.toLowerCase()] ?? { label: role.toUpperCase().slice(0, 3), icon: null, color: "#a1a1aa" };
+  return ROLE_META[role.toLowerCase()] ?? {
+    label: role.toUpperCase().slice(0, 3),
+    icon: null,
+    color: "#a1a1aa",
+  };
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -94,206 +79,187 @@ export default function RosterCard({
   rankColor = "#e8d48b",
   scale = 1,
 }: RosterCardProps) {
-  const W = Math.round(320 * scale);
-  const H = Math.round(440 * scale);
-  const R = Math.round(16 * scale);
+  const W  = Math.round(380 * scale);
+  const H  = Math.round(240 * scale);
+  const R  = Math.round(12 * scale);
+  const PHOTO_W = Math.round(W * 0.52); // foto ocupa ~52% del ancho
+  const INFO_W  = W - PHOTO_W;
 
-  const roleMeta = getRoleMeta(role);
-  const borderColor = isCaptain ? "#fbbf24" : (roleMeta?.color ?? accentColor);
+  const roleMeta   = getRoleMeta(role);
+  const badgeColor = isCaptain ? "#fbbf24" : (roleMeta?.color ?? accentColor);
 
   // Win rate
   const totalGames = (stats?.wins ?? 0) + (stats?.losses ?? 0);
-  const winRate = totalGames > 0 ? Math.round(((stats?.wins ?? 0) / totalGames) * 100) : null;
-  const winRateColor = winRate === null ? "#52525b" : winRate >= 60 ? "#4ade80" : winRate >= 45 ? "#facc15" : "#f87171";
+  const winRate    = totalGames > 0 ? Math.round(((stats?.wins ?? 0) / totalGames) * 100) : null;
+  const wrColor    = winRate === null ? "#52525b"
+    : winRate >= 60 ? "#4ade80"
+    : winRate >= 45 ? "#facc15"
+    : "#f87171";
+
+  // Tamaños tipográficos escalados
+  const fs = (base: number) => Math.round(base * scale);
 
   const card = (
     <div
-      className="relative overflow-hidden select-none group cursor-pointer"
+      className="relative overflow-visible select-none group cursor-pointer flex"
       style={{
         width: W,
         height: H,
         borderRadius: R,
+        border: `1.5px solid ${badgeColor}55`,
+        boxShadow: `0 6px 28px rgba(0,0,0,0.65), 0 0 0 1px ${badgeColor}18`,
         background: "#0d0d0f",
-        border: `1px solid ${borderColor}28`,
-        boxShadow: `0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px ${borderColor}14`,
         flexShrink: 0,
         transition: "transform 0.28s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.28s ease",
       }}
       onMouseEnter={(e) => {
         const el = e.currentTarget as HTMLDivElement;
-        el.style.transform = `translateY(${Math.round(-5 * scale)}px) scale(1.01)`;
-        el.style.boxShadow = `0 16px 48px rgba(0,0,0,0.75), 0 0 0 1px ${borderColor}55, 0 0 32px ${borderColor}18`;
+        el.style.transform = `translateY(${Math.round(-4 * scale)}px)`;
+        el.style.boxShadow = `0 18px 48px rgba(0,0,0,0.75), 0 0 0 1.5px ${badgeColor}88, 0 0 24px ${badgeColor}22`;
       }}
       onMouseLeave={(e) => {
         const el = e.currentTarget as HTMLDivElement;
-        el.style.transform = "translateY(0) scale(1)";
-        el.style.boxShadow = `0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px ${borderColor}14`;
+        el.style.transform = "translateY(0)";
+        el.style.boxShadow = `0 6px 28px rgba(0,0,0,0.65), 0 0 0 1px ${badgeColor}18`;
       }}
     >
-      {/* ── FOTO (zona superior ~60%) ── */}
+      {/* ══════════════════════════════════════════
+          COLUMNA IZQUIERDA — FOTO
+      ══════════════════════════════════════════ */}
       <div
-        className="absolute top-0 left-0 right-0 overflow-hidden"
-        style={{ height: Math.round(H * 0.60) }}
+        className="relative overflow-hidden shrink-0"
+        style={{
+          width: PHOTO_W,
+          height: H,
+          borderRadius: `${R}px 0 0 ${R}px`,
+        }}
       >
         {photoUrl ? (
           <img
             src={photoUrl}
             alt={playerName}
-            className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.05]"
+            className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.04]"
             draggable={false}
           />
         ) : (
           <div
             className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(160deg, ${borderColor}14 0%, #0d0d0f 100%)` }}
+            style={{ background: `linear-gradient(160deg, ${badgeColor}14 0%, #0d0d0f 100%)` }}
           >
             <span
-              className="font-grotesk font-black text-white/8 uppercase leading-none"
-              style={{ fontSize: Math.round(160 * scale) }}
+              className="font-grotesk font-black text-white/10 uppercase leading-none"
+              style={{ fontSize: fs(110) }}
             >
               {playerName.charAt(0)}
             </span>
           </div>
         )}
 
-        {/* Gradiente inferior de la foto */}
+        {/* Gradiente derecho: transición suave hacia el panel info */}
         <div
-          className="absolute inset-x-0 bottom-0"
+          className="absolute inset-y-0 right-0"
           style={{
-            height: Math.round(H * 0.30),
-            background: "linear-gradient(to top, #0d0d0f 0%, #0d0d0f88 40%, transparent 100%)",
+            width: Math.round(PHOTO_W * 0.35),
+            background: "linear-gradient(to right, transparent, #0d0d0f)",
           }}
         />
 
-        {/* Badge de rol — esquina superior izquierda */}
+        {/* ── Badge circular del rol (overlap en esquina superior derecha de la foto) ── */}
         {roleMeta && (
           <div
-            className="absolute flex items-center gap-1"
+            className="absolute flex flex-col items-center justify-center z-10"
             style={{
-              top: Math.round(10 * scale),
-              left: Math.round(10 * scale),
-              background: "rgba(0,0,0,0.72)",
-              border: `1px solid ${roleMeta.color}55`,
-              borderRadius: Math.round(20 * scale),
-              padding: `${Math.round(4 * scale)}px ${Math.round(9 * scale)}px`,
-              backdropFilter: "blur(8px)",
+              top: Math.round(-1 * scale),
+              right: Math.round(-18 * scale),
+              width: Math.round(56 * scale),
+              height: Math.round(56 * scale),
+              borderRadius: "50%",
+              background: "#0d0d0f",
+              border: `2px solid ${badgeColor}`,
+              boxShadow: `0 0 16px ${badgeColor}44`,
             }}
           >
-            {roleMeta.icon && (
+            {roleMeta.icon ? (
               <img
                 src={roleMeta.icon}
                 alt={roleMeta.label}
                 style={{
-                  width: Math.round(12 * scale),
-                  height: Math.round(12 * scale),
+                  width: Math.round(22 * scale),
+                  height: Math.round(22 * scale),
                   filter: "invert(1)",
-                  opacity: 0.85,
+                  opacity: 0.9,
                   objectFit: "contain",
+                  marginBottom: Math.round(2 * scale),
                 }}
               />
+            ) : (
+              <span
+                className="font-grotesk font-black"
+                style={{ fontSize: fs(11), color: badgeColor }}
+              >
+                {roleMeta.label}
+              </span>
             )}
             <span
-              className="font-grotesk font-bold uppercase tracking-widest"
-              style={{ fontSize: Math.round(9 * scale), color: roleMeta.color, letterSpacing: "0.12em" }}
+              className="font-grotesk font-bold uppercase leading-none"
+              style={{ fontSize: fs(8), color: badgeColor, letterSpacing: "0.08em" }}
             >
               {roleMeta.label}
             </span>
           </div>
         )}
 
-        {/* Badge capitán — esquina superior derecha */}
+        {/* Badge capitán */}
         {isCaptain && (
           <div
             className="absolute flex items-center gap-1"
             style={{
-              top: Math.round(10 * scale),
-              right: Math.round(10 * scale),
+              bottom: Math.round(8 * scale),
+              left: Math.round(8 * scale),
               background: "rgba(0,0,0,0.72)",
               border: "1px solid #fbbf2455",
               borderRadius: Math.round(20 * scale),
-              padding: `${Math.round(4 * scale)}px ${Math.round(9 * scale)}px`,
+              padding: `${fs(3)}px ${fs(7)}px`,
               backdropFilter: "blur(8px)",
             }}
           >
-            <svg viewBox="0 0 24 24" fill="#fbbf24" style={{ width: Math.round(10 * scale), height: Math.round(10 * scale) }}>
+            <svg viewBox="0 0 24 24" fill="#fbbf24" style={{ width: fs(9), height: fs(9) }}>
               <path d="M2 19l2-9 4 4 4-8 4 8 4-4 2 9H2z" />
             </svg>
             <span
               className="font-grotesk font-bold uppercase"
-              style={{ fontSize: Math.round(9 * scale), color: "#fbbf24", letterSpacing: "0.12em" }}
+              style={{ fontSize: fs(8), color: "#fbbf24", letterSpacing: "0.12em" }}
             >
               CAP
             </span>
           </div>
         )}
-
-        {/* Región — esquina inferior derecha de la foto */}
-        {region && (
-          <div
-            className="absolute"
-            style={{
-              bottom: Math.round(10 * scale),
-              right: Math.round(10 * scale),
-              background: "rgba(0,0,0,0.65)",
-              border: "1px solid rgba(255,255,255,0.10)",
-              borderRadius: Math.round(6 * scale),
-              padding: `${Math.round(2 * scale)}px ${Math.round(7 * scale)}px`,
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            <span
-              className="font-grotesk font-bold uppercase"
-              style={{ fontSize: Math.round(9 * scale), color: "rgba(255,255,255,0.45)", letterSpacing: "0.10em" }}
-            >
-              {region}
-            </span>
-          </div>
-        )}
       </div>
 
-      {/* ── ZONA INFO (parte inferior ~40%) ── */}
+      {/* ══════════════════════════════════════════
+          COLUMNA DERECHA — INFO
+      ══════════════════════════════════════════ */}
       <div
-        className="absolute left-0 right-0 bottom-0 flex flex-col"
+        className="flex flex-col justify-center"
         style={{
-          height: Math.round(H * 0.44),
-          padding: `${Math.round(14 * scale)}px ${Math.round(16 * scale)}px ${Math.round(14 * scale)}px`,
+          width: INFO_W,
+          padding: `${fs(16)}px ${fs(16)}px ${fs(16)}px ${fs(22)}px`,
+          gap: fs(4),
         }}
       >
-        {/* Línea de acento superior */}
-        <div
-          style={{
-            width: Math.round(32 * scale),
-            height: Math.round(2 * scale),
-            background: borderColor,
-            borderRadius: 2,
-            marginBottom: Math.round(8 * scale),
-            opacity: 0.85,
-          }}
-        />
-
-        {/* Nickname */}
+        {/* Nick */}
         <h2
           className="font-grotesk font-black text-white leading-none truncate"
-          style={{
-            fontSize: Math.round(24 * scale),
-            letterSpacing: "-0.02em",
-            marginBottom: Math.round(3 * scale),
-            textShadow: "0 2px 10px rgba(0,0,0,0.9)",
-          }}
+          style={{ fontSize: fs(20), letterSpacing: "-0.01em" }}
         >
-          {playerName}
+          {playerName.toUpperCase()}
         </h2>
 
         {/* Nombre real */}
         {realName && (
           <p
             className="font-grotesk truncate"
-            style={{
-              fontSize: Math.round(10 * scale),
-              color: "rgba(255,255,255,0.35)",
-              letterSpacing: "0.04em",
-              marginBottom: Math.round(10 * scale),
-            }}
+            style={{ fontSize: fs(10), color: "rgba(255,255,255,0.38)", letterSpacing: "0.02em" }}
           >
             {realName}
           </p>
@@ -302,112 +268,146 @@ export default function RosterCard({
         {/* Separador */}
         <div
           style={{
-            height: Math.round(1 * scale),
-            background: "rgba(255,255,255,0.06)",
-            marginBottom: Math.round(10 * scale),
+            width: fs(24),
+            height: fs(2),
+            background: badgeColor,
+            borderRadius: 2,
+            opacity: 0.85,
+            marginTop: fs(2),
+            marginBottom: fs(2),
           }}
         />
 
-        {/* Fila: Stats + Logo equipo */}
-        <div className="flex items-end justify-between">
-          <div className="flex flex-col gap-1">
-            {/* Rango o stats */}
-            {rank ? (
-              <span
-                className="font-grotesk font-bold leading-none"
-                style={{
-                  fontSize: Math.round(11 * scale),
-                  color: rankColor,
-                  textShadow: `0 0 10px ${rankColor}44`,
-                  letterSpacing: "0.04em",
-                }}
-              >
-                {rank}
-              </span>
-            ) : game ? (
-              <span
-                className="font-grotesk leading-none truncate"
-                style={{
-                  fontSize: Math.round(9 * scale),
-                  color: "rgba(255,255,255,0.28)",
-                  letterSpacing: "0.05em",
-                  maxWidth: Math.round(180 * scale),
-                }}
-              >
-                {game}
-              </span>
-            ) : null}
-
-            {/* Stats: W/L y KDA */}
-            {stats && (
-              <div className="flex items-center gap-2 flex-wrap">
-                {winRate !== null && (
-                  <span
-                    className="font-grotesk font-bold"
-                    style={{ fontSize: Math.round(10 * scale), color: winRateColor }}
-                  >
-                    {winRate}% WR
-                  </span>
-                )}
-                {stats.wins !== undefined && stats.losses !== undefined && (
-                  <span
-                    className="font-grotesk"
-                    style={{ fontSize: Math.round(9 * scale), color: "rgba(255,255,255,0.28)" }}
-                  >
-                    {stats.wins}V {stats.losses}D
-                  </span>
-                )}
-                {stats.kda !== undefined && (
-                  <span
-                    className="font-grotesk font-semibold"
-                    style={{ fontSize: Math.round(10 * scale), color: "rgba(255,255,255,0.55)" }}
-                  >
-                    {stats.kda.toFixed(1)} KDA
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Logo del equipo o nombre del equipo */}
-          {(teamLogo || team) && (
-            <div
-              className="overflow-hidden flex items-center justify-center shrink-0"
-              style={{
-                width: Math.round(34 * scale),
-                height: Math.round(34 * scale),
-                borderRadius: Math.round(8 * scale),
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.10)",
-              }}
+        {/* Región */}
+        {region && (
+          <div className="flex items-center gap-1.5">
+            <span
+              className="font-grotesk font-bold uppercase"
+              style={{ fontSize: fs(9), color: "rgba(255,255,255,0.35)", letterSpacing: "0.10em" }}
             >
-              {teamLogo ? (
+              REGION
+            </span>
+            <span
+              className="font-grotesk font-black"
+              style={{ fontSize: fs(11), color: "rgba(255,255,255,0.75)", letterSpacing: "0.06em" }}
+            >
+              {region}
+            </span>
+          </div>
+        )}
+
+        {/* Juego */}
+        {game && (
+          <div className="flex flex-col" style={{ gap: fs(1) }}>
+            <span
+              className="font-grotesk font-bold uppercase"
+              style={{ fontSize: fs(8), color: "rgba(255,255,255,0.28)", letterSpacing: "0.10em" }}
+            >
+              GAME
+            </span>
+            <span
+              className="font-grotesk font-semibold truncate"
+              style={{ fontSize: fs(11), color: "rgba(255,255,255,0.75)" }}
+            >
+              {game}
+            </span>
+          </div>
+        )}
+
+        {/* Equipo */}
+        {(team || teamLogo) && (
+          <div className="flex flex-col" style={{ gap: fs(1) }}>
+            <span
+              className="font-grotesk font-bold uppercase"
+              style={{ fontSize: fs(8), color: "rgba(255,255,255,0.28)", letterSpacing: "0.10em" }}
+            >
+              TEAM
+            </span>
+            <div className="flex items-center gap-1.5">
+              {teamLogo && (
                 <img
                   src={teamLogo}
                   alt={team ?? ""}
-                  className="w-full h-full object-contain p-0.5"
+                  style={{ width: fs(14), height: fs(14), objectFit: "contain" }}
                 />
-              ) : (
-                <span
-                  className="font-grotesk font-black text-white/40 uppercase"
-                  style={{ fontSize: Math.round(12 * scale) }}
-                >
-                  {team?.charAt(0) ?? "?"}
-                </span>
+              )}
+              <span
+                className="font-grotesk font-bold truncate"
+                style={{ fontSize: fs(11), color: "rgba(255,255,255,0.75)" }}
+              >
+                {team}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Rango */}
+        {rank && (
+          <div className="flex flex-col" style={{ gap: fs(1) }}>
+            <span
+              className="font-grotesk font-bold uppercase"
+              style={{ fontSize: fs(8), color: "rgba(255,255,255,0.28)", letterSpacing: "0.10em" }}
+            >
+              RANK
+            </span>
+            <span
+              className="font-grotesk font-bold"
+              style={{ fontSize: fs(11), color: rankColor, textShadow: `0 0 8px ${rankColor}44` }}
+            >
+              {rank}
+            </span>
+          </div>
+        )}
+
+        {/* Stats W/L y KDA */}
+        {stats && (stats.wins !== undefined || stats.kda !== undefined) && (
+          <>
+            {/* Separador sutil */}
+            <div
+              style={{
+                height: fs(1),
+                background: "rgba(255,255,255,0.06)",
+                marginTop: fs(2),
+                marginBottom: fs(2),
+              }}
+            />
+            <div className="flex items-end gap-4">
+              {stats.wins !== undefined && stats.losses !== undefined && (
+                <div className="flex flex-col" style={{ gap: fs(1) }}>
+                  <span
+                    className="font-grotesk font-bold uppercase"
+                    style={{ fontSize: fs(8), color: "rgba(255,255,255,0.28)", letterSpacing: "0.10em" }}
+                  >
+                    W/L
+                  </span>
+                  <span
+                    className="font-grotesk font-black"
+                    style={{ fontSize: fs(13), color: wrColor }}
+                  >
+                    {stats.wins}W {stats.losses}L
+                  </span>
+                </div>
+              )}
+              {stats.kda !== undefined && (
+                <div className="flex flex-col" style={{ gap: fs(1) }}>
+                  <span
+                    className="font-grotesk font-bold uppercase"
+                    style={{ fontSize: fs(8), color: "rgba(255,255,255,0.28)", letterSpacing: "0.10em" }}
+                  >
+                    KDA
+                  </span>
+                  <span
+                    className="font-grotesk font-black"
+                    style={{ fontSize: fs(13), color: "rgba(255,255,255,0.80)" }}
+                  >
+                    {stats.kda.toFixed(2)}
+                  </span>
+                </div>
               )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
-
-      {/* ── BORDE INFERIOR con gradiente de acento ── */}
-      <div
-        className="absolute bottom-0 left-0 right-0"
-        style={{
-          height: Math.round(2 * scale),
-          background: `linear-gradient(90deg, ${borderColor}88, transparent 70%)`,
-        }}
-      />
     </div>
   );
 
