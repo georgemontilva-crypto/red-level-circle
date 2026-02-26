@@ -3,8 +3,8 @@
 .roster-card {
   display: flex;
   width: 100%;
-  max-width: 420px;
-  height: 220px;
+  max-width: 460px;
+  height: 240px;
   background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
   border: 1.5px solid #FFD700;
   border-radius: 12px;
@@ -84,15 +84,15 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
-  background: rgba(0, 0, 0, 0.75);
+  width: 54px;
+  height: 54px;
+  background: rgba(0, 0, 0, 0.80);
   border: 2px solid #FFD700;
   border-radius: 50%;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: roleEntrance 0.35s ease-out;
-  gap: 2px;
+  gap: 3px;
   z-index: 2;
 }
 
@@ -102,8 +102,8 @@
 }
 
 .roster-card__role-icon {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   object-fit: contain;
   filter: invert(1);
   opacity: 0.92;
@@ -111,7 +111,7 @@
 }
 
 .roster-card__role-label {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   color: #FFD700;
   letter-spacing: 0.5px;
@@ -119,31 +119,31 @@
   line-height: 1;
 }
 
-/* Captain badge */
+/* Captain badge — anclado en la esquina inferior izquierda de la foto */
 .roster-card__captain-badge {
   position: absolute;
-  bottom: 8px;
-  left: 8px;
+  bottom: 10px;
+  left: 10px;
   display: flex;
   align-items: center;
   gap: 4px;
-  background: rgba(0, 0, 0, 0.72);
-  border: 1px solid rgba(255, 215, 0, 0.35);
+  background: rgba(0, 0, 0, 0.80);
+  border: 1px solid rgba(255, 215, 0, 0.50);
   border-radius: 20px;
-  padding: 3px 8px;
+  padding: 4px 9px;
   backdrop-filter: blur(8px);
   z-index: 2;
 }
 
 .roster-card__captain-icon {
-  width: 9px;
-  height: 9px;
+  width: 10px;
+  height: 10px;
   fill: #FFD700;
   flex-shrink: 0;
 }
 
 .roster-card__captain-label {
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
   color: #FFD700;
   letter-spacing: 0.12em;
@@ -155,7 +155,7 @@
   display: flex;
   flex-direction: column;
   width: 40%;
-  padding: 14px 14px 14px 16px;
+  padding: 16px 14px 14px 16px;
   background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
   justify-content: space-between;
   min-width: 0;
@@ -165,26 +165,26 @@
 .roster-card__name-section {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
 }
 
 .roster-card__player-name {
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
   color: #FFD700;
   margin: 0;
   letter-spacing: 0.5px;
   text-transform: uppercase;
-  line-height: 1.2;
+  line-height: 1.1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: 'Inter', 'Manrope', system-ui, sans-serif;
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
 }
 
 .roster-card__real-name {
-  font-size: 10px;
+  font-size: 12px;
   color: #a0a0a0;
   margin: 0;
   font-weight: 400;
@@ -207,7 +207,7 @@
 .roster-card__meta {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
   min-width: 0;
 }
@@ -220,9 +220,9 @@
 }
 
 .roster-card__region-text {
-  font-size: 11px;
+  font-size: 13px;
   color: #FFD700;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
 }
 
@@ -230,12 +230,12 @@
 .roster-card__field {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   min-width: 0;
 }
 
 .roster-card__field-label {
-  font-size: 8px;
+  font-size: 9px;
   color: #707070;
   text-transform: uppercase;
   font-weight: 600;
@@ -244,7 +244,7 @@
 }
 
 .roster-card__field-value {
-  font-size: 10px;
+  font-size: 12px;
   color: #ffffff;
   font-weight: 500;
   white-space: nowrap;
@@ -255,7 +255,7 @@
 /* Stats */
 .roster-card__stats {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   margin-top: 6px;
   flex-shrink: 0;
 }
@@ -263,11 +263,11 @@
 .roster-card__stat {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
 }
 
 .roster-card__stat-label {
-  font-size: 8px;
+  font-size: 9px;
   color: #707070;
   text-transform: uppercase;
   font-weight: 700;
@@ -275,7 +275,7 @@
 }
 
 .roster-card__stat-value {
-  font-size: 11px;
+  font-size: 12px;
   color: #FFD700;
   font-weight: 700;
 }
@@ -284,24 +284,24 @@
 @media (max-width: 480px) {
   .roster-card {
     max-width: 100%;
-    height: 180px;
+    height: 190px;
   }
 
   .roster-card__player-name {
-    font-size: 13px;
+    font-size: 15px;
   }
 
   .roster-card__info {
-    padding: 10px 10px 10px 12px;
+    padding: 12px 10px 12px 12px;
   }
 
   .roster-card__role-badge {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
   }
 
   .roster-card__role-icon {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 }

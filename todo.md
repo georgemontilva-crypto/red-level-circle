@@ -596,3 +596,4 @@
 - [x] Actualizar RosterCardOptions para recibir elo, country, mainGame, gameRoleLabel
 - [x] Actualizar el router para pasar los nuevos campos a generateRosterCard
 - [x] Actualizar tests de rosterCard para reflejar el nuevo diseño
+- [x] RosterCard: eliminar contenido extra debajo de la foto (badge CAP desbordado), aumentar tamaño de tipografía del panel derecho

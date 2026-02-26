@@ -99,7 +99,7 @@ export default function RosterCard({
         {/* Fade suave hacia el panel info */}
         <div className="roster-card__photo-fade" aria-hidden="true" />
 
-        {/* Badge circular del rol — UNA SOLA VEZ */}
+        {/* Badge circular del rol — icono + label, SIN duplicar */}
         {roleMeta && (
           <div className="roster-card__role-badge" aria-label={`Rol: ${roleMeta.label}`}>
             {roleMeta.icon ? (
@@ -108,16 +108,12 @@ export default function RosterCard({
                 alt=""
                 className="roster-card__role-icon"
               />
-            ) : (
-              <span className="roster-card__role-label" style={{ fontSize: 10 }}>
-                {roleMeta.label}
-              </span>
-            )}
+            ) : null}
             <span className="roster-card__role-label">{roleMeta.label}</span>
           </div>
         )}
 
-        {/* Badge de capitán */}
+        {/* Badge de capitán — posicionado dentro de la foto */}
         {isCaptain && (
           <div className="roster-card__captain-badge">
             <svg viewBox="0 0 24 24" className="roster-card__captain-icon" aria-hidden="true">
@@ -167,7 +163,7 @@ export default function RosterCard({
                   <img
                     src={teamLogo}
                     alt=""
-                    style={{ width: 12, height: 12, objectFit: "contain", flexShrink: 0 }}
+                    style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }}
                   />
                 )}
                 <span className="roster-card__field-value">{team}</span>
