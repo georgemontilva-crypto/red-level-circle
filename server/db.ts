@@ -155,6 +155,15 @@ export async function getTeamMembers(teamId: number) {
       nickname: users.nickname,
       avatar: users.avatar,
       activeFrameImage: cosmetics.frameImage,
+      // Perfil competitivo
+      mainGame: users.mainGame,
+      gameRole: users.gameRole,
+      rosterImageUrl: users.rosterImageUrl,
+      rosterPhoto: users.rosterPhoto,
+      country: users.country,
+      elo: users.elo,
+      competitiveRegion: users.competitiveRegion,
+      competitiveScore: users.competitiveScore,
     })
     .from(teamMembers)
     .leftJoin(users, eq(teamMembers.userId, users.id))

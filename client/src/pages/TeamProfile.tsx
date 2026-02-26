@@ -1,6 +1,7 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import { getRolesForGame } from "../../../shared/gameRoles";
 import { Link, useParams } from "wouter";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
@@ -82,6 +83,12 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
 function PlayerCard({ member, accent, captainId }: { member: any; accent: string; captainId: number }) {
   const roleInfo = ROLE_LABELS[member.role] ?? { label: member.role, color: "#a1a1aa" };
   const isCapt = member.userId === captainId;
+  // Obtener el icono SVG del rol del juego
+  const gameSlug = member.mainGame
+    ? member.mainGame.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+    : "";
+  const rolesForGame = getRolesForGame(gameSlug);
+  const gameRoleData = rolesForGame.find((r) => r.value === member.gameRole);
   return (
     <Link href={`/profile/${member.userId}`}>
       <div
@@ -142,13 +149,33 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
               {roleInfo.label}
             </span>
           </div>
+          {/* Game role icon — esquina superior derecha (si no es capitán) */}
+          {gameRoleData?.svgPath && !isCapt && (
+            <div
+              className="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: "rgba(0,0,0,0.65)", border: `1px solid ${accent}44`, backdropFilter: "blur(6px)" }}
+            >
+              <img
+                src={gameRoleData.svgPath}
+                alt={gameRoleData.label}
+                className="w-4 h-4 object-contain"
+                style={{ filter: "invert(1)" }}
+              />
+            </div>
+          )}
           {/* Game role badge bottom-right */}
-          {member.gameRole && (
-            <div className="absolute bottom-2 right-2">
-              <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
-                style={{ background: `${accent}22`, border: `1px solid ${accent}44`, color: accent, backdropFilter: "blur(4px)" }}>
-                {member.gameRole}
-              </span>
+          {gameRoleData && (
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-lg"
+              style={{ background: `${accent}22`, border: `1px solid ${accent}44`, backdropFilter: "blur(4px)" }}>
+              {gameRoleData.svgPath && (
+                <img
+                  src={gameRoleData.svgPath}
+                  alt={gameRoleData.label}
+                  className="w-3 h-3 object-contain"
+                  style={{ filter: "invert(1)", opacity: 0.8 }}
+                />
+              )}
+              <span className="text-xs font-mono" style={{ color: accent }}>{gameRoleData.label}</span>
             </div>
           )}
           {/* Gradient overlay at bottom */}
