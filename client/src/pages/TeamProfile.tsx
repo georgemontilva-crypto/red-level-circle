@@ -1,7 +1,8 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { getRolesForGame } from "../../../shared/gameRoles";
+import { getRolesForGame, getRanksForGame } from "../../../shared/gameRoles";
+import { PlayerRosterCard } from "@/components/PlayerRosterCard";
 import { Link, useParams } from "wouter";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
@@ -80,8 +81,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   );
 }
 
-function PlayerCard({ member, accent, captainId }: { member: any; accent: string; captainId: number }) {
-  const roleInfo = ROLE_LABELS[member.role] ?? { label: member.role, color: "#a1a1aa" };
+function PlayerCard({ member, teamLogo, teamName, captainId }: { member: any; teamLogo?: string | null; teamName?: string | null; captainId: number }) {
   const isCapt = member.userId === captainId;
   // Obtener el icono SVG del rol del juego
   const gameSlug = member.mainGame
@@ -89,136 +89,26 @@ function PlayerCard({ member, accent, captainId }: { member: any; accent: string
     : "";
   const rolesForGame = getRolesForGame(gameSlug);
   const gameRoleData = rolesForGame.find((r) => r.value === member.gameRole);
+  // Obtener el color del rango
+  const ranksForGame = getRanksForGame(gameSlug);
+  const rankData = ranksForGame.find((r) => r.value === member.elo);
+  // Foto de perfil para el fallback
+  const photoUrl = member.rosterImageUrl ?? member.rosterPhoto ?? member.avatar ?? null;
   return (
-    <Link href={`/profile/${member.userId}`}>
-      <div
-        className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
-        style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${isCapt ? accent + "33" : "oklch(0.16 0.01 0)"}` }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.borderColor = `${accent}55`;
-          el.style.boxShadow = `0 12px 32px rgba(0,0,0,0.6), 0 0 0 1px ${accent}22`;
-          el.style.transform = "translateY(-4px)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.borderColor = isCapt ? `${accent}33` : "oklch(0.16 0.01 0)";
-          el.style.boxShadow = "none";
-          el.style.transform = "none";
-        }}
-      >
-        {/* Captain accent top bar */}
-        {isCapt && <div className="h-0.5 w-full" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />}
-        {/* Roster card (generated 600x900) or avatar fallback */}
-        <div className="relative" style={{ aspectRatio: "2/3", background: "oklch(0.07 0.005 0)" }}>
-          {(member.rosterImageUrl || member.rosterPhoto) ? (
-            <img
-              src={member.rosterImageUrl ?? member.rosterPhoto ?? ""}
-              alt={member.nickname ?? member.userName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-3"
-              style={{ background: `linear-gradient(160deg, ${accent}08 0%, oklch(0.07 0.005 0) 100%)` }}>
-              <div
-                style={{
-                  border: `3px solid ${isCapt ? accent : "oklch(0.22 0.01 0)"}`,
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  width: 72,
-                  height: 72,
-                  flexShrink: 0,
-                  boxShadow: isCapt ? `0 0 20px ${accent}44` : "none",
-                }}
-              >
-                <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={72} />
-              </div>
-            </div>
-          )}
-          {/* Captain crown badge */}
-          {isCapt && (
-            <div className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-lg"
-              style={{ background: "#fbbf24", border: "2px solid oklch(0.09 0.005 0)" }}>
-              <Crown size={13} className="text-black" />
-            </div>
-          )}
-          {/* Role badge bottom-left — solo para no-capitán */}
-          {!isCapt && (
-            <div className="absolute bottom-2 left-2">
-              <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-lg"
-                style={{ background: `${roleInfo.color}22`, border: `1px solid ${roleInfo.color}44`, color: roleInfo.color, backdropFilter: "blur(4px)" }}>
-                {roleInfo.label}
-              </span>
-            </div>
-          )}
-          {/* Avatar circular — esquina superior derecha (solo si no hay roster card) */}
-          {!(member.rosterImageUrl || member.rosterPhoto) && (
-            <div
-              className="absolute top-2 right-2 w-9 h-9 rounded-full overflow-hidden"
-              style={{ border: `2px solid ${isCapt ? "#fbbf24" : accent}`, boxShadow: isCapt ? "0 0 12px #fbbf2466" : `0 0 8px ${accent}44` }}
-            >
-              <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} size={36} />
-            </div>
-          )}
-          {/* Game role badge bottom-right — solo texto + icono SVG */}
-          {gameRoleData && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 px-2 py-0.5 rounded-lg"
-              style={{ background: `${accent}22`, border: `1px solid ${accent}44`, backdropFilter: "blur(4px)" }}>
-              {gameRoleData.svgPath && (
-                <img
-                  src={gameRoleData.svgPath}
-                  alt={gameRoleData.label}
-                  className="w-3 h-3 object-contain"
-                  style={{ filter: "invert(1)", opacity: 0.8 }}
-                />
-              )}
-              <span className="text-xs font-mono" style={{ color: accent }}>{gameRoleData.label}</span>
-            </div>
-          )}
-          {/* Gradient overlay at bottom */}
-          <div className="absolute inset-x-0 bottom-0 h-16"
-            style={{ background: "linear-gradient(to top, oklch(0.09 0.005 0) 0%, transparent 100%)" }} />
-        </div>
-        {/* Info section */}
-        <div className="p-3">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <p className="font-mono font-bold text-white text-sm truncate">{member.nickname ?? member.userName}</p>
-            <ExternalLink size={10} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-          </div>
-          <p className="text-xs text-zinc-500 font-mono truncate mb-1">{member.userName}</p>
-          {member.country && (
-            <p className="text-xs text-zinc-600 font-mono">{COUNTRY_FLAGS[member.country] ?? ""} {member.country}</p>
-          )}
-          {(member.elo || member.competitiveRegion) && (
-            <div className="flex flex-wrap items-center gap-1.5 mt-2">
-              {member.elo && (
-                <span className="text-xs font-mono px-2 py-0.5 rounded-lg"
-                  style={{ background: "oklch(0.65 0.18 80 / 0.10)", border: "1px solid oklch(0.65 0.18 80 / 0.20)", color: "oklch(0.70 0.18 80)" }}>
-                  ⚡ {member.elo}
-                </span>
-              )}
-              {member.competitiveRegion && (
-                <span className="text-xs font-mono text-zinc-600">{member.competitiveRegion}</span>
-              )}
-            </div>
-          )}
-          {member.stats && (
-            <div className="flex items-center gap-3 mt-2 pt-2" style={{ borderTop: "1px solid oklch(0.14 0.01 0)" }}>
-              <div className="flex items-center gap-1 text-xs font-mono">
-                <Trophy size={10} className="text-yellow-500" />
-                <span className="text-zinc-400">{member.stats.tournamentsWon}</span>
-                <span className="text-zinc-700">títulos</span>
-              </div>
-              <div className="flex items-center gap-1 text-xs font-mono">
-                <Swords size={10} className="text-zinc-600" />
-                <span className="text-zinc-400">{member.stats.tournamentsPlayed}</span>
-                <span className="text-zinc-700">torneos</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </Link>
+    <PlayerRosterCard
+      userId={member.userId}
+      nickname={member.nickname ?? member.userName ?? "Jugador"}
+      photoUrl={photoUrl}
+      roleIcon={gameRoleData?.svgPath ?? null}
+      roleLabel={gameRoleData?.label ?? null}
+      rank={rankData?.label ?? member.elo ?? null}
+      rankColor={rankData?.color ?? "#a1a1aa"}
+      region={member.competitiveRegion ?? null}
+      teamLogo={teamLogo ?? null}
+      teamName={teamName ?? null}
+      isCaptain={isCapt}
+      scale={0.55}
+    />
   );
 }
 
@@ -532,9 +422,9 @@ export default function TeamProfile() {
                 <p className="font-mono text-zinc-500">Sin jugadores registrados aún</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
                 {team.members.map((member: any) => (
-                  <PlayerCard key={member.id} member={member} accent={c.accent} captainId={team.captainId} />
+                  <PlayerCard key={member.id} member={member} teamLogo={team.logo} teamName={team.name} captainId={team.captainId} />
                 ))}
               </div>
             )}

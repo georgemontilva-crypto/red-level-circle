@@ -150,6 +150,7 @@
   .font-display { font-family: 'Orbitron', sans-serif; }
   .font-tech { font-family: 'Share Tech Mono', monospace; }
   .font-body { font-family: 'Inter', sans-serif; }
+  .font-grotesk { font-family: 'Space Grotesk', sans-serif; }
 
   .neon-text {
     color: oklch(0.70 0.28 25);
