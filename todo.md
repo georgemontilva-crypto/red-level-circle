@@ -597,3 +597,4 @@
 - [x] Actualizar el router para pasar los nuevos campos a generateRosterCard
 - [x] Actualizar tests de rosterCard para reflejar el nuevo diseño
 - [x] RosterCard: eliminar contenido extra debajo de la foto (badge CAP desbordado), aumentar tamaño de tipografía del panel derecho
+- [x] Fix TeamProfile.tsx: usar rosterPhoto (foto original) en lugar de rosterImageUrl (tarjeta completa legacy) como photoUrl de RosterCard

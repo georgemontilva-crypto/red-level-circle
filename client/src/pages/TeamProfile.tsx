@@ -399,7 +399,7 @@ export default function TeamProfile() {
                     role={member.gameRole ?? undefined}
                     region={member.competitiveRegion ?? undefined}
                     game={member.mainGame ?? undefined}
-                    photoUrl={member.rosterImageUrl ?? member.rosterPhoto ?? member.avatar ?? null}
+                    photoUrl={member.rosterPhoto ?? member.avatar ?? null}
                     team={team.name ?? undefined}
                     teamLogo={team.logo ?? undefined}
                     isCaptain={member.userId === team.captainId}
