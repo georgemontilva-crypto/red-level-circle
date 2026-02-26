@@ -114,7 +114,6 @@ function getRoleSvgPaths(roleValue: string | null | undefined): string {
   // Intentar leer desde el directorio de assets del proyecto
   const possiblePaths = [
     path.join(process.cwd(), "client", "public", `${fileName}.svg`),
-    path.join(__dirname, "..", "client", "public", `${fileName}.svg`),
     path.join("/home/ubuntu/red-level-circle/client/public", `${fileName}.svg`),
   ];
 
