@@ -201,7 +201,8 @@ export default function TeamProfile() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: "oklch(0.06 0.005 0)" }}>
-      <div className="relative overflow-hidden" style={{ height: "280px" }}>
+      <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
+      <div className="relative overflow-hidden rounded-xl mb-6" style={{ height: "280px" }}>
         {team.banner ? (
           <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
             style={{ filter: "brightness(0.4) saturate(1.2)" }} />
@@ -241,7 +242,7 @@ export default function TeamProfile() {
         </div>
       </div>
 
-      <div className="container -mt-20 relative z-10">
+      <div className="-mt-20 relative z-10">
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
           <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
             style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
@@ -481,6 +482,7 @@ export default function TeamProfile() {
             )}
           </section>
         )}
+      </div>
       </div>
     </div>
   );
