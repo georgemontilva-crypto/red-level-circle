@@ -2,7 +2,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { getRolesForGame, getRanksForGame } from "../../../shared/gameRoles";
-import { PlayerRosterCard } from "@/components/PlayerRosterCard";
+import RosterCard from "@/components/RosterCard";
 import { Link, useParams } from "wouter";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
@@ -95,17 +95,18 @@ function PlayerCard({ member, teamLogo, teamName, captainId, accentColor }: { me
   // Foto de perfil para el fallback
   const photoUrl = member.rosterImageUrl ?? member.rosterPhoto ?? member.avatar ?? null;
   return (
-    <PlayerRosterCard
+    <RosterCard
       userId={member.userId}
-      nickname={member.nickname ?? member.userName ?? "Jugador"}
+      playerName={member.nickname ?? member.userName ?? "Jugador"}
+      realName={member.userName ?? undefined}
+      role={member.gameRole ?? undefined}
+      region={member.competitiveRegion ?? undefined}
+      game={member.mainGame ?? undefined}
       photoUrl={photoUrl}
-      roleIcon={gameRoleData?.svgPath ?? null}
-      roleLabel={gameRoleData?.label ?? null}
+      team={teamName ?? undefined}
+      teamLogo={teamLogo ?? undefined}
       rank={rankData?.label ?? member.elo ?? null}
       rankColor={rankData?.color ?? "#a1a1aa"}
-      region={member.competitiveRegion ?? null}
-      teamLogo={teamLogo ?? null}
-      teamName={teamName ?? null}
       isCaptain={isCapt}
       accentColor={accentColor}
       scale={0.55}
