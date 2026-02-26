@@ -1,0 +1,307 @@
+/* ===== ROSTER CARD — Esports Premium ===== */
+
+.roster-card {
+  display: flex;
+  width: 100%;
+  max-width: 420px;
+  height: 220px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #242424 100%);
+  border: 1.5px solid #FFD700;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  position: relative;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+
+.roster-card:hover {
+  box-shadow: 0 16px 48px rgba(255, 215, 0, 0.18);
+  transform: translateY(-4px);
+  border-color: #FFD700;
+}
+
+/* ── Photo ── */
+.roster-card__photo-container {
+  position: relative;
+  width: 60%;
+  overflow: hidden;
+  background: #0a0a0a;
+  flex-shrink: 0;
+}
+
+.roster-card__photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  transition: transform 0.35s ease-out;
+  display: block;
+}
+
+.roster-card:hover .roster-card__photo {
+  transform: scale(1.04);
+}
+
+.roster-card__photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, rgba(255,215,0,0.06) 0%, #0a0a0a 100%);
+}
+
+.roster-card__photo-placeholder-letter {
+  font-size: 72px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.06);
+  text-transform: uppercase;
+  font-family: 'Inter', 'Manrope', system-ui, sans-serif;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Fade derecho de la foto hacia el panel info */
+.roster-card__photo-fade {
+  position: absolute;
+  inset-y: 0;
+  right: 0;
+  width: 30%;
+  background: linear-gradient(to right, transparent, #1a1a1a);
+  pointer-events: none;
+}
+
+/* ── Role Badge ── */
+.roster-card__role-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: rgba(0, 0, 0, 0.75);
+  border: 2px solid #FFD700;
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: roleEntrance 0.35s ease-out;
+  gap: 2px;
+  z-index: 2;
+}
+
+@keyframes roleEntrance {
+  from { opacity: 0; transform: scale(0.75); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.roster-card__role-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: 0.92;
+  display: block;
+}
+
+.roster-card__role-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #FFD700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* Captain badge */
+.roster-card__captain-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  border-radius: 20px;
+  padding: 3px 8px;
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.roster-card__captain-icon {
+  width: 9px;
+  height: 9px;
+  fill: #FFD700;
+  flex-shrink: 0;
+}
+
+.roster-card__captain-label {
+  font-size: 8px;
+  font-weight: 700;
+  color: #FFD700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Info Panel ── */
+.roster-card__info {
+  display: flex;
+  flex-direction: column;
+  width: 40%;
+  padding: 14px 14px 14px 16px;
+  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+  justify-content: space-between;
+  min-width: 0;
+}
+
+/* Name section */
+.roster-card__name-section {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.roster-card__player-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #FFD700;
+  margin: 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Inter', 'Manrope', system-ui, sans-serif;
+}
+
+.roster-card__real-name {
+  font-size: 10px;
+  color: #a0a0a0;
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Divider */
+.roster-card__divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, #FFD700 0%, transparent 100%);
+  margin: 8px 0;
+  flex-shrink: 0;
+}
+
+/* Meta block */
+.roster-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Region */
+.roster-card__region {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.roster-card__region-text {
+  font-size: 11px;
+  color: #FFD700;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+/* Game & Team */
+.roster-card__field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.roster-card__field-label {
+  font-size: 8px;
+  color: #707070;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1;
+}
+
+.roster-card__field-value {
+  font-size: 10px;
+  color: #ffffff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Stats */
+.roster-card__stats {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.roster-card__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.roster-card__stat-label {
+  font-size: 8px;
+  color: #707070;
+  text-transform: uppercase;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.roster-card__stat-value {
+  font-size: 11px;
+  color: #FFD700;
+  font-weight: 700;
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .roster-card {
+    max-width: 100%;
+    height: 180px;
+  }
+
+  .roster-card__player-name {
+    font-size: 13px;
+  }
+
+  .roster-card__info {
+    padding: 10px 10px 10px 12px;
+  }
+
+  .roster-card__role-badge {
+    width: 42px;
+    height: 42px;
+  }
+
+  .roster-card__role-icon {
+    width: 16px;
+    height: 16px;
+  }
+}

@@ -1,8 +1,8 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-
 import { Link, useParams } from "wouter";
+import RosterCard from "@/components/RosterCard";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
   ExternalLink, Twitter, MessageSquare, Tv2,
@@ -385,10 +385,30 @@ export default function TeamProfile() {
 
         {activeTab === "roster" && (
           <section className="mb-12">
-            <div className="flex flex-col items-center justify-center py-16">
-              <Users size={32} className="text-zinc-700 mb-3" />
-              <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
-            </div>
+            {!team.members || team.members.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Users size={32} className="text-zinc-700 mb-3" />
+                <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "20px" }}>
+                {team.members.map((member: any) => (
+                  <RosterCard
+                    key={member.id}
+                    userId={member.userId}
+                    playerName={member.nickname ?? member.userName ?? "Jugador"}
+                    realName={member.userName ?? undefined}
+                    role={member.gameRole ?? undefined}
+                    region={member.competitiveRegion ?? undefined}
+                    game={member.mainGame ?? undefined}
+                    photoUrl={member.rosterImageUrl ?? member.rosterPhoto ?? member.avatar ?? null}
+                    team={team.name ?? undefined}
+                    teamLogo={team.logo ?? undefined}
+                    isCaptain={member.userId === team.captainId}
+                  />
+                ))}
+              </div>
+            )}
           </section>
         )}
 
