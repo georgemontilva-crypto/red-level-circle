@@ -1462,13 +1462,27 @@ export const appRouter = router({
         const rawBuffer = Buffer.from(input.base64, "base64");
         const { url: rawUrl } = await storagePut(rawKey, rawBuffer, input.mimeType);
         // 4. Generar la roster card compuesta (600×900)
+        // Obtener el label legible del rol del juego
+        const { getRolesForGame } = await import("../shared/gameRoles.js");
+        const gameSlug = userProfile.mainGame
+          ? userProfile.mainGame.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
+          : "";
+        const rolesForGame = getRolesForGame(gameSlug);
+        const roleData = rolesForGame.find((r) => r.value === userProfile.gameRole);
         const cardBuffer = await generateRosterCard({
           playerPhotoBuffer: rawBuffer,
           nickname: userProfile.nickname ?? userProfile.name ?? "Jugador",
           teamRole: primaryTeam?.role ?? "player",
           gameRole: userProfile.gameRole,
+          gameRoleLabel: roleData?.label ?? null,
           teamLogoUrl: primaryTeam?.teamLogo ?? null,
           teamTag: primaryTeam?.teamTag ?? null,
+          realName: userProfile.name ?? null,
+          country: userProfile.country ?? null,
+          elo: userProfile.elo ?? null,
+          competitiveRegion: userProfile.competitiveRegion ?? null,
+          mainGame: userProfile.mainGame ?? null,
+          competitiveScore: userProfile.competitiveScore ?? null,
         });
         // 5. Subir la card compuesta a S3
         const cardKey = `profiles/${ctx.user.id}/roster-card-${Date.now()}.jpg`;

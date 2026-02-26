@@ -584,3 +584,15 @@
 - [x] Reemplazar select nativo de Juego principal con GameDropdown
 - [x] Reemplazar select nativo de Región competitiva con GameDropdown
 - [x] Todos los 4 dropdowns con altura, padding y tipografía consistentes
+
+## Rediseño Ficha Competitiva (Roster Card) V20
+- [x] Rediseñar rosterCard.ts: nueva tipografía UI moderna, layout con jerarquía clara
+- [x] Imagen del jugador en zona superior (62% de la card)
+- [x] Nick destacado con fuente grande y limpia
+- [x] Info secundaria (nombre real + país) debajo del nick
+- [x] Badges en una sola línea (rol, rango, región) sin duplicar texto
+- [x] Icono SVG del rol en lugar del logo del equipo
+- [x] Reducir ruido visual: menos colores, más espaciado, tipografía consistente
+- [x] Actualizar RosterCardOptions para recibir elo, country, mainGame, gameRoleLabel
+- [x] Actualizar el router para pasar los nuevos campos a generateRosterCard
+- [x] Actualizar tests de rosterCard para reflejar el nuevo diseño
