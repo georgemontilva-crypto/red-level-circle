@@ -1,8 +1,7 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
-import { getRolesForGame, getRanksForGame } from "../../../shared/gameRoles";
-import RosterCard from "@/components/RosterCard";
+
 import { Link, useParams } from "wouter";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
@@ -81,38 +80,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   );
 }
 
-function PlayerCard({ member, teamLogo, teamName, captainId, accentColor }: { member: any; teamLogo?: string | null; teamName?: string | null; captainId: number; accentColor?: string }) {
-  const isCapt = member.userId === captainId;
-  // Obtener el icono SVG del rol del juego
-  const gameSlug = member.mainGame
-    ? member.mainGame.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "")
-    : "";
-  const rolesForGame = getRolesForGame(gameSlug);
-  const gameRoleData = rolesForGame.find((r) => r.value === member.gameRole);
-  // Obtener el color del rango
-  const ranksForGame = getRanksForGame(gameSlug);
-  const rankData = ranksForGame.find((r) => r.value === member.elo);
-  // Foto de perfil para el fallback
-  const photoUrl = member.rosterImageUrl ?? member.rosterPhoto ?? member.avatar ?? null;
-  return (
-    <RosterCard
-      userId={member.userId}
-      playerName={member.nickname ?? member.userName ?? "Jugador"}
-      realName={member.userName ?? undefined}
-      role={member.gameRole ?? undefined}
-      region={member.competitiveRegion ?? undefined}
-      game={member.mainGame ?? undefined}
-      photoUrl={photoUrl}
-      team={teamName ?? undefined}
-      teamLogo={teamLogo ?? undefined}
-      rank={rankData?.label ?? member.elo ?? null}
-      rankColor={rankData?.color ?? "#a1a1aa"}
-      isCaptain={isCapt}
-      accentColor={accentColor}
-      scale={0.55}
-    />
-  );
-}
+
 
 function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; teamId: number }) {
   const isWinner = reg.tournamentWinnerId === teamId && reg.tournamentStatus === "completed";
@@ -417,19 +385,10 @@ export default function TeamProfile() {
 
         {activeTab === "roster" && (
           <section className="mb-12">
-            {!team.members || team.members.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
-                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
-                <Users size={36} className="text-zinc-700 mb-3" />
-                <p className="font-mono text-zinc-500">Sin jugadores registrados aún</p>
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-4 justify-center sm:justify-start">
-                {team.members.map((member: any) => (
-                  <PlayerCard key={member.id} member={member} teamLogo={team.logo} teamName={team.name} captainId={team.captainId} accentColor={c.accent} />
-                ))}
-              </div>
-            )}
+            <div className="flex flex-col items-center justify-center py-16">
+              <Users size={32} className="text-zinc-700 mb-3" />
+              <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
+            </div>
           </section>
         )}
 
