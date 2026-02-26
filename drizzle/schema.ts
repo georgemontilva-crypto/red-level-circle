@@ -301,15 +301,22 @@ export const games = mysqlTable("games", {
 export type Game = typeof games.$inferSelect;
 export type InsertGame = typeof games.$inferInsert;
 
-// ─── Streams ──────────────────────────────────────────────────────────────────
+/// ─── Streams ──────────────────────────────────────────────────────────────────
 export const streams = mysqlTable("streams", {
   id: int("id").autoincrement().primaryKey(),
+  // Owner: null for legacy/admin-created streams, userId for creator streams
+  userId: int("userId"),
+  // Type: "tournament" for tournament broadcasts, "creator" for creator streams
+  type: mysqlEnum("type", ["tournament", "creator"]).default("creator").notNull(),
   tournamentId: int("tournamentId"),
   title: varchar("title", { length: 256 }).notNull(),
   streamerName: varchar("streamerName", { length: 128 }),
-  platform: mysqlEnum("platform", ["twitch", "youtube", "discord", "other"]).notNull(),
+  platform: mysqlEnum("platform", ["twitch", "youtube", "discord", "other"]).notNull().default("twitch"),
   url: text("url").notNull(),
   embedUrl: text("embedUrl"),
+  // gameSlug: canonical slug from games table (preferred)
+  gameSlug: varchar("gameSlug", { length: 128 }),
+  // game: display name (kept for backwards compat + fallback when slug unknown)
   game: varchar("game", { length: 64 }),
   isLive: boolean("isLive").default(false).notNull(),
   viewerCount: int("viewerCount").default(0),
@@ -317,7 +324,6 @@ export const streams = mysqlTable("streams", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Stream = typeof streams.$inferSelect;
 export type InsertStream = typeof streams.$inferInsert;
 

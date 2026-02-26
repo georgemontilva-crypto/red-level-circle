@@ -137,6 +137,9 @@ import {
   removeTeamMember,
   getTeamsByMembership,
   hasApprovedTeamMembership,
+  getActiveStreamByUser,
+  createCreatorStream,
+  stopCreatorStream,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -166,6 +169,17 @@ const premiumProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// creatorProcedure: requires an approved content_creator record for the user
+const creatorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
+  const creator = await getCreatorByUserId(ctx.user.id);
+  if (!creator || creator.status !== "approved") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Solo creadores de contenido aprobados pueden iniciar transmisiones.",
+    });
+  }
+  return next({ ctx });
+});
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Solo administradores." });
@@ -910,6 +924,36 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), isLive: z.boolean() }))
       .mutation(async ({ input }) => {
         await updateStream(input.id, { isLive: input.isLive });
+        return { success: true };
+      }),
+    // ── Creator stream procedures ─────────────────────────────────────────
+    /** Returns the caller's active (isLive=true) creator stream, or null */
+    myActiveStream: protectedProcedure.query(async ({ ctx }) => {
+      return getActiveStreamByUser(ctx.user.id);
+    }),
+    /** Starts a new creator stream. Requires approved creator status. */
+    startCreatorStream: creatorProcedure
+      .input(z.object({
+        title: z.string().min(1).max(256),
+        platform: z.enum(["twitch", "youtube", "discord", "other"]),
+        url: z.string().url(),
+        game: z.string().min(1).max(64),
+        gameSlug: z.string().max(128).optional(),
+        thumbnailUrl: z.string().url().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const user = ctx.user;
+        const id = await createCreatorStream(user.id, {
+          ...input,
+          streamerName: user.nickname ?? user.name ?? undefined,
+        });
+        return { id };
+      }),
+    /** Stops the caller's active creator stream (or any stream if admin). */
+    stopCreatorStream: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await stopCreatorStream(input.id, ctx.user.id, ctx.user.role === "admin");
         return { success: true };
       }),
   }),

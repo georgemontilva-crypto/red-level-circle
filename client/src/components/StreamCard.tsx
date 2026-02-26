@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Eye, Radio } from "lucide-react";
+import { Eye, Radio, Trophy, Video } from "lucide-react";
 
 export interface StreamCardData {
   id: number;
@@ -11,6 +11,8 @@ export interface StreamCardData {
   isLive: boolean;
   viewerCount?: number | null;
   thumbnailUrl?: string | null;
+  /** "tournament" = official broadcast, "creator" = content creator stream */
+  type?: "tournament" | "creator" | null;
 }
 
 const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
@@ -59,6 +61,20 @@ export function StreamCard({ stream }: StreamCardProps) {
             <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-red-600 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded tracking-widest shadow-lg">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
               EN VIVO
+            </div>
+          )}
+
+          {/* Type badge: TORNEO or CREADOR */}
+          {stream.type === "tournament" && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+              <Trophy className="w-2.5 h-2.5" />
+              TORNEO
+            </div>
+          )}
+          {stream.type === "creator" && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-sky-500/20 text-sky-300 border border-sky-500/30 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
+              <Video className="w-2.5 h-2.5" />
+              CREADOR
             </div>
           )}
 

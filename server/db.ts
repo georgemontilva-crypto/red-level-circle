@@ -825,6 +825,7 @@ export async function getStreams(opts?: { liveOnly?: boolean; tournamentId?: num
  * Returns live streams grouped by game, max 5 per game.
  * Uses a raw SQL window function (ROW_NUMBER OVER PARTITION BY game)
  * so only one round-trip is needed regardless of how many games exist.
+ * Includes both tournament and creator streams.
  */
 export async function getStreamsByGame(): Promise<
   Array<{
@@ -834,7 +835,6 @@ export async function getStreamsByGame(): Promise<
 > {
   const db = await getDb();
   if (!db) return [];
-
   // Raw SQL: rank each live stream within its game partition by viewerCount DESC.
   // MySQL does not allow filtering on window function aliases in WHERE/HAVING of the same
   // SELECT level, so we wrap in a subquery.
@@ -853,7 +853,6 @@ export async function getStreamsByGame(): Promise<
      WHERE ranked.rn <= 5
      ORDER BY ranked.game ASC, ranked.rn ASC`
   ) as unknown as [Array<typeof streams.$inferSelect & { rn: number }>, unknown];
-
   // Group into { game -> streams[] } map
   const map = new Map<string, Array<typeof streams.$inferSelect>>();
   for (const row of rawRows) {
@@ -863,8 +862,74 @@ export async function getStreamsByGame(): Promise<
     const { rn: _rn, ...rest } = row as any;
     map.get(gameKey)!.push(rest);
   }
-
   return Array.from(map.entries()).map(([game, streams]) => ({ game, streams }));
+}
+
+/**
+ * Returns the active (isLive=true) stream owned by a given user, or null.
+ */
+export async function getActiveStreamByUser(userId: number): Promise<typeof streams.$inferSelect | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select()
+    .from(streams)
+    .where(and(eq(streams.userId, userId), eq(streams.isLive, true)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Creates a creator stream. Enforces: only 1 active stream per user.
+ * Returns the new stream id.
+ */
+export async function createCreatorStream(
+  userId: number,
+  data: {
+    title: string;
+    platform: "twitch" | "youtube" | "discord" | "other";
+    url: string;
+    game: string;
+    gameSlug?: string;
+    thumbnailUrl?: string;
+    streamerName?: string;
+  }
+): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Enforce 1 active stream per user
+  const existing = await getActiveStreamByUser(userId);
+  if (existing) throw new Error("Ya tienes una transmisión activa. Deténla antes de iniciar una nueva.");
+  const [result] = await db
+    .insert(streams)
+    .values({
+      userId,
+      type: "creator",
+      title: data.title,
+      platform: data.platform,
+      url: data.url,
+      game: data.game,
+      gameSlug: data.gameSlug,
+      thumbnailUrl: data.thumbnailUrl,
+      streamerName: data.streamerName,
+      isLive: true,
+    })
+    .$returningId();
+  return result.id;
+}
+
+/**
+ * Stops a creator stream. Only the owner or admin can stop it.
+ * Sets isLive = false.
+ */
+export async function stopCreatorStream(streamId: number, userId: number, isAdmin = false): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const rows = await db.select().from(streams).where(eq(streams.id, streamId)).limit(1);
+  const stream = rows[0];
+  if (!stream) throw new Error("Stream no encontrado");
+  if (!isAdmin && stream.userId !== userId) throw new Error("No tienes permiso para detener esta transmisión");
+  await db.update(streams).set({ isLive: false }).where(eq(streams.id, streamId));
 }
 
 export async function createStream(data: InsertStream) {

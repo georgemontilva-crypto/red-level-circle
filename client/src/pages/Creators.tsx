@@ -4,6 +4,7 @@ import { getLoginUrl } from "@/const";
 import { Link, useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
+import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
   CheckCircle, Clock, XCircle, Send, ChevronDown, Users,
@@ -172,15 +173,8 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
 
   if (myApp?.status === "approved") {
     return (
-      <div className="text-center py-12">
-        <CheckCircle size={40} className="text-green-500 mx-auto mb-4" />
-        <h3 className="font-orbitron font-bold text-white text-lg mb-2">¡Eres creador oficial!</h3>
-        <p className="text-zinc-500 text-sm mb-6">Tu solicitud fue aprobada. Apareces en la sección de creadores de la plataforma.</p>
-        <Link href={`/profile/${user?.id}`}>
-          <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-green-600 hover:bg-green-700 transition-colors">
-            VER MI PERFIL
-          </button>
-        </Link>
+      <div className="max-w-2xl mx-auto">
+        <CreatorStreamPanel creatorApp={myApp} />
       </div>
     );
   }

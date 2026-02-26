@@ -607,3 +607,11 @@
 - [x] Página /streams rediseñada estilo Twitch Browse por categoría
 - [x] Ruta /streams/:id para página individual del stream
 - [x] Tests para getStreamsByGame
+
+## Streams de Creadores V_CREATOR_STREAMS
+- [x] Schema: añadir userId, type (tournament|creator), gameSlug a tabla streams + migración
+- [x] server/db.ts: createCreatorStream, stopCreatorStream, getActiveStreamByUser, actualizar getStreamsByGame con type
+- [x] routers.ts: streams.startCreatorStream (creatorProcedure), streams.stopCreatorStream, streams.myActiveStream
+- [x] UI Creators.tsx: sección "Transmitir ahora" con formulario (título, juego, plataforma, URL) y estado de stream activo
+- [x] StreamCard: badge TORNEO vs CREADOR diferenciador
+- [x] Tests para nuevos procedures de streams de creadores
