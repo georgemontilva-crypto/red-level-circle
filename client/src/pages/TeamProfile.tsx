@@ -242,7 +242,7 @@ export default function TeamProfile() {
         </div>
       </div>
 
-      <div className="-mt-20 relative z-10">
+      <div className="-mt-20 relative z-10 px-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
           <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
             style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
