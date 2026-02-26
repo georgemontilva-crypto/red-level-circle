@@ -1,174 +1,155 @@
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Radio, Eye, ExternalLink, Tv } from "lucide-react";
+import { Radio, Tv } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
+import { StreamCard } from "@/components/StreamCard";
+import { ChevronRight } from "lucide-react";
 
-const PLATFORM_COLORS: Record<string, string> = {
-  twitch: "text-purple-400 bg-purple-500/10 border-purple-500/30",
-  youtube: "text-red-400 bg-red-500/10 border-red-500/30",
-  discord: "text-indigo-400 bg-indigo-500/10 border-indigo-500/30",
-  other: "text-zinc-400 bg-zinc-500/10 border-zinc-500/30",
+// ─── Game cover art (Twitch box art CDN) ─────────────────────────────────────
+const GAME_COVERS: Record<string, string> = {
+  "League of Legends": "https://static-cdn.jtvnw.net/ttv-boxart/21779-285x380.jpg",
+  "Valorant":          "https://static-cdn.jtvnw.net/ttv-boxart/516575-285x380.jpg",
+  "CS2":               "https://static-cdn.jtvnw.net/ttv-boxart/32399-285x380.jpg",
+  "Dota 2":            "https://static-cdn.jtvnw.net/ttv-boxart/29595-285x380.jpg",
+  "Fortnite":          "https://static-cdn.jtvnw.net/ttv-boxart/33214-285x380.jpg",
+  "Apex Legends":      "https://static-cdn.jtvnw.net/ttv-boxart/511224-285x380.jpg",
+  "Overwatch 2":       "https://static-cdn.jtvnw.net/ttv-boxart/515025-285x380.jpg",
+  "Rocket League":     "https://static-cdn.jtvnw.net/ttv-boxart/30921-285x380.jpg",
+  "FIFA":              "https://static-cdn.jtvnw.net/ttv-boxart/1229590973-285x380.jpg",
+  "Call of Duty":      "https://static-cdn.jtvnw.net/ttv-boxart/512710-285x380.jpg",
 };
 
-const PLATFORM_ICONS: Record<string, string> = {
-  twitch: "🎮",
-  youtube: "▶️",
-  discord: "💬",
-  other: "📺",
-};
+// ─── Skeleton card ────────────────────────────────────────────────────────────
+function SkeletonCard() {
+  return (
+    <div className="flex flex-col bg-zinc-900 border border-zinc-800/60 rounded-xl overflow-hidden animate-pulse">
+      <div className="w-full aspect-video bg-zinc-800" />
+      <div className="p-3 flex gap-3">
+        <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 bg-zinc-700 rounded w-3/4" />
+          <div className="h-2 bg-zinc-700 rounded w-1/2" />
+        </div>
+      </div>
+    </div>
+  );
+}
 
+// ─── Game section header ──────────────────────────────────────────────────────
+function GameSectionHeader({ game, count }: { game: string; count: number }) {
+  const cover = GAME_COVERS[game];
+  return (
+    <div className="flex items-center gap-4 mb-5">
+      <div className="flex-shrink-0 w-10 h-[54px] rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/50 shadow-lg">
+        {cover ? (
+          <img src={cover} alt={game} className="w-full h-full object-cover" draggable={false} />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Tv className="w-5 h-5 text-zinc-600" />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <h2 className="font-orbitron font-black text-lg text-white tracking-wide leading-none">
+          {game}
+        </h2>
+        <p className="text-zinc-500 text-xs font-mono mt-1">
+          {count} transmisión{count !== 1 ? "es" : ""} en vivo
+        </p>
+      </div>
+      <Link href={`/streams?game=${encodeURIComponent(game)}`}>
+        <button className="flex items-center gap-1 text-xs font-mono text-zinc-400 hover:text-red-400 transition-colors border border-zinc-700/60 hover:border-red-500/50 px-3 py-1.5 rounded-lg whitespace-nowrap">
+          Mostrar todo
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </Link>
+    </div>
+  );
+}
+
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function Streams() {
-  const [showLiveOnly, setShowLiveOnly] = useState(false);
-  const [selectedStream, setSelectedStream] = useState<any>(null);
-  const { isAuthenticated } = useAuth();
-
-  const { data: streams, isLoading } = trpc.streams.list.useQuery({
-    liveOnly: showLiveOnly || undefined,
+  const { data: groups, isLoading } = trpc.streams.byGame.useQuery(undefined, {
+    refetchInterval: 30_000,
   });
 
-  const liveStreams = streams?.filter(s => s.isLive) ?? [];
-  const allStreams = streams ?? [];
+  const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-zinc-950 text-white">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-20">
 
-      <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
-        <div className="mb-8">
+        {/* ── Page header ── */}
+        <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
-            {liveStreams.length > 0 && <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />}
-            <Radio className="w-5 h-5 text-red-500" />
-            <h1 className="font-orbitron font-black text-3xl text-white tracking-wider">TRANSMISIONES</h1>
-            {liveStreams.length > 0 && (
-              <span className="text-xs font-mono bg-red-600 text-white px-2 py-0.5 rounded animate-pulse">
-                {liveStreams.length} EN VIVO
+            <Radio className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <h1 className="font-orbitron font-black text-3xl sm:text-4xl text-white tracking-wider">
+              EN VIVO
+            </h1>
+            {totalLive > 0 && (
+              <span className="flex items-center gap-1.5 text-xs font-mono bg-red-600 text-white px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(220,38,38,0.4)]">
+                <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                {totalLive} activa{totalLive !== 1 ? "s" : ""}
               </span>
             )}
           </div>
-          <p className="text-zinc-500 font-rajdhani">Sigue los torneos en tiempo real desde Discord, Twitch y YouTube</p>
+          <p className="text-zinc-500 font-rajdhani text-base">
+            Transmisiones agrupadas por juego · actualizado cada 30 segundos
+          </p>
         </div>
 
-        {/* Filter */}
-        <div className="flex gap-3 mb-8">
-          <button onClick={() => setShowLiveOnly(false)}
-            className={`text-xs font-mono px-3 py-2 rounded border transition-all ${!showLiveOnly ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
-            TODOS
-          </button>
-          <button onClick={() => setShowLiveOnly(true)}
-            className={`flex items-center gap-1.5 text-xs font-mono px-3 py-2 rounded border transition-all ${showLiveOnly ? "bg-red-600 border-red-600 text-white" : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-red-500/50"}`}>
-            <div className="w-1.5 h-1.5 bg-current rounded-full animate-pulse" />
-            EN VIVO
-          </button>
-        </div>
-
-        {/* Featured stream player */}
-        {selectedStream && (
-          <div className="mb-8">
-            <div className="bg-zinc-900 border border-red-500/30 rounded-xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  <span className="font-rajdhani font-bold text-white">{selectedStream.title}</span>
-                  <span className={`text-xs px-2 py-0.5 rounded border font-mono ${PLATFORM_COLORS[selectedStream.platform]}`}>
-                    {PLATFORM_ICONS[selectedStream.platform]} {selectedStream.platform.toUpperCase()}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <a href={selectedStream.url} target="_blank" rel="noopener noreferrer">
-                    <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-400 hover:border-red-500 font-orbitron text-xs">
-                      <ExternalLink className="w-3 h-3 mr-1" /> ABRIR
-                    </Button>
-                  </a>
-                  <button onClick={() => setSelectedStream(null)} className="text-zinc-500 hover:text-white text-xs font-mono">✕ CERRAR</button>
-                </div>
-              </div>
-              {selectedStream.embedUrl ? (
-                <div className="aspect-video">
-                  <iframe
-                    src={selectedStream.embedUrl}
-                    className="w-full h-full"
-                    allowFullScreen
-                    allow="autoplay; encrypted-media"
-                    title={selectedStream.title}
-                  />
-                </div>
-              ) : (
-                <div className="aspect-video flex items-center justify-center bg-zinc-950">
-                  <div className="text-center">
-                    <Tv className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-                    <p className="text-zinc-500 font-rajdhani mb-4">Vista previa no disponible</p>
-                    <a href={selectedStream.url} target="_blank" rel="noopener noreferrer">
-                      <Button className="bg-red-600 hover:bg-red-700 font-orbitron text-xs">
-                        <ExternalLink className="w-3 h-3 mr-1" /> VER EN {selectedStream.platform.toUpperCase()}
-                      </Button>
-                    </a>
+        {/* ── Loading skeletons ── */}
+        {isLoading && (
+          <div className="space-y-14">
+            {[0, 1].map((i) => (
+              <div key={i}>
+                <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-6" />
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="w-10 h-[54px] bg-zinc-800 rounded-md animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-zinc-800 rounded w-40 animate-pulse" />
+                    <div className="h-2 bg-zinc-800 rounded w-24 animate-pulse" />
                   </div>
                 </div>
-              )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {Array.from({ length: 5 }).map((_, j) => <SkeletonCard key={j} />)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Empty state ── */}
+        {!isLoading && (!groups || groups.length === 0) && (
+          <div className="flex flex-col items-center justify-center py-32 text-center">
+            <div className="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6">
+              <Radio className="w-9 h-9 text-zinc-700" />
             </div>
+            <h3 className="font-orbitron font-black text-2xl text-zinc-600 mb-2 tracking-wide">
+              SIN TRANSMISIONES
+            </h3>
+            <p className="text-zinc-600 font-rajdhani text-base max-w-sm">
+              No hay transmisiones en vivo en este momento. Vuelve más tarde o activa una desde el panel de creador.
+            </p>
           </div>
         )}
 
-        {/* Streams grid */}
-        {isLoading ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-48 bg-zinc-900/50 rounded-xl animate-pulse" />
-            ))}
-          </div>
-        ) : allStreams.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {allStreams.map((stream) => (
-              <div key={stream.id}
-                onClick={() => setSelectedStream(stream)}
-                className="group bg-zinc-900/80 border border-zinc-800 hover:border-red-500/50 rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(220,38,38,0.1)]">
-                <div className="h-36 relative overflow-hidden bg-zinc-950">
-                  {stream.thumbnailUrl ? (
-                    <img src={stream.thumbnailUrl} alt={stream.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Tv className="w-10 h-10 text-zinc-700" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent" />
-                  {stream.isLive && (
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-red-600 text-white text-xs px-2 py-0.5 rounded font-mono animate-pulse">
-                      <Radio className="w-3 h-3" /> EN VIVO
-                    </div>
-                  )}
-                  <div className="absolute top-2 right-2">
-                    <span className={`text-xs px-2 py-0.5 rounded border font-mono ${PLATFORM_COLORS[stream.platform]}`}>
-                      {PLATFORM_ICONS[stream.platform]} {stream.platform.toUpperCase()}
-                    </span>
-                  </div>
+        {/* ── Game sections ── */}
+        {!isLoading && groups && groups.length > 0 && (
+          <div className="space-y-14">
+            {groups.map(({ game, streams }) => (
+              <section key={game}>
+                <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-6" />
+                <GameSectionHeader game={game} count={streams.length} />
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {streams.slice(0, 5).map((stream) => (
+                    <StreamCard key={stream.id} stream={stream as any} />
+                  ))}
                 </div>
-                <div className="p-4">
-                  <h3 className="font-rajdhani font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-1 mb-1">{stream.title}</h3>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-zinc-500">
-                      {stream.viewerCount && stream.viewerCount > 0 && (
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{stream.viewerCount.toLocaleString()}</span>
-                      )}
-                    </div>
-                    <a href={stream.url} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-zinc-500 hover:text-red-400 transition-colors">
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                </div>
-              </div>
+              </section>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-20">
-            <Radio className="w-16 h-16 mx-auto mb-4 text-zinc-700" />
-            <h3 className="font-orbitron font-bold text-xl text-zinc-600 mb-2">SIN TRANSMISIONES</h3>
-            <p className="text-zinc-600 font-rajdhani">No hay transmisiones {showLiveOnly ? "en vivo " : ""}disponibles.</p>
           </div>
         )}
+
       </div>
     </div>
   );

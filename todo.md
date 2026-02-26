@@ -598,3 +598,12 @@
 - [x] Actualizar tests de rosterCard para reflejar el nuevo diseño
 - [x] RosterCard: eliminar contenido extra debajo de la foto (badge CAP desbordado), aumentar tamaño de tipografía del panel derecho
 - [x] Fix TeamProfile.tsx: usar rosterPhoto (foto original) en lugar de rosterImageUrl (tarjeta completa legacy) como photoUrl de RosterCard
+
+## Streams Browse por Juego V_STREAMS
+- [x] Añadir campo `game` a tabla streams en schema + migración
+- [x] Query getStreamsByGame: agrupados por juego, máx 5 por grupo con window functions
+- [x] tRPC procedure streams.byGame (public)
+- [x] Componente StreamCard premium esports
+- [x] Página /streams rediseñada estilo Twitch Browse por categoría
+- [x] Ruta /streams/:id para página individual del stream
+- [x] Tests para getStreamsByGame

@@ -1,0 +1,59 @@
+{
+  "query": "SELECT id, title, game, isLive, viewerCount FROM streams ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, title, game, isLive, viewerCount FROM streams ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "7",
+      "title": "Apex Legends - Ranked Predator",
+      "game": "Apex Legends",
+      "isLive": "1",
+      "viewerCount": "560"
+    },
+    {
+      "id": "6",
+      "title": "CS2 Major Qualifier",
+      "game": "CS2",
+      "isLive": "1",
+      "viewerCount": "2400"
+    },
+    {
+      "id": "5",
+      "title": "Ranked Radiant Gameplay",
+      "game": "Valorant",
+      "isLive": "1",
+      "viewerCount": "750"
+    },
+    {
+      "id": "4",
+      "title": "Torneo Nacional Valorant - Semifinal",
+      "game": "Valorant",
+      "isLive": "1",
+      "viewerCount": "3100"
+    },
+    {
+      "id": "3",
+      "title": "Pro Practice Session",
+      "game": "League of Legends",
+      "isLive": "1",
+      "viewerCount": "890"
+    },
+    {
+      "id": "2",
+      "title": "Ranked Challenger Grind",
+      "game": "League of Legends",
+      "isLive": "1",
+      "viewerCount": "1230"
+    },
+    {
+      "id": "1",
+      "title": "Grand Finals - LAS Open Series",
+      "game": "League of Legends",
+      "isLive": "1",
+      "viewerCount": "4820"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tgame\tisLive\tviewerCount\n7\tApex Legends - Ranked Predator\tApex Legends\t1\t560\n6\tCS2 Major Qualifier\tCS2\t1\t2400\n5\tRanked Radiant Gameplay\tValorant\t1\t750\n4\tTorneo Nacional Valorant - Semifinal\tValorant\t1\t3100\n3\tPro Practice Session\tLeague of Legends\t1\t890\n2\tRanked Challenger Grind\tLeague of Legends\t1\t1230\n1\tGrand Finals - LAS Open Series\tLeague of Legends\t1\t4820\n",
+  "stderr": "",
+  "execution_time_ms": 367
+}

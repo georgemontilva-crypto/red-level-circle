@@ -22,6 +22,7 @@ import MyTeams from "./pages/MyTeams";
 import Ranking from "./pages/Ranking";
 import { NewsList, NewsArticle } from "./pages/News";
 import Streams from "./pages/Streams";
+import StreamDetail from "./pages/StreamDetail";
 import Betting from "./pages/Betting";
 import TeamProfile from "./pages/TeamProfile";
 import Teams from "./pages/Teams";
@@ -75,6 +76,7 @@ function Router() {
         <Route path="/news" component={NewsList} />
         <Route path="/news/:slug" component={NewsArticle} />
         <Route path="/streams" component={Streams} />
+        <Route path="/streams/:id" component={StreamDetail} />
         <Route path="/betting" component={Betting} />
         <Route path="/teams" component={Teams} />
         <Route path="/teams/:id" component={TeamProfile} />

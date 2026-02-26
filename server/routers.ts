@@ -11,6 +11,7 @@ import {
   createNews,
   createRegistration,
   createStream,
+  getStreamsByGame,
   createTeam,
   createTournament,
   generateBracket,
@@ -883,14 +884,20 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return getStreams(input);
       }),
+    byGame: publicProcedure
+      .query(async () => {
+        return getStreamsByGame();
+      }),
 
     create: premiumProcedure
       .input(z.object({
         tournamentId: z.number().optional(),
         title: z.string().min(1).max(256),
+        streamerName: z.string().max(128).optional(),
         platform: z.enum(["twitch", "youtube", "discord", "other"]),
         url: z.string().url(),
         embedUrl: z.string().optional(),
+        game: z.string().max(64).optional(),
         isLive: z.boolean().default(false),
         thumbnailUrl: z.string().optional(),
       }))

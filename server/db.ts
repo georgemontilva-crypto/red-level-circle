@@ -821,6 +821,52 @@ export async function getStreams(opts?: { liveOnly?: boolean; tournamentId?: num
   return filtered.orderBy(desc(streams.updatedAt));
 }
 
+/**
+ * Returns live streams grouped by game, max 5 per game.
+ * Uses a raw SQL window function (ROW_NUMBER OVER PARTITION BY game)
+ * so only one round-trip is needed regardless of how many games exist.
+ */
+export async function getStreamsByGame(): Promise<
+  Array<{
+    game: string;
+    streams: Array<typeof streams.$inferSelect>;
+  }>
+> {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Raw SQL: rank each live stream within its game partition by viewerCount DESC.
+  // MySQL does not allow filtering on window function aliases in WHERE/HAVING of the same
+  // SELECT level, so we wrap in a subquery.
+  // NOTE: drizzle-orm's db.execute() for MySQL2 returns [rows, fields] like mysql2 directly,
+  // so we destructure the first element to get the actual row array.
+  const [rawRows] = await db.execute(
+    `SELECT * FROM (
+       SELECT s.*,
+              ROW_NUMBER() OVER (
+                PARTITION BY COALESCE(s.game, 'Sin categoría')
+                ORDER BY s.viewerCount DESC, s.updatedAt DESC
+              ) AS rn
+       FROM streams s
+       WHERE s.isLive = 1
+     ) ranked
+     WHERE ranked.rn <= 5
+     ORDER BY ranked.game ASC, ranked.rn ASC`
+  ) as unknown as [Array<typeof streams.$inferSelect & { rn: number }>, unknown];
+
+  // Group into { game -> streams[] } map
+  const map = new Map<string, Array<typeof streams.$inferSelect>>();
+  for (const row of rawRows) {
+    const gameKey = (row as any).game ?? 'Sin categoría';
+    if (!map.has(gameKey)) map.set(gameKey, []);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { rn: _rn, ...rest } = row as any;
+    map.get(gameKey)!.push(rest);
+  }
+
+  return Array.from(map.entries()).map(([game, streams]) => ({ game, streams }));
+}
+
 export async function createStream(data: InsertStream) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
