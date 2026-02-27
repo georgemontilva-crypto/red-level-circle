@@ -1,0 +1,17 @@
+{
+  "query": "SELECT u.id as userId, u.name, u.role, cc.id as creatorId, cc.status FROM users u LEFT JOIN content_creators cc ON cc.userId = u.id WHERE u.role = 'admin';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT u.id as userId, u.name, u.role, cc.id as creatorId, cc.status FROM users u LEFT JOIN content_creators cc ON cc.userId = u.id WHERE u.role = 'admin';",
+  "rows": [
+    {
+      "userId": "1",
+      "name": "Jorge Torres",
+      "role": "admin",
+      "creatorId": "1",
+      "status": "approved"
+    }
+  ],
+  "messages": [],
+  "stdout": "userId\tname\trole\tcreatorId\tstatus\n1\tJorge Torres\tadmin\t1\tapproved\n",
+  "stderr": "",
+  "execution_time_ms": 358
+}

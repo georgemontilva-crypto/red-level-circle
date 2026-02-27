@@ -637,3 +637,10 @@
 - [x] Viewer count real de YouTube via videos?part=liveStreamingDetails
 - [x] Notificación al owner cuando isLive cambia de false a true (Twitch + YouTube)
 - [x] Tests para las nuevas funciones (102 pasando)
+
+## Perfil de Creador — Mejoras
+- [x] Aprobar cuenta admin como creador en BD (ya estaba aprobado)
+- [x] Badge EN VIVO pulsante en perfil público del creador (streams.activeByUser, refresco 60s)
+- [x] Historial de streams en perfil del creador (procedure historyByUser + UI en tab overview)
+- [x] Procedures streams.activeByUser y streams.historyByUser en router (públicos)
+- [x] 102 tests pasando, 0 errores TypeScript

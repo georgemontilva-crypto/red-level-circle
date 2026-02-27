@@ -140,6 +140,7 @@ import {
   getActiveStreamByUser,
   createCreatorStream,
   stopCreatorStream,
+  getStreamHistoryByUser,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -965,6 +966,18 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         await stopCreatorStream(input.id, ctx.user.id, ctx.user.role === "admin");
         return { success: true };
+      }),
+    /** Returns the active (isLive=true) stream for any user by userId (public) */
+    activeByUser: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return getActiveStreamByUser(input.userId);
+      }),
+    /** Returns the last N streams for a user (public, for profile history) */
+    historyByUser: publicProcedure
+      .input(z.object({ userId: z.number(), limit: z.number().min(1).max(20).default(10) }))
+      .query(async ({ input }) => {
+        return getStreamHistoryByUser(input.userId, input.limit);
       }),
   }),
 

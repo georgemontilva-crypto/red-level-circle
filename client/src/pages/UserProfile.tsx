@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import {
   User, Trophy, Gamepad2, Twitter, MessageSquare, Tv2,
   Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
-  Loader2, BadgeCheck, Camera, Save, Star,
+  Loader2, BadgeCheck, Camera, Save, Star, Radio, Clock, Eye,
 } from "lucide-react";
 import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
@@ -108,6 +108,14 @@ export default function UserProfile() {
   const { data: following } = trpc.follows.getFollowing.useQuery(
     { userId },
     { enabled: activeTab === "following" }
+  );
+  const { data: activeStream } = trpc.streams.activeByUser.useQuery(
+    { userId },
+    { enabled: !!userId, refetchInterval: 60_000 }
+  );
+  const { data: streamHistory = [] } = trpc.streams.historyByUser.useQuery(
+    { userId, limit: 10 },
+    { enabled: !!userId }
   );
 
   if (isLoading) {
@@ -249,6 +257,19 @@ export default function UserProfile() {
                 )}
                 {profile.role === "premium" && (
                   <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-red-500/15 text-red-400 border border-red-500/30">PREMIUM</span>
+                )}
+                {activeStream && (
+                  <a
+                    href={activeStream.url ?? undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-mono animate-pulse"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.2)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", color: "oklch(0.75 0.22 25)" }}
+                  >
+                    <Radio className="w-3 h-3" />
+                    EN VIVO
+                    {activeStream.viewerCount ? <span className="opacity-80">· {activeStream.viewerCount.toLocaleString()}</span> : null}
+                  </a>
                 )}
               </div>
               {/* Username / handle */}
@@ -461,6 +482,56 @@ export default function UserProfile() {
               )}
 
 
+              {/* Stream history */}
+              {(streamHistory as any[]).length > 0 && (
+                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                    <Tv2 className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                    <span className="text-xs font-display tracking-wider text-foreground">STREAMS</span>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+                    {(streamHistory as any[]).map((s) => (
+                      <a
+                        key={s.id}
+                        href={s.url ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
+                      >
+                        {s.thumbnailUrl ? (
+                          <img src={s.thumbnailUrl} alt="" className="w-16 h-9 rounded object-cover shrink-0" style={{ border: "1px solid oklch(0.22 0.01 0)" }} />
+                        ) : (
+                          <div className="w-16 h-9 rounded flex items-center justify-center shrink-0" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                            <Tv2 size={14} style={{ color: "oklch(0.40 0.005 0)" }} />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">{s.title ?? "Sin título"}</p>
+                          <div className="flex items-center gap-3 mt-0.5">
+                            {s.game && <span className="text-xs text-muted-foreground truncate">{s.game}</span>}
+                            {s.viewerCount ? (
+                              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Eye className="w-3 h-3" />{s.viewerCount.toLocaleString()}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          {s.isLive ? (
+                            <span className="px-1.5 py-0.5 rounded text-xs font-mono animate-pulse" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.75 0.22 25)" }}>EN VIVO</span>
+                          ) : (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="w-3 h-3" />
+                              {new Date(s.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
+                            </span>
+                          )}
+                          <span className="text-xs font-mono capitalize" style={{ color: "oklch(0.50 0.005 0)" }}>{s.platform ?? ""}</span>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
               {/* No activity placeholder */}
               <div
                 className="rounded-xl p-6 text-center"

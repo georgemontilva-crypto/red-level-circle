@@ -932,6 +932,24 @@ export async function stopCreatorStream(streamId: number, userId: number, isAdmi
   await db.update(streams).set({ isLive: false }).where(eq(streams.id, streamId));
 }
 
+/**
+ * Returns the last N streams (live or offline) for a given user, ordered by updatedAt desc.
+ * Used for the public stream history section in the user profile.
+ */
+export async function getStreamHistoryByUser(
+  userId: number,
+  limit = 10
+): Promise<(typeof streams.$inferSelect)[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(streams)
+    .where(eq(streams.userId, userId))
+    .orderBy(desc(streams.updatedAt))
+    .limit(limit);
+}
+
 export async function createStream(data: InsertStream) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
