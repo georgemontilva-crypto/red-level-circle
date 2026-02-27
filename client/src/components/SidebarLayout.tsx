@@ -25,7 +25,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: number): NavSection[] {
+function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: number, liveCount?: number): NavSection[] {
   const sections: NavSection[] = [
     {
       title: "GENERAL",
@@ -39,7 +39,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       items: [
         { label: "Torneos", href: "/tournaments", icon: Trophy },
         { label: "Ranking", href: "/ranking", icon: Star },
-        { label: "En Vivo", href: "/streams", icon: Radio },
+        { label: "En Vivo", href: "/streams", icon: Radio, badge: liveCount ?? 0 },
       ],
     },
     {
@@ -110,6 +110,10 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const { data: pendingCount } = trpc.registrations.pendingCount.useQuery(undefined, {
     enabled: isPremium,
   });
+  const { data: liveData } = trpc.streams.liveCount.useQuery(undefined, {
+    refetchInterval: 60_000,
+    staleTime: 30_000,
+  });
 
   const { data: wallet } = trpc.auth.wallet.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -120,7 +124,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   });
   const activeFrame = activeCosmetics?.find((c) => c.isEquipped && c.type === "frame");
 
-  const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0);
+  const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0, liveData?.count ?? 0);
 
   const isActive = (href: string) => location === href;
 

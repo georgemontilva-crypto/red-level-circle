@@ -615,3 +615,8 @@
 - [x] UI Creators.tsx: sección "Transmitir ahora" con formulario (título, juego, plataforma, URL) y estado de stream activo
 - [x] StreamCard: badge TORNEO vs CREADOR diferenciador
 - [x] Tests para nuevos procedures de streams de creadores
+
+## Limpieza y mejoras de streams
+- [x] Eliminar streams de prueba (mocks) de la BD
+- [x] Contador EN VIVO en sidebar con badge rojo y refresco cada 60s
+- [x] Integrar Twitch API: cron job que actualiza isLive, viewerCount y thumbnailUrl automáticamente

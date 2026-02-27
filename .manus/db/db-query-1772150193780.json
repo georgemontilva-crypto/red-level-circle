@@ -1,0 +1,91 @@
+{
+  "query": "SELECT id, title, streamerName, game, isLive, type, userId FROM streams ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, title, streamerName, game, isLive, type, userId FROM streams ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "title": "Grand Finals - LAS Open Series",
+      "streamerName": "TioMemox",
+      "game": "League of Legends",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "2",
+      "title": "Ranked Challenger Grind",
+      "streamerName": "GamingMonster",
+      "game": "League of Legends",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "3",
+      "title": "Pro Practice Session",
+      "streamerName": "RLCPro",
+      "game": "League of Legends",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "4",
+      "title": "Torneo Nacional Valorant - Semifinal",
+      "streamerName": "ValorantVE",
+      "game": "Valorant",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "5",
+      "title": "Ranked Radiant Gameplay",
+      "streamerName": "ProValorant",
+      "game": "Valorant",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "6",
+      "title": "CS2 Major Qualifier",
+      "streamerName": "CSProTeam",
+      "game": "CS2",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "7",
+      "title": "Apex Legends - Ranked Predator",
+      "streamerName": "ApexGod",
+      "game": "Apex Legends",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "NULL"
+    },
+    {
+      "id": "8",
+      "title": "New Stream",
+      "streamerName": "NULL",
+      "game": "Valorant",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "1"
+    },
+    {
+      "id": "9",
+      "title": "My First Stream",
+      "streamerName": "NULL",
+      "game": "League of Legends",
+      "isLive": "1",
+      "type": "creator",
+      "userId": "2"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstreamerName\tgame\tisLive\ttype\tuserId\n1\tGrand Finals - LAS Open Series\tTioMemox\tLeague of Legends\t1\tcreator\tNULL\n2\tRanked Challenger Grind\tGamingMonster\tLeague of Legends\t1\tcreator\tNULL\n3\tPro Practice Session\tRLCPro\tLeague of Legends\t1\tcreator\tNULL\n4\tTorneo Nacional Valorant - Semifinal\tValorantVE\tValorant\t1\tcreator\tNULL\n5\tRanked Radiant Gameplay\tProValorant\tValorant\t1\tcreator\tNULL\n6\tCS2 Major Qualifier\tCSProTeam\tCS2\t1\tcreator\tNULL\n7\tApex Legends - Ranked Predator\tApexGod\tApex Legends\t1\tcreator\tNULL\n8\tNew Stream\tNULL\tValorant\t1\tcreator\t1\n9\tMy First Stream\tNULL\tLeague of Legends\t1\tcreator\t2\n",
+  "stderr": "",
+  "execution_time_ms": 380
+}

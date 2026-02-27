@@ -154,7 +154,7 @@ import { storagePut } from "./storage";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql } from "drizzle-orm";
-import { sectionBanners, tournaments, teams, users } from "../drizzle/schema";
+import { sectionBanners, tournaments, teams, users, streams } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
 import { eventBus } from "./eventBus";
 
@@ -902,6 +902,16 @@ export const appRouter = router({
       .query(async () => {
         return getStreamsByGame();
       }),
+    /** Returns the count of currently live streams (public, for sidebar badge) */
+    liveCount: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return { count: 0 };
+      const rows = await db
+        .select({ count: sql<number>`COUNT(*)` })
+        .from(streams)
+        .where(eq(streams.isLive, true));
+      return { count: Number(rows[0]?.count ?? 0) };
+    }),
 
     create: premiumProcedure
       .input(z.object({

@@ -1,0 +1,9 @@
+{
+  "query": "DELETE FROM streams WHERE title IN ('Apex Ranked Push', 'CS2 Premier', 'LoL Ranked Climb', 'LoL Coaching Session', 'LoL Pro Scrims', 'Valorant Radiant Run', 'Valorant IGL POV') OR streamerName IN ('ProPlayer_RLC', 'FragMaster', 'MidLaner', 'JungleCoach', 'ADCarry', 'ValorantPro', 'IGLStream');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute DELETE FROM streams WHERE title IN ('Apex Ranked Push', 'CS2 Premier', 'LoL Ranked Climb', 'LoL Coaching Session', 'LoL Pro Scrims', 'Valorant Radiant Run', 'Valorant IGL POV') OR streamerName IN ('ProPlayer_RLC', 'FragMaster', 'MidLaner', 'JungleCoach', 'ADCarry', 'ValorantPro', 'IGLStream');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 431
+}

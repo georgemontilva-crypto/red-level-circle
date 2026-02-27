@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { registerNotificationListeners } from "../notifications";
+import { startTwitchSyncJob } from "../twitchSync";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -65,5 +66,7 @@ async function startServer() {
 
 // Register event-driven notification listeners
 registerNotificationListeners();
+// Start Twitch stream sync job (polls every 2 minutes)
+startTwitchSyncJob();
 
 startServer().catch(console.error);
