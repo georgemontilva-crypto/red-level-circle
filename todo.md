@@ -754,3 +754,10 @@
 ## Bug Fix: Ficha de Jugador V24
 - [x] Diagnosticar por qué el formulario de ficha (alineación) no guarda la información
 - [x] Corregir el bug en el formulario y/o procedimiento backend
+
+## Fix RosterCard V25
+- [x] Reescribir RosterCard.tsx con layout horizontal 60/40 correcto (foto izquierda, info derecha)
+- [x] Eliminar texto "JUGADOR", duplicaciones y elementos incorrectos
+- [x] Restaurar CSS con estilos esports: fondo #1a1a1a, bordes dorados, hover con sombra dorada
+- [x] Responsive: vertical en mobile (foto arriba, info abajo)
+- [x] Corregir TeamProfile.tsx para pasar todos los campos al RosterCard (nickname, realName, gameRole, region, game, team, rosterImageUrl)

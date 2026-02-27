@@ -545,9 +545,13 @@ export default function TeamProfile() {
                   {team.members.map((m: any) => (
                     <RosterCard
                       key={m.id}
-                      playerName={m.username ?? m.name ?? "Jugador"}
-                      role={m.role ?? undefined}
-                      photoUrl={m.avatar ?? m.photoUrl ?? null}
+                      playerName={m.nickname ?? m.userName ?? m.username ?? m.name ?? "Jugador"}
+                      realName={m.nickname ? (m.userName ?? undefined) : undefined}
+                      role={m.gameRole ?? m.role ?? undefined}
+                      region={m.competitiveRegion ?? m.country ?? undefined}
+                      game={m.mainGame ?? undefined}
+                      photoUrl={m.rosterImageUrl ?? m.rosterPhoto ?? m.avatar ?? m.photoUrl ?? null}
+                      team={team.name ?? undefined}
                       isCaptain={m.userId === team.captainId}
                       userId={m.userId}
                     />
