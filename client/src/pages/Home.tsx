@@ -427,12 +427,22 @@ function TeamsAndPeopleSection() {
   const allTeams = topTeams ?? [];
   const allPeople = (people ?? []).filter((u: any) => !isAuthenticated || u.id !== user?.id);
 
-  // Rotate displayed items
+  // Rotate displayed items — sin duplicar cuando hay menos de 8 elementos
   const displayedTeams = allTeams.length > 0
-    ? [...allTeams, ...allTeams].slice(teamOffset % allTeams.length, (teamOffset % allTeams.length) + 8).slice(0, 8)
+    ? (() => {
+        if (allTeams.length <= 8) return allTeams.slice(0, 8);
+        const start = teamOffset % allTeams.length;
+        const doubled = [...allTeams, ...allTeams];
+        return doubled.slice(start, start + 8).slice(0, 8);
+      })()
     : [];
   const displayedPeople = allPeople.length > 0
-    ? [...allPeople, ...allPeople].slice(userOffset % allPeople.length, (userOffset % allPeople.length) + 8).slice(0, 8)
+    ? (() => {
+        if (allPeople.length <= 8) return allPeople.slice(0, 8);
+        const start = userOffset % allPeople.length;
+        const doubled = [...allPeople, ...allPeople];
+        return doubled.slice(start, start + 8).slice(0, 8);
+      })()
     : [];
 
   // Auto-refresh every 30 seconds

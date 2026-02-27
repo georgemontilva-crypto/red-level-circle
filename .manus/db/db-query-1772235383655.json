@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, name, points FROM teams ORDER BY points DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, name, points FROM teams ORDER BY points DESC LIMIT 20;",
+  "rows": [
+    {
+      "id": "30001",
+      "name": "Avejas Rojas",
+      "points": "0"
+    },
+    {
+      "id": "1",
+      "name": "Gaming Monster",
+      "points": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tpoints\n30001\tAvejas Rojas\t0\n1\tGaming Monster\t0\n",
+  "stderr": "",
+  "execution_time_ms": 393
+}

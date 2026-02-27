@@ -786,3 +786,6 @@
 - [x] Frontend: botón "Transferir Capitanía" en el roster del equipo (modal con lista de miembros seleccionables)
 - [x] Frontend: botón "Disolver Equipo" con modal de confirmación (requiere escribir el nombre del equipo)
 - [x] Frontend: contador de miembros en el roster (ej. 3/10) y bloqueo al llegar al límite
+
+## Bug Fix: Duplicación en Top Equipos V31
+- [x] Corregir duplicación de equipos en la sección "Top Equipos" de la página Comunidad
