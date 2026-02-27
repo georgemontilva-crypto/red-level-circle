@@ -1,10 +1,10 @@
 /**
  * BracketView — Visualización interactiva de brackets de torneo.
  * Muestra las rondas en columnas con líneas conectoras SVG.
- * El creador puede marcar ganador/perdedor directamente en cada tarjeta con ✓/✗.
+ * El organizador puede registrar el resultado (scoreA/scoreB) haciendo clic en la tarjeta.
  */
 import { useState } from "react";
-import { Trophy, Check, X, Loader2 } from "lucide-react";
+import { Trophy, Swords, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 export interface BracketMatch {
   id: number;
@@ -22,8 +22,8 @@ export interface BracketMatch {
 
 interface BracketViewProps {
   matches: BracketMatch[];
-  /** Called when the creator declares a winner inline */
-  onDeclareWinner?: (matchId: number, winnerId: number) => Promise<void>;
+  /** Called when the organizer submits scores */
+  onDeclareWinner?: (matchId: number, team1Score: number, team2Score: number) => Promise<void>;
   canEditResults?: boolean;
   /** Show a demo/example bracket when no matches exist */
   showDemo?: boolean;
@@ -36,15 +36,12 @@ const ROW_GAP = 28;  // vertical gap between cards in the same round
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
 const DEMO_MATCHES: BracketMatch[] = [
-  // Cuartos de final
   { id: 1, round: 1, matchNumber: 1, team1Id: 1, team2Id: 2, team1Name: "Red Dragons", team2Name: "Blue Storm", team1Score: 2, team2Score: 0, winnerId: 1, status: "completed" },
   { id: 2, round: 1, matchNumber: 2, team1Id: 3, team2Id: 4, team1Name: "Night Wolves", team2Name: "Iron Fist", team1Score: 1, team2Score: 2, winnerId: 4, status: "completed" },
   { id: 3, round: 1, matchNumber: 3, team1Id: 5, team2Id: 6, team1Name: "Cyber Hawks", team2Name: "Shadow Clan", team1Score: null, team2Score: null, winnerId: null, status: "pending" },
   { id: 4, round: 1, matchNumber: 4, team1Id: 7, team2Id: 8, team1Name: "Apex Squad", team2Name: "Void Breakers", team1Score: null, team2Score: null, winnerId: null, status: "pending" },
-  // Semifinales
   { id: 5, round: 2, matchNumber: 5, team1Id: 1, team2Id: 4, team1Name: "Red Dragons", team2Name: "Iron Fist", team1Score: null, team2Score: null, winnerId: null, status: "pending" },
   { id: 6, round: 2, matchNumber: 6, team1Id: null, team2Id: null, team1Name: "TBD", team2Name: "TBD", team1Score: null, team2Score: null, winnerId: null, status: "pending" },
-  // Final
   { id: 7, round: 3, matchNumber: 7, team1Id: null, team2Id: null, team1Name: "TBD", team2Name: "TBD", team1Score: null, team2Score: null, winnerId: null, status: "pending" },
 ];
 
@@ -57,81 +54,238 @@ function roundLabel(roundIndex: number, totalRounds: number): string {
   return `RONDA ${roundIndex + 1}`;
 }
 
+// ─── Score Modal ──────────────────────────────────────────────────────────────
+function ScoreModal({
+  match,
+  onClose,
+  onSubmit,
+}: {
+  match: BracketMatch;
+  onClose: () => void;
+  onSubmit: (matchId: number, s1: number, s2: number) => Promise<void>;
+}) {
+  const [s1, setS1] = useState("");
+  const [s2, setS2] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const n1 = parseInt(s1);
+  const n2 = parseInt(s2);
+  const valid = !isNaN(n1) && !isNaN(n2) && s1 !== "" && s2 !== "";
+  const isDraw = valid && n1 === n2;
+  const predictedWinner = valid && !isDraw
+    ? (n1 > n2 ? match.team1Name : match.team2Name)
+    : null;
+
+  const handleSubmit = async () => {
+    if (!valid || isDraw) return;
+    setSaving(true);
+    try {
+      await onSubmit(match.id, n1, n2);
+      onClose();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "oklch(0 0 0 / 0.75)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl p-6"
+        style={{
+          background: "oklch(0.10 0.005 0)",
+          border: "1px solid oklch(0.55 0.22 25 / 0.35)",
+          boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.18)",
+          animation: "fadeInScale 0.18s ease-out",
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 mb-5">
+          <Swords size={17} style={{ color: "oklch(0.55 0.22 25)" }} />
+          <h3 className="font-display text-sm font-bold tracking-widest text-foreground">
+            REGISTRAR RESULTADO
+          </h3>
+          <span className="ml-auto text-xs font-mono text-zinc-600">
+            #{match.matchNumber}
+          </span>
+        </div>
+
+        <div className="space-y-3 mb-4">
+          {/* Team 1 */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+            >
+              {(match.team1Name ?? "?").charAt(0).toUpperCase()}
+            </div>
+            <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
+              {match.team1Name ?? "Equipo 1"}
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={s1}
+              onChange={(e) => setS1(e.target.value)}
+              placeholder="0"
+              autoFocus
+              className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
+              style={{
+                background: "oklch(0.09 0.005 0)",
+                border: valid && !isDraw && n1 > n2
+                  ? "1px solid oklch(0.65 0.18 145 / 0.7)"
+                  : "1px solid oklch(0.25 0.01 0)",
+                color: valid && !isDraw && n1 > n2
+                  ? "oklch(0.72 0.18 145)"
+                  : "oklch(0.90 0.005 0)",
+                outline: "none",
+              }}
+            />
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-2 px-1">
+            <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+            <span className="text-xs font-mono text-zinc-700">VS</span>
+            <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+          </div>
+
+          {/* Team 2 */}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+            >
+              {(match.team2Name ?? "?").charAt(0).toUpperCase()}
+            </div>
+            <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
+              {match.team2Name ?? "Equipo 2"}
+            </span>
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={s2}
+              onChange={(e) => setS2(e.target.value)}
+              placeholder="0"
+              className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
+              style={{
+                background: "oklch(0.09 0.005 0)",
+                border: valid && !isDraw && n2 > n1
+                  ? "1px solid oklch(0.65 0.18 145 / 0.7)"
+                  : "1px solid oklch(0.25 0.01 0)",
+                color: valid && !isDraw && n2 > n1
+                  ? "oklch(0.72 0.18 145)"
+                  : "oklch(0.90 0.005 0)",
+                outline: "none",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Live preview */}
+        {predictedWinner && (
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
+            style={{ background: "oklch(0.65 0.18 145 / 0.07)", border: "1px solid oklch(0.65 0.18 145 / 0.22)" }}
+          >
+            <CheckCircle size={12} style={{ color: "oklch(0.65 0.18 145)" }} />
+            <span className="text-xs font-mono" style={{ color: "oklch(0.72 0.18 145)" }}>
+              Ganador: <strong>{predictedWinner}</strong>
+            </span>
+          </div>
+        )}
+        {isDraw && (
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
+            style={{ background: "oklch(0.55 0.22 25 / 0.07)", border: "1px solid oklch(0.55 0.22 25 / 0.22)" }}
+          >
+            <AlertCircle size={12} style={{ color: "oklch(0.65 0.22 25)" }} />
+            <span className="text-xs font-mono" style={{ color: "oklch(0.65 0.22 25)" }}>
+              El marcador no puede ser empate
+            </span>
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 rounded-xl font-display text-xs tracking-widest"
+            style={{
+              background: "transparent",
+              border: "1px solid oklch(0.22 0.01 0)",
+              color: "oklch(0.55 0.005 0)",
+            }}
+          >
+            CANCELAR
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!valid || isDraw || saving}
+            className="flex-1 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-40"
+            style={{
+              background: "oklch(0.55 0.22 25)",
+              color: "oklch(0.98 0 0)",
+              boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.35)",
+            }}
+          >
+            {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "GUARDAR"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── MatchCard ────────────────────────────────────────────────────────────────
 function MatchCard({
   match,
   canEdit,
-  onDeclareWinner,
+  onOpenScoreModal,
   isDemo,
 }: {
   match: BracketMatch;
   canEdit?: boolean;
-  onDeclareWinner?: (matchId: number, winnerId: number) => Promise<void>;
+  onOpenScoreModal?: (match: BracketMatch) => void;
   isDemo?: boolean;
 }) {
-  const [loading, setLoading] = useState<number | null>(null); // teamId being saved
-  const [hovered, setHovered] = useState<1 | 2 | null>(null);
-
   const isPending = match.status === "pending";
   const isCompleted = match.status === "completed";
   const hasBothTeams = match.team1Id !== null && match.team2Id !== null;
   const canDeclare = canEdit && isPending && hasBothTeams && !isDemo;
 
-  const handleDeclare = async (winnerId: number) => {
-    if (!canDeclare || loading !== null) return;
-    setLoading(winnerId);
-    try {
-      await onDeclareWinner?.(match.id, winnerId);
-    } finally {
-      setLoading(null);
-    }
-  };
-
   const borderColor = isCompleted
     ? "oklch(0.65 0.18 145 / 0.45)"
-    : isDemo && isPending
-    ? "oklch(0.30 0.01 0)"
     : "oklch(0.20 0.01 0)";
 
   const glowShadow = isCompleted
     ? "0 0 12px oklch(0.65 0.18 145 / 0.12)"
     : undefined;
 
-  // Team row renderer
   const TeamRow = ({
     teamId,
     teamName,
     score,
-    slot,
   }: {
     teamId: number | null;
     teamName: string | null | undefined;
     score: number | null | undefined;
-    slot: 1 | 2;
   }) => {
-    const isWinner = isCompleted && match.winnerId === teamId;
-    const isLoser = isCompleted && match.winnerId !== null && match.winnerId !== teamId;
-    const isHovered = hovered === slot;
+    const isWinner = isCompleted && match.winnerId === teamId && teamId !== null;
+    const isLoser = isCompleted && match.winnerId !== null && match.winnerId !== teamId && teamId !== null;
 
     return (
-      <div
-        className="flex items-center gap-1.5 px-3 py-1.5 relative transition-all duration-150"
-        style={{
-          background: isHovered && canDeclare
-            ? slot === 1
-              ? "oklch(0.65 0.18 145 / 0.08)"
-              : "oklch(0.55 0.22 25 / 0.08)"
-            : "transparent",
-        }}
-        onMouseEnter={() => canDeclare && setHovered(slot)}
-        onMouseLeave={() => setHovered(null)}
-      >
+      <div className="flex items-center gap-1.5 px-3 py-1.5">
         {/* Winner trophy */}
         {isWinner && <Trophy className="w-3 h-3 text-yellow-400 flex-shrink-0" />}
 
         {/* Team name */}
         <span
-          className={`text-xs font-bold font-mono truncate flex-1 transition-colors duration-150 ${
+          className={`text-xs font-bold font-mono truncate flex-1 ${
             isWinner
               ? "text-green-400"
               : isLoser
@@ -144,56 +298,34 @@ function MatchCard({
           {teamName ?? (teamId ? `Equipo ${teamId}` : "TBD")}
         </span>
 
-        {/* Score */}
-        {isCompleted && score !== null && score !== undefined && (
-          <span
-            className={`text-sm font-black font-mono w-5 text-right flex-shrink-0 ${
-              isWinner ? "text-green-400" : "text-zinc-600"
-            }`}
-          >
-            {score}
-          </span>
-        )}
-
-        {/* Inline ✓/✗ buttons — only when canDeclare and hovering */}
-        {canDeclare && isHovered && (
-          <div className="flex items-center gap-1 flex-shrink-0 ml-1">
-            {loading === teamId ? (
-              <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
-            ) : (
-              <>
-                <button
-                  title={`${teamName} GANA`}
-                  onClick={(e) => { e.stopPropagation(); handleDeclare(teamId!); }}
-                  className="w-5 h-5 rounded flex items-center justify-center transition-all duration-150 hover:scale-110"
-                  style={{ background: "oklch(0.65 0.18 145 / 0.2)", border: "1px solid oklch(0.65 0.18 145 / 0.5)" }}
-                >
-                  <Check className="w-3 h-3 text-green-400" />
-                </button>
-                <button
-                  title={`${teamName} PIERDE`}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Declare the OTHER team as winner
-                    const otherId = slot === 1 ? match.team2Id : match.team1Id;
-                    if (otherId) handleDeclare(otherId);
-                  }}
-                  className="w-5 h-5 rounded flex items-center justify-center transition-all duration-150 hover:scale-110"
-                  style={{ background: "oklch(0.55 0.22 25 / 0.2)", border: "1px solid oklch(0.55 0.22 25 / 0.5)" }}
-                >
-                  <X className="w-3 h-3 text-red-400" />
-                </button>
-              </>
-            )}
-          </div>
-        )}
+        {/* Score — always show when completed, dash when pending */}
+        <span
+          className={`text-sm font-black font-mono w-5 text-right flex-shrink-0 ${
+            isCompleted
+              ? isWinner
+                ? "text-green-400"
+                : isLoser
+                ? "text-zinc-600"
+                : "text-zinc-400"
+              : "text-zinc-700"
+          }`}
+          style={
+            isCompleted && score !== null && score !== undefined
+              ? { color: isWinner ? "oklch(0.72 0.18 145)" : "oklch(0.45 0.005 0)" }
+              : {}
+          }
+        >
+          {isCompleted && score !== null && score !== undefined ? score : "-"}
+        </span>
       </div>
     );
   };
 
   return (
     <div
-      className="relative rounded-xl overflow-hidden select-none"
+      className={`relative rounded-xl overflow-hidden select-none transition-all duration-200 ${
+        canDeclare ? "cursor-pointer hover:scale-[1.02]" : ""
+      }`}
       style={{
         width: CARD_W,
         height: CARD_H,
@@ -202,6 +334,7 @@ function MatchCard({
         boxShadow: glowShadow,
         opacity: isDemo && match.team1Id === null ? 0.5 : 1,
       }}
+      onClick={() => canDeclare && onOpenScoreModal?.(match)}
     >
       {/* Match number */}
       <div className="absolute top-1 left-2 text-xs font-mono opacity-30" style={{ fontSize: 9 }}>
@@ -215,22 +348,22 @@ function MatchCard({
         </div>
       )}
 
-      {/* Teams */}
-      <div className="flex flex-col justify-center h-full pt-3 gap-0">
-        <TeamRow teamId={match.team1Id} teamName={match.team1Name} score={match.team1Score} slot={1} />
-        <div className="h-px mx-3" style={{ background: "oklch(0.18 0.01 0)" }} />
-        <TeamRow teamId={match.team2Id} teamName={match.team2Name} score={match.team2Score} slot={2} />
-      </div>
-
-      {/* Pending hint */}
-      {isPending && hasBothTeams && canDeclare && (
+      {/* Click hint for editable pending matches */}
+      {canDeclare && (
         <div
-          className="absolute bottom-0.5 left-0 right-0 text-center text-xs font-mono opacity-50 pointer-events-none"
+          className="absolute top-1 right-2 text-xs font-mono opacity-50"
           style={{ fontSize: 8, color: "oklch(0.55 0.22 25)" }}
         >
-          PASA EL CURSOR PARA REGISTRAR
+          CLIC PARA REGISTRAR
         </div>
       )}
+
+      {/* Teams */}
+      <div className="flex flex-col justify-center h-full pt-3 gap-0">
+        <TeamRow teamId={match.team1Id} teamName={match.team1Name} score={match.team1Score} />
+        <div className="h-px mx-3" style={{ background: "oklch(0.18 0.01 0)" }} />
+        <TeamRow teamId={match.team2Id} teamName={match.team2Name} score={match.team2Score} />
+      </div>
     </div>
   );
 }
@@ -242,6 +375,8 @@ export default function BracketView({
   canEditResults,
   showDemo = false,
 }: BracketViewProps) {
+  const [scoreModal, setScoreModal] = useState<BracketMatch | null>(null);
+
   const effectiveMatches = (!matches || matches.length === 0) && showDemo
     ? DEMO_MATCHES
     : matches;
@@ -299,107 +434,121 @@ export default function BracketView({
   const svgPadding = 20;
 
   return (
-    <div>
-      {isDemo && (
-        <div
-          className="mb-4 px-4 py-2.5 rounded-lg text-xs font-mono flex items-center gap-2"
-          style={{
-            background: "oklch(0.55 0.22 25 / 0.08)",
-            border: "1px solid oklch(0.55 0.22 25 / 0.25)",
-            color: "oklch(0.65 0.22 25)",
-          }}
-        >
-          <Trophy className="w-3.5 h-3.5 flex-shrink-0" />
-          Vista previa — Este es un ejemplo de cómo se verá el bracket cuando el torneo esté en curso.
-        </div>
-      )}
-
-      <div className="overflow-x-auto pb-4">
-        <div
-          style={{
-            position: "relative",
-            width: totalW + svgPadding * 2,
-            minWidth: totalW + svgPadding * 2,
-          }}
-        >
-          {/* Round labels */}
-          <div className="flex" style={{ paddingLeft: svgPadding }}>
-            {rounds.map((_, ri) => (
-              <div
-                key={ri}
-                style={{ width: CARD_W, marginRight: ri < rounds.length - 1 ? COL_GAP : 0 }}
-                className="text-center mb-3"
-              >
-                <span
-                  className="text-xs font-mono tracking-widest px-3 py-1 rounded-full"
-                  style={{
-                    color: "oklch(0.55 0.22 25)",
-                    background: "oklch(0.55 0.22 25 / 0.08)",
-                    border: "1px solid oklch(0.55 0.22 25 / 0.2)",
-                  }}
-                >
-                  {roundLabel(ri, rounds.length)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* SVG connectors */}
-          <svg
+    <>
+      <div>
+        {isDemo && (
+          <div
+            className="mb-4 px-4 py-2.5 rounded-lg text-xs font-mono flex items-center gap-2"
             style={{
-              position: "absolute",
-              top: 36,
-              left: svgPadding,
-              width: totalW,
-              height: totalH,
-              pointerEvents: "none",
-              overflow: "visible",
+              background: "oklch(0.55 0.22 25 / 0.08)",
+              border: "1px solid oklch(0.55 0.22 25 / 0.25)",
+              color: "oklch(0.65 0.22 25)",
             }}
           >
-            {connectors.map((c, i) => {
-              const midX = (c.x1 + c.x2) / 2;
-              return (
-                <path
-                  key={i}
-                  d={`M ${c.x1} ${c.y1} C ${midX} ${c.y1}, ${midX} ${c.y2}, ${c.x2} ${c.y2}`}
-                  fill="none"
-                  stroke={c.done ? "oklch(0.65 0.18 145 / 0.35)" : "oklch(0.22 0.01 0)"}
-                  strokeWidth={c.done ? 2 : 1.5}
-                  strokeDasharray={c.done ? undefined : "4 3"}
-                />
-              );
-            })}
-          </svg>
+            <Trophy className="w-3.5 h-3.5 flex-shrink-0" />
+            Vista previa — Este es un ejemplo de cómo se verá el bracket cuando el torneo esté en curso.
+          </div>
+        )}
 
-          {/* Match cards */}
-          <div style={{ position: "relative", height: totalH + 8, paddingLeft: svgPadding, paddingTop: 8 }}>
-            {rounds.map((_, ri) => (
-              <div key={ri} style={{ position: "absolute", left: svgPadding + ri * (CARD_W + COL_GAP) }}>
-                {matchesByRound[ri].map((match, mi) => {
-                  const yCenter = roundPositions[ri][mi];
-                  return (
-                    <div
-                      key={match.id}
-                      style={{
-                        position: "absolute",
-                        top: yCenter - CARD_H / 2,
-                        left: 0,
-                      }}
-                    >
-                      <MatchCard
-                        match={match}
-                        canEdit={canEditResults}
-                        onDeclareWinner={onDeclareWinner}
-                        isDemo={isDemo}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+        <div className="overflow-x-auto pb-4">
+          <div
+            style={{
+              position: "relative",
+              width: totalW + svgPadding * 2,
+              minWidth: totalW + svgPadding * 2,
+            }}
+          >
+            {/* Round labels */}
+            <div className="flex" style={{ paddingLeft: svgPadding }}>
+              {rounds.map((_, ri) => (
+                <div
+                  key={ri}
+                  style={{ width: CARD_W, marginRight: ri < rounds.length - 1 ? COL_GAP : 0 }}
+                  className="text-center mb-3"
+                >
+                  <span
+                    className="text-xs font-mono tracking-widest px-3 py-1 rounded-full"
+                    style={{
+                      color: "oklch(0.55 0.22 25)",
+                      background: "oklch(0.55 0.22 25 / 0.08)",
+                      border: "1px solid oklch(0.55 0.22 25 / 0.2)",
+                    }}
+                  >
+                    {roundLabel(ri, rounds.length)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* SVG connectors */}
+            <svg
+              style={{
+                position: "absolute",
+                top: 36,
+                left: svgPadding,
+                width: totalW,
+                height: totalH,
+                pointerEvents: "none",
+                overflow: "visible",
+              }}
+            >
+              {connectors.map((c, i) => {
+                const midX = (c.x1 + c.x2) / 2;
+                return (
+                  <path
+                    key={i}
+                    d={`M ${c.x1} ${c.y1} C ${midX} ${c.y1}, ${midX} ${c.y2}, ${c.x2} ${c.y2}`}
+                    fill="none"
+                    stroke={c.done ? "oklch(0.65 0.18 145 / 0.35)" : "oklch(0.22 0.01 0)"}
+                    strokeWidth={c.done ? 2 : 1.5}
+                    strokeDasharray={c.done ? undefined : "4 3"}
+                  />
+                );
+              })}
+            </svg>
+
+            {/* Match cards */}
+            <div style={{ position: "relative", height: totalH + 8, paddingLeft: svgPadding, paddingTop: 8 }}>
+              {rounds.map((_, ri) => (
+                <div key={ri} style={{ position: "absolute", left: svgPadding + ri * (CARD_W + COL_GAP) }}>
+                  {matchesByRound[ri].map((match, mi) => {
+                    const yCenter = roundPositions[ri][mi];
+                    return (
+                      <div
+                        key={match.id}
+                        style={{
+                          position: "absolute",
+                          top: yCenter - CARD_H / 2,
+                          left: 0,
+                        }}
+                      >
+                        <MatchCard
+                          match={match}
+                          canEdit={canEditResults}
+                          onOpenScoreModal={setScoreModal}
+                          isDemo={isDemo}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Score Modal */}
+      {scoreModal && (
+        <ScoreModal
+          match={scoreModal}
+          onClose={() => setScoreModal(null)}
+          onSubmit={async (matchId, s1, s2) => {
+            await onDeclareWinner?.(matchId, s1, s2);
+            setScoreModal(null);
+          }}
+        />
+      )}
+    </>
   );
 }

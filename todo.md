@@ -728,3 +728,13 @@
 - [x] Reemplazar emojis en Home, Dashboard, Sidebar, Profile
 - [x] Reemplazar emojis en Tournaments, Teams, Ranking, Shop
 - [x] Reemplazar emojis en Streams, News, Betting, Rewards, Admin
+
+## Sistema de Marcadores en Bracket V22
+- [x] Añadir columnas scoreA y scoreB a la tabla tournament_matches en el esquema (ya existían: team1Score/team2Score)
+- [x] Migrar BD con pnpm db:push (no fue necesario, columnas ya existían)
+- [x] Actualizar procedimiento updateResult para recibir team1Score/team2Score y calcular winnerId automáticamente
+- [x] Actualizar getMatches/getBracket para retornar team1Score y team2Score
+- [x] Reemplazar selector de ganador en TournamentManage por formulario con inputs de score
+- [x] Actualizar BracketView para mostrar scores alineados a la derecha (ganador verde, perdedor gris)
+- [x] Actualizar TournamentDetail para pasar scores al BracketView
+- [x] Actualizar tests unitarios

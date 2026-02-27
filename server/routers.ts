@@ -749,9 +749,8 @@ export const appRouter = router({
       .input(z.object({
         matchId: z.number(),
         tournamentId: z.number(),
-        winnerId: z.number(),
-        team1Score: z.number().int().min(0).optional(),
-        team2Score: z.number().int().min(0).optional(),
+        team1Score: z.number().int().min(0),
+        team2Score: z.number().int().min(0),
         notes: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -760,8 +759,24 @@ export const appRouter = router({
         if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-        const { matchId, tournamentId, ...data } = input;
-        await updateMatchResult(matchId, data);
+        // Fetch match to get team IDs for auto-calculating winner
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [existingMatch] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, input.matchId))
+          .limit(1);
+        if (!existingMatch) throw new TRPCError({ code: "NOT_FOUND", message: "Partida no encontrada" });
+        if (!existingMatch.team1Id || !existingMatch.team2Id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La partida no tiene dos equipos asignados" });
+        }
+        if (input.team1Score === input.team2Score) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El marcador no puede ser empate. Ingresa scores diferentes." });
+        }
+        const winnerId = input.team1Score > input.team2Score ? existingMatch.team1Id : existingMatch.team2Id;
+        const { matchId, tournamentId, ...scores } = input;
+        await updateMatchResult(matchId, { ...scores, winnerId });
         // Update team match stats and advance round
         try {
           const db = await getDb();
@@ -772,11 +787,11 @@ export const appRouter = router({
               .where(eq(tournamentMatches.id, matchId))
               .limit(1);
             if (match) {
-              const loserId = match.team1Id === input.winnerId ? match.team2Id : match.team1Id;
+              const loserId = match.team1Id === winnerId ? match.team2Id : match.team1Id;
               if (loserId) {
                 // Update wins/losses for both teams
-                await updateTeamMatchStats(input.winnerId, loserId);
-                eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId: input.winnerId, loserId });
+                await updateTeamMatchStats(winnerId, loserId);
+                eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId, loserId });
               }
               // Auto-advance to next round if all matches in this round are done
               await advanceRoundIfComplete(tournamentId, match.round ?? 1);

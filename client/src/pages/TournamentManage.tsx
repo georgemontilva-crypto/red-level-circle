@@ -366,11 +366,12 @@ export default function TournamentManage() {
               <BracketView
                 matches={matches}
                 canEditResults={tournament.status === "in_progress"}
-                onDeclareWinner={async (matchId, winnerId) => {
+                onDeclareWinner={async (matchId, team1Score, team2Score) => {
                   await updateResultMutation.mutateAsync({
                     matchId,
                     tournamentId: id,
-                    winnerId,
+                    team1Score,
+                    team2Score,
                   });
                 }}
               />
@@ -484,148 +485,137 @@ export default function TournamentManage() {
         )}
       </div>
 
-      {/* Result Modal */}
-      {resultModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "oklch(0 0 0 / 0.8)" }}
-          onClick={() => { setResultModal(null); setWinnerId(null); }}
-        >
+      {/* Result Modal — Score-based */}
+      {resultModal && (() => {
+        const s1 = parseInt(team1Score);
+        const s2 = parseInt(team2Score);
+        const scoresValid = !isNaN(s1) && !isNaN(s2) && team1Score !== "" && team2Score !== "";
+        const isDraw = scoresValid && s1 === s2;
+        const predictedWinner = scoresValid && !isDraw
+          ? (s1 > s2 ? resultModal.team1Name : resultModal.team2Name)
+          : null;
+        return (
           <div
-            className="w-full max-w-md rounded-2xl p-6"
-            style={{
-              background: "oklch(0.10 0.005 0)",
-              border: "1px solid oklch(0.55 0.22 25 / 0.3)",
-              boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)",
-            }}
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "oklch(0 0 0 / 0.8)" }}
+            onClick={() => { setResultModal(null); setTeam1Score(""); setTeam2Score(""); setResultNotes(""); }}
           >
-            <h3 className="font-display text-lg font-bold tracking-wider text-foreground mb-5">
-              REGISTRAR RESULTADO
-            </h3>
+            <div
+              className="w-full max-w-sm rounded-2xl p-6"
+              style={{
+                background: "oklch(0.10 0.005 0)",
+                border: "1px solid oklch(0.55 0.22 25 / 0.3)",
+                boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 mb-5">
+                <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
+                <h3 className="font-display text-base font-bold tracking-wider text-foreground">
+                  REGISTRAR RESULTADO
+                </h3>
+              </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => setWinnerId(resultModal.team1Id)}
-                  className="p-4 rounded-xl text-center transition-all duration-200"
-                  style={
-                    winnerId === resultModal.team1Id
-                      ? {
-                          background: "oklch(0.65 0.18 145 / 0.15)",
-                          border: "1px solid oklch(0.65 0.18 145 / 0.5)",
-                        }
-                      : {
-                          background: "oklch(0.12 0.005 0)",
-                          border: "1px solid oklch(0.20 0.01 0)",
-                        }
-                  }
-                >
+              {/* Score inputs */}
+              <div className="space-y-3 mb-4">
+                {/* Team 1 row */}
+                <div className="flex items-center gap-3">
                   <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2"
-                    style={{
-                      background: "oklch(0.55 0.22 25 / 0.15)",
-                      color: "oklch(0.65 0.22 25)",
-                    }}
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
                   >
                     {resultModal.team1Name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-sm font-display tracking-wide text-foreground">
+                  <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
                     {resultModal.team1Name}
-                  </p>
-                  {winnerId === resultModal.team1Id && (
-                    <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.18 145)" }}>
-                      GANADOR
-                    </p>
-                  )}
-                </button>
-                <button
-                  onClick={() => setWinnerId(resultModal.team2Id)}
-                  className="p-4 rounded-xl text-center transition-all duration-200"
-                  style={
-                    winnerId === resultModal.team2Id
-                      ? {
-                          background: "oklch(0.65 0.18 145 / 0.15)",
-                          border: "1px solid oklch(0.65 0.18 145 / 0.5)",
-                        }
-                      : {
-                          background: "oklch(0.12 0.005 0)",
-                          border: "1px solid oklch(0.20 0.01 0)",
-                        }
-                  }
-                >
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold mx-auto mb-2"
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={99}
+                    value={team1Score}
+                    onChange={(e) => setTeam1Score(e.target.value)}
+                    placeholder="0"
+                    className="w-16 px-2 py-2 rounded-lg text-center text-lg font-mono font-bold transition-all duration-200"
                     style={{
-                      background: "oklch(0.55 0.22 25 / 0.15)",
-                      color: "oklch(0.65 0.22 25)",
+                      background: "oklch(0.09 0.005 0)",
+                      border: scoresValid && !isDraw && s1 > s2
+                        ? "1px solid oklch(0.65 0.18 145 / 0.7)"
+                        : "1px solid oklch(0.22 0.01 0)",
+                      color: scoresValid && !isDraw && s1 > s2
+                        ? "oklch(0.75 0.18 145)"
+                        : "oklch(0.90 0.005 0)",
+                      outline: "none",
                     }}
+                  />
+                </div>
+
+                {/* Divider */}
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
+                  <span className="text-xs font-mono text-zinc-600">VS</span>
+                  <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
+                </div>
+
+                {/* Team 2 row */}
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
                   >
                     {resultModal.team2Name.charAt(0).toUpperCase()}
                   </div>
-                  <p className="text-sm font-display tracking-wide text-foreground">
+                  <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
                     {resultModal.team2Name}
-                  </p>
-                  {winnerId === resultModal.team2Id && (
-                    <p className="text-xs mt-1" style={{ color: "oklch(0.65 0.18 145)" }}>
-                      GANADOR
-                    </p>
-                  )}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">
-                    SCORE {resultModal.team1Name.split(" ")[0]}
-                  </label>
+                  </span>
                   <input
                     type="number"
                     min={0}
-                    value={team1Score}
-                    onChange={(e) => setTeam1Score(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm transition-all duration-200"
-                    style={{
-                      background: "oklch(0.09 0.005 0)",
-                      border: "1px solid oklch(0.22 0.01 0)",
-                      color: "oklch(0.90 0.005 0)",
-                      outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "oklch(0.55 0.22 25)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "oklch(0.22 0.01 0)";
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">
-                    SCORE {resultModal.team2Name.split(" ")[0]}
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
+                    max={99}
                     value={team2Score}
                     onChange={(e) => setTeam2Score(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg text-sm transition-all duration-200"
+                    placeholder="0"
+                    className="w-16 px-2 py-2 rounded-lg text-center text-lg font-mono font-bold transition-all duration-200"
                     style={{
                       background: "oklch(0.09 0.005 0)",
-                      border: "1px solid oklch(0.22 0.01 0)",
-                      color: "oklch(0.90 0.005 0)",
+                      border: scoresValid && !isDraw && s2 > s1
+                        ? "1px solid oklch(0.65 0.18 145 / 0.7)"
+                        : "1px solid oklch(0.22 0.01 0)",
+                      color: scoresValid && !isDraw && s2 > s1
+                        ? "oklch(0.75 0.18 145)"
+                        : "oklch(0.90 0.005 0)",
                       outline: "none",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "oklch(0.55 0.22 25)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "oklch(0.22 0.01 0)";
                     }}
                   />
                 </div>
               </div>
 
-              <div>
+              {/* Live winner preview */}
+              {predictedWinner && (
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
+                  style={{ background: "oklch(0.65 0.18 145 / 0.08)", border: "1px solid oklch(0.65 0.18 145 / 0.25)" }}
+                >
+                  <CheckCircle size={13} style={{ color: "oklch(0.65 0.18 145)" }} />
+                  <span className="text-xs font-mono" style={{ color: "oklch(0.75 0.18 145)" }}>
+                    Ganador: <strong>{predictedWinner}</strong>
+                  </span>
+                </div>
+              )}
+              {isDraw && (
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
+                  style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.25)" }}
+                >
+                  <AlertCircle size={13} style={{ color: "oklch(0.65 0.22 25)" }} />
+                  <span className="text-xs font-mono" style={{ color: "oklch(0.65 0.22 25)" }}>
+                    El marcador no puede ser empate
+                  </span>
+                </div>
+              )}
+
+              {/* Notes */}
+              <div className="mb-5">
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">
                   NOTAS (OPCIONAL)
                 </label>
@@ -641,54 +631,48 @@ export default function TournamentManage() {
                     color: "oklch(0.90 0.005 0)",
                     outline: "none",
                   }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = "oklch(0.55 0.22 25)";
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = "oklch(0.22 0.01 0)";
-                  }}
                 />
               </div>
-            </div>
 
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => { setResultModal(null); setWinnerId(null); }}
-                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
-                style={{
-                  background: "transparent",
-                  border: "1px solid oklch(0.25 0.01 0)",
-                  color: "oklch(0.60 0.005 0)",
-                }}
-              >
-                CANCELAR
-              </button>
-              <button
-                onClick={() => {
-                  if (!winnerId) { toast.error("Selecciona el equipo ganador"); return; }
-                  updateResultMutation.mutate({
-                    matchId: resultModal.matchId,
-                    tournamentId: id,
-                    winnerId,
-                    team1Score: team1Score ? parseInt(team1Score) : undefined,
-                    team2Score: team2Score ? parseInt(team2Score) : undefined,
-                    notes: resultNotes || undefined,
-                  });
-                }}
-                disabled={!winnerId || updateResultMutation.isPending}
-                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{
-                  background: "oklch(0.55 0.22 25)",
-                  color: "oklch(0.98 0 0)",
-                  boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
-                }}
-              >
-                {updateResultMutation.isPending ? "GUARDANDO..." : "GUARDAR"}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => { setResultModal(null); setTeam1Score(""); setTeam2Score(""); setResultNotes(""); }}
+                  className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+                  style={{
+                    background: "transparent",
+                    border: "1px solid oklch(0.25 0.01 0)",
+                    color: "oklch(0.60 0.005 0)",
+                  }}
+                >
+                  CANCELAR
+                </button>
+                <button
+                  onClick={() => {
+                    if (!scoresValid) { toast.error("Ingresa el marcador de ambos equipos"); return; }
+                    if (isDraw) { toast.error("El marcador no puede ser empate"); return; }
+                    updateResultMutation.mutate({
+                      matchId: resultModal.matchId,
+                      tournamentId: id,
+                      team1Score: s1,
+                      team2Score: s2,
+                      notes: resultNotes || undefined,
+                    });
+                  }}
+                  disabled={!scoresValid || isDraw || updateResultMutation.isPending}
+                  className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                  style={{
+                    background: "oklch(0.55 0.22 25)",
+                    color: "oklch(0.98 0 0)",
+                    boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
+                  }}
+                >
+                  {updateResultMutation.isPending ? "GUARDANDO..." : "GUARDAR"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Declare Winner Modal */}
       {winnerModal && (

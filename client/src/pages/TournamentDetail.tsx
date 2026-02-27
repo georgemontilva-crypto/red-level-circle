@@ -900,8 +900,8 @@ export default function TournamentDetail() {
                   matches={matches ?? []}
                   showDemo={false}
                   canEditResults={tournament.status === "in_progress" && isOrganizer}
-                  onDeclareWinner={async (matchId, winnerId) => {
-                    await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
+                  onDeclareWinner={async (matchId, team1Score, team2Score) => {
+                    await updateResultMutation.mutateAsync({ matchId, tournamentId: id, team1Score, team2Score });
                   }}
                 />
               </div>
