@@ -677,3 +677,12 @@
 - [x] Corrección dropdown notificaciones: ahora usa position:fixed calculado desde el botón campana (alineado correctamente)
 - [x] Traducción completa al español: corregidos "Coach"→"Entrenador", "Roster"→"Alineación", "Badge"→"Insignia", "Bundle"→"Paquete", "Single/Double Elimination"→español, "Win Rate"→"Tasa de Victoria", "Videojuegos" en categorías, "Identificador Único" en lugar de "Slug"
 - [x] 102 tests pasando, 0 errores TypeScript
+
+## Sprint Siguiente — Funcionalidades Avanzadas
+- [x] Bracket visual interactivo: visualización por rondas con navegación, botones X/✓ para creador del torneo
+- [x] Bracket: datos de ejemplo visibles en TournamentDetail para mostrar cómo quedará
+- [x] Notificaciones automáticas: al cambiar estado de torneo a "En Curso"
+- [x] Notificaciones automáticas: al aprobar inscripción de equipo
+- [x] Notificaciones automáticas: al registrar resultado de partido
+- [x] Perfil de equipo: gráfica de rendimiento mensual (victorias/derrotas por mes)
+- [x] Perfil de equipo: sistema de logros desbloqueables basados en torneos ganados

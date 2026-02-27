@@ -155,7 +155,7 @@ import { storagePut } from "./storage";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
-import { sectionBanners, tournaments, teams, users, streams } from "../drizzle/schema";
+import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
 import { eventBus } from "./eventBus";
 
@@ -364,6 +364,14 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournamentStatus(input.id, input.status);
+        // Notify registered teams about status change
+        try {
+          eventBus.emit("tournament.status_changed", {
+            tournamentId: input.id,
+            newStatus: input.status,
+            tournamentName: t.name,
+          });
+        } catch (e) { console.error("[StatusChange] Notification error:", e); }
         return { success: true };
       }),
 
@@ -382,6 +390,11 @@ export const appRouter = router({
         const teamIds = registrations.map((r) => r.teamId);
         await generateBracket(input.id, teamIds);
         await updateTournamentStatus(input.id, "in_progress");
+        // Notify all registered teams that tournament has started
+        try {
+          eventBus.emit("tournament.status_changed", { tournamentId: input.id, newStatus: "in_progress", tournamentName: t.name });
+          eventBus.emit("tournament.brackets_generated", { tournamentId: input.id });
+        } catch (e) { console.error("[StartTournament] Notification error:", e); }
         return { success: true, matchCount: teamIds.length };
       }),
 
@@ -670,9 +683,34 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateRegistrationStatus(input.id, input.status, ctx.user.id, input.creatorMessage);
+        // Notify team captain about registration decision
+        try {
+          const team = await getTeamById(reg.teamId);
+          if (team?.captainId) {
+            if (input.status === "Aprobado") {
+              eventBus.emit("registration.approved", {
+                registrationId: input.id,
+                teamId: reg.teamId,
+                tournamentId: reg.tournamentId,
+                tournamentName: t.name,
+                teamCaptainId: team.captainId,
+                teamName: team.name,
+              });
+            } else if (input.status === "Rechazado") {
+              eventBus.emit("registration.rejected", {
+                registrationId: input.id,
+                teamId: reg.teamId,
+                tournamentId: reg.tournamentId,
+                tournamentName: t.name,
+                teamCaptainId: team.captainId,
+                teamName: team.name,
+                reason: input.creatorMessage,
+              });
+            }
+          }
+        } catch (e) { console.error("[RegistrationStatus] Notification error:", e); }
         return { success: true };
       }),
-
     auditLog: premiumProcedure
       .input(z.object({ registrationId: z.number() }))
       .query(async ({ ctx, input }) => {
@@ -716,11 +754,27 @@ export const appRouter = router({
         }
         const { matchId, tournamentId, ...data } = input;
         await updateMatchResult(matchId, data);
+        // Emit match_finished event to notify both teams
+        try {
+          const db = await getDb();
+          if (db) {
+            const [match] = await db
+              .select()
+              .from(tournamentMatches)
+              .where(eq(tournamentMatches.id, matchId))
+              .limit(1);
+            if (match) {
+              const loserId = match.team1Id === input.winnerId ? match.team2Id : match.team1Id;
+              if (loserId) {
+                eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId: input.winnerId, loserId });
+              }
+            }
+          }
+        } catch (e) { console.error("[MatchResult] Notification error:", e); }
         return { success: true };
       }),
   }),
-
-  // ─── News ──────────────────────────────────────────────────────────────────
+  // ─── Newss ──────────────────────────────────────────────────────────────────
   news: router({
     list: publicProcedure
       .input(z.object({

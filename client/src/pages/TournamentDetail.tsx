@@ -49,7 +49,11 @@ export default function TournamentDetail() {
 
   const { data: tournament, isLoading, refetch } = trpc.tournaments.byId.useQuery({ id });
   const { data: myTeams } = trpc.teams.myTeams.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: matches } = trpc.matches.byTournament.useQuery({ tournamentId: id });
+  const { data: matches, refetch: refetchMatches } = trpc.matches.byTournament.useQuery({ tournamentId: id });
+  const updateResultMutation = trpc.matches.updateResult.useMutation({
+    onSuccess: () => { toast.success("Resultado registrado"); refetchMatches(); },
+    onError: (err) => toast.error(err.message),
+  });
 
   const registerMutation = trpc.registrations.register.useMutation({
     onSuccess: () => {
@@ -269,22 +273,32 @@ export default function TournamentDetail() {
               </div>
             )}
 
-            {/* Matches / Bracket */}
-            {matches && matches.length > 0 && (
-              <div
-                className="rounded-xl p-6"
-                style={{
-                  background: "oklch(0.10 0.005 0)",
-                  border: "1px solid oklch(0.18 0.01 0)",
+            {/* Matches / Bracket — always visible */}
+            <div
+              className="rounded-xl p-6"
+              style={{
+                background: "oklch(0.10 0.005 0)",
+                border: "1px solid oklch(0.18 0.01 0)",
+              }}
+            >
+              <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
+                <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
+                BRACKET
+                {matches && matches.length > 0 && (
+                  <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full" style={{ background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
+                    {matches.filter(m => m.status === "completed").length}/{matches.length} partidas
+                  </span>
+                )}
+              </h2>
+              <BracketView
+                matches={matches ?? []}
+                showDemo={!matches || matches.length === 0}
+                canEditResults={tournament.status === "in_progress" && user?.id === tournament.creatorId}
+                onDeclareWinner={async (matchId, winnerId) => {
+                  await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
                 }}
-              >
-                <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
-                  <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
-                  BRACKET
-                </h2>
-                <BracketView matches={matches} canEditResults={false} />
-              </div>
-            )}
+              />
+            </div>
           </div>
 
           {/* Sidebar */}

@@ -364,14 +364,11 @@ export default function TournamentManage() {
               <BracketView
                 matches={matches}
                 canEditResults={tournament.status === "in_progress"}
-                onSelectMatch={(match) => {
-                  if (tournament.status !== "in_progress" || match.status === "completed") return;
-                  setResultModal({
-                    matchId: match.id,
-                    team1Id: match.team1Id,
-                    team2Id: match.team2Id,
-                    team1Name: match.team1Name ?? `Equipo ${match.team1Id}`,
-                    team2Name: match.team2Name ?? `Equipo ${match.team2Id}`,
+                onDeclareWinner={async (matchId, winnerId) => {
+                  await updateResultMutation.mutateAsync({
+                    matchId,
+                    tournamentId: id,
+                    winnerId,
                   });
                 }}
               />

@@ -15,6 +15,9 @@ export interface RlcEvents {
   "tournament.full": { tournamentId: number };
   "tournament.brackets_generated": { tournamentId: number };
   "tournament.match_finished": { matchId: number; tournamentId: number; winnerId: number; loserId: number };
+  "tournament.status_changed": { tournamentId: number; newStatus: string; tournamentName: string };
+  "registration.approved": { registrationId: number; teamId: number; tournamentId: number; tournamentName: string; teamCaptainId: number; teamName: string };
+  "registration.rejected": { registrationId: number; teamId: number; tournamentId: number; tournamentName: string; teamCaptainId: number; teamName: string; reason?: string };
   "mission.approved": { missionId: number; submissionId: number; userId: number; coins: number };
   "mission.rejected": { missionId: number; submissionId: number; userId: number };
   "creator.verified": { userId: number };

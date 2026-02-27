@@ -1,14 +1,18 @@
 import { UserAvatar } from "@/components/UserAvatar";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link, useParams } from "wouter";
 import RosterCard from "@/components/RosterCard";
 import {
   ChevronLeft, Shield, Trophy, Swords, Star, Users,
   ExternalLink, Twitter, MessageSquare, Tv2,
   CheckCircle, Crown, TrendingUp, Target, Calendar,
-  Globe, Award, Hash,
+  Globe, Award, Hash, Flame, Zap, Medal, Lock,
 } from "lucide-react";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, BarChart, Bar, Legend,
+} from "recharts";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
@@ -81,6 +85,163 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
 }
 
 
+
+// ─── Performance Chart ───────────────────────────────────────────────────────
+function PerformanceChart({ history, accent }: { history: any[]; accent: string }) {
+  const chartData = useMemo(() => {
+    const byMonth: Record<string, { month: string; victorias: number; derrotas: number }> = {};
+    for (const reg of history) {
+      const date = reg.tournamentStartDate ? new Date(reg.tournamentStartDate) : new Date(reg.registeredAt);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+      const label = date.toLocaleDateString("es-ES", { month: "short", year: "2-digit" });
+      if (!byMonth[key]) byMonth[key] = { month: label, victorias: 0, derrotas: 0 };
+      byMonth[key].victorias += reg.wins ?? 0;
+      byMonth[key].derrotas += reg.losses ?? 0;
+    }
+    return Object.values(byMonth).slice(-8);
+  }, [history]);
+
+  if (chartData.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl p-5 mb-6" style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      <div className="flex items-center gap-2 mb-4">
+        <TrendingUp size={16} style={{ color: accent }} />
+        <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider">Rendimiento Mensual</h3>
+      </div>
+      <ResponsiveContainer width="100%" height={180}>
+        <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.16 0.01 0)" vertical={false} />
+          <XAxis dataKey="month" tick={{ fill: "#71717a", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "#71717a", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <Tooltip
+            contentStyle={{ background: "#0a0a0a", border: "1px solid #27272a", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }}
+            labelStyle={{ color: "#a1a1aa" }}
+            cursor={{ fill: "rgba(255,255,255,0.03)" }}
+          />
+          <Bar dataKey="victorias" name="Victorias" fill="#4ade80" radius={[4, 4, 0, 0]} maxBarSize={32} />
+          <Bar dataKey="derrotas" name="Derrotas" fill="#f87171" radius={[4, 4, 0, 0]} maxBarSize={32} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── Achievements Panel ───────────────────────────────────────────────────────
+type AchievementDef = {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  check: (wins: number, titles: number, tournaments: number) => boolean;
+};
+
+const RARITY_COLORS = {
+  common:    { bg: "rgba(161,161,170,0.08)", border: "rgba(161,161,170,0.2)", text: "#a1a1aa", label: "Común" },
+  rare:      { bg: "rgba(96,165,250,0.08)",  border: "rgba(96,165,250,0.25)",  text: "#60a5fa", label: "Raro" },
+  epic:      { bg: "rgba(168,85,247,0.08)",  border: "rgba(168,85,247,0.25)",  text: "#a855f7", label: "Épico" },
+  legendary: { bg: "rgba(250,204,21,0.08)",  border: "rgba(250,204,21,0.25)",  text: "#fbbf24", label: "Legendario" },
+};
+
+const ACHIEVEMENT_DEFS: AchievementDef[] = [
+  { id: "first_tournament", title: "Primer Torneo", description: "Participó en su primer torneo", icon: <Swords size={18} />, rarity: "common", check: (_, __, t) => t >= 1 },
+  { id: "first_win", title: "Primera Victoria", description: "Ganó su primera partida en torneo", icon: <Star size={18} />, rarity: "common", check: (w) => w >= 1 },
+  { id: "five_wins", title: "Cinco Victorias", description: "Acumuló 5 victorias en torneos", icon: <Zap size={18} />, rarity: "rare", check: (w) => w >= 5 },
+  { id: "ten_wins", title: "Diez Victorias", description: "Acumuló 10 victorias en torneos", icon: <Flame size={18} />, rarity: "rare", check: (w) => w >= 10 },
+  { id: "first_title", title: "Primer Título", description: "Ganó su primer torneo", icon: <Trophy size={18} />, rarity: "epic", check: (_, t) => t >= 1 },
+  { id: "three_titles", title: "Triple Campeón", description: "Ganó 3 torneos", icon: <Crown size={18} />, rarity: "epic", check: (_, t) => t >= 3 },
+  { id: "five_titles", title: "Dinastía", description: "Ganó 5 torneos", icon: <Medal size={18} />, rarity: "legendary", check: (_, t) => t >= 5 },
+  { id: "veteran", title: "Veterano", description: "Participó en 10 o más torneos", icon: <Shield size={18} />, rarity: "epic", check: (_, __, t) => t >= 10 },
+];
+
+function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
+  achievements: any[];
+  tournamentHistory: any[];
+  wins: number;
+  accent: string;
+}) {
+  const totalTournaments = tournamentHistory.length;
+  const totalTitles = tournamentHistory.filter((r: any) => r.isWinner).length;
+  const totalWins = wins;
+
+  const unlockedAutoIds = useMemo(() =>
+    new Set(ACHIEVEMENT_DEFS.filter(def => def.check(totalWins, totalTitles, totalTournaments)).map(d => d.id)),
+    [totalWins, totalTitles, totalTournaments]
+  );
+
+  const manualAchievements = achievements.filter((a: any) => !ACHIEVEMENT_DEFS.find(d => d.id === a.title));
+
+  return (
+    <div>
+      {/* Auto-unlockable achievements */}
+      <div className="mb-6">
+        <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Logros del Sistema</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {ACHIEVEMENT_DEFS.map((def) => {
+            const unlocked = unlockedAutoIds.has(def.id);
+            const r = RARITY_COLORS[def.rarity];
+            return (
+              <div key={def.id}
+                className="flex items-start gap-3 p-4 rounded-2xl transition-all duration-200"
+                style={{
+                  background: unlocked ? r.bg : "oklch(0.07 0.003 0)",
+                  border: `1px solid ${unlocked ? r.border : "oklch(0.12 0.005 0)"}`,
+                  opacity: unlocked ? 1 : 0.5,
+                }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: unlocked ? r.bg : "oklch(0.10 0.005 0)", color: unlocked ? r.text : "#52525b" }}>
+                  {unlocked ? def.icon : <Lock size={16} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono font-bold text-sm" style={{ color: unlocked ? "white" : "#52525b" }}>{def.title}</p>
+                    <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: unlocked ? r.bg : "transparent", color: unlocked ? r.text : "#3f3f46", border: `1px solid ${unlocked ? r.border : "#27272a"}` }}>{r.label}</span>
+                  </div>
+                  <p className="text-xs font-mono mt-0.5" style={{ color: unlocked ? "#a1a1aa" : "#3f3f46" }}>{def.description}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Manual achievements from tournaments */}
+      {manualAchievements.length > 0 && (
+        <div>
+          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Logros de Torneos</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {manualAchievements.map((ach: any) => (
+              <div key={ach.id} className="flex items-start gap-3 p-4 rounded-2xl"
+                style={{ background: "rgba(250,204,21,0.05)", border: "1px solid rgba(250,204,21,0.2)" }}>
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(250,204,21,0.1)" }}>
+                  <Trophy size={18} className="text-yellow-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono font-bold text-white text-sm">{ach.title}</p>
+                  {ach.description && <p className="text-xs text-zinc-500 mt-0.5">{ach.description}</p>}
+                  <p className="text-xs font-mono text-zinc-700 mt-1">
+                    {new Date(ach.awardedAt).toLocaleDateString("es-ES", { year: "numeric", month: "short" })}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {manualAchievements.length === 0 && unlockedAutoIds.size === 0 && (
+        <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
+          style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+          <Award size={36} className="text-zinc-700 mb-3" />
+          <p className="font-mono text-zinc-500">Aún no hay logros desbloqueados</p>
+          <p className="font-mono text-zinc-700 text-xs mt-1">Participa en torneos para desbloquear logros</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; teamId: number }) {
   const isWinner = reg.tournamentWinnerId === teamId && reg.tournamentStatus === "completed";
@@ -412,6 +573,10 @@ export default function TeamProfile() {
 
         {activeTab === "history" && (
           <section className="mb-12">
+            {/* Performance Chart */}
+            {tournamentHistory && tournamentHistory.length > 0 && (
+              <PerformanceChart history={tournamentHistory} accent={c.accent} />
+            )}
             {!tournamentHistory || tournamentHistory.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
                 style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
@@ -453,33 +618,12 @@ export default function TeamProfile() {
 
         {activeTab === "achievements" && (
           <section className="mb-12">
-            {!team.achievements || team.achievements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
-                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
-                <Award size={36} className="text-zinc-700 mb-3" />
-                <p className="font-mono text-zinc-500">Sin logros registrados aún</p>
-                <p className="font-mono text-zinc-700 text-xs mt-1">Los logros se otorgan al ganar torneos</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {team.achievements.map((ach: any) => (
-                  <div key={ach.id} className="flex items-start gap-3 p-4 rounded-2xl"
-                    style={{ background: "oklch(0.09 0.005 0)", border: "1px solid rgba(250,204,21,0.15)" }}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ background: "rgba(250,204,21,0.1)" }}>
-                      <Trophy size={18} className="text-yellow-400" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-mono font-bold text-white text-sm">{ach.title}</p>
-                      {ach.description && <p className="text-xs text-zinc-500 mt-0.5">{ach.description}</p>}
-                      <p className="text-xs font-mono text-zinc-700 mt-1">
-                        {new Date(ach.awardedAt).toLocaleDateString("es-ES", { year: "numeric", month: "short" })}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <AchievementsPanel
+              achievements={team.achievements ?? []}
+              tournamentHistory={tournamentHistory ?? []}
+              wins={team.wins ?? 0}
+              accent={c.accent}
+            />
           </section>
         )}
       </div>
