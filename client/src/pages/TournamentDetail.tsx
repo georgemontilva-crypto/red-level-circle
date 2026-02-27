@@ -818,7 +818,8 @@ export default function TournamentDetail() {
           </div>
         </div>
       </div>
-        {/* ─── BRACKET ────────────────────────────────────────────────────────── */}
+      {/* ─── BRACKET ────────────────────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4 pb-20">
         <section>
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display text-lg font-bold tracking-wider text-foreground flex items-center gap-2">
@@ -907,7 +908,7 @@ export default function TournamentDetail() {
             </div>
           )}
         </section>
-
+      </div>
 
       {/* ─── REGISTER MODAL ───────────────────────────────────────────────────── */}
       {showRegisterModal && (

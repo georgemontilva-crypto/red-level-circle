@@ -719,3 +719,6 @@
 
 ## Fix Layout TournamentDetail
 - [x] Mover sección del bracket al final de la página, debajo de stats/reglas/sidebar
+
+## Fix Bracket Ancho y Padding
+- [x] Limitar ancho del bracket (no ancho completo) y agregar padding inferior
