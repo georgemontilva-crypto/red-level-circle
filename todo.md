@@ -765,3 +765,8 @@
 ## Fix RosterCard Texto Duplicado V26
 - [x] Eliminar el panel de info (nick, nombre, badges) generado por el servidor dentro de la imagen de ficha
 - [x] La imagen generada contiene SOLO la foto del jugador + badge de rol en esquina superior derecha
+
+## Fix RosterCard JSX Duplicado V27
+- [x] Identificar el badge de rol superpuesto en UserProfile.tsx (líneas 911-927)
+- [x] Eliminar el overlay de texto sobre la imagen de ficha en UserProfile.tsx
+- [x] RosterCard.tsx ya tenía el layout correcto sin duplicaciones

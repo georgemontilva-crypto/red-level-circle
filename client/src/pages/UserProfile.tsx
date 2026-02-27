@@ -908,23 +908,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 <span className="text-xs font-mono text-center px-3" style={{ color: "oklch(0.35 0.005 0)" }}>Sin ficha generada</span>
               </div>
             )}
-            {/* Role badge overlay */}
-            {(isOwnProfile ? roleData : viewRoleData) && (
-              <div
-                className="absolute bottom-0 left-0 right-0 px-2 py-1.5 flex items-center justify-center gap-1"
-                style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.85) 0%, transparent 100%)" }}
-              >
-                {(isOwnProfile ? roleData : viewRoleData)?.svgPath ? (
-                  <img
-                    src={(isOwnProfile ? roleData : viewRoleData)!.svgPath!}
-                    alt={(isOwnProfile ? roleData : viewRoleData)!.label}
-                    className="w-4 h-4 object-contain"
-                    style={{ filter: "invert(1)" }}
-                  />
-                ) : null}
-                <span className="text-xs font-mono font-bold text-white">{(isOwnProfile ? roleData : viewRoleData)?.label}</span>
-              </div>
-            )}
+            {/* Role info shown in right panel — no overlay on the photo */}
           </div>
 
           {/* Upload button (own profile + has team) */}
