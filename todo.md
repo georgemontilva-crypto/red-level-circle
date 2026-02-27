@@ -761,3 +761,7 @@
 - [x] Restaurar CSS con estilos esports: fondo #1a1a1a, bordes dorados, hover con sombra dorada
 - [x] Responsive: vertical en mobile (foto arriba, info abajo)
 - [x] Corregir TeamProfile.tsx para pasar todos los campos al RosterCard (nickname, realName, gameRole, region, game, team, rosterImageUrl)
+
+## Fix RosterCard Texto Duplicado V26
+- [x] Eliminar el panel de info (nick, nombre, badges) generado por el servidor dentro de la imagen de ficha
+- [x] La imagen generada contiene SOLO la foto del jugador + badge de rol en esquina superior derecha
