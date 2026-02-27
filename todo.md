@@ -750,3 +750,7 @@
 - [x] Frontend: sección PRÓXIMOS PARTIDOS en tab Info
 - [x] Frontend: pestaña RESULTADOS con historial agrupado por ronda y marcadores
 - [x] Frontend: BRACKET DINÁMICO con scores en tab dedicado
+
+## Bug Fix: Ficha de Jugador V24
+- [x] Diagnosticar por qué el formulario de ficha (alineación) no guarda la información
+- [x] Corregir el bug en el formulario y/o procedimiento backend

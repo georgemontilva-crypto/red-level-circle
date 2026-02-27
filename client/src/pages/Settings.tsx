@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -489,11 +489,11 @@ export default function Settings() {
     avatar: "",
     bannerUrl: "",
   });
-  const [initialized, setInitialized] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Initialize form from user data
-  if (me && !initialized) {
+  // Initialize form from user data — use useEffect to avoid setState-in-render anti-pattern
+  useEffect(() => {
+    if (!me) return;
     const u = me as {
       nickname?: string; bio?: string; mainGame?: string; gameRole?: string;
       elo?: string; competitiveRegion?: string; gameId?: string; competitiveScore?: number; country?: string;
@@ -517,8 +517,7 @@ export default function Settings() {
       avatar: u.avatar ?? "",
       bannerUrl: u.bannerUrl ?? "",
     });
-    setInitialized(true);
-  }
+  }, [me]);
 
   const updateMutation = trpc.profile.updateMine.useMutation({
     onSuccess: () => {
@@ -550,21 +549,20 @@ export default function Settings() {
 
   const handleSave = () => {
     setSaving(true);
-    const payload: Record<string, string | undefined> = {};
-    if (form.nickname) payload.nickname = form.nickname;
-    if (form.bio) payload.bio = form.bio;
-    if (form.mainGame) payload.mainGame = form.mainGame;
-    if (form.gameRole) payload.gameRole = form.gameRole;
-    if (form.elo) payload.elo = form.elo;
-    if (form.competitiveRegion) payload.competitiveRegion = form.competitiveRegion;
-    if (form.country) payload.country = form.country;
-    if (form.socialDiscord) payload.socialDiscord = form.socialDiscord;
-    if (form.socialTwitch) payload.socialTwitch = form.socialTwitch;
-    if (form.socialTwitter) payload.socialTwitter = form.socialTwitter;
-    if (form.avatar) payload.avatar = form.avatar;
-    if (form.bannerUrl) payload.bannerUrl = form.bannerUrl;
+    // Send all fields so the backend always receives the latest values
     updateMutation.mutate({
-      ...payload,
+      nickname: form.nickname || undefined,
+      bio: form.bio || undefined,
+      mainGame: form.mainGame || undefined,
+      gameRole: form.gameRole || undefined,
+      elo: form.elo || undefined,
+      competitiveRegion: form.competitiveRegion || undefined,
+      country: form.country || undefined,
+      socialDiscord: form.socialDiscord || undefined,
+      socialTwitch: form.socialTwitch || undefined,
+      socialTwitter: form.socialTwitter || undefined,
+      avatar: form.avatar || undefined,
+      bannerUrl: form.bannerUrl || undefined,
       profileType: form.profileType,
       gameId: form.gameId || null,
       competitiveScore: form.competitiveScore || null,
