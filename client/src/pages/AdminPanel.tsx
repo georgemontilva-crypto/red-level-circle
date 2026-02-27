@@ -115,7 +115,7 @@ function UsersTab() {
                 <SelectContent>
                   <SelectItem value="user">Usuario</SelectItem>
                   <SelectItem value="premium">Premium</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="admin">Administrador</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -271,7 +271,7 @@ function ShopTab() {
                   <SelectContent>
                     <SelectItem value="physical">Físico</SelectItem>
                     <SelectItem value="digital">Digital</SelectItem>
-                    <SelectItem value="bundle">Bundle</SelectItem>
+                    <SelectItem value="bundle">Paquete</SelectItem>
                     <SelectItem value="limited">Edición Limitada</SelectItem>
                   </SelectContent>
                 </Select>
@@ -427,9 +427,9 @@ function AdsTab() {
             {[
               { key: "brand", label: "Marca", placeholder: "Nombre de la marca" },
               { key: "title", label: "Título", placeholder: "Título del anuncio" },
-              { key: "tagline", label: "Tagline / Subtítulo", placeholder: "Frase corta descriptiva" },
+              { key: "tagline", label: "Eslogan / Subtítulo", placeholder: "Frase corta descriptiva" },
               { key: "linkUrl", label: "URL de destino", placeholder: "https://..." },
-              { key: "ctaLabel", label: "Texto del botón (CTA)", placeholder: "Ver más" },
+              { key: "ctaLabel", label: "Texto del botón", placeholder: "Ver más" },
               { key: "sortOrder", label: "Orden (número)", placeholder: "0 = primero" },
             ].map(({ key, label, placeholder }) => (
               <div key={key}>
@@ -684,7 +684,7 @@ function RewardsTab() {
             </div>
             <div className="md:col-span-2">
               <ImageUploader
-                label="Thumbnail (imagen de portada 16:9)"
+                label="Miniatura (imagen de portada 16:9)"
                 value={form.thumbnailUrl}
                 onChange={(url) => setForm(f => ({ ...f, thumbnailUrl: url }))}
                 folder="rewards/thumbnails"
@@ -1124,7 +1124,7 @@ function GamesTab() {
               className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Valorant" />
           </div>
           <div>
-            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">SLUG (ID único)</label>
+            <label className="text-gray-400 text-xs font-rajdhani mb-1 block">IDENTIFICADOR Único (slug)</label>
             <input value={form.slug} onChange={e => setForm(f => ({ ...f, slug: e.target.value }))}
               className="w-full bg-black border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: valorant" />
           </div>
@@ -1715,7 +1715,7 @@ function CosmeticsAdminTab() {
               <SelectContent>
                 <SelectItem value="frame">Marco</SelectItem>
                 <SelectItem value="aura">Aura</SelectItem>
-                <SelectItem value="badge">Badge</SelectItem>
+                <SelectItem value="badge">Insignia</SelectItem>
                 <SelectItem value="background">Fondo</SelectItem>
               </SelectContent>
             </Select>
@@ -1998,8 +1998,37 @@ function BannersTab() {
     onSuccess: () => { toast.success("Banner guardado"); refetch(); },
     onError: e => toast.error(e.message),
   });
+  // Per-section text fields state
+  const [textFields, setTextFields] = useState<Record<string, { title: string; subtitle: string; linkUrl: string }>>({});
+  const getFields = (key: string) => textFields[key] ?? { title: "", subtitle: "", linkUrl: "" };
+  const setField = (key: string, field: "title" | "subtitle" | "linkUrl", value: string) =>
+    setTextFields(f => ({ ...f, [key]: { ...getFields(key), [field]: value } }));
 
   const getBanner = (key: string) => allBanners?.find(b => b.sectionKey === key);
+
+  // Initialize text fields when banners load
+  useEffect(() => {
+    if (!allBanners) return;
+    const init: Record<string, { title: string; subtitle: string; linkUrl: string }> = {};
+    allBanners.forEach(b => {
+      init[b.sectionKey] = { title: b.title ?? "", subtitle: b.subtitle ?? "", linkUrl: b.linkUrl ?? "" };
+    });
+    setTextFields(init);
+  }, [allBanners?.length]);
+
+  const handleSaveText = (sectionKey: string) => {
+    const existing = getBanner(sectionKey);
+    const fields = getFields(sectionKey);
+    upsertBanner.mutate({
+      sectionKey,
+      imageUrl: existing?.imageUrl ?? null,
+      mobileImageUrl: existing?.mobileImageUrl ?? null,
+      title: fields.title || null,
+      subtitle: fields.subtitle || null,
+      linkUrl: fields.linkUrl || null,
+      isActive: existing?.isActive ?? true,
+    });
+  };
 
   const handleUpload = async (sectionKey: string, file: File, isMobile = false) => {
     if (!file.type.startsWith("image/")) { toast.error("Solo imágenes"); return; }
@@ -2097,6 +2126,38 @@ function BannersTab() {
                     className={`text-xs font-orbitron px-2 py-1 rounded border transition-colors ${isActive ? "border-green-700/50 text-green-400 bg-green-900/20 hover:bg-green-900/40" : "border-gray-700 text-gray-500 bg-gray-900/40 hover:bg-gray-800"}`}
                   >
                     {isActive ? "● ACTIVO" : "○ INACTIVO"}
+                  </button>
+                </div>
+                {/* Text fields: title, subtitle, link */}
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-500 font-rajdhani">TEXTO SUPERPUESTO (opcional)</p>
+                  <input
+                    type="text"
+                    value={getFields(key).title}
+                    onChange={e => setField(key, "title", e.target.value)}
+                    placeholder="Título del banner"
+                    className="w-full bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:border-red-500 outline-none"
+                  />
+                  <input
+                    type="text"
+                    value={getFields(key).subtitle}
+                    onChange={e => setField(key, "subtitle", e.target.value)}
+                    placeholder="Subtítulo o descripción"
+                    className="w-full bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:border-red-500 outline-none"
+                  />
+                  <input
+                    type="url"
+                    value={getFields(key).linkUrl}
+                    onChange={e => setField(key, "linkUrl", e.target.value)}
+                    placeholder="URL de destino (opcional)"
+                    className="w-full bg-black border border-gray-700 rounded-lg px-3 py-1.5 text-white text-xs focus:border-red-500 outline-none"
+                  />
+                  <button
+                    onClick={() => handleSaveText(key)}
+                    disabled={upsertBanner.isPending}
+                    className="w-full py-1.5 rounded-lg text-xs font-orbitron font-bold transition-colors bg-red-700/40 hover:bg-red-700/70 text-red-300 border border-red-700/40 disabled:opacity-50"
+                  >
+                    GUARDAR TEXTO
                   </button>
                 </div>
                 {/* Mobile banner */}

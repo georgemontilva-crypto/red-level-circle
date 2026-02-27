@@ -96,7 +96,7 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
     onError: (err) => toast.error(err.message),
   });
 
-  const ROLE_LABELS: Record<string, string> = { player: "Jugador", substitute: "Suplente", coach: "Coach" };
+  const ROLE_LABELS: Record<string, string> = { player: "Jugador", substitute: "Suplente", coach: "Entrenador" };
 
   return (
     <div className="space-y-3">
@@ -181,7 +181,7 @@ function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () 
     onError: (err) => toast.error(err.message),
   });
 
-  const ROLE_LABELS: Record<string, string> = { captain: "Capitán", player: "Jugador", substitute: "Suplente", coach: "Coach" };
+  const ROLE_LABELS: Record<string, string> = { captain: "Capitán", player: "Jugador", substitute: "Suplente", coach: "Entrenador" };
   const ROLE_COLORS: Record<string, string> = {
     captain: "oklch(0.65 0.18 80)",
     player: "oklch(0.65 0.22 25)",

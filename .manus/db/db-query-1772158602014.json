@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, name, slug, genre, isActive, sortOrder, logo, banner FROM games ORDER BY sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, name, slug, genre, isActive, sortOrder, logo, banner FROM games ORDER BY sortOrder;",
+  "rows": [
+    {
+      "id": "4",
+      "name": "Honor of Kings",
+      "slug": "honor-of-kings",
+      "genre": "",
+      "isActive": "1",
+      "sortOrder": "0",
+      "logo": "https://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1771653187860.png",
+      "banner": "https://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1771653179269.png"
+    },
+    {
+      "id": "60001",
+      "name": "Mobile Legends: Bang Bang",
+      "slug": "Mobile Legends: Bang Bang",
+      "genre": "MOBA",
+      "isActive": "1",
+      "sortOrder": "1",
+      "logo": "",
+      "banner": "https://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1772000795289.png"
+    },
+    {
+      "id": "2",
+      "name": "League of Legends",
+      "slug": "league-of-legends",
+      "genre": "NULL",
+      "isActive": "1",
+      "sortOrder": "2",
+      "logo": "NULL",
+      "banner": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/xnXJWWTgJXfVDhZC.png"
+    },
+    {
+      "id": "60002",
+      "name": "Dragon Ball Gekishin Squadra",
+      "slug": "dragon-ball-gekishin-squadra",
+      "genre": "",
+      "isActive": "1",
+      "sortOrder": "3",
+      "logo": "",
+      "banner": "https://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1772000877118.png"
+    },
+    {
+      "id": "1",
+      "name": "Valorant",
+      "slug": "valorant",
+      "genre": "NULL",
+      "isActive": "1",
+      "sortOrder": "4",
+      "logo": "NULL",
+      "banner": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/ObCOHvpcrZkNxdnd.png"
+    },
+    {
+      "id": "3",
+      "name": "Marvel Rivals",
+      "slug": "marvel-rivals",
+      "genre": "NULL",
+      "isActive": "1",
+      "sortOrder": "5",
+      "logo": "NULL",
+      "banner": "https://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/rVmgQhlDcBvOlgdo.png"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tslug\tgenre\tisActive\tsortOrder\tlogo\tbanner\n4\tHonor of Kings\thonor-of-kings\t\t1\t0\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1771653187860.png\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1771653179269.png\n60001\tMobile Legends: Bang Bang\tMobile Legends: Bang Bang\tMOBA\t1\t1\t\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1772000795289.png\n2\tLeague of Legends\tleague-of-legends\tNULL\t1\t2\tNULL\thttps://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/xnXJWWTgJXfVDhZC.png\n60002\tDragon Ball Gekishin Squadra\tdragon-ball-gekishin-squadra\t\t1\t3\t\thttps://d2xsxph8kpxj0f.cloudfront.net/310519663082553838/DxgNyfasDpwdHuCMrAaVCd/profiles/1/banner-1772000877118.png\n1\tValorant\tvalorant\tNULL\t1\t4\tNULL\thttps://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/ObCOHvpcrZkNxdnd.png\n3\tMarvel Rivals\tmarvel-rivals\tNULL\t1\t5\tNULL\thttps://files.manuscdn.com/user_upload_by_module/session_file/310519663082553838/rVmgQhlDcBvOlgdo.png\n",
+  "stderr": "",
+  "execution_time_ms": 359
+}

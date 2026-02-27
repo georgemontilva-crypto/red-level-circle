@@ -22,7 +22,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   all: "Todo",
   physical: "Físico",
   digital: "Digital",
-  bundle: "Bundle",
+  bundle: "Paquete",
   limited: "Edición Limitada",
 };
 

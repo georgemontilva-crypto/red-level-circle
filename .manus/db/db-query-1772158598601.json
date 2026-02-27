@@ -1,0 +1,52 @@
+{
+  "query": "SELECT id, name, slug, isActive, sortOrder FROM games ORDER BY sortOrder LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, name, slug, isActive, sortOrder FROM games ORDER BY sortOrder LIMIT 10;",
+  "rows": [
+    {
+      "id": "4",
+      "name": "Honor of Kings",
+      "slug": "honor-of-kings",
+      "isActive": "1",
+      "sortOrder": "0"
+    },
+    {
+      "id": "60001",
+      "name": "Mobile Legends: Bang Bang",
+      "slug": "Mobile Legends: Bang Bang",
+      "isActive": "1",
+      "sortOrder": "1"
+    },
+    {
+      "id": "2",
+      "name": "League of Legends",
+      "slug": "league-of-legends",
+      "isActive": "1",
+      "sortOrder": "2"
+    },
+    {
+      "id": "60002",
+      "name": "Dragon Ball Gekishin Squadra",
+      "slug": "dragon-ball-gekishin-squadra",
+      "isActive": "1",
+      "sortOrder": "3"
+    },
+    {
+      "id": "1",
+      "name": "Valorant",
+      "slug": "valorant",
+      "isActive": "1",
+      "sortOrder": "4"
+    },
+    {
+      "id": "3",
+      "name": "Marvel Rivals",
+      "slug": "marvel-rivals",
+      "isActive": "1",
+      "sortOrder": "5"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tslug\tisActive\tsortOrder\n4\tHonor of Kings\thonor-of-kings\t1\t0\n60001\tMobile Legends: Bang Bang\tMobile Legends: Bang Bang\t1\t1\n2\tLeague of Legends\tleague-of-legends\t1\t2\n60002\tDragon Ball Gekishin Squadra\tdragon-ball-gekishin-squadra\t1\t3\n1\tValorant\tvalorant\t1\t4\n3\tMarvel Rivals\tmarvel-rivals\t1\t5\n",
+  "stderr": "",
+  "execution_time_ms": 408
+}

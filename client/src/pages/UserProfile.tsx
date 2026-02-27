@@ -467,7 +467,7 @@ export default function UserProfile() {
                                   : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
                                 }
                               >
-                                {m.role === "captain" ? "Capitán" : m.role === "substitute" ? "Suplente" : m.role === "coach" ? "Coach" : "Jugador"}
+                                {m.role === "captain" ? "Capitán" : m.role === "substitute" ? "Suplente" : m.role === "coach" ? "Entrenador" : "Jugador"}
                               </span>
                             </div>
                           </div>

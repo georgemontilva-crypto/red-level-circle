@@ -15,7 +15,7 @@ import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 const CATEGORIES = [
-  { value: "gaming", label: "Gaming", icon: Gamepad2 },
+  { value: "gaming", label: "Videojuegos", icon: Gamepad2 },
   { value: "esports", label: "Esports", icon: Zap },
   { value: "streaming", label: "Streaming", icon: Play },
   { value: "content", label: "Contenido", icon: Camera },
@@ -328,7 +328,10 @@ export default function Creators() {
     }
   }, []);
 
-  const filtered = activeFilter === "all"
+  const liveCount = (creators ?? []).filter((c: any) => liveSet.has(c.userId)).length;
+  const filtered = activeFilter === "live"
+    ? (creators ?? []).filter((c: any) => liveSet.has(c.userId))
+    : activeFilter === "all"
     ? creators ?? []
     : (creators ?? []).filter((c: any) => c.category === activeFilter);
 
@@ -351,6 +354,18 @@ export default function Creators() {
           >
             Todos ({creators?.length ?? 0})
           </button>
+          {liveCount > 0 && (
+            <button
+              onClick={() => setActiveFilter("live")}
+              className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold font-mono transition-all ${
+                activeFilter === "live" ? "text-white" : "text-red-400 hover:text-white border border-red-800/50 hover:border-red-600"
+              }`}
+              style={activeFilter === "live" ? { background: "oklch(0.50 0.22 25)", boxShadow: "0 0 12px oklch(0.50 0.22 25 / 0.5)" } : { background: "oklch(0.12 0.04 25)" }}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+              EN VIVO ({liveCount})
+            </button>
+          )}
           {CATEGORIES.map(cat => {
             const count = (creators ?? []).filter((c: any) => c.category === cat.value).length;
             if (count === 0) return null;
@@ -378,7 +393,7 @@ export default function Creators() {
           <div className="text-center py-20">
             <Users size={48} className="text-zinc-700 mx-auto mb-4" />
             <h3 className="font-orbitron font-bold text-zinc-500 text-lg mb-2">
-              {activeFilter === "all" ? "Aún no hay creadores aprobados" : "No hay creadores en esta categoría"}
+              {activeFilter === "live" ? "No hay creadores transmitiendo ahora" : activeFilter === "all" ? "Aún no hay creadores aprobados" : "No hay creadores en esta categoría"}
             </h3>
             <p className="text-zinc-600 text-sm">¡Sé el primero en aplicar!</p>
           </div>

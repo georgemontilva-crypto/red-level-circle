@@ -26,8 +26,8 @@ function formatNumber(n: number): string {
 }
 function bracketLabel(b: string) {
   const m: Record<string, string> = {
-    single_elimination: "Single Elimination",
-    double_elimination: "Double Elimination",
+    single_elimination: "Eliminación Simple",
+    double_elimination: "Eliminación Doble",
     groups: "Grupos",
   };
   return m[b] ?? b;
@@ -661,6 +661,9 @@ export default function Home() {
   const { data: creators } = trpc.creators.listApproved.useQuery();
   const { data: missions } = trpc.home.availableMissions.useQuery();
   const { data: sideAds } = trpc.ads.list.useQuery();
+  const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
+  const liveSet = new Set(liveUserIds ?? []);
+  const liveCreatorsList = (creators ?? []).filter((c: any) => liveSet.has(c.userId));
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
@@ -672,6 +675,54 @@ export default function Home() {
         {/* 2. Stats */}
         <PlatformStats />
 
+        {/* 2.5 Creadores en Vivo Ahora — solo visible cuando hay streams activos */}
+        {liveCreatorsList.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                Creadores en Vivo Ahora
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold text-white" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.5)" }}>
+                  {liveCreatorsList.length}
+                </span>
+              </h2>
+              <Link href="/creators?filter=live" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver todos <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {liveCreatorsList.map((c: any) => (
+                <Link key={c.id} href={`/profile/${c.userId}`}>
+                  <div
+                    className="shrink-0 w-52 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", boxShadow: "0 0 16px oklch(0.55 0.22 25 / 0.2)" }}
+                  >
+                    <div className="relative h-32 overflow-hidden">
+                      {c.banner ? (
+                        <img src={c.banner} alt={c.displayName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-red-950/40 to-zinc-900" />
+                      )}
+                      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
+                      {/* EN VIVO badge */}
+                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.6)" }}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                        EN VIVO
+                      </div>
+                    </div>
+                    <div className="p-3 flex items-center gap-2.5">
+                      <UserAvatar avatar={c.avatar} name={c.displayName} size="sm" />
+                      <div className="min-w-0">
+                        <p className="text-white text-sm font-bold truncate">{c.displayName}</p>
+                        <p className="text-zinc-500 text-xs truncate">{c.category ?? "Creador"}</p>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
         {/* 3. Torneos activos */}
         {(featuredTournaments?.length ?? 0) > 0 && (
           <HScrollSection

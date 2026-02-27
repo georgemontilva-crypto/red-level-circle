@@ -650,3 +650,30 @@
 - [x] Badge EN VIVO pulsante en CreatorCard del Home (prop isLive + glow rojo)
 - [x] Badge EN VIVO pulsante en tarjetas de Creators.tsx (refetch 60s)
 - [x] 102 tests pasando, 0 errores TypeScript
+
+## Prioridad ALTA — Sprint actual
+- [ ] Filtro "En Vivo" en /creadores: tab adicional que muestra solo creadores transmitiendo
+- [ ] Sección "Creadores en Vivo Ahora" en Home: condicional, aparece solo cuando hay streams activos
+- [ ] Sistema de Juegos: tabla games, endpoints, imágenes S3, tarjetas portada en Home, filtro en Torneos
+- [ ] Rediseño Home: banner limpio, TournamentCard con bracket/slots/premio, sección Equipos+Personas, creadores scroll horizontal
+
+## Prioridad MEDIA — Sprint actual
+- [ ] SectionBanners mejorados: eliminar texto debajo del banner en páginas públicas
+- [ ] SectionBanners admin: drag & drop para reordenar, mejoras UX
+- [ ] TournamentCard universal: bracket, formato, slots, organizador, fecha, premio
+- [ ] Corrección dropdown notificaciones: alinear con icono campana en SidebarLayout
+- [ ] Traducción completa al español: revisar toda la UI y corregir textos en inglés
+
+## Prioridad MEDIA — Sprint actual
+- [ ] SectionBanners mejorados: eliminar texto debajo del banner en páginas públicas
+- [ ] SectionBanners admin: drag & drop para reordenar, mejoras UX
+- [ ] TournamentCard universal: bracket, formato, slots, organizador, fecha, premio
+- [ ] Corrección dropdown notificaciones: alinear con icono campana en SidebarLayout
+- [ ] Traducción completa al español: revisar toda la UI y corregir textos en inglés
+
+## Prioridad MEDIA — Completado
+- [x] SectionBanners admin mejorado: campos título, subtítulo y link en BannersTab del AdminPanel
+- [x] TournamentCard universal: ya implementado con bracket, formato, slots, organizador, fecha, premio
+- [x] Corrección dropdown notificaciones: ahora usa position:fixed calculado desde el botón campana (alineado correctamente)
+- [x] Traducción completa al español: corregidos "Coach"→"Entrenador", "Roster"→"Alineación", "Badge"→"Insignia", "Bundle"→"Paquete", "Single/Double Elimination"→español, "Win Rate"→"Tasa de Victoria", "Videojuegos" en categorías, "Identificador Único" en lugar de "Slug"
+- [x] 102 tests pasando, 0 errores TypeScript

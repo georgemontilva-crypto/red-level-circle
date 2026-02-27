@@ -193,7 +193,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
           {wr !== null && (
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-zinc-500 text-xs font-mono uppercase tracking-wider">Win Rate</span>
+                <span className="text-zinc-500 text-xs font-mono uppercase tracking-wider">Tasa de Victoria</span>
                 <span
                   className="font-orbitron font-bold text-sm"
                   style={{ color: wr >= 60 ? "#22c55e" : wr >= 40 ? "#eab308" : "#ef4444" }}
@@ -421,7 +421,7 @@ function RankingRow({
         </div>
       </div>
 
-      {/* Win Rate */}
+      {/* Tasa de Victoria */}
       <div className="flex items-center gap-1.5">
         {wr !== null ? (
           <>
@@ -761,7 +761,7 @@ export default function Ranking() {
                   <div className="flex gap-3 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
                     <HighlightCard
                       icon={<TrendingUp size={14} />}
-                      label="Mejor win rate"
+                      label="Mejor tasa de victoria"
                       team={highlights.bestWinRate}
                       sublabel={
                         highlights.bestWinRate
@@ -804,7 +804,7 @@ export default function Ranking() {
               {highlights.bestWinRate && (
                 <HighlightCard
                   icon={<TrendingUp size={14} />}
-                  label="Mejor win rate"
+                  label="Mejor tasa de victoria"
                   team={highlights.bestWinRate}
                   sublabel={`${winRate(highlights.bestWinRate.wins ?? 0, highlights.bestWinRate.losses ?? 0)}% WR · ${(highlights.bestWinRate.wins ?? 0) + (highlights.bestWinRate.losses ?? 0)} partidas`}
                   accent="#22c55e"
@@ -1091,7 +1091,7 @@ export default function Ranking() {
                 >
                   <div className="text-center text-xs font-mono text-zinc-600">#</div>
                   <div className="text-xs font-mono text-zinc-600 uppercase tracking-wider">Equipo</div>
-                  <div className="text-xs font-mono text-zinc-600 uppercase tracking-wider">Win Rate</div>
+                  <div className="text-xs font-mono text-zinc-600 uppercase tracking-wider">Tasa de Victoria</div>
                   <div className="text-center text-xs font-mono text-green-700 uppercase">V</div>
                   <div className="text-center text-xs font-mono text-red-800 uppercase">D</div>
                   <div className="text-right text-xs font-mono text-zinc-600 uppercase tracking-wider">Puntos</div>

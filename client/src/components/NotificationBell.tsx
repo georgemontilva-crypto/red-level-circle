@@ -162,11 +162,30 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+  const [fixedPos, setFixedPos] = useState({ top: 0, left: 0 });
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
     refetchInterval: 30_000,
   });
   const unreadCount = unreadData?.count ?? 0;
+
+  function calcPos() {
+    if (!buttonRef.current) return;
+    const rect = buttonRef.current.getBoundingClientRect();
+    const dropdownW = 320;
+    const margin = 8;
+    // Position dropdown to the right of the sidebar, aligned with the button
+    let left = rect.right + margin;
+    // If it overflows the viewport, flip to the left
+    if (left + dropdownW > window.innerWidth - margin) {
+      left = rect.left - dropdownW - margin;
+    }
+    setFixedPos({ top: rect.top, left });
+  }
+
+  function handleToggle() {
+    if (!open) calcPos();
+    setOpen((v) => !v);
+  }
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -178,21 +197,21 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // The dropdown is rendered inside the profile card via a portal-like trick:
-  // We pass the style as absolute relative to the card (position:relative on card).
   const dropdownStyle: React.CSSProperties = {
-    position: "absolute",
-    top: "calc(100% + 6px)",
-    left: 0,
+    position: "fixed",
+    top: fixedPos.top,
+    left: fixedPos.left,
     width: 320,
     zIndex: 9999,
+    maxHeight: "calc(100vh - 32px)",
+    overflowY: "auto",
   };
 
   return (
     <>
       <button
         ref={buttonRef}
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggle}
         className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
         aria-label="Notificaciones"
       >
@@ -203,7 +222,6 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
           </span>
         )}
       </button>
-
       {open && (
         <NotificationPanel
           dropdownRef={dropdownRef}
@@ -214,8 +232,7 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
     </>
   );
 }
-
-// ─── Topbar variant (mobile) ─────────────────────────────────────────────────
+// ─── Topbar variant (mobile)─────────────────────────────────────────────────
 export function TopbarNotificationBell() {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);

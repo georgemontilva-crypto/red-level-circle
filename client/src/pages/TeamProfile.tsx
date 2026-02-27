@@ -35,7 +35,7 @@ const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   captain:    { label: "Capitán",  color: "#fbbf24" },
   player:     { label: "Jugador",  color: "#a1a1aa" },
   substitute: { label: "Suplente", color: "#6366f1" },
-  coach:      { label: "Coach",    color: "#22c55e" },
+  coach:      { label: "Entrenador",    color: "#22c55e" },
 };
 
 const TOURNAMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
@@ -64,7 +64,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
     <div className="flex flex-col gap-1.5 p-4 rounded-2xl"
       style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Win Rate</span>
+        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Tasa de Victoria</span>
         <span className="text-lg font-black font-mono" style={{ color }}>{rate !== null ? `${rate}%` : "—"}</span>
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.16 0.01 0)" }}>
@@ -355,7 +355,7 @@ export default function TeamProfile() {
         <div className="flex gap-1 mb-6 p-1 rounded-xl"
           style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
           {([
-            { key: "roster",       label: "Roster",  icon: <Users size={14} />,  count: team.members?.length },
+            { key: "roster",       label: "Alineación",  icon: <Users size={14} />,  count: team.members?.length },
             { key: "history",      label: "Torneos", icon: <Trophy size={14} />, count: tournamentHistory?.length },
             { key: "achievements", label: "Logros",  icon: <Award size={14} />,  count: team.achievements?.length },
           ] as const).map((tab) => (

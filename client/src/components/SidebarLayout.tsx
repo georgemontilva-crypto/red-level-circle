@@ -31,7 +31,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       title: "GENERAL",
       items: [
         { label: "Inicio", href: "/", icon: Home },
-        { label: "Dashboard", href: "/dashboard", icon: TrendingUp, requiresAuth: true },
+        { label: "Panel", href: "/dashboard", icon: TrendingUp, requiresAuth: true },
       ],
     },
     {
@@ -84,7 +84,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
     sections.push({
       title: "ADMINISTRACIÓN",
       items: [
-        { label: "Admin", href: "/admin", icon: Settings },
+        { label: "Administración", href: "/admin", icon: Settings },
       ],
     });
   }
