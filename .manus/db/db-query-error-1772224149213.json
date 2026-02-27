@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, userName, rosterPhoto, rosterImageUrl FROM users WHERE rosterPhoto IS NOT NULL OR rosterImageUrl IS NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway04.us-east-1.prod.aws.tidbcloud.com --port 4000 --user oiP1ys9vPpNrfMo.root --database DxgNyfasDpwdHuCMrAaVCd --execute SELECT id, userName, rosterPhoto, rosterImageUrl FROM users WHERE rosterPhoto IS NOT NULL OR rosterImageUrl IS NOT NULL;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'username' in 'field list'"
+  ]
+}

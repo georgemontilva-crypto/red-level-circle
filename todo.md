@@ -770,3 +770,7 @@
 - [x] Identificar el badge de rol superpuesto en UserProfile.tsx (líneas 911-927)
 - [x] Eliminar el overlay de texto sobre la imagen de ficha en UserProfile.tsx
 - [x] RosterCard.tsx ya tenía el layout correcto sin duplicaciones
+
+## Fix Fichas Antiguas V28
+- [x] Limpiar imágenes de ficha antiguas (con diseño viejo) de la BD para todos los usuarios
+- [x] El nuevo diseño genera solo foto + barra roja + badge de rol (sin texto sobreimpuesto)
