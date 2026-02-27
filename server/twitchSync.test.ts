@@ -3,7 +3,7 @@
  * Covers: URL parsing, live data processing, and sync logic.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { extractTwitchLogin, getTwitchStreamData } from "./twitchSync";
+import { extractTwitchLogin, getTwitchStreamData, extractYouTubeHandle, syncYouTubeStreams } from "./twitchSync";
 
 // ── extractTwitchLogin ────────────────────────────────────────────────────────
 describe("extractTwitchLogin", () => {
@@ -124,5 +124,55 @@ describe("Twitch URL edge cases", () => {
 
   it("handles URLs with port numbers", () => {
     expect(extractTwitchLogin("https://twitch.tv:443/streamer")).toBe("streamer");
+  });
+});
+
+// ── extractYouTubeHandle ──────────────────────────────────────────────────────
+describe("extractYouTubeHandle", () => {
+  it("extracts handle from @handle URL", () => {
+    expect(extractYouTubeHandle("https://youtube.com/@ninja")).toBe("ninja");
+  });
+
+  it("extracts handle from www subdomain URL", () => {
+    expect(extractYouTubeHandle("https://www.youtube.com/@shroud")).toBe("shroud");
+  });
+
+  it("extracts channel ID from /channel/ URL", () => {
+    expect(extractYouTubeHandle("https://youtube.com/channel/UCxxxxxxxxxxxxxxxxxxxxxx")).toBe("ucxxxxxxxxxxxxxxxxxxxxxx");
+  });
+
+  it("extracts name from /c/ URL", () => {
+    expect(extractYouTubeHandle("https://youtube.com/c/channelname")).toBe("channelname");
+  });
+
+  it("extracts name from /user/ URL", () => {
+    expect(extractYouTubeHandle("https://youtube.com/user/username")).toBe("username");
+  });
+
+  it("returns null for non-YouTube URLs", () => {
+    expect(extractYouTubeHandle("https://twitch.tv/ninja")).toBeNull();
+    expect(extractYouTubeHandle("https://kick.com/streamer")).toBeNull();
+  });
+
+  it("returns null for invalid URLs", () => {
+    expect(extractYouTubeHandle("not-a-url")).toBeNull();
+    expect(extractYouTubeHandle("")).toBeNull();
+  });
+
+  it("returns lowercase handle", () => {
+    expect(extractYouTubeHandle("https://youtube.com/@NINJA")).toBe("ninja");
+  });
+});
+
+// ── syncYouTubeStreams — missing API key ──────────────────────────────────────
+describe("syncYouTubeStreams", () => {
+  it("skips sync when YOUTUBE_API_KEY is not set", async () => {
+    const originalKey = process.env.YOUTUBE_API_KEY;
+    delete process.env.YOUTUBE_API_KEY;
+
+    // Should resolve without throwing
+    await expect(syncYouTubeStreams()).resolves.toBeUndefined();
+
+    process.env.YOUTUBE_API_KEY = originalKey;
   });
 });

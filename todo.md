@@ -626,3 +626,9 @@
 - [x] UI en /settings: sección CANALES DE STREAMING para creadores aprobados
 - [x] CreatorStreamPanel pre-rellena URL desde creatorApp.twitch automáticamente
 - [x] Tests 93 pasando, TypeScript limpio
+
+## YouTube Data API Sync
+- [x] Obtener YOUTUBE_API_KEY y configurar en secrets
+- [x] Implementar syncYouTubeStreams() en twitchSync.ts
+- [x] Integrar en cron job principal junto a syncTwitchStreams
+- [x] Tests para syncYouTubeStreams

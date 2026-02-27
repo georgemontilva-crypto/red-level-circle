@@ -189,6 +189,178 @@ function processHelixResponse(
   }
 }
 
+// ── YouTube API ─────────────────────────────────────────────────────────────
+const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY ?? "";
+const YOUTUBE_CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels";
+const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
+
+export interface YouTubeStreamData {
+  handle: string;
+  channelId: string | null;
+  isLive: boolean;
+  viewerCount: number;
+  thumbnailUrl: string | null;
+  title: string | null;
+}
+
+/**
+ * Extracts the YouTube handle or channel ID from a URL like:
+ *   https://youtube.com/@handle
+ *   https://www.youtube.com/channel/UCxxxxxx
+ *   https://youtube.com/c/channelname
+ *   https://youtube.com/user/username
+ */
+export function extractYouTubeHandle(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.hostname.includes("youtube.com")) return null;
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    // @handle format
+    if (parts[0]?.startsWith("@")) return parts[0].slice(1).toLowerCase();
+    // /channel/UCxxx, /c/name, /user/name
+    if (parts.length >= 2 && ["channel", "c", "user"].includes(parts[0])) return parts[1].toLowerCase();
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolves a YouTube handle/username to a channel ID using the channels API.
+ * Returns null if not found.
+ */
+async function resolveYouTubeChannelId(handle: string): Promise<string | null> {
+  // If it already looks like a channel ID (starts with UC and 24 chars)
+  if (/^UC[\w-]{22}$/.test(handle)) return handle;
+
+  const params = new URLSearchParams({
+    part: "id",
+    forHandle: handle.startsWith("@") ? handle : `@${handle}`,
+    key: YOUTUBE_API_KEY,
+  });
+
+  const res = await fetch(`${YOUTUBE_CHANNELS_URL}?${params.toString()}`);
+  if (!res.ok) {
+    console.error(`[youtubeSync] channels API error for handle "${handle}": ${res.status}`);
+    return null;
+  }
+  const data = (await res.json()) as { items?: { id: string }[] };
+  return data.items?.[0]?.id ?? null;
+}
+
+/**
+ * Checks if a YouTube channel is currently live using the search API.
+ * Returns stream metadata if live, null otherwise.
+ */
+async function getYouTubeLiveStream(channelId: string): Promise<{
+  isLive: boolean;
+  viewerCount: number;
+  thumbnailUrl: string | null;
+  title: string | null;
+} | null> {
+  const params = new URLSearchParams({
+    part: "snippet",
+    channelId,
+    eventType: "live",
+    type: "video",
+    key: YOUTUBE_API_KEY,
+  });
+
+  const res = await fetch(`${YOUTUBE_SEARCH_URL}?${params.toString()}`);
+  if (!res.ok) {
+    console.error(`[youtubeSync] search API error for channel "${channelId}": ${res.status}`);
+    return null;
+  }
+
+  const data = (await res.json()) as {
+    items?: {
+      id: { videoId: string };
+      snippet: {
+        title: string;
+        thumbnails: { high?: { url: string }; medium?: { url: string } };
+      };
+    }[];
+  };
+
+  if (!data.items || data.items.length === 0) {
+    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null };
+  }
+
+  const item = data.items[0];
+  const thumbnail =
+    item.snippet.thumbnails.high?.url ??
+    item.snippet.thumbnails.medium?.url ??
+    null;
+
+  return {
+    isLive: true,
+    viewerCount: 0, // YouTube search API doesn't return viewer count; requires videos.list with liveStreamingDetails
+    thumbnailUrl: thumbnail,
+    title: item.snippet.title ?? null,
+  };
+}
+
+/**
+ * Syncs all YouTube streams in the DB with live data from YouTube Data API.
+ * Uses the same pattern as syncTwitchStreams.
+ */
+export async function syncYouTubeStreams(): Promise<void> {
+  if (!YOUTUBE_API_KEY) {
+    console.warn("[youtubeSync] Missing YOUTUBE_API_KEY — skipping YouTube sync");
+    return;
+  }
+
+  const db = await getDb();
+  if (!db) return;
+
+  // Fetch all streams with platform=youtube
+  const ytStreams = await db
+    .select()
+    .from(streams)
+    .where(eq(streams.platform, "youtube"));
+
+  if (ytStreams.length === 0) return;
+
+  console.log(`[youtubeSync] Checking ${ytStreams.length} YouTube stream(s)`);
+
+  for (const stream of ytStreams) {
+    if (!stream.url) continue;
+
+    const handle = extractYouTubeHandle(stream.url);
+    if (!handle) continue;
+
+    try {
+      // Resolve handle to channel ID (cached per run)
+      const channelId = await resolveYouTubeChannelId(handle);
+      if (!channelId) {
+        console.warn(`[youtubeSync] Could not resolve channel ID for handle "${handle}"`);
+        continue;
+      }
+
+      const liveData = await getYouTubeLiveStream(channelId);
+      if (!liveData) continue;
+
+      await db
+        .update(streams)
+        .set({
+          isLive: liveData.isLive,
+          viewerCount: liveData.viewerCount,
+          ...(liveData.thumbnailUrl ? { thumbnailUrl: liveData.thumbnailUrl } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(streams.id, stream.id));
+
+      console.log(
+        `[youtubeSync] ${handle}: ${
+          liveData.isLive ? `LIVE (${liveData.title})` : "offline"
+        }`
+      );
+    } catch (e) {
+      console.error(`[youtubeSync] Error processing handle "${handle}":`, e);
+    }
+  }
+}
+
 // ── Sync job ─────────────────────────────────────────────────────────────────
 let syncInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -249,23 +421,34 @@ export async function syncTwitchStreams(): Promise<void> {
 }
 
 /**
+ * Runs both Twitch and YouTube sync in parallel.
+ */
+async function syncAllStreams(): Promise<void> {
+  await Promise.allSettled([
+    syncTwitchStreams(),
+    syncYouTubeStreams(),
+  ]);
+}
+
+/**
  * Starts the background sync job that runs every 2 minutes.
+ * Syncs both Twitch and YouTube streams.
  * Safe to call multiple times — only one interval is created.
  */
 export function startTwitchSyncJob(): void {
   if (syncInterval) return; // already running
 
-  console.log("[twitchSync] Starting Twitch sync job (every 2 minutes)");
+  console.log("[streamSync] Starting Twitch + YouTube sync job (every 2 minutes)");
 
   // Run immediately on startup
-  syncTwitchStreams().catch((e) =>
-    console.error("[twitchSync] Initial sync error:", e)
+  syncAllStreams().catch((e) =>
+    console.error("[streamSync] Initial sync error:", e)
   );
 
   // Then every 2 minutes
   syncInterval = setInterval(() => {
-    syncTwitchStreams().catch((e) =>
-      console.error("[twitchSync] Sync error:", e)
+    syncAllStreams().catch((e) =>
+      console.error("[streamSync] Sync error:", e)
     );
   }, 2 * 60 * 1000);
 }
