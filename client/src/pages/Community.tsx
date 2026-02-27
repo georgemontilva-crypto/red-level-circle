@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Search, Users, Crown, Swords, Shield,
-  UserPlus, UserMinus, Loader2, Gamepad2,
+  UserPlus, UserMinus, Loader2, Gamepad2, MapPin,
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -177,7 +177,7 @@ function UserCard({ user, myId }: UserCardProps) {
                 {user.mainGame}
               </span>
             )}
-            {user.country && <span>🌍 {user.country}</span>}
+            {user.country && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{user.country}</span>}
           </div>
         </div>
       </Link>

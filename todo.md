@@ -722,3 +722,9 @@
 
 ## Fix Bracket Ancho y Padding
 - [x] Limitar ancho del bracket (no ancho completo) y agregar padding inferior
+
+## Eliminar Emojis V21
+- [x] Identificar todos los archivos con emojis en el proyecto
+- [x] Reemplazar emojis en Home, Dashboard, Sidebar, Profile
+- [x] Reemplazar emojis en Tournaments, Teams, Ranking, Shop
+- [x] Reemplazar emojis en Streams, News, Betting, Rewards, Admin

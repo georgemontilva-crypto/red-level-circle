@@ -13,6 +13,8 @@ import {
   Swords,
   Crown,
   CheckCircle,
+  CheckCircle2,
+  Circle,
   Clock,
   AlertCircle,
   Edit,
@@ -431,7 +433,7 @@ export default function TournamentManage() {
                               </div>
                               <div className="flex items-center gap-3 flex-shrink-0">
                                 <span className="text-xs font-display tracking-wider" style={{ color: isCompleted ? "oklch(0.65 0.18 145)" : "oklch(0.55 0.005 0)" }}>
-                                  {isCompleted ? "✓" : "•"}
+                                  {isCompleted ? <CheckCircle2 size={14} /> : <Circle size={14} />}
                                 </span>
                                 {tournament.status === "in_progress" && !isCompleted && (
                                   <button

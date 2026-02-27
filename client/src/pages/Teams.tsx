@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 import { Link, useSearch } from "wouter";
 import {
   Search, Trophy, Shield, Users,
-  ExternalLink, X, ChevronDown, CheckCircle,
+  ExternalLink, X, ChevronDown, CheckCircle, MapPin,
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 
@@ -20,12 +20,6 @@ const GAME_COLORS: Record<string, { from: string; to: string; glow: string; acce
 };
 const DEFAULT_COLOR = { from: "#0d0d0d", to: "#1a1a1a", glow: "rgba(220,38,38,0.25)", accent: "#dc2626" };
 function getGameColor(slug: string) { return GAME_COLORS[slug] ?? DEFAULT_COLOR; }
-
-const COUNTRY_FLAGS: Record<string, string> = {
-  Colombia: "🇨🇴", Venezuela: "🇻🇪", Argentina: "🇦🇷", México: "🇲🇽", Chile: "🇨🇱",
-  Perú: "🇵🇪", Ecuador: "🇪🇨", Bolivia: "🇧🇴", Uruguay: "🇺🇾", Paraguay: "🇵🇾",
-  España: "🇪🇸", Brasil: "🇧🇷",
-};
 
 // ─── Game Chip (idéntico al de Ranking y Torneos) ─────────────────────────────
 function GameChip({ game, active, onClick }: { game: any; active: boolean; onClick: () => void }) {
@@ -143,7 +137,7 @@ function TeamCard({ team }: { team: any }) {
                   <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded" style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>[{team.tag}]</span>
                 )}
                 {team.country && (
-                  <span className="text-xs text-zinc-500 font-mono">{COUNTRY_FLAGS[team.country] ?? ""} {team.country}</span>
+                  <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><MapPin size={10} />{team.country}</span>
                 )}
               </div>
             </div>

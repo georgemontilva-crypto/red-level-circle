@@ -8,7 +8,7 @@ import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
   CheckCircle, Clock, XCircle, Send, ChevronDown, Users,
-  Gamepad2, Mic, Camera, Music, Zap, ExternalLink
+  Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -444,7 +444,7 @@ export default function Creators() {
                   onClick={() => setShowForm(false)}
                   className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
                 >
-                  ✕
+                  <X size={14} />
                 </button>
               </div>
               {/* Modal body */}

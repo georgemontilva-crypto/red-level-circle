@@ -126,7 +126,7 @@ export default function Shop() {
                         <p className="font-bold text-white truncate">{order.itemName ?? "Producto"}</p>
                         <p className="text-gray-500 text-sm">Cantidad: {order.quantity} · {order.totalPrice} RLC</p>
                         {order.deliveryNote && (
-                          <p className="text-green-400 text-xs mt-1">📦 {order.deliveryNote}</p>
+                          <p className="text-green-400 text-xs mt-1 flex items-center gap-1"><Package size={11} />{order.deliveryNote}</p>
                         )}
                       </div>
                       <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${statusCfg.color}`}>

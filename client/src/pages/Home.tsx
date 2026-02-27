@@ -299,7 +299,7 @@ function MissionCard({ m }: { m: any }) {
           {/* Type badge */}
           <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono font-semibold capitalize"
             style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.65 0.18 145)", border: "1px solid oklch(0.45 0.18 145 / 0.4)", backdropFilter: "blur(8px)" }}>
-            {m.type === "video" ? "▶ Video" : m.type === "ad" ? "📢 Publicidad" : m.type}
+            {m.type === "video" ? <><Play size={9} className="inline mr-0.5" />Video</> : m.type === "ad" ? <><Zap size={9} className="inline mr-0.5" />Publicidad</> : m.type}
           </div>
         </div>
         {/* Body */}
@@ -454,7 +454,7 @@ function TeamsAndPeopleSection() {
     else refetchUsers();
   }, [isAuthenticated, refetchTeams, refetchSuggested, refetchUsers]);
 
-  const medals = ["🥇", "🥈", "🥉"];
+  const medals = ["#1", "#2", "#3"];
 
   if (allTeams.length === 0 && allPeople.length === 0) return null;
 

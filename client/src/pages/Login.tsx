@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trophy, Swords, BarChart3 } from "lucide-react";
 
 export default function Login() {
   const { isAuthenticated, loading } = useAuth();
@@ -180,25 +180,18 @@ export default function Login() {
               Plataforma de Esports
             </p>
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: "Torneos", icon: "🏆" },
-                { label: "Equipos", icon: "⚔️" },
-                { label: "Rankings", icon: "📊" },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-lg p-3 text-center"
-                  style={{
-                    background: "oklch(0.10 0.005 0)",
-                    border: "1px solid oklch(0.18 0.01 0)",
-                  }}
-                >
-                  <div className="text-xl mb-1">{item.icon}</div>
-                  <div className="text-xs text-muted-foreground font-display tracking-wider">
-                    {item.label}
-                  </div>
-                </div>
-              ))}
+              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="flex justify-center mb-1"><Trophy size={20} style={{ color: "oklch(0.65 0.18 80)" }} /></div>
+                <div className="text-xs text-muted-foreground font-display tracking-wider">Torneos</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="flex justify-center mb-1"><Swords size={20} style={{ color: "oklch(0.55 0.22 25)" }} /></div>
+                <div className="text-xs text-muted-foreground font-display tracking-wider">Equipos</div>
+              </div>
+              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="flex justify-center mb-1"><BarChart3 size={20} style={{ color: "oklch(0.55 0.18 220)" }} /></div>
+                <div className="text-xs text-muted-foreground font-display tracking-wider">Rankings</div>
+              </div>
             </div>
           </div>
         </div>

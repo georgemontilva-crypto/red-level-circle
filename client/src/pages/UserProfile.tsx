@@ -5,6 +5,7 @@ import {
   User, Trophy, Gamepad2, Twitter, MessageSquare, Tv2,
   Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
   Loader2, BadgeCheck, Camera, Save, Star, Radio, Clock, Eye,
+  Coins, Globe, MapPin, Palette, CheckCircle2,
 } from "lucide-react";
 import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
@@ -301,7 +302,7 @@ export default function UserProfile() {
                   style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
                   {_vRoleData?.svgPath ? (
                     <img src={_vRoleData.svgPath} alt={_vRoleData.label} className="w-3.5 h-3.5" style={{ filter: "invert(1) sepia(1) saturate(2) hue-rotate(320deg)" }} />
-                  ) : <span>🎮</span>}
+                  ) : <Gamepad2 className="w-3.5 h-3.5" />}
                   {_vRoleData?.label ?? (profile as { gameRole?: string | null }).gameRole}
                 </span>
               );
@@ -324,11 +325,11 @@ export default function UserProfile() {
             {(profile as { competitiveRegion?: string | null }).competitiveRegion && (
               <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
                 style={{ background: "oklch(0.45 0.15 220 / 0.12)", border: "1px solid oklch(0.45 0.15 220 / 0.25)", color: "oklch(0.70 0.15 220)" }}>
-                🌐 {(profile as { competitiveRegion?: string | null }).competitiveRegion}
+                <Globe className="w-3 h-3" /> {(profile as { competitiveRegion?: string | null }).competitiveRegion}
               </span>
             )}
             {profile.country && (
-              <span className="flex items-center gap-1">🌍 {profile.country}</span>
+              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {profile.country}</span>
             )}
             <span className="flex items-center gap-1">
               <Calendar className="w-3 h-3" />
@@ -422,16 +423,20 @@ export default function UserProfile() {
               {/* Stats grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {[
-                  { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: "🪙" },
-                  { label: "Seguidores", value: profile.followerCount ?? 0, icon: "👥" },
-                  { label: "Siguiendo", value: profile.followingCount ?? 0, icon: "➕" },
+                  { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: "coins" },
+                  { label: "Seguidores", value: profile.followerCount ?? 0, icon: "users" },
+                  { label: "Siguiendo", value: profile.followingCount ?? 0, icon: "userplus" },
                 ].map((stat) => (
                   <div
                     key={stat.label}
                     className="rounded-xl p-4 text-center"
                     style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    <div className="text-2xl mb-1">{stat.icon}</div>
+                    <div className="flex justify-center mb-1" style={{ color: "oklch(0.55 0.22 25)" }}>
+                      {stat.icon === "coins" && <Coins size={22} />}
+                      {stat.icon === "users" && <Users size={22} />}
+                      {stat.icon === "userplus" && <UserPlus size={22} />}
+                    </div>
                     <div className="font-mono font-bold text-white text-lg">{stat.value.toLocaleString()}</div>
                     <div className="text-xs text-zinc-500 font-mono mt-0.5">{stat.label}</div>
                   </div>
@@ -564,7 +569,7 @@ export default function UserProfile() {
                     className="rounded-xl p-8 text-center"
                     style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    <span className="text-4xl mb-3 block">🎨</span>
+                    <Palette size={36} className="mx-auto mb-3 text-zinc-600" />
                     <p className="text-zinc-500 font-mono text-sm">No tienes cosméticos aún</p>
                     <a href="/shop/cosmetics" className="mt-3 inline-block text-xs text-red-400 hover:text-red-300 font-mono underline">Ir a la tienda</a>
                   </div>
@@ -599,7 +604,7 @@ export default function UserProfile() {
                               <img src={(c as any).previewImage} alt={(c as any).name ?? ""} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-2xl">🎨</span>
+                                <Palette size={24} className="text-zinc-600" />
                               </div>
                             )}
                           </div>
@@ -607,7 +612,7 @@ export default function UserProfile() {
                             <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{(c as any).name}</p>
                             <p className="text-[10px] font-mono capitalize mt-0.5" style={{ color: rarityColor[rarity] }}>{rarityLabel[rarity]}</p>
                             {c.isEquipped ? (
-                              <span className="mt-1 inline-block text-[10px] text-green-400 font-mono">✓ Equipado</span>
+                              <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] text-green-400 font-mono"><CheckCircle2 size={10} /> Equipado</span>
                             ) : (
                               <button
                                 onClick={() => equipMutation.mutate({ cosmeticId: c.cosmeticId })}
@@ -630,7 +635,7 @@ export default function UserProfile() {
                     className="rounded-xl p-8 text-center"
                     style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    <span className="text-4xl mb-3 block">🎨</span>
+                    <Palette size={36} className="mx-auto mb-3 text-zinc-600" />
                     <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
                   </div>
                 ) : (
@@ -664,7 +669,7 @@ export default function UserProfile() {
                               <img src={c.previewImage} alt={c.name} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <span className="text-2xl">🎨</span>
+                                <Palette size={24} className="text-zinc-600" />
                               </div>
                             )}
                           </div>
@@ -1085,7 +1090,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-base font-mono font-bold"
                       style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.35)", color: "oklch(0.80 0.15 25)" }}
                     >
-                      🎮 {profile.gameRole}
+                      <Gamepad2 className="w-4 h-4" /> {profile.gameRole}
                     </span>
                   )}
                   {profile.mainGame && (
@@ -1119,7 +1124,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
                       style={{ background: "oklch(0.45 0.15 220 / 0.15)", border: "1px solid oklch(0.45 0.15 220 / 0.3)", color: "oklch(0.70 0.15 220)" }}
                     >
-                      🌐 {profile.competitiveRegion}
+                      <Globe className="w-4 h-4" /> {profile.competitiveRegion}
                     </span>
                   </div>
                 )}
@@ -1141,7 +1146,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
                       style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}
                     >
-                      🏆 {profile.competitiveScore?.toLocaleString()} pts
+                      <Trophy className="w-4 h-4" /> {profile.competitiveScore?.toLocaleString()} pts
                     </span>
                   </div>
                 )}

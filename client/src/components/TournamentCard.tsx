@@ -4,7 +4,7 @@
  * Usado en: Home (scroll horizontal), Tournaments (grid), MyTournaments, Dashboard, Betting, etc.
  */
 import { Link } from "wouter";
-import { Trophy, Calendar, Users, GitBranch, Hash, Radio } from "lucide-react";
+import { Trophy, Calendar, Users, GitBranch, Hash, Radio, Coins } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 export function bracketLabel(b: string | null | undefined) {
@@ -128,8 +128,8 @@ export function TournamentCard({
         </div>
         {/* Prize */}
         {(t.prizeAmount ?? 0) > 0 && (
-          <span className="font-orbitron font-bold text-xs shrink-0" style={{ color: "oklch(0.65 0.18 80)" }}>
-            🪙 {t.prizeAmount} RLC
+          <span className="font-orbitron font-bold text-xs shrink-0 flex items-center gap-0.5" style={{ color: "oklch(0.65 0.18 80)" }}>
+            <Coins size={11} />{t.prizeAmount} RLC
           </span>
         )}
       </div>
@@ -283,7 +283,7 @@ export function TournamentCard({
           </span>
           {(t.prizeAmount ?? 0) > 0 && (
             <span className="flex items-center gap-1 font-orbitron font-bold text-xs" style={{ color: "oklch(0.65 0.18 80)" }}>
-              🪙 {t.prizeAmount} RLC
+              <Coins size={11} className="inline mr-0.5" />{t.prizeAmount} RLC
             </span>
           )}
         </div>

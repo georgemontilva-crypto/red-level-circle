@@ -402,7 +402,7 @@ function VerificationSection() {
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
         <p className="text-zinc-400 text-sm">
           La verificación confirma que eres un creador, jugador profesional u organización reconocida en la comunidad.
-          El badge <span className="text-blue-400 font-bold">✓</span> aparecerá en tu perfil y en toda la plataforma.
+          El badge <BadgeCheck size={14} className="inline text-blue-400" /> aparecerá en tu perfil y en toda la plataforma.
         </p>
         {myRequest ? (
           <div>

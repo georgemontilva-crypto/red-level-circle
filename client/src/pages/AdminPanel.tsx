@@ -1837,7 +1837,7 @@ function CosmeticsAdminTab() {
                 <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
               </div>
               {c.frameImage && (
-                <p className="text-green-500 text-xs font-rajdhani mt-0.5">✓ PNG cargado</p>
+                <p className="text-green-500 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5"><CheckCircle2 size={11} /> PNG cargado</p>
               )}
             </div>
             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

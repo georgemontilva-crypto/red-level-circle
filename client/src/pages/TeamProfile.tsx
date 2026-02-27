@@ -29,12 +29,6 @@ const GAME_COLORS: Record<string, { from: string; to: string; glow: string; acce
 const DEFAULT_COLOR = { from: "#0d0d0d", to: "#1a0505", glow: "rgba(220,38,38,0.3)", accent: "#dc2626", mid: "#2a0a0a" };
 function getGameColor(slug?: string | null): { from: string; to: string; glow: string; accent: string; mid: string } { return (slug ? GAME_COLORS[slug] : undefined) ?? DEFAULT_COLOR; }
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  Colombia: "🇨🇴", Venezuela: "🇻🇪", Argentina: "🇦🇷", México: "🇲🇽", Chile: "🇨🇱",
-  Perú: "🇵🇪", Ecuador: "🇪🇨", Bolivia: "🇧🇴", Uruguay: "🇺🇾", Paraguay: "🇵🇾",
-  España: "🇪🇸", Brasil: "🇧🇷",
-};
-
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   captain:    { label: "Capitán",  color: "#fbbf24" },
   player:     { label: "Jugador",  color: "#a1a1aa" },
@@ -449,7 +443,7 @@ export default function TeamProfile() {
                 )}
                 {team.country && (
                   <span className="flex items-center gap-1.5">
-                    <Globe size={13} /> {COUNTRY_FLAGS[team.country] ?? ""} {team.country}
+                    <Globe size={13} /> {team.country}
                   </span>
                 )}
                 {rankPos && (

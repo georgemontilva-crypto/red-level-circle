@@ -464,7 +464,7 @@ function VideoPlayerModal({
             {claiming ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             ) : videoCompleted ? (
-              <><CheckCircle size={13} /> <span>Reclamar +{task.reward} RLC 🎉</span></>
+              <><CheckCircle size={13} /> <span>Reclamar +{task.reward} RLC</span></>
             ) : ytPlaying ? (
               <><span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shrink-0" /> <span>Viendo... ({formatTime(remaining)})</span></>
             ) : (

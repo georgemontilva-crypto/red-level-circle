@@ -474,7 +474,7 @@ export default function CosmeticsShop() {
                   </div>
                   <p className="text-xs text-gray-400 truncate">{(uc as any).name}</p>
                   {uc.isEquipped ? (
-                    <span className="text-xs text-green-400 font-mono">✓ Equipado</span>
+                    <span className="text-xs text-green-400 font-mono flex items-center gap-0.5"><Check size={11} /> Equipado</span>
                   ) : (
                     <button
                       onClick={() => equipMutation.mutate({ cosmeticId: uc.cosmeticId })}
