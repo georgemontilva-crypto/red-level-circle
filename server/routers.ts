@@ -468,11 +468,25 @@ export const appRouter = router({
         socialTwitch: z.string().optional(),
         socialTwitter: z.string().optional(),
       }))
-      .mutation(async ({ ctx, input }) => {
+       .mutation(async ({ ctx, input }) => {
+        // Verificar que el usuario no sea ya capitán de otro equipo
+        const db = await getDb();
+        if (db) {
+          const existingTeam = await db
+            .select({ id: teams.id, name: teams.name })
+            .from(teams)
+            .where(eq(teams.captainId, ctx.user.id))
+            .limit(1);
+          if (existingTeam.length > 0) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: `Ya eres capitán del equipo "${existingTeam[0].name}". Solo puedes ser capitán de un equipo a la vez.`,
+            });
+          }
+        }
         const id = await createTeam({ ...input, captainId: ctx.user.id });
         return { id };
       }),
-
     update: protectedProcedure
       .input(z.object({
         id: z.number(),

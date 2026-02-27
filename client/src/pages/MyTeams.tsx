@@ -286,7 +286,11 @@ export default function MyTeams() {
   const [teamLogos, setTeamLogos] = useState<Record<number, string>>({});
   const [teamBanners, setTeamBanners] = useState<Record<number, string>>({});
 
+  const { data: me } = trpc.auth.me.useQuery();
   const { data: teams, isLoading, refetch } = trpc.teams.myTeams.useQuery();
+  // Bloquear creación si el usuario ya es capitán de algún equipo
+  const captainTeam = teams?.find((t) => t.captainId === me?.id);
+  const isAlreadyCaptain = !!captainTeam;
   const uploadImageCreate = trpc.profile.uploadImage.useMutation();
 
   const createMutation = trpc.teams.create.useMutation({
@@ -307,13 +311,25 @@ export default function MyTeams() {
           <p className="text-muted-foreground text-sm">
             {teams?.length ?? 0} equipo{(teams?.length ?? 0) !== 1 ? "s" : ""}
           </p>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-300"
-            style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
-          >
-            <PlusCircle size={14} /> CREAR EQUIPO
-          </button>
+          <div className="flex flex-col items-end gap-1">
+            <button
+              onClick={() => !isAlreadyCaptain && setShowCreate(true)}
+              disabled={isAlreadyCaptain}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+              style={isAlreadyCaptain
+                ? { background: "oklch(0.20 0.005 0)", color: "oklch(0.45 0.005 0)", border: "1px solid oklch(0.25 0.01 0)" }
+                : { background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }
+              }
+              title={isAlreadyCaptain ? `Ya eres capitán de "${captainTeam?.name}"` : "Crear nuevo equipo"}
+            >
+              <PlusCircle size={14} /> CREAR EQUIPO
+            </button>
+            {isAlreadyCaptain && (
+              <p className="text-xs" style={{ color: "oklch(0.55 0.18 80)" }}>
+                Ya eres capitán de &ldquo;{captainTeam?.name}&rdquo;
+              </p>
+            )}
+          </div>
         </div>
 
         {isLoading ? (

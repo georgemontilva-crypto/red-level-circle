@@ -774,3 +774,7 @@
 ## Fix Fichas Antiguas V28
 - [x] Limpiar imágenes de ficha antiguas (con diseño viejo) de la BD para todos los usuarios
 - [x] El nuevo diseño genera solo foto + barra roja + badge de rol (sin texto sobreimpuesto)
+
+## Límite Creación de Equipos V29
+- [x] Backend: validar en createTeam que el usuario no sea ya capitán de otro equipo
+- [x] Frontend: mostrar mensaje de error y deshabilitar el botón si el usuario ya tiene un equipo
