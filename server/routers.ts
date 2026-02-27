@@ -1695,6 +1695,21 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         return applyAsCreator(ctx.user.id, input);
       }),
+    /** Update the caller's streaming channel handles (twitch, youtube, etc.) */
+    updateChannels: protectedProcedure
+      .input(z.object({
+        twitch: z.string().max(128).optional(),
+        youtube: z.string().max(256).optional(),
+        twitter: z.string().max(128).optional(),
+        instagram: z.string().max(128).optional(),
+        tiktok: z.string().max(128).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const existing = await getCreatorByUserId(ctx.user.id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "No tienes una solicitud de creador activa" });
+        await applyAsCreator(ctx.user.id, input);
+        return { success: true };
+      }),
     review: protectedProcedure
       .input(z.object({
         id: z.number(),

@@ -620,3 +620,9 @@
 - [x] Eliminar streams de prueba (mocks) de la BD
 - [x] Contador EN VIVO en sidebar con badge rojo y refresco cada 60s
 - [x] Integrar Twitch API: cron job que actualiza isLive, viewerCount y thumbnailUrl automáticamente
+
+## Twitch Handle en perfil de usuario
+- [x] Procedure creators.updateChannels para editar twitch/youtube handle
+- [x] UI en /settings: sección CANALES DE STREAMING para creadores aprobados
+- [x] CreatorStreamPanel pre-rellena URL desde creatorApp.twitch automáticamente
+- [x] Tests 93 pasando, TypeScript limpio

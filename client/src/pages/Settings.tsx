@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import {
   Camera, User, Globe, MessageSquare, Save, ChevronLeft,
   Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2,
-  BadgeCheck, Clock, XCircle
+  BadgeCheck, Clock, XCircle, Radio
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
@@ -281,6 +281,99 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
             />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ── Creator Channels Section ─────────────────────────────────────────────────
+function CreatorChannelsSection() {
+  const utils = trpc.useUtils();
+  const { data: creatorApp, isLoading } = trpc.creators.getMyApplication.useQuery();
+  const [channelForm, setChannelForm] = useState({ twitch: "", youtube: "" });
+  const [channelInit, setChannelInit] = useState(false);
+  const [savingChannels, setSavingChannels] = useState(false);
+
+  if (creatorApp && !channelInit) {
+    setChannelForm({
+      twitch: creatorApp.twitch ?? "",
+      youtube: creatorApp.youtube ?? "",
+    });
+    setChannelInit(true);
+  }
+
+  const updateChannels = trpc.creators.updateChannels.useMutation({
+    onSuccess: () => {
+      toast.success("Canales actualizados. El sistema detectará tu stream automáticamente.", {
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
+      });
+      utils.creators.getMyApplication.invalidate();
+      setSavingChannels(false);
+    },
+    onError: (err) => { toast.error(err.message); setSavingChannels(false); },
+  });
+
+  if (isLoading) return null;
+  if (!creatorApp || creatorApp.status !== "approved") return null;
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-orbitron text-sm tracking-widest text-purple-400 flex items-center gap-2">
+        <Radio className="w-4 h-4" /> CANALES DE STREAMING
+      </h2>
+      <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-5 space-y-4">
+        <p className="text-zinc-400 text-sm">
+          Registra tu canal de Twitch o YouTube. El sistema detectará automáticamente cuando estés en vivo
+          y mostrará tu stream en la sección{" "}
+          <span className="text-red-400 font-bold">EN VIVO</span> sin que tengas que hacer nada.
+        </p>
+        <div className="space-y-3">
+          {/* Twitch */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest flex items-center gap-1">
+              <span className="text-purple-400">●</span> TWITCH (detección automática)
+            </label>
+            <div className="flex items-center">
+              <span className="bg-zinc-800 border border-r-0 border-purple-500/30 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">twitch.tv/</span>
+              <input
+                type="text"
+                value={channelForm.twitch}
+                onChange={(e) => setChannelForm((f) => ({ ...f, twitch: e.target.value.replace(/^@/, "").trim() }))}
+                placeholder="tu_canal"
+                maxLength={128}
+                className="flex-1 bg-zinc-900 border border-purple-500/30 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-zinc-600"
+              />
+            </div>
+            {channelForm.twitch && (
+              <p className="mt-1 text-xs text-purple-400 font-mono">
+                → El sistema verificará twitch.tv/{channelForm.twitch} cada 2 minutos
+              </p>
+            )}
+          </div>
+          {/* YouTube */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">YOUTUBE</label>
+            <div className="flex items-center">
+              <span className="bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">youtube.com/@</span>
+              <input
+                type="text"
+                value={channelForm.youtube}
+                onChange={(e) => setChannelForm((f) => ({ ...f, youtube: e.target.value.replace(/^@/, "").trim() }))}
+                placeholder="tu_canal"
+                maxLength={256}
+                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+              />
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => { setSavingChannels(true); updateChannels.mutate(channelForm); }}
+          disabled={savingChannels || updateChannels.isPending}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white font-orbitron font-bold text-sm tracking-widest transition-all"
+          style={{ boxShadow: "0 0 16px rgba(168,85,247,0.3)" }}
+        >
+          {savingChannels ? <><Loader2 className="w-4 h-4 animate-spin" /> GUARDANDO...</> : <><Save className="w-4 h-4" /> GUARDAR CANALES</>}
+        </button>
       </div>
     </div>
   );
@@ -730,6 +823,8 @@ export default function Settings() {
 
         {/* Roster Photo */}
         <RosterPhotoUpload currentUrl={(me as { rosterPhoto?: string })?.rosterPhoto ?? null} />
+        {/* Creator Channels */}
+        <CreatorChannelsSection />
         {/* Verification */}
         <VerificationSection />
         {/* Save Button */}
