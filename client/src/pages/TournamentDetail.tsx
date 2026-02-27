@@ -495,96 +495,6 @@ export default function TournamentDetail() {
           </section>
         )}
 
-        {/* ─── BRACKET ────────────────────────────────────────────────────────── */}
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-lg font-bold tracking-wider text-foreground flex items-center gap-2">
-              <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
-              BRACKET DEL TORNEO
-              {hasBracket && (
-                <span
-                  className="text-xs font-mono px-2 py-0.5 rounded-full ml-1"
-                  style={{
-                    background: "oklch(0.65 0.18 80 / 0.15)",
-                    color: "oklch(0.65 0.18 80)",
-                    border: "1px solid oklch(0.65 0.18 80 / 0.3)",
-                  }}
-                >
-                  {matches!.filter((m) => m.status === "completed").length}/{matches!.length}{" "}
-                  partidas
-                </span>
-              )}
-            </h2>
-            {isOrganizer && hasBracket && tournament.status === "in_progress" && (
-              <button
-                onClick={() => generateBracketMutation.mutate({ tournamentId: id })}
-                disabled={generateBracketMutation.isPending}
-                className="px-4 py-1.5 rounded-lg font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-50"
-                style={{
-                  background: "oklch(0.12 0.005 0)",
-                  border: "1px solid oklch(0.55 0.22 25 / 0.4)",
-                  color: "oklch(0.70 0.28 25)",
-                }}
-              >
-                {generateBracketMutation.isPending ? "REGENERANDO..." : "REGENERAR BRACKET"}
-              </button>
-            )}
-          </div>
-
-          {!hasBracket ? (
-            <div
-              className="rounded-xl p-12 text-center"
-              style={{
-                background: "oklch(0.10 0.005 0)",
-                border: "1px dashed oklch(0.22 0.01 0)",
-              }}
-            >
-              <Swords size={40} className="mx-auto mb-4 opacity-30" />
-              <p className="font-display text-sm tracking-wider text-muted-foreground mb-2">
-                {tournament.status === "registration_open"
-                  ? "El bracket se generará cuando cierren las inscripciones"
-                  : tournament.status === "registration_closed" && isOrganizer
-                  ? "Las inscripciones están cerradas. Genera el bracket para comenzar."
-                  : "El bracket aún no ha sido generado"}
-              </p>
-              {canGenerateBracket && (
-                <button
-                  onClick={() => generateBracketMutation.mutate({ tournamentId: id })}
-                  disabled={generateBracketMutation.isPending}
-                  className="mt-4 px-6 py-2.5 rounded-lg font-display text-sm tracking-widest transition-all duration-300 disabled:opacity-50"
-                  style={{
-                    background: "oklch(0.55 0.22 25)",
-                    color: "white",
-                    boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)",
-                  }}
-                >
-                  <Zap size={14} className="inline mr-1.5" />
-                  {generateBracketMutation.isPending ? "GENERANDO..." : "GENERAR BRACKET AHORA"}
-                </button>
-              )}
-            </div>
-          ) : (
-            <div
-              className="rounded-xl overflow-x-auto"
-              style={{
-                background: "oklch(0.08 0.005 0)",
-                border: "1px solid oklch(0.15 0.01 0)",
-              }}
-            >
-              <div className="p-6" style={{ minWidth: "fit-content" }}>
-                <BracketView
-                  matches={matches ?? []}
-                  showDemo={false}
-                  canEditResults={tournament.status === "in_progress" && isOrganizer}
-                  onDeclareWinner={async (matchId, winnerId) => {
-                    await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </section>
-
         {/* ─── INFO GRID ──────────────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
@@ -908,6 +818,96 @@ export default function TournamentDetail() {
           </div>
         </div>
       </div>
+        {/* ─── BRACKET ────────────────────────────────────────────────────────── */}
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-display text-lg font-bold tracking-wider text-foreground flex items-center gap-2">
+              <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
+              BRACKET DEL TORNEO
+              {hasBracket && (
+                <span
+                  className="text-xs font-mono px-2 py-0.5 rounded-full ml-1"
+                  style={{
+                    background: "oklch(0.65 0.18 80 / 0.15)",
+                    color: "oklch(0.65 0.18 80)",
+                    border: "1px solid oklch(0.65 0.18 80 / 0.3)",
+                  }}
+                >
+                  {matches!.filter((m) => m.status === "completed").length}/{matches!.length}{" "}
+                  partidas
+                </span>
+              )}
+            </h2>
+            {isOrganizer && hasBracket && tournament.status === "in_progress" && (
+              <button
+                onClick={() => generateBracketMutation.mutate({ tournamentId: id })}
+                disabled={generateBracketMutation.isPending}
+                className="px-4 py-1.5 rounded-lg font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-50"
+                style={{
+                  background: "oklch(0.12 0.005 0)",
+                  border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+                  color: "oklch(0.70 0.28 25)",
+                }}
+              >
+                {generateBracketMutation.isPending ? "REGENERANDO..." : "REGENERAR BRACKET"}
+              </button>
+            )}
+          </div>
+
+          {!hasBracket ? (
+            <div
+              className="rounded-xl p-12 text-center"
+              style={{
+                background: "oklch(0.10 0.005 0)",
+                border: "1px dashed oklch(0.22 0.01 0)",
+              }}
+            >
+              <Swords size={40} className="mx-auto mb-4 opacity-30" />
+              <p className="font-display text-sm tracking-wider text-muted-foreground mb-2">
+                {tournament.status === "registration_open"
+                  ? "El bracket se generará cuando cierren las inscripciones"
+                  : tournament.status === "registration_closed" && isOrganizer
+                  ? "Las inscripciones están cerradas. Genera el bracket para comenzar."
+                  : "El bracket aún no ha sido generado"}
+              </p>
+              {canGenerateBracket && (
+                <button
+                  onClick={() => generateBracketMutation.mutate({ tournamentId: id })}
+                  disabled={generateBracketMutation.isPending}
+                  className="mt-4 px-6 py-2.5 rounded-lg font-display text-sm tracking-widest transition-all duration-300 disabled:opacity-50"
+                  style={{
+                    background: "oklch(0.55 0.22 25)",
+                    color: "white",
+                    boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)",
+                  }}
+                >
+                  <Zap size={14} className="inline mr-1.5" />
+                  {generateBracketMutation.isPending ? "GENERANDO..." : "GENERAR BRACKET AHORA"}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div
+              className="rounded-xl overflow-x-auto"
+              style={{
+                background: "oklch(0.08 0.005 0)",
+                border: "1px solid oklch(0.15 0.01 0)",
+              }}
+            >
+              <div className="p-6" style={{ minWidth: "fit-content" }}>
+                <BracketView
+                  matches={matches ?? []}
+                  showDemo={false}
+                  canEditResults={tournament.status === "in_progress" && isOrganizer}
+                  onDeclareWinner={async (matchId, winnerId) => {
+                    await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
 
       {/* ─── REGISTER MODAL ───────────────────────────────────────────────────── */}
       {showRegisterModal && (

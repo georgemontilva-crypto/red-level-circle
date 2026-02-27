@@ -716,3 +716,6 @@
 - [x] BracketView: colores ganador (verde), perdedor (gris tachado), pendiente (neutral)
 - [x] BracketView: botones ✓/✗ inline al hacer hover, sin datos de ejemplo en TournamentDetail
 - [x] Impacto en perfil de equipo: stats actualizadas automáticamente al registrar resultado
+
+## Fix Layout TournamentDetail
+- [x] Mover sección del bracket al final de la página, debajo de stats/reglas/sidebar
