@@ -20,9 +20,10 @@
  *  - All DB writes use a single batch update to minimize round-trips.
  */
 
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { streams } from "../drizzle/schema";
 import { getDb } from "./db";
+import { notifyOwner } from "./_core/notification";
 
 // ── Twitch credentials (injected from env) ───────────────────────────────────
 const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID ?? "";
@@ -193,6 +194,7 @@ function processHelixResponse(
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY ?? "";
 const YOUTUBE_CHANNELS_URL = "https://www.googleapis.com/youtube/v3/channels";
 const YOUTUBE_SEARCH_URL = "https://www.googleapis.com/youtube/v3/search";
+const YOUTUBE_VIDEOS_URL = "https://www.googleapis.com/youtube/v3/videos";
 
 export interface YouTubeStreamData {
   handle: string;
@@ -292,9 +294,31 @@ async function getYouTubeLiveStream(channelId: string): Promise<{
     item.snippet.thumbnails.medium?.url ??
     null;
 
+  const videoId = item.id.videoId;
+
+  // Fetch real viewer count via videos?part=liveStreamingDetails
+  let viewerCount = 0;
+  try {
+    const vParams = new URLSearchParams({
+      part: "liveStreamingDetails",
+      id: videoId,
+      key: YOUTUBE_API_KEY,
+    });
+    const vRes = await fetch(`${YOUTUBE_VIDEOS_URL}?${vParams.toString()}`);
+    if (vRes.ok) {
+      const vData = (await vRes.json()) as {
+        items?: { liveStreamingDetails?: { concurrentViewers?: string } }[];
+      };
+      const viewers = vData.items?.[0]?.liveStreamingDetails?.concurrentViewers;
+      if (viewers) viewerCount = parseInt(viewers, 10);
+    }
+  } catch {
+    // viewer count is non-critical — continue with 0
+  }
+
   return {
     isLive: true,
-    viewerCount: 0, // YouTube search API doesn't return viewer count; requires videos.list with liveStreamingDetails
+    viewerCount,
     thumbnailUrl: thumbnail,
     title: item.snippet.title ?? null,
   };
@@ -340,6 +364,9 @@ export async function syncYouTubeStreams(): Promise<void> {
       const liveData = await getYouTubeLiveStream(channelId);
       if (!liveData) continue;
 
+      // Detect transition from offline → live for notification
+      const wasLive = stream.isLive;
+
       await db
         .update(streams)
         .set({
@@ -350,9 +377,18 @@ export async function syncYouTubeStreams(): Promise<void> {
         })
         .where(eq(streams.id, stream.id));
 
+      // Notify owner when a creator goes live
+      if (!wasLive && liveData.isLive) {
+        const streamerName = stream.streamerName ?? stream.title ?? handle;
+        notifyOwner({
+          title: `🔴 ${streamerName} está EN VIVO en YouTube`,
+          content: `**${streamerName}** acaba de iniciar una transmisión en YouTube.\n\n**Título:** ${liveData.title ?? "Sin título"}\n**Viewers:** ${liveData.viewerCount.toLocaleString()}\n\n[Ver stream](${stream.url})`,
+        }).catch((e) => console.error("[youtubeSync] notifyOwner error:", e));
+      }
+
       console.log(
         `[youtubeSync] ${handle}: ${
-          liveData.isLive ? `LIVE (${liveData.title})` : "offline"
+          liveData.isLive ? `LIVE (${liveData.title}, ${liveData.viewerCount} viewers)` : "offline"
         }`
       );
     } catch (e) {
@@ -400,6 +436,13 @@ export async function syncTwitchStreams(): Promise<void> {
 
   const liveData = await getTwitchStreamData(logins);
 
+  // Build a map of streamId → current isLive state for transition detection
+  const prevLiveState = new Map<number, boolean>();
+  for (const stream of twitchStreams) {
+    const login = extractTwitchLogin(stream.url ?? "");
+    if (login) prevLiveState.set(stream.id, stream.isLive ?? false);
+  }
+
   // Batch update each stream
   for (const [login, data] of Array.from(liveData.entries())) {
     const streamId = loginToId.get(login);
@@ -414,6 +457,17 @@ export async function syncTwitchStreams(): Promise<void> {
         updatedAt: new Date(),
       })
       .where(eq(streams.id, streamId));
+
+    // Notify owner when a creator goes live (offline → live transition)
+    const wasLive = prevLiveState.get(streamId) ?? false;
+    if (!wasLive && data.isLive) {
+      const stream = twitchStreams.find((s) => s.id === streamId);
+      const streamerName = stream?.streamerName ?? stream?.title ?? login;
+      notifyOwner({
+        title: `🔴 ${streamerName} está EN VIVO en Twitch`,
+        content: `**${streamerName}** acaba de iniciar una transmisión en Twitch.\n\n**Título:** ${data.title ?? "Sin título"}\n**Juego:** ${data.gameName ?? "Sin categoría"}\n**Viewers:** ${data.viewerCount.toLocaleString()}\n\n[Ver stream](https://twitch.tv/${login})`,
+      }).catch((e) => console.error("[twitchSync] notifyOwner error:", e));
+    }
   }
 
   const liveCount = Array.from(liveData.values()).filter((d) => d.isLive).length;

@@ -632,3 +632,8 @@
 - [x] Implementar syncYouTubeStreams() en twitchSync.ts
 - [x] Integrar en cron job principal junto a syncTwitchStreams
 - [x] Tests para syncYouTubeStreams
+
+## Mejoras cron job streams
+- [x] Viewer count real de YouTube via videos?part=liveStreamingDetails
+- [x] Notificación al owner cuando isLive cambia de false a true (Twitch + YouTube)
+- [x] Tests para las nuevas funciones (102 pasando)
