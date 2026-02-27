@@ -145,6 +145,9 @@ import {
   updateTeamMatchStats,
   getTournamentRegisteredTeams,
   getTournamentResults,
+  transferCaptaincy,
+  dissolveTeam,
+  getTeamMemberCount,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -525,6 +528,11 @@ export const appRouter = router({
         if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
+        // Enforce 10-member limit
+        const currentCount = await getTeamMemberCount(input.teamId);
+        if (currentCount >= 10) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ha alcanzado el límite máximo de 10 miembros." });
+        }
         await addTeamMember(input);
         return { success: true };
       }),
@@ -554,6 +562,46 @@ export const appRouter = router({
         }
         await removeTeamMember(input.teamId, input.memberId);
         return { success: true };
+      }),
+
+    transferCaptaincy: protectedProcedure
+      .input(z.object({ teamId: z.number(), newCaptainUserId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND" });
+        if (team.captainId !== ctx.user.id) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede transferir la capitanía." });
+        }
+        if (input.newCaptainUserId === ctx.user.id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ya eres el capitán del equipo." });
+        }
+        // Verify the new captain is a member of the team
+        const members = await getTeamMembers(input.teamId);
+        const isMember = members.some((m) => m.userId === input.newCaptainUserId);
+        if (!isMember) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El usuario debe ser miembro del equipo." });
+        }
+        await transferCaptaincy(input.teamId, input.newCaptainUserId);
+        return { success: true };
+      }),
+
+    dissolve: protectedProcedure
+      .input(z.object({ teamId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND" });
+        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede disolver el equipo." });
+        }
+        await dissolveTeam(input.teamId);
+        return { success: true };
+      }),
+
+    memberCount: publicProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(async ({ input }) => {
+        const count = await getTeamMemberCount(input.teamId);
+        return { count };
       }),
 
     myMemberships: protectedProcedure.query(async ({ ctx }) => {

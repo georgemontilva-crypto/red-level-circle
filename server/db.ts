@@ -3072,3 +3072,39 @@ export async function getTournamentResults(tournamentId: number) {
     ))
     .orderBy(tournamentMatches.round, tournamentMatches.completedAt);
 }
+
+// ─── Team Management: Transfer Captaincy, Dissolve, Member Count ─────────────
+export async function getTeamMemberCount(teamId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`COUNT(*)` })
+    .from(teamMembers)
+    .where(eq(teamMembers.teamId, teamId));
+  return Number(result[0]?.count ?? 0);
+}
+
+export async function transferCaptaincy(teamId: number, newCaptainUserId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Update the team's captainId
+  await db.update(teams).set({ captainId: newCaptainUserId }).where(eq(teams.id, teamId));
+  // Demote old captain to player
+  await db.update(teamMembers)
+    .set({ role: "player" })
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.role, "captain")));
+  // Promote new captain
+  await db.update(teamMembers)
+    .set({ role: "captain" })
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, newCaptainUserId)));
+}
+
+export async function dissolveTeam(teamId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Delete in order to avoid FK constraint issues
+  await db.delete(teamMembers).where(eq(teamMembers.teamId, teamId));
+  await db.delete(teamAchievements).where(eq(teamAchievements.teamId, teamId));
+  await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.teamId, teamId));
+  await db.delete(teams).where(eq(teams.id, teamId));
+}

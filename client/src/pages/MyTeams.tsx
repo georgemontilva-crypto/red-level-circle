@@ -3,6 +3,7 @@ import PremiumLayout from "@/components/PremiumLayout";
 import {
   Users, PlusCircle, UserPlus, Shield, Gamepad2, Camera, Loader2, Plus,
   ExternalLink, Trophy, CheckCircle, Search, X, Trash2, Crown, UserMinus,
+  ArrowRightLeft, AlertTriangle,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
@@ -172,9 +173,190 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
   );
 }
 
+// ─── Transfer Captaincy Modal ─────────────────────────────────────────────────
+function TransferCaptaincyModal({ team, members, onClose, onSuccess }: {
+  team: any; members: any[]; onClose: () => void; onSuccess: () => void;
+}) {
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const transferMutation = trpc.teams.transferCaptaincy.useMutation({
+    onSuccess: () => {
+      toast.success("Capitanía transferida correctamente");
+      onSuccess();
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const eligibleMembers = members.filter((m) => m.role !== "captain");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "oklch(0 0 0 / 0.85)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl p-6"
+        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.18 80 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.18 80 / 0.15)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <ArrowRightLeft size={16} style={{ color: "oklch(0.65 0.18 80)" }} />
+            <h3 className="font-display text-lg font-bold tracking-wider text-foreground">TRANSFERIR CAPITANÍA</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <X size={16} style={{ color: "oklch(0.55 0.005 0)" }} />
+          </button>
+        </div>
+
+        <p className="text-sm text-muted-foreground mb-4">
+          Selecciona el miembro del equipo <span style={{ color: "oklch(0.65 0.22 25)" }}>{team.name}</span> al que deseas transferir la capitanía. Esta acción no se puede deshacer.
+        </p>
+
+        {eligibleMembers.length === 0 ? (
+          <div className="text-center py-6">
+            <Users size={32} className="mx-auto mb-3" style={{ color: "oklch(0.30 0.01 0)" }} />
+            <p className="text-sm text-muted-foreground">No hay otros miembros en el equipo.</p>
+            <p className="text-xs text-muted-foreground mt-1">Añade jugadores antes de transferir la capitanía.</p>
+          </div>
+        ) : (
+          <div className="space-y-2 mb-5">
+            {eligibleMembers.map((member) => (
+              <button
+                key={member.id}
+                onClick={() => setSelectedUserId(member.userId)}
+                className="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200"
+                style={selectedUserId === member.userId
+                  ? { background: "oklch(0.55 0.18 80 / 0.15)", border: "1px solid oklch(0.55 0.18 80 / 0.5)" }
+                  : { background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.15 0.005 0)" }
+                }
+              >
+                <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} activeFrameImage={member.activeFrameImage} size={36} />
+                <div className="flex-1 text-left">
+                  <p className="text-sm font-semibold text-foreground">
+                    {member.nickname ? `@${member.nickname}` : member.userName}
+                  </p>
+                  <p className="text-xs text-muted-foreground capitalize">{member.role}</p>
+                </div>
+                {selectedUserId === member.userId && (
+                  <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "oklch(0.55 0.18 80)" }}>
+                    <CheckCircle size={12} style={{ color: "oklch(0.98 0 0)" }} />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+            style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+          >
+            CANCELAR
+          </button>
+          <button
+            onClick={() => selectedUserId && transferMutation.mutate({ teamId: team.id, newCaptainUserId: selectedUserId })}
+            disabled={!selectedUserId || transferMutation.isPending}
+            className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: "oklch(0.55 0.18 80)", color: "oklch(0.10 0 0)", boxShadow: selectedUserId ? "0 0 12px oklch(0.55 0.18 80 / 0.4)" : "none" }}
+          >
+            {transferMutation.isPending ? "TRANSFIRIENDO..." : "TRANSFERIR"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Dissolve Team Dialog ─────────────────────────────────────────────────────
+function DissolveTeamDialog({ team, onClose, onSuccess }: {
+  team: any; onClose: () => void; onSuccess: () => void;
+}) {
+  const [confirmName, setConfirmName] = useState("");
+  const dissolveMutation = trpc.teams.dissolve.useMutation({
+    onSuccess: () => {
+      toast.success("Equipo disuelto correctamente");
+      onSuccess();
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const isConfirmed = confirmName.trim() === team.name.trim();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: "oklch(0 0 0 / 0.85)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl p-6"
+        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
+            <h3 className="font-display text-lg font-bold tracking-wider text-foreground">DISOLVER EQUIPO</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
+            <X size={16} style={{ color: "oklch(0.55 0.005 0)" }} />
+          </button>
+        </div>
+
+        <div className="p-4 rounded-xl mb-5" style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
+          <p className="text-sm" style={{ color: "oklch(0.75 0.22 25)" }}>
+            Esta acción eliminará permanentemente el equipo <strong>{team.name}</strong> y todos sus datos, incluyendo el roster y el historial. No se puede deshacer.
+          </p>
+        </div>
+
+        <div className="mb-5">
+          <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">
+            ESCRIBE EL NOMBRE DEL EQUIPO PARA CONFIRMAR
+          </label>
+          <input
+            type="text"
+            value={confirmName}
+            onChange={(e) => setConfirmName(e.target.value)}
+            placeholder={team.name}
+            className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+            style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${isConfirmed ? "oklch(0.55 0.22 25)" : "oklch(0.22 0.01 0)"}`, color: "oklch(0.90 0.005 0)", outline: "none" }}
+          />
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+            style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+          >
+            CANCELAR
+          </button>
+          <button
+            onClick={() => dissolveMutation.mutate({ teamId: team.id })}
+            disabled={!isConfirmed || dissolveMutation.isPending}
+            className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: isConfirmed ? "0 0 12px oklch(0.55 0.22 25 / 0.4)" : "none" }}
+          >
+            {dissolveMutation.isPending ? "DISOLVIENDO..." : "DISOLVER EQUIPO"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Team Roster Panel ────────────────────────────────────────────────────────
-function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () => void }) {
+const MAX_MEMBERS = 10;
+
+function TeamRoster({ team, onMemberRemoved, onTeamChanged }: { team: any; onMemberRemoved: () => void; onTeamChanged: () => void }) {
   const [showAddPlayer, setShowAddPlayer] = useState(false);
+  const [showTransfer, setShowTransfer] = useState(false);
+  const [showDissolve, setShowDissolve] = useState(false);
   const { data: members, refetch } = trpc.teams.byId.useQuery({ id: team.id });
   const removeMutation = trpc.teams.removeMember.useMutation({
     onSuccess: () => { toast.success("Jugador eliminado del equipo"); refetch(); onMemberRemoved(); },
@@ -190,21 +372,37 @@ function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () 
   };
 
   const allMembers = members?.members ?? [];
+  const isAtLimit = allMembers.length >= MAX_MEMBERS;
 
   return (
     <div className="mt-4 pt-4" style={{ borderTop: "1px solid oklch(0.15 0.005 0)" }}>
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Users size={14} style={{ color: "oklch(0.55 0.22 25)" }} />
-          <span className="text-xs font-display tracking-wider text-foreground">ROSTER ({allMembers.length})</span>
+          <span className="text-xs font-display tracking-wider text-foreground">ROSTER</span>
+          {/* Member counter badge */}
+          <span
+            className="px-2 py-0.5 rounded-full text-xs font-display tracking-wider"
+            style={isAtLimit
+              ? { background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.4)" }
+              : { background: "oklch(0.15 0.005 0)", color: "oklch(0.55 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }
+            }
+          >
+            {allMembers.length}/{MAX_MEMBERS}
+          </span>
+          {isAtLimit && (
+            <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.65 0.22 25)" }}>COMPLETO</span>
+          )}
         </div>
         <button
-          onClick={() => setShowAddPlayer(!showAddPlayer)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all duration-200"
+          onClick={() => !isAtLimit && setShowAddPlayer(!showAddPlayer)}
+          disabled={isAtLimit}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
           style={showAddPlayer
             ? { background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", color: "oklch(0.65 0.22 25)" }
             : { background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.55 0.005 0)" }
           }
+          title={isAtLimit ? "El equipo está completo (máximo 10 miembros)" : ""}
         >
           {showAddPlayer ? <X size={12} /> : <UserPlus size={12} />}
           {showAddPlayer ? "CERRAR" : "AÑADIR JUGADOR"}
@@ -212,7 +410,7 @@ function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () 
       </div>
 
       {/* Add player search */}
-      {showAddPlayer && (
+      {showAddPlayer && !isAtLimit && (
         <div className="mb-4 p-3 rounded-xl" style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
           <p className="text-xs text-muted-foreground mb-3 font-display tracking-wider">Busca un jugador registrado en la plataforma:</p>
           <PlayerSearch teamId={team.id} onAdded={() => { refetch(); setShowAddPlayer(false); }} />
@@ -268,6 +466,43 @@ function TeamRoster({ team, onMemberRemoved }: { team: any; onMemberRemoved: () 
             </div>
           ))}
         </div>
+      )}
+
+      {/* Captain actions */}
+      <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: "1px solid oklch(0.12 0.005 0)" }}>
+        <button
+          onClick={() => setShowTransfer(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-display tracking-wider transition-all duration-200"
+          style={{ background: "oklch(0.55 0.18 80 / 0.1)", border: "1px solid oklch(0.55 0.18 80 / 0.25)", color: "oklch(0.65 0.18 80)" }}
+          title="Transferir la capitanía a otro miembro"
+        >
+          <ArrowRightLeft size={12} /> TRANSFERIR CAPITANÍA
+        </button>
+        <button
+          onClick={() => setShowDissolve(true)}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-display tracking-wider transition-all duration-200"
+          style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.55 0.22 25)" }}
+          title="Disolver el equipo permanentemente"
+        >
+          <Trash2 size={12} /> DISOLVER EQUIPO
+        </button>
+      </div>
+
+      {/* Modals */}
+      {showTransfer && (
+        <TransferCaptaincyModal
+          team={team}
+          members={allMembers}
+          onClose={() => setShowTransfer(false)}
+          onSuccess={() => { refetch(); onTeamChanged(); }}
+        />
+      )}
+      {showDissolve && (
+        <DissolveTeamDialog
+          team={team}
+          onClose={() => setShowDissolve(false)}
+          onSuccess={() => { onTeamChanged(); }}
+        />
       )}
     </div>
   );
@@ -422,7 +657,7 @@ export default function MyTeams() {
                   </div>
 
                   {/* Roster management */}
-                  <TeamRoster team={team} onMemberRemoved={refetch} />
+                  <TeamRoster team={team} onMemberRemoved={refetch} onTeamChanged={refetch} />
                 </div>
               </div>
             ))}

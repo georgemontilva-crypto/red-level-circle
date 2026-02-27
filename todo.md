@@ -778,3 +778,11 @@
 ## Límite Creación de Equipos V29
 - [x] Backend: validar en createTeam que el usuario no sea ya capitán de otro equipo
 - [x] Frontend: mostrar mensaje de error y deshabilitar el botón si el usuario ya tiene un equipo
+
+## Gestión Avanzada de Equipos V30
+- [x] Backend: procedure teams.transferCaptaincy(teamId, newCaptainUserId)
+- [x] Backend: procedure teams.dissolveTeam(teamId) con eliminación en cascada
+- [x] Backend: validar límite de 10 miembros en addMember
+- [x] Frontend: botón "Transferir Capitanía" en el roster del equipo (modal con lista de miembros seleccionables)
+- [x] Frontend: botón "Disolver Equipo" con modal de confirmación (requiere escribir el nombre del equipo)
+- [x] Frontend: contador de miembros en el roster (ej. 3/10) y bloqueo al llegar al límite
