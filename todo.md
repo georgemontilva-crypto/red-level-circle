@@ -686,3 +686,10 @@
 - [x] Notificaciones automáticas: al registrar resultado de partido
 - [x] Perfil de equipo: gráfica de rendimiento mensual (victorias/derrotas por mes)
 - [x] Perfil de equipo: sistema de logros desbloqueables basados en torneos ganados
+
+## Fix Bracket Ancho
+- [ ] Ampliar sección del bracket en TournamentDetail y TournamentManage (más ancho horizontal)
+
+## Fix Bracket Ancho V20
+- [x] Ampliar sección del bracket en TournamentDetail (max-w-7xl, ancho completo, overflow-x-auto)
+- [x] Bracket movido fuera del grid de 3 columnas para ocupar todo el ancho disponible

@@ -84,8 +84,6 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   );
 }
 
-
-
 // ─── Performance Chart ───────────────────────────────────────────────────────
 function PerformanceChart({ history, accent }: { history: any[]; accent: string }) {
   const chartData = useMemo(() => {
@@ -359,274 +357,256 @@ export default function TeamProfile() {
   const isMember = team.members?.some((m: any) => m.userId === user?.id);
   const wonTournaments = (tournamentHistory ?? []).filter((r: any) => r.isWinner);
   const activeTournaments = (tournamentHistory ?? []).filter((r: any) => r.tournamentStatus === "in_progress" || r.tournamentStatus === "registration_open");
-
   return (
     <div className="min-h-screen text-white" style={{ background: "oklch(0.06 0.005 0)" }}>
       <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
-      <div className="relative overflow-hidden rounded-xl mb-6" style={{ height: "280px" }}>
-        {team.banner ? (
-          <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
-            style={{ filter: "brightness(0.4) saturate(1.2)" }} />
-        ) : (
-          <div className="w-full h-full"
-            style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 50%, ${c.to} 100%)` }} />
-        )}
-        <div className="absolute inset-0"
-          style={{ background: `radial-gradient(ellipse at 30% 50%, ${c.glow} 0%, transparent 60%)` }} />
-        <div className="absolute inset-0"
-          style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.06 0.005 0) 100%)" }} />
-        <div className="absolute inset-0 opacity-5"
-          style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
-        {/* Botones alineados al contenedor estándar */}
-        <div className="absolute inset-0 z-20 pointer-events-none">
-          <div className="container h-full relative">
-            <button
-              onClick={() => window.history.back()}
-              className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-              style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
-            >
-              <ChevronLeft size={14} /> Volver
-            </button>
-            {isCaptain && (
-              <div className="absolute top-4 right-4 pointer-events-auto">
-                <Link href="/dashboard/teams">
-                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-                    style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
-                    <Shield size={14} /> Gestionar
-                  </button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="-mt-20 relative z-10 px-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
-            style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
-            {team.logo ? (
-              <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Shield size={40} style={{ color: c.accent, opacity: 0.5 }} />
-              </div>
-            )}
-          </div>
-          <div className="flex-1 min-w-0 pb-1">
-            <div className="flex flex-wrap items-center gap-2 mb-1">
-              <h1 className="font-mono font-black text-3xl sm:text-4xl text-white tracking-tight">{team.name}</h1>
-              {team.tag && (
-                <span className="text-sm font-mono font-bold px-2 py-0.5 rounded-lg"
-                  style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>
-                  [{team.tag}]
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              {team.isVerified && (
-                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
-                  style={{ background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.3)", color: "#fbbf24" }}>
-                  <CheckCircle size={11} /> EQUIPO OFICIAL
-                </span>
-              )}
-              {wonTournaments.length > 0 && (
-                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
-                  style={{ background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", color: "#fbbf24" }}>
-                  <Crown size={11} /> {wonTournaments.length}x CAMPEÓN
-                </span>
-              )}
-              {activeTournaments.length > 0 && (
-                <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
-                  style={{ background: "rgba(250,204,21,0.06)", border: "1px solid rgba(250,204,21,0.15)", color: "#facc15" }}>
-                  <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /> EN COMPETICIÓN
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-zinc-500">
-              {(team.game || team.gameSlug) && (
-                <span className="flex items-center gap-1.5" style={{ color: c.accent }}>
-                  <Target size={13} /> {team.game ?? team.gameSlug}
-                </span>
-              )}
-              {team.country && (
-                <span className="flex items-center gap-1.5">
-                  <Globe size={13} /> {COUNTRY_FLAGS[team.country] ?? ""} {team.country}
-                </span>
-              )}
-              {rankPos && (
-                <span className="flex items-center gap-1.5">
-                  <Hash size={13} /> #{rankPos.globalPosition} Global
-                </span>
-              )}
-              {team.createdAt && (
-                <span className="flex items-center gap-1.5">
-                  <Calendar size={13} /> Desde {new Date(team.createdAt).getFullYear()}
-                </span>
-              )}
-            </div>
-            {(team.socialDiscord || team.socialTwitch || team.socialTwitter) && (
-              <div className="flex items-center gap-3 mt-3">
-                {team.socialDiscord && (
-                  <a href={team.socialDiscord} target="_blank" rel="noopener noreferrer"
-                    className="text-zinc-600 hover:text-indigo-400 transition-colors">
-                    <MessageSquare size={16} />
-                  </a>
-                )}
-                {team.socialTwitch && (
-                  <a href={team.socialTwitch} target="_blank" rel="noopener noreferrer"
-                    className="text-zinc-600 hover:text-purple-400 transition-colors">
-                    <Tv2 size={16} />
-                  </a>
-                )}
-                {team.socialTwitter && (
-                  <a href={team.socialTwitter} target="_blank" rel="noopener noreferrer"
-                    className="text-zinc-600 hover:text-sky-400 transition-colors">
-                    <Twitter size={16} />
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-          {isAuthenticated && !isMember && !isCaptain && (
-            <button
-              onClick={() => joinTeam.mutate({ teamId, userId: user!.id, role: "player" })}
-              disabled={joinTeam.isPending}
-              className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold transition-all duration-200"
-              style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 100%)`, border: `1px solid ${c.accent}55`, color: c.accent }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 20px ${c.glow}`; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
-            >
-              <Users size={15} /> {joinTeam.isPending ? "Enviando..." : "Unirse al equipo"}
-            </button>
+        <div className="relative overflow-hidden rounded-xl mb-6" style={{ height: "280px" }}>
+          {team.banner ? (
+            <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
+              style={{ filter: "brightness(0.4) saturate(1.2)" }} />
+          ) : (
+            <div className="w-full h-full"
+              style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 50%, ${c.to} 100%)` }} />
           )}
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-          <StatCard icon={<TrendingUp size={20} />} value={rankPos ? `#${rankPos.globalPosition}` : "—"} label="Ranking Global" accent={c.accent} />
-          <StatCard icon={<Trophy size={20} />} value={team.stats?.tournamentsPlayed ?? 0} label="Torneos" accent={c.accent} />
-          <StatCard icon={<Crown size={20} />} value={wonTournaments.length} label="Títulos" accent="#fbbf24" />
-          <StatCard icon={<Star size={20} />} value={team.points ?? 0} label="Puntos RLC" accent={c.accent} />
-        </div>
-        <div className="mb-8">
-          <WinRateBar wins={team.wins ?? 0} losses={team.losses ?? 0} accent={c.accent} />
-        </div>
-        <div className="flex gap-1 mb-6 p-1 rounded-xl"
-          style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
-          {([
-            { key: "roster",       label: "Alineación",  icon: <Users size={14} />,  count: team.members?.length },
-            { key: "history",      label: "Torneos", icon: <Trophy size={14} />, count: tournamentHistory?.length },
-            { key: "achievements", label: "Logros",  icon: <Award size={14} />,  count: team.achievements?.length },
-          ] as const).map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200"
-              style={{
-                background: activeTab === tab.key ? c.accent + "18" : "transparent",
-                color: activeTab === tab.key ? c.accent : "#71717a",
-                border: activeTab === tab.key ? `1px solid ${c.accent}33` : "1px solid transparent",
-              }}
-            >
-              {tab.icon}
-              {tab.label}
-              {(tab.count ?? 0) > 0 && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full"
-                  style={{ background: "oklch(0.14 0.005 0)", color: "#71717a" }}>
-                  {tab.count}
-                </span>
+          <div className="absolute inset-0"
+            style={{ background: `radial-gradient(ellipse at 30% 50%, ${c.glow} 0%, transparent 60%)` }} />
+          <div className="absolute inset-0"
+            style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.06 0.005 0) 100%)" }} />
+          <div className="absolute inset-0 opacity-5"
+            style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
+          <div className="absolute inset-0 z-20 pointer-events-none">
+            <div className="container h-full relative">
+              <button
+                onClick={() => window.history.back()}
+                className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
+              >
+                <ChevronLeft size={14} /> Volver
+              </button>
+              {isCaptain && (
+                <div className="absolute top-4 right-4 pointer-events-auto">
+                  <Link href="/dashboard/teams">
+                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
+                      <Shield size={14} /> Gestionar
+                    </button>
+                  </Link>
+                </div>
               )}
-            </button>
-          ))}
+            </div>
+          </div>
         </div>
 
-        {activeTab === "roster" && (
-          <section className="mb-12">
-            {!team.members || team.members.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <Users size={32} className="text-zinc-700 mb-3" />
-                <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
+        <div className="-mt-20 relative z-10 px-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
+              style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
+              {team.logo ? (
+                <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <Shield size={40} style={{ color: c.accent, opacity: 0.5 }} />
+                </div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0 pb-1">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <h1 className="font-mono font-black text-3xl sm:text-4xl text-white tracking-tight">{team.name}</h1>
+                {team.tag && (
+                  <span className="text-sm font-mono font-bold px-2 py-0.5 rounded-lg"
+                    style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>
+                    [{team.tag}]
+                  </span>
+                )}
               </div>
-            ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: "20px" }}>
-                {team.members.map((member: any) => (
-                  <RosterCard
-                    key={member.id}
-                    userId={member.userId}
-                    playerName={member.nickname ?? member.userName ?? "Jugador"}
-                    realName={member.userName ?? undefined}
-                    role={member.gameRole ?? undefined}
-                    region={member.competitiveRegion ?? undefined}
-                    game={member.mainGame ?? undefined}
-                    photoUrl={member.rosterPhoto ?? member.avatar ?? null}
-                    team={team.name ?? undefined}
-                    teamLogo={team.logo ?? undefined}
-                    isCaptain={member.userId === team.captainId}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {activeTab === "history" && (
-          <section className="mb-12">
-            {/* Performance Chart */}
-            {tournamentHistory && tournamentHistory.length > 0 && (
-              <PerformanceChart history={tournamentHistory} accent={c.accent} />
-            )}
-            {!tournamentHistory || tournamentHistory.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 rounded-2xl"
-                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
-                <Trophy size={36} className="text-zinc-700 mb-3" />
-                <p className="font-mono text-zinc-500">Sin torneos registrados aún</p>
-              </div>
-            ) : (
-              <div>
-                {activeTournaments.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs font-mono text-yellow-400 mb-2 tracking-widest uppercase">En curso</p>
-                    {activeTournaments.map((reg: any) => (
-                      <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
-                    ))}
-                  </div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                {team.isVerified && (
+                  <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: "rgba(250,204,21,0.1)", border: "1px solid rgba(250,204,21,0.3)", color: "#fbbf24" }}>
+                    <CheckCircle size={11} /> EQUIPO OFICIAL
+                  </span>
                 )}
                 {wonTournaments.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-xs font-mono text-yellow-400 mb-2 tracking-widest uppercase">Títulos</p>
-                    {wonTournaments.map((reg: any) => (
-                      <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
-                    ))}
-                  </div>
+                  <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: "rgba(250,204,21,0.08)", border: "1px solid rgba(250,204,21,0.2)", color: "#fbbf24" }}>
+                    <Crown size={11} /> {wonTournaments.length}x CAMPEÓN
+                  </span>
                 )}
-                {tournamentHistory.filter((r: any) => !r.isWinner && r.tournamentStatus !== "in_progress" && r.tournamentStatus !== "registration_open").length > 0 && (
-                  <div>
-                    <p className="text-xs font-mono text-zinc-600 mb-2 tracking-widest uppercase">Participaciones</p>
-                    {tournamentHistory
-                      .filter((r: any) => !r.isWinner && r.tournamentStatus !== "in_progress" && r.tournamentStatus !== "registration_open")
-                      .map((reg: any) => (
-                        <TournamentRow key={reg.tournamentId} reg={reg} accent={c.accent} teamId={teamId} />
-                      ))}
-                  </div>
+                {activeTournaments.length > 0 && (
+                  <span className="flex items-center gap-1 text-xs font-mono font-semibold px-2.5 py-1 rounded-lg"
+                    style={{ background: "rgba(250,204,21,0.06)", border: "1px solid rgba(250,204,21,0.15)", color: "#facc15" }}>
+                    <div className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse" /> EN COMPETICIÓN
+                  </span>
                 )}
               </div>
+              <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-zinc-500">
+                {(team.game || team.gameSlug) && (
+                  <span className="flex items-center gap-1.5" style={{ color: c.accent }}>
+                    <Target size={13} /> {team.game ?? team.gameSlug}
+                  </span>
+                )}
+                {team.country && (
+                  <span className="flex items-center gap-1.5">
+                    <Globe size={13} /> {COUNTRY_FLAGS[team.country] ?? ""} {team.country}
+                  </span>
+                )}
+                {rankPos && (
+                  <span className="flex items-center gap-1.5">
+                    <Hash size={13} /> #{rankPos.globalPosition} Global
+                  </span>
+                )}
+                {team.createdAt && (
+                  <span className="flex items-center gap-1.5">
+                    <Calendar size={13} /> Desde {new Date(team.createdAt).getFullYear()}
+                  </span>
+                )}
+              </div>
+              {(team.socialDiscord || team.socialTwitch || team.socialTwitter) && (
+                <div className="flex items-center gap-3 mt-3">
+                  {team.socialDiscord && (
+                    <a href={team.socialDiscord} target="_blank" rel="noopener noreferrer"
+                      className="text-zinc-600 hover:text-indigo-400 transition-colors">
+                      <MessageSquare size={16} />
+                    </a>
+                  )}
+                  {team.socialTwitch && (
+                    <a href={team.socialTwitch} target="_blank" rel="noopener noreferrer"
+                      className="text-zinc-600 hover:text-purple-400 transition-colors">
+                      <Tv2 size={16} />
+                    </a>
+                  )}
+                  {team.socialTwitter && (
+                    <a href={team.socialTwitter} target="_blank" rel="noopener noreferrer"
+                      className="text-zinc-600 hover:text-sky-400 transition-colors">
+                      <Twitter size={16} />
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+            {isAuthenticated && !isMember && !isCaptain && (
+              <button
+                onClick={() => joinTeam.mutate({ teamId, userId: user!.id, role: "player" })}
+                disabled={joinTeam.isPending}
+                className="shrink-0 flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold transition-all duration-200"
+                style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 100%)`, border: `1px solid ${c.accent}55`, color: c.accent }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 20px ${c.glow}`; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.boxShadow = "none"; }}
+              >
+                <Users size={15} /> {joinTeam.isPending ? "Enviando..." : "Unirse al equipo"}
+              </button>
             )}
-          </section>
-        )}
+          </div>
 
-        {activeTab === "achievements" && (
-          <section className="mb-12">
-            <AchievementsPanel
-              achievements={team.achievements ?? []}
-              tournamentHistory={tournamentHistory ?? []}
-              wins={team.wins ?? 0}
-              accent={c.accent}
-            />
-          </section>
-        )}
-      </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <StatCard icon={<TrendingUp size={20} />} value={rankPos ? `#${rankPos.globalPosition}` : "—"} label="Ranking Global" accent={c.accent} />
+            <StatCard icon={<Trophy size={20} />} value={team.stats?.tournamentsPlayed ?? 0} label="Torneos" accent={c.accent} />
+            <StatCard icon={<Crown size={20} />} value={wonTournaments.length} label="Títulos" accent="#fbbf24" />
+            <StatCard icon={<Star size={20} />} value={team.points ?? 0} label="Puntos RLC" accent={c.accent} />
+          </div>
+          <div className="mb-8">
+            <WinRateBar wins={team.wins ?? 0} losses={team.losses ?? 0} accent={c.accent} />
+          </div>
+
+          <div className="flex gap-1 mb-6 p-1 rounded-xl"
+            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
+            {([
+              { key: "roster",       label: "Alineación",  icon: <Users size={14} />,  count: team.members?.length },
+              { key: "history",      label: "Torneos", icon: <Trophy size={14} />, count: tournamentHistory?.length },
+              { key: "achievements", label: "Logros",  icon: <Award size={14} />,  count: team.achievements?.length },
+            ] as const).map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200"
+                style={{
+                  background: activeTab === tab.key ? c.accent + "18" : "transparent",
+                  color: activeTab === tab.key ? c.accent : "#71717a",
+                  border: activeTab === tab.key ? `1px solid ${c.accent}33` : "1px solid transparent",
+                }}
+              >
+                {tab.icon}
+                {tab.label}
+                {(tab.count ?? 0) > 0 && (
+                  <span className="text-xs px-1.5 py-0.5 rounded-full"
+                    style={{ background: "oklch(0.14 0.005 0)", color: "#71717a" }}>
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "roster" && (
+            <section className="mb-12">
+              {!team.members || team.members.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <Users size={32} className="text-zinc-700 mb-3" />
+                  <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+                  {team.members.map((m: any) => (
+                    <RosterCard
+                      key={m.id}
+                      playerName={m.username ?? m.name ?? "Jugador"}
+                      role={m.role ?? undefined}
+                      photoUrl={m.avatar ?? m.photoUrl ?? null}
+                      isCaptain={m.userId === team.captainId}
+                      userId={m.userId}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === "history" && (
+            <section className="mb-12">
+              <PerformanceChart history={tournamentHistory ?? []} accent={c.accent} />
+              {(!tournamentHistory || tournamentHistory.length === 0) ? (
+                <div>
+                  <div className="mb-4">
+                    <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
+                      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+                      <Trophy size={32} className="text-zinc-700 mb-3" />
+                      <p className="font-mono text-zinc-500">Sin historial de torneos</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="mb-4">
+                    <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Historial de Torneos</p>
+                  </div>
+                  <div className="mb-4">
+                    {tournamentHistory.map((reg: any) => (
+                      <TournamentRow key={reg.id} reg={reg} accent={c.accent} teamId={teamId} />
+                    ))}
+                  </div>
+                  <div>
+                    <p className="text-xs font-mono text-zinc-700 mt-4">
+                      {tournamentHistory.length} torneo{tournamentHistory.length !== 1 ? "s" : ""} en total
+                    </p>
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
+
+          {activeTab === "achievements" && (
+            <section className="mb-12">
+              <AchievementsPanel
+                achievements={team.achievements ?? []}
+                tournamentHistory={tournamentHistory ?? []}
+                wins={team.wins ?? 0}
+                accent={c.accent}
+              />
+            </section>
+          )}
+        </div>
       </div>
     </div>
   );

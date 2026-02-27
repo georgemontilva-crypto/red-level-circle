@@ -210,7 +210,35 @@ export default function TournamentDetail() {
         </div>
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-4 py-8" style={{ zIndex: 1 }}>
+      <div className="relative max-w-7xl mx-auto px-4 py-8" style={{ zIndex: 1 }}>
+        {/* Bracket — full width above the grid */}
+        <div
+          className="rounded-xl p-6 mb-8"
+          style={{
+            background: "oklch(0.10 0.005 0)",
+            border: "1px solid oklch(0.18 0.01 0)",
+          }}
+        >
+          <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
+            <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
+            BRACKET
+            {matches && matches.length > 0 && (
+              <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full" style={{ background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
+                {matches.filter(m => m.status === "completed").length}/{matches.length} partidas
+              </span>
+            )}
+          </h2>
+          <div className="overflow-x-auto">
+            <BracketView
+              matches={matches ?? []}
+              showDemo={!matches || matches.length === 0}
+              canEditResults={tournament.status === "in_progress" && user?.id === tournament.creatorId}
+              onDeclareWinner={async (matchId, winnerId) => {
+                await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
+              }}
+            />
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
@@ -273,32 +301,7 @@ export default function TournamentDetail() {
               </div>
             )}
 
-            {/* Matches / Bracket — always visible */}
-            <div
-              className="rounded-xl p-6"
-              style={{
-                background: "oklch(0.10 0.005 0)",
-                border: "1px solid oklch(0.18 0.01 0)",
-              }}
-            >
-              <h2 className="font-display text-lg font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
-                <Swords size={18} style={{ color: "oklch(0.55 0.22 25)" }} />
-                BRACKET
-                {matches && matches.length > 0 && (
-                  <span className="ml-auto text-xs font-mono px-2 py-0.5 rounded-full" style={{ background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
-                    {matches.filter(m => m.status === "completed").length}/{matches.length} partidas
-                  </span>
-                )}
-              </h2>
-              <BracketView
-                matches={matches ?? []}
-                showDemo={!matches || matches.length === 0}
-                canEditResults={tournament.status === "in_progress" && user?.id === tournament.creatorId}
-                onDeclareWinner={async (matchId, winnerId) => {
-                  await updateResultMutation.mutateAsync({ matchId, tournamentId: id, winnerId });
-                }}
-              />
-            </div>
+
           </div>
 
           {/* Sidebar */}
