@@ -141,6 +141,9 @@ import {
   createCreatorStream,
   stopCreatorStream,
   getStreamHistoryByUser,
+  advanceRoundIfComplete,
+  updateTeamMatchStats,
+  getTournamentRegisteredTeams,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -418,9 +421,14 @@ export const appRouter = router({
         await resolveBets(input.tournamentId, input.winnerId);
         return { success: true };
       }),
-  }),
 
-  // ─── Teams ─────────────────────────────────────────────────────────────────
+    registeredTeams: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        return getTournamentRegisteredTeams(input.tournamentId);
+      }),
+  }),
+  // ─── Teams ──────────────────────────────────────────────────────────────────
   teams: router({
     list: publicProcedure
       .input(z.object({
@@ -754,7 +762,7 @@ export const appRouter = router({
         }
         const { matchId, tournamentId, ...data } = input;
         await updateMatchResult(matchId, data);
-        // Emit match_finished event to notify both teams
+        // Update team match stats and advance round
         try {
           const db = await getDb();
           if (db) {
@@ -766,12 +774,33 @@ export const appRouter = router({
             if (match) {
               const loserId = match.team1Id === input.winnerId ? match.team2Id : match.team1Id;
               if (loserId) {
+                // Update wins/losses for both teams
+                await updateTeamMatchStats(input.winnerId, loserId);
                 eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId: input.winnerId, loserId });
               }
+              // Auto-advance to next round if all matches in this round are done
+              await advanceRoundIfComplete(tournamentId, match.round ?? 1);
             }
           }
         } catch (e) { console.error("[MatchResult] Notification error:", e); }
         return { success: true };
+      }),
+
+    generateBracketManual: protectedProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const registrations = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        if (registrations.length < 2) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Se necesitan al menos 2 equipos aprobados para generar el bracket." });
+        }
+        const teamIds = registrations.map((r) => r.teamId);
+        const matchCount = await generateBracket(input.tournamentId, teamIds);
+        return { success: true, matchCount };
       }),
   }),
   // ─── Newss ──────────────────────────────────────────────────────────────────

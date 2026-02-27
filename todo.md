@@ -693,3 +693,26 @@
 ## Fix Bracket Ancho V20
 - [x] Ampliar sección del bracket en TournamentDetail (max-w-7xl, ancho completo, overflow-x-auto)
 - [x] Bracket movido fuera del grid de 3 columnas para ocupar todo el ancho disponible
+
+## Rediseño Sistema Torneos V21
+- [ ] Backend: endpoint generateBracket (sorteo aleatorio, soporte bye, single elimination)
+- [ ] Backend: declareWinner actualiza stats equipo (totalWins/Losses, winsTournament/lossesTournament)
+- [ ] Backend: generación automática de siguiente ronda al completar ronda actual
+- [ ] Backend: al finalizar torneo, incrementar torneos jugados y títulos del equipo
+- [ ] Frontend: TournamentDetail hero profesional (nombre, juego, estado, premio, fechas, organizador, CTA)
+- [ ] Frontend: carrusel horizontal de equipos inscritos con logo, nombre, capitán, ranking, record
+- [ ] Frontend: botón "Generar Bracket" visible solo para organizador cuando inscripciones cerradas
+- [ ] Frontend: BracketView dinámico sin mocks (ganador verde, perdedor gris, pendiente neutral)
+- [ ] Frontend: solo organizador puede seleccionar ganador en cada match
+
+## Rediseño Sistema Torneos Profesional V20
+- [x] Hero profesional con banner, estado, juego, organizador, fechas, premio, botón inscribir
+- [x] Carrusel horizontal de equipos inscritos con logo, capitán, ranking, record en torneo
+- [x] Botón "Generar Bracket" visible solo para organizador cuando inscripciones cerradas
+- [x] generateBracket mejorado: sorteo aleatorio, soporte bye para número impar de equipos
+- [x] advanceRoundIfComplete: avance automático de ronda al completar todos los partidos
+- [x] updateTeamMatchStats: actualiza wins/losses del equipo por partido
+- [x] getTournamentRegisteredTeams: endpoint con logo, capitán, ranking y record en torneo
+- [x] BracketView: colores ganador (verde), perdedor (gris tachado), pendiente (neutral)
+- [x] BracketView: botones ✓/✗ inline al hacer hover, sin datos de ejemplo en TournamentDetail
+- [x] Impacto en perfil de equipo: stats actualizadas automáticamente al registrar resultado

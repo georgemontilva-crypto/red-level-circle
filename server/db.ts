@@ -319,6 +319,9 @@ export async function getTournamentById(id: number) {
       registrationEnd: tournaments.registrationEnd,
       prizeDescription: tournaments.prizeDescription,
       prizeAmount: tournaments.prizeAmount,
+      prizeFirst: tournaments.prizeFirst,
+      prizeSecond: tournaments.prizeSecond,
+      prizeThird: tournaments.prizeThird,
       creatorId: tournaments.creatorId,
       winnerId: tournaments.winnerId,
       banner: tournaments.banner,
@@ -545,48 +548,62 @@ export async function updateMatchResult(
     .where(eq(tournamentMatches.id, matchId));
 }
 
+/**
+ * Genera el bracket con sorteo aleatorio (Fisher-Yates).
+ * Soporta bye: equipo impar avanza automáticamente (status=completed, winnerId=team1Id).
+ * Crea placeholders para rondas siguientes.
+ */
 export async function generateBracket(tournamentId: number, approvedTeamIds: number[]) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-
-  // Clear existing matches
   await db.delete(tournamentMatches).where(eq(tournamentMatches.tournamentId, tournamentId));
-
   const tournament = await getTournamentById(tournamentId);
   if (!tournament) throw new Error("Tournament not found");
-
-  const shuffled = [...approvedTeamIds].sort(() => Math.random() - 0.5);
+  // Fisher-Yates shuffle
+  const shuffled = [...approvedTeamIds];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
   const matchesToInsert: typeof tournamentMatches.$inferInsert[] = [];
-
-  if (tournament.bracketType === "single_elimination") {
-    const rounds = Math.ceil(Math.log2(shuffled.length));
+  if (tournament.bracketType === "single_elimination" || tournament.bracketType === "double_elimination") {
+    const totalRounds = Math.ceil(Math.log2(shuffled.length));
     let matchNum = 1;
+    // Round 1: pair teams, handle bye
     for (let i = 0; i < shuffled.length; i += 2) {
+      const team1Id = shuffled[i];
+      const team2Id = shuffled[i + 1] ?? null;
+      const isBye = team2Id === null;
       matchesToInsert.push({
         tournamentId,
         round: 1,
         matchNumber: matchNum++,
-        team1Id: shuffled[i],
-        team2Id: shuffled[i + 1] ?? null,
-        status: "pending",
+        team1Id,
+        team2Id,
+        winnerId: isBye ? team1Id : null,
+        status: isBye ? "completed" : "pending",
+        completedAt: isBye ? new Date() : null,
+        notes: isBye ? "BYE" : null,
         bracketPosition: { round: 1, position: Math.ceil(matchNum / 2) },
       });
     }
-    // Create placeholder matches for subsequent rounds
-    for (let r = 2; r <= rounds; r++) {
-      const prevRoundMatches = matchesToInsert.filter((m) => m.round === r - 1).length;
-      for (let p = 0; p < Math.ceil(prevRoundMatches / 2); p++) {
+    // Placeholder matches for subsequent rounds
+    for (let r = 2; r <= totalRounds; r++) {
+      const prevCount = matchesToInsert.filter((m) => m.round === r - 1).length;
+      const thisCount = Math.ceil(prevCount / 2);
+      for (let p = 0; p < thisCount; p++) {
         matchesToInsert.push({
           tournamentId,
           round: r,
           matchNumber: matchNum++,
+          team1Id: null,
+          team2Id: null,
           status: "pending",
           bracketPosition: { round: r, position: p + 1 },
         });
       }
     }
   } else if (tournament.bracketType === "groups") {
-    // Simple groups: all vs all in round 1
     let matchNum = 1;
     for (let i = 0; i < shuffled.length; i++) {
       for (let j = i + 1; j < shuffled.length; j++) {
@@ -601,27 +618,136 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
         });
       }
     }
-  } else {
-    // double_elimination - simplified: same as single for now
-    let matchNum = 1;
-    for (let i = 0; i < shuffled.length; i += 2) {
-      matchesToInsert.push({
-        tournamentId,
-        round: 1,
-        matchNumber: matchNum++,
-        team1Id: shuffled[i],
-        team2Id: shuffled[i + 1] ?? null,
-        status: "pending",
-        bracketPosition: { round: 1, position: Math.ceil(matchNum / 2) },
-      });
-    }
   }
-
   if (matchesToInsert.length > 0) {
     await db.insert(tournamentMatches).values(matchesToInsert);
   }
-
+  // Auto-advance byes in round 1
+  await advanceRoundIfComplete(tournamentId, 1);
   return matchesToInsert.length;
+}
+
+/**
+ * Verifica si todos los partidos de una ronda están completados.
+ * Si es así, rellena los equipos ganadores en la siguiente ronda.
+ * Llamar después de cada updateMatchResult.
+ */
+export async function advanceRoundIfComplete(tournamentId: number, round: number) {
+  const db = await getDb();
+  if (!db) return;
+  const roundMatches = await db
+    .select()
+    .from(tournamentMatches)
+    .where(and(eq(tournamentMatches.tournamentId, tournamentId), eq(tournamentMatches.round, round)))
+    .orderBy(tournamentMatches.matchNumber);
+  if (roundMatches.length === 0) return;
+  const allDone = roundMatches.every((m) => m.status === "completed" && m.winnerId !== null);
+  if (!allDone) return;
+  const nextRoundMatches = await db
+    .select()
+    .from(tournamentMatches)
+    .where(and(eq(tournamentMatches.tournamentId, tournamentId), eq(tournamentMatches.round, round + 1)))
+    .orderBy(tournamentMatches.matchNumber);
+  if (nextRoundMatches.length === 0) return;
+  const winners = roundMatches.map((m) => m.winnerId!).filter(Boolean);
+  for (let i = 0; i < nextRoundMatches.length; i++) {
+    const nextMatch = nextRoundMatches[i];
+    const team1Id = winners[i * 2] ?? null;
+    const team2Id = winners[i * 2 + 1] ?? null;
+    const isBye = team1Id !== null && team2Id === null;
+    await db.update(tournamentMatches).set({
+      team1Id,
+      team2Id,
+      winnerId: isBye ? team1Id : null,
+      status: isBye ? "completed" : "pending",
+      completedAt: isBye ? new Date() : null,
+      notes: isBye ? "BYE" : null,
+    }).where(eq(tournamentMatches.id, nextMatch.id));
+  }
+  // Recursively advance if next round is also complete
+  await advanceRoundIfComplete(tournamentId, round + 1);
+}
+
+/**
+ * Actualiza estadísticas de equipo por resultado de partido individual.
+ * +30 pts al ganador, +5 pts al perdedor.
+ */
+export async function updateTeamMatchStats(winnerId: number, loserId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(teams).set({
+    wins: sql`wins + 1`,
+    points: sql`points + 30`,
+  }).where(eq(teams.id, winnerId));
+  await db.update(teams).set({
+    losses: sql`losses + 1`,
+    points: sql`points + 5`,
+  }).where(eq(teams.id, loserId));
+}
+
+/**
+ * Obtiene equipos inscritos (aprobados) de un torneo con datos completos:
+ * logo, nombre, capitán, ranking global (por puntos), record en el torneo.
+ */
+export async function getTournamentRegisteredTeams(tournamentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const captain = alias(users, "captain");
+  const regs = await db
+    .select({
+      teamId: tournamentRegistrations.teamId,
+      teamName: teams.name,
+      teamLogo: teams.logo,
+      teamTag: teams.tag,
+      teamPoints: teams.points,
+      teamWins: teams.wins,
+      teamLosses: teams.losses,
+      teamIsVerified: teams.isVerified,
+      captainId: teams.captainId,
+      captainName: captain.name,
+      captainNickname: captain.nickname,
+      registeredAt: tournamentRegistrations.registeredAt,
+    })
+    .from(tournamentRegistrations)
+    .leftJoin(teams, eq(tournamentRegistrations.teamId, teams.id))
+    .leftJoin(captain, eq(teams.captainId, captain.id))
+    .where(and(
+      eq(tournamentRegistrations.tournamentId, tournamentId),
+      eq(tournamentRegistrations.status, "Aprobado")
+    ))
+    .orderBy(desc(teams.points));
+  if (regs.length === 0) return [];
+  const allMatches = await db
+    .select({
+      team1Id: tournamentMatches.team1Id,
+      team2Id: tournamentMatches.team2Id,
+      winnerId: tournamentMatches.winnerId,
+    })
+    .from(tournamentMatches)
+    .where(and(
+      eq(tournamentMatches.tournamentId, tournamentId),
+      eq(tournamentMatches.status, "completed")
+    ));
+  return regs.map((reg, idx) => {
+    const tid = reg.teamId!;
+    const played = allMatches.filter((m) => (m.team1Id === tid || m.team2Id === tid) && m.winnerId !== null);
+    const wins = played.filter((m) => m.winnerId === tid).length;
+    const losses = played.filter((m) => m.winnerId !== null && m.winnerId !== tid).length;
+    return {
+      teamId: tid,
+      teamName: reg.teamName ?? "Equipo",
+      teamLogo: reg.teamLogo ?? null,
+      teamTag: reg.teamTag ?? null,
+      teamPoints: reg.teamPoints ?? 0,
+      teamWins: reg.teamWins ?? 0,
+      teamLosses: reg.teamLosses ?? 0,
+      teamIsVerified: reg.teamIsVerified ?? false,
+      captainName: reg.captainNickname ?? reg.captainName ?? null,
+      rankPosition: idx + 1,
+      tournamentWins: wins,
+      tournamentLosses: losses,
+    };
+  });
 }
 
 // ─── Games ────────────────────────────────────────────────────────────────────
