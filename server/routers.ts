@@ -154,7 +154,7 @@ import {
 import { storagePut } from "./storage";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users, streams } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
 import { eventBus } from "./eventBus";
@@ -974,13 +974,22 @@ export const appRouter = router({
         return getActiveStreamByUser(input.userId);
       }),
     /** Returns the last N streams for a user (public, for profile history) */
-    historyByUser: publicProcedure
+     historyByUser: publicProcedure
       .input(z.object({ userId: z.number(), limit: z.number().min(1).max(20).default(10) }))
       .query(async ({ input }) => {
         return getStreamHistoryByUser(input.userId, input.limit);
       }),
+    liveCreators: publicProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return [] as number[];
+        const rows = await db
+          .select({ userId: streams.userId })
+          .from(streams)
+          .where(and(eq(streams.isLive, true), isNotNull(streams.userId)));
+        return rows.map((r: { userId: number | null }) => r.userId).filter((id: number | null): id is number => id !== null);
+      }),
   }),
-
   // ─── Ranking ───────────────────────────────────────────────────────────────
   ranking: router({
     teams: publicProcedure

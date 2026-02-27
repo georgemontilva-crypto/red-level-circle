@@ -644,3 +644,9 @@
 - [x] Historial de streams en perfil del creador (procedure historyByUser + UI en tab overview)
 - [x] Procedures streams.activeByUser y streams.historyByUser en router (públicos)
 - [x] 102 tests pasando, 0 errores TypeScript
+
+## Badge EN VIVO en tarjetas de creadores
+- [x] Procedure streams.liveCreators: devuelve Set de userIds de creadores en vivo
+- [x] Badge EN VIVO pulsante en CreatorCard del Home (prop isLive + glow rojo)
+- [x] Badge EN VIVO pulsante en tarjetas de Creators.tsx (refetch 60s)
+- [x] 102 tests pasando, 0 errores TypeScript

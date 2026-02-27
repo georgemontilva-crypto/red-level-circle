@@ -322,19 +322,25 @@ function MissionCard({ m }: { m: any }) {
 }
 
 // ─── Creator Card (más grande, 4 en escritorio) ───────────────────────────────
-function CreatorCard({ c }: { c: any }) {
+function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const name = c.nickname ?? c.userName ?? "Creador";
   const [, navigate] = useLocation();
   return (
     <div
       className="shrink-0 w-60 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-      style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+      style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 16px oklch(0.50 0.22 25 / 0.25)" : undefined }}
       onClick={() => navigate(`/profile/${c.userId}`)}
     >
       {/* Banner */}
       <div className="h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden relative">
         {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, oklch(0.12 0.005 0) 100%)" }} />
+        {isLive && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-white font-bold text-xs tracking-wider" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.7)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            EN VIVO
+          </div>
+        )}
       </div>
       {/* Avatar overlap */}
       <div className="relative" style={{ height: 0 }}>

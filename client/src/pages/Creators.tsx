@@ -41,19 +41,24 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function CreatorCard({ c }: { c: any }) {
+function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const name = c.nickname ?? c.userName ?? "Creador";
   const cat = CATEGORIES.find(x => x.value === c.category);
   const [, navigate] = useLocation();
   return (
-    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-red-600/40 transition-all cursor-pointer group">
+    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-zinc-900 transition-all cursor-pointer group" style={{ border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 20px oklch(0.50 0.22 25 / 0.2)" : undefined }}>
         {/* Banner */}
         <div className="relative h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden">
           {c.banner && (
             <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
-          {cat && (
+          {isLive ? (
+            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-white font-bold text-xs tracking-wider" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.7)" }}>
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              EN VIVO
+            </div>
+          ) : cat && (
             <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-xs text-zinc-300 font-mono border border-zinc-700/50">
               <cat.icon size={10} /> {cat.label}
             </div>
@@ -308,6 +313,8 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
 
 export default function Creators() {
   const { data: creators, isLoading } = trpc.creators.listApproved.useQuery();
+  const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
+  const liveSet = new Set(liveUserIds ?? []);
   const [activeFilter, setActiveFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
 
@@ -377,7 +384,7 @@ export default function Creators() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {filtered.map((c: any) => <CreatorCard key={c.id} c={c} />)}
+            {filtered.map((c: any) => <CreatorCard key={c.id} c={c} isLive={liveSet.has(c.userId)} />)}
           </div>
         )}
 
