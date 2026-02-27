@@ -144,6 +144,7 @@ import {
   advanceRoundIfComplete,
   updateTeamMatchStats,
   getTournamentRegisteredTeams,
+  getTournamentResults,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -794,7 +795,44 @@ export const appRouter = router({
                 eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId, loserId });
               }
               // Auto-advance to next round if all matches in this round are done
-              await advanceRoundIfComplete(tournamentId, match.round ?? 1);
+              const roundBefore = match.round ?? 1;
+              await advanceRoundIfComplete(tournamentId, roundBefore);
+              // Notify organizer if the round is now complete
+              try {
+                const { createNotification } = await import("./notifications");
+                const allRoundMatches = await db
+                  .select({ status: tournamentMatches.status, winnerId: tournamentMatches.winnerId })
+                  .from(tournamentMatches)
+                  .where(and(eq(tournamentMatches.tournamentId, tournamentId), eq(tournamentMatches.round, roundBefore)));
+                const roundComplete = allRoundMatches.length > 0 && allRoundMatches.every((m) => m.status === "completed" && m.winnerId !== null);
+                if (roundComplete) {
+                  const tournament = await getTournamentById(tournamentId);
+                  if (tournament?.creatorId) {
+                    // Check if notification already sent for this round (avoid duplicates)
+                    const { notifications: notifTable } = await import("../drizzle/schema");
+                    const existing = await db
+                      .select({ id: notifTable.id })
+                      .from(notifTable)
+                      .where(and(
+                        eq(notifTable.userId, tournament.creatorId),
+                        eq(notifTable.referenceId, tournamentId),
+                        eq(notifTable.referenceType, `round_${roundBefore}_complete`)
+                      ))
+                      .limit(1);
+                    if (existing.length === 0) {
+                      await createNotification({
+                        userId: tournament.creatorId,
+                        type: "bracket_ready",
+                        title: `Ronda ${roundBefore} completada`,
+                        message: `Todos los partidos de la Ronda ${roundBefore} en "${tournament.name}" han finalizado. La siguiente ronda está lista.`,
+                        link: `/tournaments/${tournamentId}`,
+                        referenceId: tournamentId,
+                        referenceType: `round_${roundBefore}_complete`,
+                      });
+                    }
+                  }
+                }
+              } catch (notifErr) { console.error("[RoundNotif] Error:", notifErr); }
             }
           }
         } catch (e) { console.error("[MatchResult] Notification error:", e); }
@@ -1131,6 +1169,11 @@ export const appRouter = router({
       .input(z.object({ tournamentId: z.number() }))
       .query(async ({ input }) => {
         return getTeamRankingByTournament(input.tournamentId);
+      }),
+    getResults: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        return getTournamentResults(input.tournamentId);
       }),
   }),
 

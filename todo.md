@@ -738,3 +738,15 @@
 - [x] Actualizar BracketView para mostrar scores alineados a la derecha (ganador verde, perdedor gris)
 - [x] Actualizar TournamentDetail para pasar scores al BracketView
 - [x] Actualizar tests unitarios
+
+## Profesionalización Página Torneo V23
+- [x] Backend: procedure ranking.getResults(tournamentId)
+- [x] Backend: función resolveTournamentBets(tournamentId) con distribución proporcional de RLC
+- [x] Backend: notificación automática al organizador cuando se completa una ronda
+- [x] Backend: actualización de stats de equipo (wins/losses/titles) al finalizar match
+- [x] Backend: integrar resolveTournamentBets y notificación en el flujo de declarar campeón
+- [x] Frontend: reorganizar TournamentDetail con tabs (Info, Equipos, Bracket, Resultados)
+- [x] Frontend: sección EQUIPOS INSCRITOS en tab dedicado con grid de tarjetas
+- [x] Frontend: sección PRÓXIMOS PARTIDOS en tab Info
+- [x] Frontend: pestaña RESULTADOS con historial agrupado por ronda y marcadores
+- [x] Frontend: BRACKET DINÁMICO con scores en tab dedicado

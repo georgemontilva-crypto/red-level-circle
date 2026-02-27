@@ -3035,3 +3035,40 @@ export async function getTeamRankPosition(teamId: number) {
     gameTotal: gameTeams.length,
   };
 }
+
+// ─── Tournament Results (completed matches history) ────────────────────────────
+/**
+ * Devuelve todas las partidas completadas de un torneo con marcador y equipos.
+ * Ordenadas por ronda ASC, completedAt ASC.
+ */
+export async function getTournamentResults(tournamentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const team1 = alias(teams, "team1");
+  const team2 = alias(teams, "team2");
+  return db
+    .select({
+      id: tournamentMatches.id,
+      round: tournamentMatches.round,
+      matchNumber: tournamentMatches.matchNumber,
+      team1Id: tournamentMatches.team1Id,
+      team2Id: tournamentMatches.team2Id,
+      team1Name: team1.name,
+      team2Name: team2.name,
+      team1Logo: team1.logo,
+      team2Logo: team2.logo,
+      team1Score: tournamentMatches.team1Score,
+      team2Score: tournamentMatches.team2Score,
+      winnerId: tournamentMatches.winnerId,
+      notes: tournamentMatches.notes,
+      completedAt: tournamentMatches.completedAt,
+    })
+    .from(tournamentMatches)
+    .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
+    .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
+    .where(and(
+      eq(tournamentMatches.tournamentId, tournamentId),
+      eq(tournamentMatches.status, "completed"),
+    ))
+    .orderBy(tournamentMatches.round, tournamentMatches.completedAt);
+}
