@@ -148,6 +148,10 @@ import {
   transferCaptaincy,
   dissolveTeam,
   getTeamMemberCount,
+  scheduleMatch,
+  getOpenBetMatches,
+  getBetsByMatch,
+  resolveMatchBets,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -917,6 +921,25 @@ export const appRouter = router({
         const matchCount = await generateBracket(input.tournamentId, teamIds);
         return { success: true, matchCount };
       }),
+    // Asignar fecha/hora y cierre de apuestas a un partido
+    schedule: premiumProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(),
+        scheduledAt: z.number(), // Unix ms timestamp
+        betsCloseMinutesBefore: z.number().int().min(0).max(1440).default(30),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const scheduledDate = new Date(input.scheduledAt);
+        const betsCloseDate = new Date(input.scheduledAt - input.betsCloseMinutesBefore * 60 * 1000);
+        await scheduleMatch(input.matchId, scheduledDate, betsCloseDate);
+        return { success: true, scheduledAt: scheduledDate, betsCloseAt: betsCloseDate };
+      }),
   }),
   // ─── Newss ──────────────────────────────────────────────────────────────────
   news: router({
@@ -1261,7 +1284,7 @@ export const appRouter = router({
         return Object.values(teamBets);
       }),
 
-    place: protectedProcedure
+     place: protectedProcedure
       .input(z.object({
         tournamentId: z.number(),
         teamId: z.number(),
@@ -1280,7 +1303,6 @@ export const appRouter = router({
         // Simple multiplier: 1.5x for now (can be dynamic based on odds)
         const multiplier = 1.5;
         const potentialWin = Math.floor(input.amount * multiplier);
-
         // Deduct coins
         await addRlcTransaction({
           userId: ctx.user.id,
@@ -1288,7 +1310,6 @@ export const appRouter = router({
           amount: -input.amount,
           description: `Apuesta en torneo: ${t.name}`,
         });
-
         const betId = await createBet({
           userId: ctx.user.id,
           tournamentId: input.tournamentId,
@@ -1298,11 +1319,75 @@ export const appRouter = router({
           potentialWin,
           status: "pending",
         });
-
         return { betId, potentialWin };
       }),
+    // Partidos abiertos para apuestas (tienen betsCloseAt en el futuro)
+    openMatches: publicProcedure.query(async () => {
+      return getOpenBetMatches();
+    }),
+    // Apostar al ganador de un partido específico
+    placeOnMatch: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(),
+        teamId: z.number(),
+        amount: z.number().int().min(10).max(10000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.status !== "in_progress") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Las apuestas por partido solo están disponibles durante el torneo." });
+        }
+        // Verify match exists and bets are still open
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [match] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, input.matchId))
+          .limit(1);
+        if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Partido no encontrado." });
+        if (match.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Este partido ya no acepta apuestas." });
+        }
+        if (!match.betsCloseAt || new Date() > match.betsCloseAt) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Las apuestas para este partido están cerradas." });
+        }
+        if (match.team1Id !== input.teamId && match.team2Id !== input.teamId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo seleccionado no participa en este partido." });
+        }
+        const balance = await getUserBalance(ctx.user.id);
+        if (balance < input.amount) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Saldo insuficiente de RLC Coins." });
+        }
+        // Dynamic multiplier based on existing bets
+        const existingBets = await getBetsByMatch(input.matchId);
+        const totalOnTeam = existingBets.filter(b => b.teamId === input.teamId).reduce((s, b) => s + b.amount, 0);
+        const totalOpponent = existingBets.filter(b => b.teamId !== input.teamId).reduce((s, b) => s + b.amount, 0);
+        // Multiplier: more bets on opponent = higher reward; floor at 1.2, cap at 3.0
+        const ratio = totalOpponent > 0 ? (totalOnTeam + totalOpponent) / (totalOnTeam + input.amount) : 1.5;
+        const multiplier = Math.min(3.0, Math.max(1.2, parseFloat(ratio.toFixed(2))));
+        const potentialWin = Math.floor(input.amount * multiplier);
+        await addRlcTransaction({
+          userId: ctx.user.id,
+          type: "bet_placed",
+          amount: -input.amount,
+          description: `Apuesta en partido #${input.matchId} (${t.name})`,
+        });
+        const betId = await createBet({
+          userId: ctx.user.id,
+          tournamentId: input.tournamentId,
+          matchId: input.matchId,
+          teamId: input.teamId,
+          amount: input.amount,
+          multiplier: multiplier.toString() as any,
+          potentialWin,
+          status: "pending",
+        });
+         return { betId, potentialWin, multiplier };
+      }),
   }),
-
   // ─── Admin ─────────────────────────────────────────────────────────────────
   admin: router({
     setRole: adminProcedure

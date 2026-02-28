@@ -789,3 +789,13 @@
 
 ## Bug Fix: Duplicación en Top Equipos V31
 - [x] Corregir duplicación de equipos en la sección "Top Equipos" de la página Comunidad
+
+## Sistema de Apuestas por Partido V32
+- [x] Schema: añadir betsCloseAt a tournament_matches + migrar
+- [x] Backend: procedure matches.schedule (organizador asigna fecha/hora a un partido)
+- [x] Backend: procedure bets.openMatches (lista partidos apostables con equipos y cierre)
+- [x] Backend: procedure bets.placeOnMatch (apostar a equipo ganador de un partido específico)
+- [x] Backend: validar cierre de apuestas (betsCloseAt <= now) en placeOnMatch
+- [x] Frontend TournamentManage: formulario inline fecha/hora por partido en el bracket
+- [x] Frontend Betting: rediseñar con tarjetas VS por partido, selección de equipo, contador de cierre
+- [x] Corregir bug teamId=0 en Betting.tsx

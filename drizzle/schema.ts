@@ -204,6 +204,7 @@ export const tournamentMatches = mysqlTable("tournament_matches", {
   team2Score: int("team2Score"),
   status: mysqlEnum("status", ["pending", "in_progress", "completed"]).default("pending").notNull(),
   scheduledAt: timestamp("scheduledAt"),
+  betsCloseAt: timestamp("betsCloseAt"),
   completedAt: timestamp("completedAt"),
   notes: text("notes"),
   bracketPosition: json("bracketPosition"),
@@ -254,6 +255,7 @@ export const bets = mysqlTable("bets", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),
   tournamentId: int("tournamentId").notNull(),
+  matchId: int("matchId"), // null = apuesta por torneo completo, set = apuesta por partido
   teamId: int("teamId").notNull(), // team bet on
   amount: int("amount").notNull(), // RLC coins wagered
   multiplier: decimal("multiplier", { precision: 5, scale: 2 }).notNull(), // e.g. 1.50

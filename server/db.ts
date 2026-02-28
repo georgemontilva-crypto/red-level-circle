@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, like, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
@@ -516,19 +516,122 @@ export async function getMatchesByTournament(tournamentId: number) {
       winnerId: tournamentMatches.winnerId,
       team1Score: tournamentMatches.team1Score,
       team2Score: tournamentMatches.team2Score,
-      status: tournamentMatches.status,
+       status: tournamentMatches.status,
       scheduledAt: tournamentMatches.scheduledAt,
+      betsCloseAt: tournamentMatches.betsCloseAt,
       completedAt: tournamentMatches.completedAt,
       notes: tournamentMatches.notes,
       bracketPosition: tournamentMatches.bracketPosition,
       team1Name: team1.name,
       team2Name: team2.name,
+      team1Logo: team1.logo,
+      team2Logo: team2.logo,
     })
     .from(tournamentMatches)
     .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
     .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
     .where(eq(tournamentMatches.tournamentId, tournamentId))
     .orderBy(tournamentMatches.round, tournamentMatches.matchNumber);
+}
+
+export async function scheduleMatch(
+  matchId: number,
+  scheduledAt: Date,
+  betsCloseAt: Date
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db
+    .update(tournamentMatches)
+    .set({ scheduledAt, betsCloseAt })
+    .where(eq(tournamentMatches.id, matchId));
+}
+
+/**
+ * Devuelve partidos pendientes de torneos en curso que tienen betsCloseAt en el futuro.
+ * Incluye nombres y logos de equipos para mostrar en la sección de apuestas.
+ */
+export async function getOpenBetMatches() {
+  const db = await getDb();
+  if (!db) return [];
+  const team1 = alias(teams, "team1");
+  const team2 = alias(teams, "team2");
+  const rows = await db
+    .select({
+      matchId: tournamentMatches.id,
+      tournamentId: tournamentMatches.tournamentId,
+      round: tournamentMatches.round,
+      matchNumber: tournamentMatches.matchNumber,
+      team1Id: tournamentMatches.team1Id,
+      team2Id: tournamentMatches.team2Id,
+      status: tournamentMatches.status,
+      scheduledAt: tournamentMatches.scheduledAt,
+      betsCloseAt: tournamentMatches.betsCloseAt,
+      team1Name: team1.name,
+      team2Name: team2.name,
+      team1Logo: team1.logo,
+      team2Logo: team2.logo,
+      tournamentName: tournaments.name,
+      game: tournaments.game,
+    })
+    .from(tournamentMatches)
+    .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
+    .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
+    .innerJoin(tournaments, eq(tournamentMatches.tournamentId, tournaments.id))
+    .where(
+      and(
+        eq(tournamentMatches.status, "pending"),
+        eq(tournaments.status, "in_progress"),
+        isNotNull(tournamentMatches.betsCloseAt),
+        isNotNull(tournamentMatches.team1Id),
+        isNotNull(tournamentMatches.team2Id),
+      )
+    )
+    .orderBy(tournamentMatches.betsCloseAt);
+
+  // Enrich with per-team bet totals
+  const enriched = await Promise.all(rows.map(async (row) => {
+    const matchBets = await db!.select().from(bets).where(eq(bets.matchId, row.matchId));
+    const team1TotalBets = matchBets.filter(b => b.teamId === row.team1Id).reduce((s, b) => s + b.amount, 0);
+    const team2TotalBets = matchBets.filter(b => b.teamId === row.team2Id).reduce((s, b) => s + b.amount, 0);
+    return {
+      ...row,
+      team1Name: row.team1Name ?? "",
+      team2Name: row.team2Name ?? "",
+      scheduledAt: row.scheduledAt!,
+      betsCloseAt: row.betsCloseAt!,
+      team1TotalBets,
+      team2TotalBets,
+    };
+  }));
+  return enriched;
+}
+
+export async function getBetsByMatch(matchId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(bets).where(eq(bets.matchId, matchId));
+}
+
+export async function resolveMatchBets(matchId: number, winnerTeamId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const pendingBets = await db.select().from(bets)
+    .where(and(eq(bets.matchId, matchId), eq(bets.status, "pending")));
+  for (const bet of pendingBets) {
+    if (bet.teamId === winnerTeamId) {
+      await db.update(bets).set({ status: "won", resolvedAt: new Date() }).where(eq(bets.id, bet.id));
+      await addRlcTransaction({
+        userId: bet.userId,
+        type: "bet_won",
+        amount: bet.potentialWin,
+        description: `Apuesta ganada en partido #${matchId}`,
+        referenceId: bet.id,
+      });
+    } else {
+      await db.update(bets).set({ status: "lost", resolvedAt: new Date() }).where(eq(bets.id, bet.id));
+    }
+  }
 }
 
 export async function updateMatchResult(

@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Edit,
   Eye,
+  CalendarClock,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -61,6 +62,10 @@ export default function TournamentManage() {
   const [resultNotes, setResultNotes] = useState("");
   const [winnerModal, setWinnerModal] = useState(false);
   const [selectedWinnerId, setSelectedWinnerId] = useState<number | null>(null);
+  const [scheduleModal, setScheduleModal] = useState<{ matchId: number; matchLabel: string } | null>(null);
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+  const [betsCloseMinutes, setBetsCloseMinutes] = useState(30);
 
   const { data: tournament, refetch: refetchTournament } = trpc.tournaments.byId.useQuery({ id });
   const { data: registrations, refetch: refetchRegs } = trpc.registrations.byTournament.useQuery(
@@ -105,6 +110,19 @@ export default function TournamentManage() {
       toast.success("¡Ganador declarado! El torneo ha finalizado.");
       setWinnerModal(false);
       refetchTournament();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const scheduleMatchMutation = trpc.matches.schedule.useMutation({
+    onSuccess: (data) => {
+      const d = new Date(data.scheduledAt);
+      const closeD = new Date(data.betsCloseAt);
+      toast.success(`Partido programado para ${d.toLocaleString("es-ES")}. Apuestas cierran: ${closeD.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`);
+      setScheduleModal(null);
+      setScheduleDate("");
+      setScheduleTime("");
+      refetchMatches();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -436,6 +454,22 @@ export default function TournamentManage() {
                                 <span className="text-xs font-display tracking-wider" style={{ color: isCompleted ? "oklch(0.65 0.18 145)" : "oklch(0.55 0.005 0)" }}>
                                   {isCompleted ? <CheckCircle2 size={14} /> : <Circle size={14} />}
                                 </span>
+                                {tournament.status === "in_progress" && !isCompleted && match.team1Id && match.team2Id && (
+                                  <button
+                                    onClick={() => {
+                                      const existing = match.scheduledAt ? new Date(match.scheduledAt) : null;
+                                      setScheduleDate(existing ? existing.toISOString().split("T")[0] : "");
+                                      setScheduleTime(existing ? existing.toTimeString().slice(0, 5) : "");
+                                      setBetsCloseMinutes(30);
+                                      setScheduleModal({ matchId: match.id, matchLabel: `${match.team1Name ?? "Equipo 1"} vs ${match.team2Name ?? "Equipo 2"}` });
+                                    }}
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200 flex items-center gap-1"
+                                    style={{ background: "oklch(0.55 0.18 220 / 0.15)", border: "1px solid oklch(0.55 0.18 220 / 0.3)", color: "oklch(0.65 0.18 220)" }}
+                                  >
+                                    <CalendarClock size={12} />
+                                    {match.scheduledAt ? "REPROG." : "PROGRAMAR"}
+                                  </button>
+                                )}
                                 {tournament.status === "in_progress" && !isCompleted && (
                                   <button
                                     onClick={() => setResultModal({ matchId: match.id, team1Id: match.team1Id, team2Id: match.team2Id, team1Name: match.team1Name ?? `Equipo ${match.team1Id}`, team2Name: match.team2Name ?? `Equipo ${match.team2Id}` })}
@@ -673,6 +707,106 @@ export default function TournamentManage() {
           </div>
         );
       })()}
+
+      {/* Schedule Match Modal */}
+      {scheduleModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "oklch(0 0 0 / 0.8)" }}
+          onClick={() => setScheduleModal(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6"
+            style={{
+              background: "oklch(0.10 0.005 0)",
+              border: "1px solid oklch(0.55 0.18 220 / 0.4)",
+              boxShadow: "0 0 40px oklch(0.55 0.18 220 / 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2 mb-4">
+              <CalendarClock size={18} style={{ color: "oklch(0.65 0.18 220)" }} />
+              <h3 className="font-display text-base font-bold tracking-wider text-foreground">PROGRAMAR PARTIDO</h3>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mb-4 truncate">{scheduleModal.matchLabel}</p>
+
+            <div className="space-y-4 mb-5">
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">FECHA</label>
+                <input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">HORA</label>
+                <input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg text-sm"
+                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">
+                  CERRAR APUESTAS (minutos antes)
+                </label>
+                <div className="flex gap-2">
+                  {[15, 30, 60, 120].map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => setBetsCloseMinutes(m)}
+                      className="flex-1 py-2 rounded-lg text-xs font-mono transition-all duration-200"
+                      style={betsCloseMinutes === m
+                        ? { background: "oklch(0.55 0.18 220 / 0.3)", border: "1px solid oklch(0.55 0.18 220 / 0.6)", color: "oklch(0.75 0.18 220)" }
+                        : { background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.50 0.005 0)" }
+                      }
+                    >
+                      {m}m
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Las apuestas se cerrarán {betsCloseMinutes} minutos antes del inicio.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setScheduleModal(null)}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => {
+                  if (!scheduleDate || !scheduleTime) { toast.error("Selecciona fecha y hora"); return; }
+                  const scheduledAt = new Date(`${scheduleDate}T${scheduleTime}`).getTime();
+                  if (isNaN(scheduledAt)) { toast.error("Fecha inválida"); return; }
+                  if (scheduledAt <= Date.now()) { toast.error("La fecha debe ser en el futuro"); return; }
+                  scheduleMatchMutation.mutate({
+                    matchId: scheduleModal.matchId,
+                    tournamentId: id,
+                    scheduledAt,
+                    betsCloseMinutesBefore: betsCloseMinutes,
+                  });
+                }}
+                disabled={!scheduleDate || !scheduleTime || scheduleMatchMutation.isPending}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                style={{ background: "oklch(0.55 0.18 220)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.18 220 / 0.4)" }}
+              >
+                {scheduleMatchMutation.isPending ? "GUARDANDO..." : "CONFIRMAR"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Declare Winner Modal */}
       {winnerModal && (

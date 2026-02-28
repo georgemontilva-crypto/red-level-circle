@@ -1,48 +1,107 @@
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Coins, Lock, Trophy, Zap } from "lucide-react";
+import { Coins, Lock, Trophy, Zap, Clock, Swords, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { toast } from "sonner";
 
+// Countdown hook
+function useCountdown(targetMs: number | null) {
+  const [remaining, setRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    if (!targetMs) { setRemaining(null); return; }
+    const update = () => setRemaining(Math.max(0, targetMs - Date.now()));
+    update();
+    const id = setInterval(update, 1000);
+    return () => clearInterval(id);
+  }, [targetMs]);
+  return remaining;
+}
+
+function CountdownBadge({ targetMs }: { targetMs: number }) {
+  const remaining = useCountdown(targetMs);
+  if (remaining === null) return null;
+  if (remaining <= 0) return (
+    <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)" }}>
+      CERRADAS
+    </span>
+  );
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  const s = Math.floor((remaining % 60000) / 1000);
+  const label = h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`;
+  const isUrgent = remaining < 300000;
+  return (
+    <span
+      className="text-xs font-mono px-2 py-0.5 rounded flex items-center gap-1"
+      style={isUrgent
+        ? { background: "oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.22 25)" }
+        : { background: "oklch(0.55 0.18 145 / 0.15)", color: "oklch(0.65 0.18 145)" }
+      }
+    >
+      <Clock size={10} />
+      {label}
+    </span>
+  );
+}
+
+type OpenMatch = {
+  matchId: number;
+  tournamentId: number;
+  tournamentName: string;
+  game: string;
+  round: number;
+  matchNumber: number;
+  team1Id: number | null;
+  team1Name: string;
+  team2Id: number | null;
+  team2Name: string;
+  scheduledAt: Date;
+  betsCloseAt: Date;
+  team1TotalBets: number;
+  team2TotalBets: number;
+};
 
 export default function Betting() {
   const { isAuthenticated } = useAuth();
-  const [selectedTournamentId, setSelectedTournamentId] = useState<number | null>(null);
+  const [selectedMatch, setSelectedMatch] = useState<OpenMatch | null>(null);
+  const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [betAmount, setBetAmount] = useState(100);
 
-  const { data: wallet } = trpc.auth.wallet.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: myBets } = trpc.bets.myBets.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: activeTournaments, isLoading } = trpc.tournaments.list.useQuery({ status: "in_progress" });
+  const { data: wallet, refetch: refetchWallet } = trpc.auth.wallet.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: myBets, refetch: refetchMyBets } = trpc.bets.myBets.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: openMatches, isLoading } = trpc.bets.openMatches.useQuery(undefined, {
+    refetchInterval: 30000,
+  });
 
-  const placeBet = trpc.bets.place.useMutation({
-    onSuccess: () => {
-      toast.success("¡Apuesta realizada!", { description: `${betAmount} RLC apostados` });
-      setSelectedTournamentId(null);
+  const placeOnMatch = trpc.bets.placeOnMatch.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Apuesta realizada! Ganancia potencial: ${data.potentialWin.toLocaleString()} RLC (x${data.multiplier})`);
+      setSelectedMatch(null);
+      setSelectedTeamId(null);
       setBetAmount(100);
+      refetchWallet();
+      refetchMyBets();
     },
     onError: (err: { message: string }) => toast.error("Error al apostar", { description: err.message }),
   });
 
-  const handlePlaceBet = (teamId: number) => {
-    if (!selectedTournamentId) return;
-    placeBet.mutate({ tournamentId: selectedTournamentId, teamId, amount: betAmount });
-  };
-
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black text-white">
+      <div className="min-h-screen" style={{ background: "oklch(0.07 0.005 0)" }}>
         <div className="pt-24 pb-16 max-w-2xl mx-auto px-4 text-center">
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-12">
-            <div className="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center mx-auto mb-6">
-              <Lock className="w-10 h-10 text-red-400" />
+          <div className="rounded-2xl p-12" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "oklch(0.55 0.22 25 / 0.1)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
+              <Lock className="w-10 h-10" style={{ color: "oklch(0.65 0.22 25)" }} />
             </div>
-            <h2 className="font-orbitron font-black text-2xl text-white mb-3">ACCESO RESTRINGIDO</h2>
-            <p className="text-zinc-400 font-rajdhani mb-6">Debes iniciar sesión para acceder al centro de apuestas y usar tus RLC Coins.</p>
+            <h2 className="font-display font-black text-2xl text-foreground mb-3 tracking-wider">ACCESO RESTRINGIDO</h2>
+            <p className="text-muted-foreground mb-6">Debes iniciar sesion para acceder al centro de apuestas y usar tus RLC Coins.</p>
             <a href={getLoginUrl()}>
-              <Button className="bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">INICIAR SESIÓN</Button>
+              <Button className="font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}>
+                INICIAR SESION
+              </Button>
             </a>
           </div>
         </div>
@@ -50,149 +109,297 @@ export default function Betting() {
     );
   }
 
+  const balance = wallet?.balance ?? 0;
+
+  const getMultiplierPreview = (match: OpenMatch, teamId: number) => {
+    const totalOnTeam = teamId === match.team1Id ? match.team1TotalBets : match.team2TotalBets;
+    const totalOpponent = teamId === match.team1Id ? match.team2TotalBets : match.team1TotalBets;
+    const ratio = totalOpponent > 0 ? (totalOnTeam + totalOpponent) / (totalOnTeam + betAmount) : 1.5;
+    return Math.min(3.0, Math.max(1.2, parseFloat(ratio.toFixed(2))));
+  };
+
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen" style={{ background: "oklch(0.07 0.005 0)" }}>
       <div className="pt-6 sm:pt-24 pb-16 max-w-7xl mx-auto px-4 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Coins className="w-5 h-5 text-yellow-400" />
-              <h1 className="font-orbitron font-black text-3xl text-white tracking-wider">CENTRO DE APUESTAS</h1>
+              <Coins className="w-5 h-5" style={{ color: "oklch(0.75 0.18 80)" }} />
+              <h1 className="font-display font-black text-3xl text-foreground tracking-wider">CENTRO DE APUESTAS</h1>
             </div>
-            <p className="text-zinc-500 font-rajdhani">Apuesta RLC Coins en los torneos activos de la plataforma</p>
+            <p className="text-muted-foreground text-sm">Apuesta RLC Coins al ganador de cada partido en tiempo real</p>
           </div>
-          {/* Wallet */}
-          <div className="bg-zinc-900/80 border border-yellow-500/30 rounded-xl px-6 py-4">
-            <p className="text-xs font-mono text-zinc-500 mb-1">TU SALDO</p>
+          <div className="rounded-xl px-6 py-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
+            <p className="text-xs font-mono text-muted-foreground mb-1">TU SALDO</p>
             <div className="flex items-center gap-2">
-              <Coins className="w-5 h-5 text-yellow-400" />
-              <span className="font-orbitron font-black text-2xl text-yellow-400">{(wallet?.balance ?? 0).toLocaleString()}</span>
-              <span className="text-zinc-500 font-mono text-sm">RLC</span>
+              <Coins className="w-5 h-5" style={{ color: "oklch(0.75 0.18 80)" }} />
+              <span className="font-display font-black text-2xl" style={{ color: "oklch(0.75 0.18 80)" }}>{balance.toLocaleString()}</span>
+              <span className="text-muted-foreground font-mono text-sm">RLC</span>
             </div>
           </div>
         </div>
 
         {/* Info banner */}
-        <div className="bg-yellow-500/5 border border-yellow-500/20 rounded-xl p-4 mb-8">
+        <div className="rounded-xl p-4 mb-8" style={{ background: "oklch(0.65 0.18 80 / 0.05)", border: "1px solid oklch(0.65 0.18 80 / 0.2)" }}>
           <div className="flex items-start gap-3">
-            <Coins className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" />
+            <Zap className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "oklch(0.75 0.18 80)" }} />
             <div>
-              <p className="font-rajdhani font-bold text-yellow-400 text-sm">CÓMO FUNCIONA</p>
-              <p className="text-zinc-400 font-rajdhani text-xs mt-1">
-                Los RLC Coins son la moneda interna de la plataforma. Úsalos para apostar en torneos en curso.
-                Si tu equipo gana, recibirás 1.5× tu apuesta. Los coins se otorgan al registrarte y al participar en torneos.
+              <p className="font-display font-bold text-sm" style={{ color: "oklch(0.75 0.18 80)" }}>COMO FUNCIONA</p>
+              <p className="text-muted-foreground text-xs mt-1">
+                Elige un partido con apuestas abiertas, selecciona al equipo que crees que ganara y define tu monto.
+                El multiplicador es dinamico: cuanto mas apuesten al rival, mayor sera tu ganancia potencial (min x1.2, max x3.0).
+                Las apuestas se cierran automaticamente antes del inicio del partido.
               </p>
             </div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Active tournaments to bet on */}
+          {/* Open matches */}
           <div className="lg:col-span-2">
-            <h2 className="font-orbitron font-bold text-sm text-zinc-400 tracking-wider mb-4">TORNEOS EN CURSO</h2>
+            <h2 className="font-display font-bold text-sm text-muted-foreground tracking-wider mb-4 flex items-center gap-2">
+              <Swords size={14} /> PARTIDOS DISPONIBLES PARA APOSTAR
+            </h2>
+
             {isLoading ? (
               <div className="space-y-3">
-                {Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-24 bg-zinc-900/50 rounded-xl animate-pulse" />)}
-              </div>
-            ) : activeTournaments && activeTournaments.length > 0 ? (
-              <div className="space-y-3">
-                {activeTournaments.map((t) => (
-                  <div key={t.id}
-                    onClick={() => setSelectedTournamentId(t.id)}
-                    className={`bg-zinc-900/80 border rounded-xl p-4 cursor-pointer transition-all ${selectedTournamentId === t.id ? "border-red-500/50 shadow-[0_0_15px_rgba(220,38,38,0.1)]" : "border-zinc-800 hover:border-zinc-700"}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-rajdhani font-bold text-white">{t.name}</h3>
-                      <span className="text-xs font-mono text-red-400">{t.game}</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-zinc-500">
-                      <span className="font-mono">Multiplicador: ×1.5</span>
-                      <span>Apuesta mínima: 10 RLC</span>
-                    </div>
-                    {selectedTournamentId === t.id && (
-                      <div className="mt-3 pt-3 border-t border-zinc-800">
-                        <p className="text-xs font-mono text-zinc-500 mb-2">CANTIDAD A APOSTAR</p>
-                        <div className="flex gap-2 mb-2">
-                          {[50, 100, 250, 500].map((amount) => (
-                            <button key={amount} onClick={(e) => { e.stopPropagation(); setBetAmount(amount); }}
-                              className={`flex-1 py-1.5 text-xs font-mono rounded border transition-all ${betAmount === amount ? "bg-red-600 border-red-600 text-white" : "bg-zinc-800 border-zinc-700 text-zinc-400 hover:border-red-500/50"}`}>
-                              {amount}
-                            </button>
-                          ))}
-                        </div>
-                        <input
-                          type="number"
-                          value={betAmount}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={(e) => setBetAmount(Math.max(10, parseInt(e.target.value) || 10))}
-                          min={10}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white font-mono text-sm outline-none focus:border-red-500/50 mb-3"
-                        />
-                        <p className="text-xs text-zinc-500 mb-3">
-                          Ganancia potencial: <span className="text-yellow-400 font-mono">{Math.floor(betAmount * 1.5).toLocaleString()} RLC</span>
-                        </p>
-                        <Button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet(0); }}
-                          disabled={placeBet.isPending || betAmount > (wallet?.balance ?? 0)}
-                          className="w-full bg-red-600 hover:bg-red-700 font-orbitron text-xs tracking-wider">
-                          {placeBet.isPending ? "PROCESANDO..." : `APOSTAR ${betAmount} RLC`}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-28 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
                 ))}
               </div>
+            ) : openMatches && openMatches.length > 0 ? (
+              <div className="space-y-3">
+                {openMatches.map((match) => {
+                  const isSelected = selectedMatch?.matchId === match.matchId;
+                  const betsCloseMs = new Date(match.betsCloseAt).getTime();
+                  const isClosed = Date.now() > betsCloseMs;
+                  const totalBets = match.team1TotalBets + match.team2TotalBets;
+                  const t1Pct = totalBets > 0 ? Math.round((match.team1TotalBets / totalBets) * 100) : 50;
+                  const t2Pct = 100 - t1Pct;
+
+                  return (
+                    <div
+                      key={match.matchId}
+                      onClick={() => {
+                        if (isClosed) return;
+                        setSelectedMatch(isSelected ? null : match);
+                        setSelectedTeamId(null);
+                        setBetAmount(100);
+                      }}
+                      className="rounded-xl p-4 transition-all duration-300 cursor-pointer"
+                      style={{
+                        background: "oklch(0.10 0.005 0)",
+                        border: isSelected ? "1px solid oklch(0.55 0.22 25 / 0.6)" : isClosed ? "1px solid oklch(0.18 0.005 0)" : "1px solid oklch(0.18 0.01 0)",
+                        boxShadow: isSelected ? "0 0 20px oklch(0.55 0.22 25 / 0.1)" : "none",
+                        opacity: isClosed ? 0.6 : 1,
+                      }}
+                    >
+                      {/* Match header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-mono text-muted-foreground">{match.tournamentName}</span>
+                          <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}>
+                            R{match.round}
+                          </span>
+                          <span className="text-xs font-mono text-muted-foreground">{match.game}</span>
+                        </div>
+                        {isClosed ? (
+                          <span className="text-xs font-mono px-2 py-0.5 rounded" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)" }}>
+                            CERRADAS
+                          </span>
+                        ) : (
+                          <CountdownBadge targetMs={betsCloseMs} />
+                        )}
+                      </div>
+
+                      {/* VS row */}
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="flex-1 text-center">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold mb-1" style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.75 0.22 25)" }}>
+                            {match.team1Name.charAt(0).toUpperCase()}
+                          </div>
+                          <p className="text-xs font-display tracking-wide text-foreground truncate">{match.team1Name}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{t1Pct}% apuestas</p>
+                        </div>
+                        <div className="text-center">
+                          <span className="font-display font-black text-lg" style={{ color: "oklch(0.55 0.22 25)" }}>VS</span>
+                          <p className="text-xs font-mono text-muted-foreground mt-0.5">
+                            {new Date(match.scheduledAt).toLocaleString("es-ES", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                        <div className="flex-1 text-center">
+                          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold mb-1" style={{ background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.75 0.18 220)" }}>
+                            {match.team2Name.charAt(0).toUpperCase()}
+                          </div>
+                          <p className="text-xs font-display tracking-wide text-foreground truncate">{match.team2Name}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{t2Pct}% apuestas</p>
+                        </div>
+                      </div>
+
+                      {/* Bet distribution bar */}
+                      {totalBets > 0 && (
+                        <div className="flex rounded-full overflow-hidden h-1.5 mb-3">
+                          <div style={{ width: `${t1Pct}%`, background: "oklch(0.55 0.22 25)" }} />
+                          <div style={{ width: `${t2Pct}%`, background: "oklch(0.55 0.18 220)" }} />
+                        </div>
+                      )}
+
+                      {/* Expanded bet panel */}
+                      {isSelected && !isClosed && (
+                        <div
+                          className="mt-3 pt-3 rounded-xl p-3"
+                          style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <p className="text-xs font-display tracking-wider text-muted-foreground mb-3">ELIGE TU EQUIPO</p>
+                          <div className="grid grid-cols-2 gap-2 mb-4">
+                            {[
+                              { id: match.team1Id, name: match.team1Name, color: "oklch(0.55 0.22 25)" },
+                              { id: match.team2Id, name: match.team2Name, color: "oklch(0.55 0.18 220)" },
+                            ].map((team) => {
+                              const mult = getMultiplierPreview(match, team.id ?? 0);
+                              const isChosen = selectedTeamId === team.id;
+                              return (
+                                <button
+                                  key={team.id}
+                                  onClick={() => setSelectedTeamId(team.id)}
+                                  className="p-3 rounded-xl text-left transition-all duration-200"
+                                  style={isChosen
+                                    ? { background: "oklch(0.13 0.005 0)", border: `1px solid ${team.color}`, boxShadow: `0 0 12px ${team.color} / 0.2` }
+                                    : { background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }
+                                  }
+                                >
+                                  <div className="flex items-center gap-2 mb-1">
+                                    {isChosen && <CheckCircle2 size={12} style={{ color: team.color }} />}
+                                    <span className="text-xs font-display tracking-wide text-foreground truncate">{team.name}</span>
+                                  </div>
+                                  <span className="text-xs font-mono" style={{ color: team.color }}>x{mult}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <p className="text-xs font-display tracking-wider text-muted-foreground mb-2">CANTIDAD</p>
+                          <div className="flex gap-2 mb-2">
+                            {[50, 100, 250, 500].map((amount) => (
+                              <button
+                                key={amount}
+                                onClick={() => setBetAmount(amount)}
+                                className="flex-1 py-1.5 text-xs font-mono rounded-lg transition-all duration-200"
+                                style={betAmount === amount
+                                  ? { background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }
+                                  : { background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.50 0.005 0)" }
+                                }
+                              >
+                                {amount}
+                              </button>
+                            ))}
+                          </div>
+                          <input
+                            type="number"
+                            value={betAmount}
+                            onChange={(e) => setBetAmount(Math.max(10, Math.min(10000, parseInt(e.target.value) || 10)))}
+                            min={10}
+                            max={10000}
+                            className="w-full px-3 py-2 rounded-lg text-sm font-mono mb-2"
+                            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                          />
+
+                          {selectedTeamId && (
+                            <p className="text-xs text-muted-foreground mb-3">
+                              Ganancia potencial:{" "}
+                              <span className="font-mono" style={{ color: "oklch(0.75 0.18 80)" }}>
+                                {Math.floor(betAmount * getMultiplierPreview(match, selectedTeamId)).toLocaleString()} RLC
+                              </span>
+                              {" "}(x{getMultiplierPreview(match, selectedTeamId)})
+                            </p>
+                          )}
+
+                          <Button
+                            onClick={() => {
+                              if (!selectedTeamId) { toast.error("Selecciona un equipo"); return; }
+                              placeOnMatch.mutate({
+                                matchId: match.matchId,
+                                tournamentId: match.tournamentId,
+                                teamId: selectedTeamId,
+                                amount: betAmount,
+                              });
+                            }}
+                            disabled={!selectedTeamId || placeOnMatch.isPending || betAmount > balance}
+                            className="w-full font-display text-xs tracking-wider disabled:opacity-50"
+                            style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}
+                          >
+                            {placeOnMatch.isPending
+                              ? "PROCESANDO..."
+                              : !selectedTeamId
+                              ? "SELECCIONA UN EQUIPO"
+                              : betAmount > balance
+                              ? "SALDO INSUFICIENTE"
+                              : `APOSTAR ${betAmount.toLocaleString()} RLC`}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             ) : (
-              <div className="text-center py-16 bg-zinc-900/50 border border-zinc-800 rounded-xl">
-                <Trophy className="w-12 h-12 mx-auto mb-3 text-zinc-700" />
-                <p className="font-orbitron text-zinc-600 text-sm">NO HAY TORNEOS EN CURSO</p>
-                <p className="text-zinc-700 font-rajdhani text-xs mt-1">Las apuestas se abren cuando hay torneos activos</p>
+              <div className="text-center py-16 rounded-xl" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <Trophy className="w-12 h-12 mx-auto mb-3" style={{ color: "oklch(0.25 0.005 0)" }} />
+                <p className="font-display text-sm tracking-wider" style={{ color: "oklch(0.40 0.005 0)" }}>NO HAY PARTIDOS DISPONIBLES</p>
+                <p className="text-muted-foreground text-xs mt-1">Los partidos aparecen aqui cuando el organizador les asigna fecha y hora</p>
                 <Link href="/tournaments">
-                  <Button className="mt-4 bg-red-600 hover:bg-red-700 font-orbitron text-xs">VER TORNEOS</Button>
+                  <Button className="mt-4 font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}>
+                    VER TORNEOS
+                  </Button>
                 </Link>
               </div>
             )}
           </div>
 
-          {/* My bets history */}
-          <div>
-            <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4">
-              <h3 className="font-orbitron font-bold text-xs text-zinc-400 tracking-wider mb-4">MIS APUESTAS</h3>
+          {/* Sidebar */}
+          <div className="space-y-4">
+            <div className="rounded-xl p-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <h3 className="font-display font-bold text-xs text-muted-foreground tracking-wider mb-4">MIS APUESTAS</h3>
               {myBets && myBets.length > 0 ? (
                 <div className="space-y-2">
                   {myBets.slice(0, 10).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between text-xs py-2 border-b border-zinc-800/50 last:border-0">
+                    <div key={b.id} className="flex items-center justify-between text-xs py-2 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
                       <div>
-                        <p className="font-rajdhani text-zinc-300">{b.amount} RLC</p>
-                        <p className="text-zinc-600 font-mono">×{b.multiplier}</p>
+                        <p className="text-foreground font-mono">{b.amount.toLocaleString()} RLC</p>
+                        <p className="text-muted-foreground font-mono">x{b.multiplier}</p>
                       </div>
-                      <span className={`font-mono px-2 py-0.5 rounded text-xs ${
-                        b.status === "won" ? "bg-green-500/20 text-green-400" :
-                        b.status === "lost" ? "bg-red-900/20 text-red-500" :
-                        "bg-zinc-800 text-zinc-400"
-                      }`}>
-                        {b.status === "won" ? `+${b.potentialWin} RLC` : b.status === "lost" ? "PERDIDA" : "PENDIENTE"}
+                      <span
+                        className="font-mono px-2 py-0.5 rounded text-xs"
+                        style={b.status === "won"
+                          ? { background: "oklch(0.65 0.18 145 / 0.15)", color: "oklch(0.65 0.18 145)" }
+                          : b.status === "lost"
+                          ? { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
+                          : { background: "oklch(0.20 0.005 0)", color: "oklch(0.55 0.005 0)" }
+                        }
+                      >
+                        {b.status === "won" ? `+${b.potentialWin?.toLocaleString()} RLC` : b.status === "lost" ? "PERDIDA" : "PENDIENTE"}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <Coins className="w-8 h-8 mx-auto mb-2 text-zinc-700" />
-                  <p className="text-xs text-zinc-600 font-rajdhani">Sin apuestas aún</p>
+                  <Coins className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.25 0.005 0)" }} />
+                  <p className="text-xs text-muted-foreground">Sin apuestas aun</p>
                 </div>
               )}
             </div>
 
-            {/* Wallet transactions */}
             {wallet?.transactions && wallet.transactions.length > 0 && (
-              <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-4 mt-4">
-                <h3 className="font-orbitron font-bold text-xs text-zinc-400 tracking-wider mb-4">TRANSACCIONES</h3>
+              <div className="rounded-xl p-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <h3 className="font-display font-bold text-xs text-muted-foreground tracking-wider mb-4">TRANSACCIONES</h3>
                 <div className="space-y-2">
                   {wallet.transactions.slice(0, 8).map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b border-zinc-800/50 last:border-0">
-                      <span className="text-zinc-500 font-rajdhani line-clamp-1 flex-1">{tx.description ?? tx.type}</span>
-                      <span className={`font-mono ml-2 ${tx.amount > 0 ? "text-green-400" : "text-red-400"}`}>
+                    <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                      <span className="text-muted-foreground line-clamp-1 flex-1">{tx.description ?? tx.type}</span>
+                      <span className="font-mono ml-2" style={{ color: tx.amount > 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
                         {tx.amount > 0 ? "+" : ""}{tx.amount}
                       </span>
                     </div>
