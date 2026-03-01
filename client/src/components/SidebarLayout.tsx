@@ -55,8 +55,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
     {
       title: "TIENDA",
       items: [
-        { label: "Cosméticos", href: "/shop/cosmetics", icon: Sparkles },
-        { label: "Productos", href: "/shop", icon: ShoppingBag },
+        { label: "Tienda", href: "/shop", icon: ShoppingBag },
         { label: "Recompensas", href: "/rewards", icon: Gift },
         { label: "Publicidad", href: "/ads", icon: Megaphone },
       ],

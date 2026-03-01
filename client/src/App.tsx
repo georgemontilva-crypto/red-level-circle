@@ -26,7 +26,6 @@ import StreamDetail from "./pages/StreamDetail";
 import Betting from "./pages/Betting";
 import TeamProfile from "./pages/TeamProfile";
 import Teams from "./pages/Teams";
-import CosmeticsShop from "./pages/CosmeticsShop";
 import Shop from "./pages/Shop";
 import Rewards from "./pages/Rewards";
 import BrandAds from "./pages/BrandAds";
@@ -80,7 +79,7 @@ function Router() {
         <Route path="/betting" component={Betting} />
         <Route path="/teams" component={Teams} />
         <Route path="/teams/:id" component={TeamProfile} />
-        <Route path="/shop/cosmetics" component={CosmeticsShop} />
+        <Route path="/shop/cosmetics">{() => { window.location.replace("/shop?tab=cosmetics"); return null; }}</Route>
         <Route path="/shop" component={Shop} />
         <Route path="/rewards" component={Rewards} />
         <Route path="/ads" component={BrandAds} />

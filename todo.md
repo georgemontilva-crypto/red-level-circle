@@ -847,3 +847,10 @@
 - [x] Frontend Shop.tsx: botón COMPRAR deshabilitado cuando se alcanza el límite
 - [x] Frontend AdminPanel: sección "Catálogo de Productos" con botón editar y eliminar en cada producto
 - [x] Frontend AdminPanel: modal de edición inline con todos los campos (nombre, imagen, precio, stock, categoría, límite, activo, destacado)
+
+## Tienda Unificada V39
+- [x] Reescribir Shop.tsx con tabs: TODOS / PRODUCTOS / COSMÉTICOS / MIS PEDIDOS
+- [x] Integrar el grid de cosméticos (con preview de marco/aura) dentro de la nueva Shop.tsx
+- [x] Eliminar la ruta /shop/cosmetics de App.tsx (redirigir a /shop?tab=cosmeticos)
+- [x] Actualizar el sidebar para que solo haya un enlace "Tienda" → /shop
+- [x] Mantener la funcionalidad completa: compra, equipar cosméticos, historial de pedidos
