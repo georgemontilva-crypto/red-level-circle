@@ -176,7 +176,7 @@ const isPhysicalCat = (cat?: string | null) => cat === "physical" || cat === "bu
 
 function ShopTab() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any });
+  const [form, setForm] = useState({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null });
   const [uploadingImg, setUploadingImg] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
@@ -184,7 +184,7 @@ function ShopTab() {
   const { data: orders, refetch: refetchOrders } = trpc.admin.listOrders.useQuery();
   const uploadImage = trpc.admin.uploadImage.useMutation();
   const createItem = trpc.admin.createShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" }); },
+    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital", maxPerUser: null }); },
     onError: e => toast.error(e.message),
   });
   const updateOrder = trpc.admin.updateOrderStatus.useMutation({
@@ -282,6 +282,18 @@ function ShopTab() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Límite por usuario</label>
+                <input
+                  type="number"
+                  value={form.maxPerUser ?? ""}
+                  onChange={e => setForm(f => ({ ...f, maxPerUser: e.target.value ? parseInt(e.target.value) : null }))}
+                  placeholder="Sin límite"
+                  min={1}
+                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
+                />
+                <p className="text-gray-600 text-xs mt-1">Ej: 1 = sólo 1 por usuario</p>
+              </div>
               <div className="md:col-span-2">
                 <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción</label>
                 <textarea
@@ -295,7 +307,7 @@ function ShopTab() {
             </div>
             <div className="flex gap-3">
               <Button
-                onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1 })}
+                onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null })}
                 disabled={!form.name || !form.price || createItem.isPending || uploadingImg}
                 className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
               >

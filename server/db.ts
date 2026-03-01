@@ -1554,6 +1554,23 @@ export async function buyShopItem(userId: number, itemId: number, quantity: numb
   if (!item.isActive) throw new Error("Producto no disponible");
   if (item.stock !== -1 && item.stock < quantity) throw new Error("Stock insuficiente");
 
+  // Validate maxPerUser limit
+  if (item.maxPerUser !== null && item.maxPerUser !== undefined) {
+    const previousOrders = await db
+      .select({ count: shopOrders.id })
+      .from(shopOrders)
+      .where(and(
+        eq(shopOrders.userId, userId),
+        eq(shopOrders.itemId, itemId),
+        // Count non-cancelled orders
+        sql`${shopOrders.status} != 'cancelled'`
+      ));
+    const totalBought = previousOrders.length;
+    if (totalBought + quantity > item.maxPerUser) {
+      throw new Error(`Límite de compra alcanzado: máximo ${item.maxPerUser} por usuario`);
+    }
+  }
+
   const totalPrice = item.price * quantity;
 
   // Check user balance
@@ -1614,8 +1631,10 @@ export async function getShopOrders(userId?: number, status?: string) {
       itemName: shopItems.name,
       itemImage: shopItems.image,
       itemCategory: shopItems.category,
+      shippingAddress: shopOrders.shippingAddress,
       userName: users.name,
       userNickname: users.nickname,
+      userEmail: users.email,
     })
     .from(shopOrders)
     .leftJoin(shopItems, eq(shopOrders.itemId, shopItems.id))

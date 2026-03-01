@@ -343,6 +343,7 @@ export const shopItems = mysqlTable("shop_items", {
   isFeatured: boolean("isFeatured").default(false).notNull(),
   isLimited: boolean("isLimited").default(false).notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
+  maxPerUser: int("maxPerUser"), // null = unlimited; 1 = one per user, etc.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

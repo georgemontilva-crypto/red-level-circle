@@ -1535,9 +1535,10 @@ export const appRouter = router({
         price: z.number().int().min(1),
         stock: z.number().int().default(-1),
         category: z.enum(["physical", "digital", "bundle", "limited"]),
+        maxPerUser: z.number().int().min(1).nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category });
+        await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category, maxPerUser: input.maxPerUser ?? null });
         return { success: true };
       }),
     listAds: adminProcedure

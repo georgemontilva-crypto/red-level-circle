@@ -831,3 +831,10 @@
 - [x] Frontend AdminPanel ShopTab: tarjeta de pedido muestra tipo, email, datos de envío y nota del usuario
 - [x] Frontend AdminPanel ShopTab: campo de código al marcar entregado (productos digitales)
 - [x] Frontend AdminPanel ShopTab: filtro por estado (todos/pendiente/procesando/entregado/cancelado)
+
+## Historial Entregados + Límite por Usuario V37
+- [x] Schema: añadir maxPerUser (int, default null) a shopItems + migrar BD
+- [x] Backend: validar maxPerUser en shop.buy (contar pedidos previos del usuario para ese item)
+- [x] Backend: getShopOrders incluye deliveryCode (deliveryNote del pedido entregado)
+- [x] Frontend Shop.tsx: sección "Entregados" en Mis Pedidos con código/seguimiento visible
+- [x] Frontend AdminPanel: campo maxPerUser en formulario de creación/edición de producto
