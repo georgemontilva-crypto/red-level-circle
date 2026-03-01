@@ -21,6 +21,7 @@ import {
   getBetsByUser,
   adminListBets,
   cancelBetById,
+  getBetStatsByUser,
   getGames,
   getMatchesByTournament,
   getNews,
@@ -1396,6 +1397,12 @@ export const appRouter = router({
           status: "pending",
         });
          return { betId, potentialWin, multiplier };
+      }),
+    // Estadísticas públicas de apuestas de un usuario
+    userStats: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        return getBetStatsByUser(input.userId);
       }),
     // Admin: listar todas las apuestas con datos enriquecidos
     adminList: adminProcedure.query(async () => {

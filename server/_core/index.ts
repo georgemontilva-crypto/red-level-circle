@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { registerNotificationListeners } from "../notifications";
 import { startTwitchSyncJob } from "../twitchSync";
+import { startBetsClosingJob } from "../betsClosingJob";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -68,5 +69,7 @@ async function startServer() {
 registerNotificationListeners();
 // Start Twitch stream sync job (polls every 2 minutes)
 startTwitchSyncJob();
+// Start bets closing job (checks every 60s for expired betting windows)
+startBetsClosingJob();
 
 startServer().catch(console.error);

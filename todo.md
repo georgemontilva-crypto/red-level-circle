@@ -807,3 +807,9 @@
 - [x] Backend: notificación push al owner cuando se programa un partido con ventana de apuestas
 - [x] Frontend Betting: rediseñar sección "Mis Apuestas" con nombre torneo, VS equipos y fecha del partido
 - [x] Frontend Admin: pestaña "Apuestas" con tabla por partido, volumen total y botón anular apuesta
+
+## Cron Apuestas + Stats Perfil V34
+- [x] Backend: cron job cada minuto para cerrar apuestas cuando betsCloseAt <= now
+- [x] Backend: notificación push a cada apostante cuando sus apuestas se cierran
+- [x] Backend: procedure bets.userStats (ganadas, perdidas, pendientes, % acierto, volumen)
+- [x] Frontend: sección estadísticas de apuestas en perfil público del usuario

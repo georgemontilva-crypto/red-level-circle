@@ -1404,6 +1404,23 @@ export async function cancelBetById(betId: number) {
   });
 }
 
+export async function getBetStatsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, won: 0, lost: 0, pending: 0, cancelled: 0, winRate: 0, totalWagered: 0, totalWon: 0, netProfit: 0 };
+  const userBets = await db.select().from(bets).where(eq(bets.userId, userId));
+  const total = userBets.length;
+  const won = userBets.filter(b => b.status === "won").length;
+  const lost = userBets.filter(b => b.status === "lost").length;
+  const pending = userBets.filter(b => b.status === "pending").length;
+  const cancelled = userBets.filter(b => b.status === "cancelled").length;
+  const resolved = won + lost;
+  const winRate = resolved > 0 ? Math.round((won / resolved) * 100) : 0;
+  const totalWagered = userBets.filter(b => b.status !== "cancelled").reduce((s, b) => s + b.amount, 0);
+  const totalWon = userBets.filter(b => b.status === "won").reduce((s, b) => s + (b.potentialWin ?? 0), 0);
+  const netProfit = totalWon - totalWagered;
+  return { total, won, lost, pending, cancelled, winRate, totalWagered, totalWon, netProfit };
+}
+
 export async function getBetsByTournament(tournamentId: number) {
   const db = await getDb();
   if (!db) return [];

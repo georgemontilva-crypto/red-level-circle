@@ -110,6 +110,11 @@ export default function UserProfile() {
     { userId },
     { enabled: activeTab === "following" }
   );
+  const { data: betStats } = trpc.bets.userStats.useQuery(
+    { userId },
+    { enabled: !!userId }
+  );
+
   const { data: activeStream } = trpc.streams.activeByUser.useQuery(
     { userId },
     { enabled: !!userId, refetchInterval: 60_000 }
@@ -537,6 +542,59 @@ export default function UserProfile() {
                   </div>
                 </div>
               )}
+              {/* Bet Stats */}
+              {betStats && betStats.total > 0 && (
+                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                    <Coins className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                    <span className="text-xs font-display tracking-wider text-foreground">APUESTAS</span>
+                  </div>
+                  <div className="p-4 space-y-4">
+                    {/* Win rate bar */}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-muted-foreground font-mono">% ACIERTO</span>
+                        <span className="text-sm font-orbitron" style={{ color: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>{betStats.winRate}%</span>
+                      </div>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.18 0.005 0)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${betStats.winRate}%`, background: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}
+                        />
+                      </div>
+                    </div>
+                    {/* Stats grid */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                        <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>{betStats.won}</p>
+                        <p className="text-xs text-muted-foreground font-mono">GANADAS</p>
+                      </div>
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                        <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.22 25)" }}>{betStats.lost}</p>
+                        <p className="text-xs text-muted-foreground font-mono">PERDIDAS</p>
+                      </div>
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                        <p className="text-lg font-orbitron text-foreground">{betStats.pending}</p>
+                        <p className="text-xs text-muted-foreground font-mono">PENDIENTES</p>
+                      </div>
+                    </div>
+                    {/* Volume + profit */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-lg p-2.5" style={{ background: "oklch(0.13 0.005 0)" }}>
+                        <p className="text-xs text-muted-foreground font-mono mb-0.5">VOLUMEN</p>
+                        <p className="text-sm font-mono text-foreground">{betStats.totalWagered.toLocaleString()} RLC</p>
+                      </div>
+                      <div className="rounded-lg p-2.5" style={{ background: "oklch(0.13 0.005 0)" }}>
+                        <p className="text-xs text-muted-foreground font-mono mb-0.5">BENEFICIO NETO</p>
+                        <p className="text-sm font-mono" style={{ color: betStats.netProfit >= 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
+                          {betStats.netProfit >= 0 ? "+" : ""}{betStats.netProfit.toLocaleString()} RLC
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* No activity placeholder */}
               <div
                 className="rounded-xl p-6 text-center"
