@@ -1210,7 +1210,186 @@ function GamesTab() {
   );
 }
 
-// ─── Audit Tab ───────────────────────────────────────────────────────────────
+// ─── Bets Tab ───────────────────────────────────────────────────────
+function BetsTab() {
+  const { data: allBets, refetch, isLoading } = trpc.bets.adminList.useQuery();
+  const cancelBet = trpc.bets.cancelBet.useMutation({
+    onSuccess: () => { toast.success("Apuesta anulada y RLC reembolsado"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterMatch, setFilterMatch] = useState<string>("all");
+
+  // Group bets by matchId for summary
+  const matchGroups = allBets ? Object.values(
+    allBets.reduce((acc, b) => {
+      const key = b.matchId ? `m${b.matchId}` : `t${b.tournamentId}`;
+      if (!acc[key]) {
+        acc[key] = {
+          matchId: b.matchId,
+          tournamentId: b.tournamentId,
+          tournamentName: b.tournamentName,
+          team1Name: b.team1Name,
+          team2Name: b.team2Name,
+          scheduledAt: b.scheduledAt,
+          totalAmount: 0,
+          betCount: 0,
+          pendingCount: 0,
+        };
+      }
+      acc[key].totalAmount += b.amount;
+      acc[key].betCount += 1;
+      if (b.status === "pending") acc[key].pendingCount += 1;
+      return acc;
+    }, {} as Record<string, { matchId: number | null; tournamentId: number | null; tournamentName: string | null; team1Name: string | null; team2Name: string | null; scheduledAt: Date | null; totalAmount: number; betCount: number; pendingCount: number }>)
+  ) : [];
+
+  const filtered = allBets?.filter(b => {
+    const statusOk = filterStatus === "all" || b.status === filterStatus;
+    const matchOk = filterMatch === "all" || (b.matchId ? `m${b.matchId}` : `t${b.tournamentId}`) === filterMatch;
+    return statusOk && matchOk;
+  }) ?? [];
+
+  const matchOptions = matchGroups.map(g => ({
+    value: g.matchId ? `m${g.matchId}` : `t${g.tournamentId}`,
+    label: g.team1Name && g.team2Name ? `${g.team1Name} vs ${g.team2Name}` : g.tournamentName ?? `Partido #${g.matchId}`,
+  }));
+
+  return (
+    <div className="space-y-6">
+      <SectionHeader icon={Coins} title="APUESTAS" subtitle="Gestión de apuestas activas, historial y anulaciones" />
+
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <p className="text-xs text-gray-400 mb-1">Total apuestas</p>
+          <p className="text-2xl font-orbitron text-white">{allBets?.length ?? 0}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <p className="text-xs text-gray-400 mb-1">Pendientes</p>
+          <p className="text-2xl font-orbitron text-yellow-400">{allBets?.filter(b => b.status === "pending").length ?? 0}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <p className="text-xs text-gray-400 mb-1">Volumen total (RLC)</p>
+          <p className="text-2xl font-orbitron text-red-400">{(allBets?.reduce((s, b) => s + b.amount, 0) ?? 0).toLocaleString()}</p>
+        </div>
+        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <p className="text-xs text-gray-400 mb-1">Partidos con apuestas</p>
+          <p className="text-2xl font-orbitron text-blue-400">{matchGroups.length}</p>
+        </div>
+      </div>
+
+      {/* Per-match summary */}
+      {matchGroups.length > 0 && (
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <p className="text-xs font-orbitron text-gray-400 tracking-wider">RESUMEN POR PARTIDO</p>
+          <div className="space-y-2">
+            {matchGroups.map((g, i) => (
+              <div key={i} className="flex items-center justify-between text-sm py-2 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                <div>
+                  <p className="text-white font-mono text-xs">
+                    {g.team1Name && g.team2Name ? `${g.team1Name} vs ${g.team2Name}` : g.tournamentName ?? `Partido #${g.matchId}`}
+                  </p>
+                  {g.scheduledAt && <p className="text-gray-500 text-xs">{new Date(g.scheduledAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
+                </div>
+                <div className="text-right">
+                  <p className="text-red-400 font-mono text-xs">{g.totalAmount.toLocaleString()} RLC</p>
+                  <p className="text-gray-400 text-xs">{g.betCount} apuestas • {g.pendingCount} pendientes</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-40 text-xs h-8">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los estados</SelectItem>
+            <SelectItem value="pending">Pendiente</SelectItem>
+            <SelectItem value="won">Ganada</SelectItem>
+            <SelectItem value="lost">Perdida</SelectItem>
+            <SelectItem value="cancelled">Anulada</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterMatch} onValueChange={setFilterMatch}>
+          <SelectTrigger className="w-56 text-xs h-8">
+            <SelectValue placeholder="Partido" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los partidos</SelectItem>
+            {matchOptions.map(o => (
+              <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Bets table */}
+      {isLoading ? (
+        <p className="text-gray-400 text-sm">Cargando apuestas...</p>
+      ) : filtered.length === 0 ? (
+        <p className="text-gray-400 text-sm">No hay apuestas con los filtros seleccionados.</p>
+      ) : (
+        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid oklch(0.20 0.01 0)" }}>
+          <table className="w-full text-xs">
+            <thead>
+              <tr style={{ background: "oklch(0.12 0.005 0)" }}>
+                <th className="text-left p-3 text-gray-400 font-orbitron">USUARIO</th>
+                <th className="text-left p-3 text-gray-400 font-orbitron">PARTIDO</th>
+                <th className="text-left p-3 text-gray-400 font-orbitron">EQUIPO</th>
+                <th className="text-right p-3 text-gray-400 font-orbitron">MONTO</th>
+                <th className="text-right p-3 text-gray-400 font-orbitron">GANANCIA</th>
+                <th className="text-center p-3 text-gray-400 font-orbitron">ESTADO</th>
+                <th className="text-center p-3 text-gray-400 font-orbitron">ACCIÓN</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((b) => {
+                const statusColor = b.status === "won" ? "text-green-400" : b.status === "lost" ? "text-red-400" : b.status === "cancelled" ? "text-gray-500" : "text-yellow-400";
+                const vsLabel = b.team1Name && b.team2Name ? `${b.team1Name} vs ${b.team2Name}` : b.tournamentName ?? `#${b.matchId}`;
+                return (
+                  <tr key={b.id} className="border-t" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                    <td className="p-3">
+                      <p className="text-white">{b.userNickname ?? b.userName ?? `#${b.userId}`}</p>
+                    </td>
+                    <td className="p-3">
+                      <p className="text-white font-mono">{vsLabel}</p>
+                      {b.scheduledAt && <p className="text-gray-500">{new Date(b.scheduledAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>}
+                    </td>
+                    <td className="p-3 text-blue-300">{b.chosenTeamName ?? `#${b.teamId}`}</td>
+                    <td className="p-3 text-right font-mono text-white">{b.amount.toLocaleString()}</td>
+                    <td className="p-3 text-right font-mono text-green-400">{b.potentialWin?.toLocaleString() ?? "-"}</td>
+                    <td className="p-3 text-center">
+                      <span className={`font-orbitron uppercase ${statusColor}`}>{b.status}</span>
+                    </td>
+                    <td className="p-3 text-center">
+                      {b.status === "pending" && (
+                        <button
+                          onClick={() => cancelBet.mutate({ betId: b.id })}
+                          disabled={cancelBet.isPending}
+                          className="px-2 py-1 rounded text-xs bg-red-900/40 text-red-400 hover:bg-red-900/70 transition-colors disabled:opacity-50"
+                        >
+                          ANULAR
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Audit Tab ───────────────────────────────────────────────
 function AuditTab() {
   const [enabled, setEnabled] = useState(false);
   const { data, isFetching, refetch } = trpc.games.auditConsistency.useQuery(undefined, {
@@ -1479,6 +1658,7 @@ export default function AdminPanel() {
             { value: "cosmetics", label: "COSMÉTICOS", icon: Star },
             { value: "verifications", label: "VERIFICACIONES", icon: BadgeCheck },
             { value: "banners", label: "BANNERS", icon: Layout },
+            { value: "bets", label: "APUESTAS", icon: Coins },
             { value: "audit", label: "AUDITORÍA", icon: Database },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
@@ -1502,6 +1682,7 @@ export default function AdminPanel() {
           <TabsContent value="cosmetics"><CosmeticsAdminTab /></TabsContent>
           <TabsContent value="verifications"><VerificationsTab /></TabsContent>
           <TabsContent value="banners"><BannersTab /></TabsContent>
+          <TabsContent value="bets"><BetsTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
         </div>
       </Tabs>

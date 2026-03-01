@@ -1312,7 +1312,96 @@ export async function createBet(data: InsertBet) {
 export async function getBetsByUser(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(bets).where(eq(bets.userId, userId)).orderBy(desc(bets.createdAt));
+  const team1 = alias(teams, "betTeam1");
+  const team2 = alias(teams, "betTeam2");
+  return db
+    .select({
+      id: bets.id,
+      userId: bets.userId,
+      tournamentId: bets.tournamentId,
+      matchId: bets.matchId,
+      teamId: bets.teamId,
+      amount: bets.amount,
+      multiplier: bets.multiplier,
+      potentialWin: bets.potentialWin,
+      status: bets.status,
+      createdAt: bets.createdAt,
+      resolvedAt: bets.resolvedAt,
+      // Tournament info
+      tournamentName: tournaments.name,
+      // Match info
+      scheduledAt: tournamentMatches.scheduledAt,
+      round: tournamentMatches.round,
+      matchNumber: tournamentMatches.matchNumber,
+      // Team names
+      team1Name: team1.name,
+      team2Name: team2.name,
+      // Chosen team name
+      chosenTeamName: teams.name,
+    })
+    .from(bets)
+    .leftJoin(tournaments, eq(bets.tournamentId, tournaments.id))
+    .leftJoin(tournamentMatches, eq(bets.matchId, tournamentMatches.id))
+    .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
+    .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
+    .leftJoin(teams, eq(bets.teamId, teams.id))
+    .where(eq(bets.userId, userId))
+    .orderBy(desc(bets.createdAt));
+}
+
+export async function adminListBets() {
+  const db = await getDb();
+  if (!db) return [];
+  const team1 = alias(teams, "adminBetTeam1");
+  const team2 = alias(teams, "adminBetTeam2");
+  return db
+    .select({
+      id: bets.id,
+      userId: bets.userId,
+      userName: users.name,
+      userNickname: users.nickname,
+      tournamentId: bets.tournamentId,
+      matchId: bets.matchId,
+      teamId: bets.teamId,
+      amount: bets.amount,
+      multiplier: bets.multiplier,
+      potentialWin: bets.potentialWin,
+      status: bets.status,
+      createdAt: bets.createdAt,
+      resolvedAt: bets.resolvedAt,
+      tournamentName: tournaments.name,
+      scheduledAt: tournamentMatches.scheduledAt,
+      round: tournamentMatches.round,
+      matchNumber: tournamentMatches.matchNumber,
+      team1Name: team1.name,
+      team2Name: team2.name,
+      chosenTeamName: teams.name,
+    })
+    .from(bets)
+    .leftJoin(users, eq(bets.userId, users.id))
+    .leftJoin(tournaments, eq(bets.tournamentId, tournaments.id))
+    .leftJoin(tournamentMatches, eq(bets.matchId, tournamentMatches.id))
+    .leftJoin(team1, eq(tournamentMatches.team1Id, team1.id))
+    .leftJoin(team2, eq(tournamentMatches.team2Id, team2.id))
+    .leftJoin(teams, eq(bets.teamId, teams.id))
+    .orderBy(desc(bets.createdAt));
+}
+
+export async function cancelBetById(betId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [bet] = await db.select().from(bets).where(eq(bets.id, betId)).limit(1);
+  if (!bet) throw new Error("Apuesta no encontrada");
+  if (bet.status !== "pending") throw new Error("Solo se pueden anular apuestas pendientes");
+  await db.update(bets).set({ status: "cancelled", resolvedAt: new Date() }).where(eq(bets.id, betId));
+  // Refund the user
+  await addRlcTransaction({
+    userId: bet.userId,
+    type: "deposit",
+    amount: bet.amount,
+    description: `Reembolso por anulación de apuesta #${betId}`,
+    referenceId: betId,
+  });
 }
 
 export async function getBetsByTournament(tournamentId: number) {

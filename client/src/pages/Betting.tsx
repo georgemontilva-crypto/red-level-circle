@@ -363,31 +363,49 @@ export default function Betting() {
             <div className="rounded-xl p-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
               <h3 className="font-display font-bold text-xs text-muted-foreground tracking-wider mb-4">MIS APUESTAS</h3>
               {myBets && myBets.length > 0 ? (
-                <div className="space-y-2">
-                  {myBets.slice(0, 10).map((b) => (
-                    <div key={b.id} className="flex items-center justify-between text-xs py-2 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
-                      <div>
-                        <p className="text-foreground font-mono">{b.amount.toLocaleString()} RLC</p>
-                        <p className="text-muted-foreground font-mono">x{b.multiplier}</p>
+                <div className="space-y-3">
+                  {myBets.slice(0, 10).map((b) => {
+                    const statusStyle = b.status === "won"
+                      ? { bg: "oklch(0.65 0.18 145 / 0.12)", color: "oklch(0.65 0.18 145)", label: `+${b.potentialWin?.toLocaleString()} RLC` }
+                      : b.status === "lost"
+                      ? { bg: "oklch(0.55 0.22 25 / 0.12)", color: "oklch(0.65 0.22 25)", label: "PERDIDA" }
+                      : b.status === "cancelled"
+                      ? { bg: "oklch(0.25 0.005 0)", color: "oklch(0.50 0.005 0)", label: "ANULADA" }
+                      : { bg: "oklch(0.20 0.005 0)", color: "oklch(0.55 0.005 0)", label: "PENDIENTE" };
+                    const vsLabel = b.team1Name && b.team2Name ? `${b.team1Name} vs ${b.team2Name}` : null;
+                    return (
+                      <div key={b.id} className="rounded-lg p-3 space-y-1.5" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+                        {/* Tournament name */}
+                        {b.tournamentName && (
+                          <p className="text-xs font-display tracking-wider" style={{ color: "oklch(0.55 0.22 25)" }}>{b.tournamentName}</p>
+                        )}
+                        {/* VS line */}
+                        {vsLabel && (
+                          <p className="text-xs text-foreground font-mono">{vsLabel}</p>
+                        )}
+                        {/* Chosen team */}
+                        {b.chosenTeamName && (
+                          <p className="text-xs" style={{ color: "oklch(0.65 0.18 220)" }}>Apostado a: <span className="font-bold">{b.chosenTeamName}</span></p>
+                        )}
+                        {/* Match date */}
+                        {b.scheduledAt && (
+                          <p className="text-xs text-muted-foreground">{new Date(b.scheduledAt).toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                        )}
+                        {/* Amount + status */}
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="font-mono text-xs text-foreground">{b.amount.toLocaleString()} RLC <span className="text-muted-foreground">x{b.multiplier}</span></span>
+                          <span className="font-mono px-2 py-0.5 rounded text-xs" style={{ background: statusStyle.bg, color: statusStyle.color }}>
+                            {statusStyle.label}
+                          </span>
+                        </div>
                       </div>
-                      <span
-                        className="font-mono px-2 py-0.5 rounded text-xs"
-                        style={b.status === "won"
-                          ? { background: "oklch(0.65 0.18 145 / 0.15)", color: "oklch(0.65 0.18 145)" }
-                          : b.status === "lost"
-                          ? { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
-                          : { background: "oklch(0.20 0.005 0)", color: "oklch(0.55 0.005 0)" }
-                        }
-                      >
-                        {b.status === "won" ? `+${b.potentialWin?.toLocaleString()} RLC` : b.status === "lost" ? "PERDIDA" : "PENDIENTE"}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <Coins className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.25 0.005 0)" }} />
-                  <p className="text-xs text-muted-foreground">Sin apuestas aun</p>
+                  <p className="text-xs text-muted-foreground">Sin apuestas aún</p>
                 </div>
               )}
             </div>

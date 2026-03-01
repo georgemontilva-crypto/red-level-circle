@@ -19,6 +19,8 @@ import {
   getAllUsers,
   getBetsByTournament,
   getBetsByUser,
+  adminListBets,
+  cancelBetById,
   getGames,
   getMatchesByTournament,
   getNews,
@@ -938,6 +940,14 @@ export const appRouter = router({
         const scheduledDate = new Date(input.scheduledAt);
         const betsCloseDate = new Date(input.scheduledAt - input.betsCloseMinutesBefore * 60 * 1000);
         await scheduleMatch(input.matchId, scheduledDate, betsCloseDate);
+        // Notify owner that a match has been scheduled with betting window
+        try {
+          const { notifyOwner } = await import("./_core/notification");
+          await notifyOwner({
+            title: `⏰ Partido programado con apuestas`,
+            content: `Partido #${input.matchId} del torneo #${input.tournamentId} programado para ${scheduledDate.toLocaleString('es-ES')}. Apuestas cierran: ${betsCloseDate.toLocaleString('es-ES')}.`,
+          });
+        } catch (_) { /* non-critical */ }
         return { success: true, scheduledAt: scheduledDate, betsCloseAt: betsCloseDate };
       }),
   }),
@@ -1386,6 +1396,17 @@ export const appRouter = router({
           status: "pending",
         });
          return { betId, potentialWin, multiplier };
+      }),
+    // Admin: listar todas las apuestas con datos enriquecidos
+    adminList: adminProcedure.query(async () => {
+      return adminListBets();
+    }),
+    // Admin: anular una apuesta pendiente y reembolsar al usuario
+    cancelBet: adminProcedure
+      .input(z.object({ betId: z.number() }))
+      .mutation(async ({ input }) => {
+        await cancelBetById(input.betId);
+        return { success: true };
       }),
   }),
   // ─── Admin ─────────────────────────────────────────────────────────────────

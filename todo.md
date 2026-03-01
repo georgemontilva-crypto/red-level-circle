@@ -799,3 +799,11 @@
 - [x] Frontend TournamentManage: formulario inline fecha/hora por partido en el bracket
 - [x] Frontend Betting: rediseñar con tarjetas VS por partido, selección de equipo, contador de cierre
 - [x] Corregir bug teamId=0 en Betting.tsx
+
+## Apuestas Avanzadas V33
+- [x] Backend: enriquecer getBetsByUser con datos de partido, torneo y equipos
+- [x] Backend: procedure bets.adminList (todas las apuestas agrupadas por partido con volumen)
+- [x] Backend: procedure bets.cancelBet (admin anula apuesta y devuelve RLC al usuario)
+- [x] Backend: notificación push al owner cuando se programa un partido con ventana de apuestas
+- [x] Frontend Betting: rediseñar sección "Mis Apuestas" con nombre torneo, VS equipos y fecha del partido
+- [x] Frontend Admin: pestaña "Apuestas" con tabla por partido, volumen total y botón anular apuesta
