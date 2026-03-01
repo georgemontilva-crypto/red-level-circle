@@ -813,3 +813,7 @@
 - [x] Backend: notificación push a cada apostante cuando sus apuestas se cierran
 - [x] Backend: procedure bets.userStats (ganadas, perdidas, pendientes, % acierto, volumen)
 - [x] Frontend: sección estadísticas de apuestas en perfil público del usuario
+
+## Modal Anular + Cuotas Dinámicas V35
+- [x] AdminPanel: modal de confirmación con datos de la apuesta antes de anular
+- [x] Betting: desglose de cuotas dinámicas en tiempo real en tarjetas VS (% apostado por equipo, multiplicador actual)

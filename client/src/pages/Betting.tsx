@@ -220,30 +220,50 @@ export default function Betting() {
                             {match.team1Name.charAt(0).toUpperCase()}
                           </div>
                           <p className="text-xs font-display tracking-wide text-foreground truncate">{match.team1Name}</p>
-                          <p className="text-xs font-mono text-muted-foreground">{t1Pct}% apuestas</p>
+                          <p className="text-xs font-mono font-bold" style={{ color: "oklch(0.70 0.22 25)" }}>x{getMultiplierPreview(match, match.team1Id ?? 0)}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{t1Pct}%</p>
                         </div>
                         <div className="text-center">
                           <span className="font-display font-black text-lg" style={{ color: "oklch(0.55 0.22 25)" }}>VS</span>
                           <p className="text-xs font-mono text-muted-foreground mt-0.5">
                             {new Date(match.scheduledAt).toLocaleString("es-ES", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </p>
+                          {totalBets > 0 && (
+                            <p className="text-xs font-mono mt-0.5" style={{ color: "oklch(0.45 0.005 0)" }}>{totalBets.toLocaleString()} RLC</p>
+                          )}
                         </div>
                         <div className="flex-1 text-center">
                           <div className="inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold mb-1" style={{ background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.75 0.18 220)" }}>
                             {match.team2Name.charAt(0).toUpperCase()}
                           </div>
                           <p className="text-xs font-display tracking-wide text-foreground truncate">{match.team2Name}</p>
-                          <p className="text-xs font-mono text-muted-foreground">{t2Pct}% apuestas</p>
+                          <p className="text-xs font-mono font-bold" style={{ color: "oklch(0.70 0.18 220)" }}>x{getMultiplierPreview(match, match.team2Id ?? 0)}</p>
+                          <p className="text-xs font-mono text-muted-foreground">{t2Pct}%</p>
                         </div>
                       </div>
 
-                      {/* Bet distribution bar */}
-                      {totalBets > 0 && (
-                        <div className="flex rounded-full overflow-hidden h-1.5 mb-3">
-                          <div style={{ width: `${t1Pct}%`, background: "oklch(0.55 0.22 25)" }} />
-                          <div style={{ width: `${t2Pct}%`, background: "oklch(0.55 0.18 220)" }} />
+                      {/* Bet distribution bar + volume breakdown */}
+                      <div className="mb-3">
+                        <div className="flex rounded-full overflow-hidden h-1.5" style={{ background: "oklch(0.18 0.005 0)" }}>
+                          {totalBets > 0 ? (
+                            <>
+                              <div style={{ width: `${t1Pct}%`, background: "oklch(0.55 0.22 25)", transition: "width 0.5s ease" }} />
+                              <div style={{ width: `${t2Pct}%`, background: "oklch(0.55 0.18 220)", transition: "width 0.5s ease" }} />
+                            </>
+                          ) : (
+                            <div className="w-full h-full" style={{ background: "oklch(0.18 0.005 0)" }} />
+                          )}
                         </div>
-                      )}
+                        {totalBets === 0 ? (
+                          <p className="text-center text-xs font-mono text-muted-foreground mt-1.5">Sin apuestas aún — sé el primero</p>
+                        ) : (
+                          <div className="flex justify-between text-xs font-mono mt-1">
+                            <span style={{ color: "oklch(0.60 0.22 25)" }}>{match.team1TotalBets.toLocaleString()} RLC</span>
+                            <span style={{ color: "oklch(0.45 0.005 0)" }}>vol. total</span>
+                            <span style={{ color: "oklch(0.60 0.18 220)" }}>{match.team2TotalBets.toLocaleString()} RLC</span>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Expanded bet panel */}
                       {isSelected && !isClosed && (

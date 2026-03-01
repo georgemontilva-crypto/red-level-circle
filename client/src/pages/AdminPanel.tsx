@@ -1213,9 +1213,21 @@ function GamesTab() {
 // ─── Bets Tab ───────────────────────────────────────────────────────
 function BetsTab() {
   const { data: allBets, refetch, isLoading } = trpc.bets.adminList.useQuery();
+  const [cancelTarget, setCancelTarget] = useState<null | {
+    id: number;
+    userLabel: string;
+    vsLabel: string;
+    amount: number;
+    potentialWin: number | null;
+    chosenTeamName: string | null;
+  }>(null);
   const cancelBet = trpc.bets.cancelBet.useMutation({
-    onSuccess: () => { toast.success("Apuesta anulada y RLC reembolsado"); refetch(); },
-    onError: (e) => toast.error(e.message),
+    onSuccess: () => {
+      toast.success("Apuesta anulada y RLC reembolsado");
+      refetch();
+      setCancelTarget(null);
+    },
+    onError: (e) => { toast.error(e.message); setCancelTarget(null); },
   });
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterMatch, setFilterMatch] = useState<string>("all");
@@ -1329,6 +1341,79 @@ function BetsTab() {
         </Select>
       </div>
 
+      {/* Cancel confirmation modal */}
+      {cancelTarget && (
+        <div
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4"
+          style={{ backdropFilter: "blur(4px)", animation: "fadeIn 0.18s ease" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setCancelTarget(null); }}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl p-6 space-y-5"
+            style={{
+              background: "oklch(0.11 0.005 0)",
+              border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+              boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
+              animation: "scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1)",
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0" style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
+                <AlertTriangle className="w-5 h-5" style={{ color: "oklch(0.75 0.22 25)" }} />
+              </div>
+              <div>
+                <h3 className="font-orbitron text-white text-sm tracking-wider">CONFIRMAR ANULACIÓN</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Esta acción reembolsará los RLC al usuario</p>
+              </div>
+            </div>
+            <div className="rounded-xl p-4 space-y-2" style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Usuario</span>
+                <span className="text-white font-mono">{cancelTarget.userLabel}</span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-400">Partido</span>
+                <span className="text-white font-mono">{cancelTarget.vsLabel}</span>
+              </div>
+              {cancelTarget.chosenTeamName && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Equipo apostado</span>
+                  <span className="text-blue-300 font-mono">{cancelTarget.chosenTeamName}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-xs border-t pt-2" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                <span className="text-gray-400">Monto a reembolsar</span>
+                <span className="font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>+{cancelTarget.amount.toLocaleString()} RLC</span>
+              </div>
+              {cancelTarget.potentialWin && (
+                <div className="flex justify-between text-xs">
+                  <span className="text-gray-400">Ganancia potencial cancelada</span>
+                  <span className="text-gray-500 font-mono line-through">{cancelTarget.potentialWin.toLocaleString()} RLC</span>
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => cancelBet.mutate({ betId: cancelTarget.id })}
+                disabled={cancelBet.isPending}
+                className="flex-1 py-2.5 rounded-xl text-xs font-orbitron tracking-wider transition-all duration-200 disabled:opacity-50"
+                style={{ background: "oklch(0.55 0.22 25)", color: "#fff" }}
+              >
+                {cancelBet.isPending ? "ANULANDO..." : "CONFIRMAR ANULACIÓN"}
+              </button>
+              <button
+                onClick={() => setCancelTarget(null)}
+                disabled={cancelBet.isPending}
+                className="px-4 py-2.5 rounded-xl text-xs font-orbitron tracking-wider transition-all duration-200"
+                style={{ background: "oklch(0.15 0.005 0)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.65 0.005 0)" }}
+              >
+                CANCELAR
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bets table */}
       {isLoading ? (
         <p className="text-gray-400 text-sm">Cargando apuestas...</p>
@@ -1370,9 +1455,15 @@ function BetsTab() {
                     <td className="p-3 text-center">
                       {b.status === "pending" && (
                         <button
-                          onClick={() => cancelBet.mutate({ betId: b.id })}
-                          disabled={cancelBet.isPending}
-                          className="px-2 py-1 rounded text-xs bg-red-900/40 text-red-400 hover:bg-red-900/70 transition-colors disabled:opacity-50"
+                          onClick={() => setCancelTarget({
+                            id: b.id,
+                            userLabel: b.userNickname ?? b.userName ?? `#${b.userId}`,
+                            vsLabel: b.team1Name && b.team2Name ? `${b.team1Name} vs ${b.team2Name}` : b.tournamentName ?? `#${b.matchId}`,
+                            amount: b.amount,
+                            potentialWin: b.potentialWin ?? null,
+                            chosenTeamName: b.chosenTeamName ?? null,
+                          })}
+                          className="px-2 py-1 rounded text-xs bg-red-900/40 text-red-400 hover:bg-red-900/70 transition-colors"
                         >
                           ANULAR
                         </button>
