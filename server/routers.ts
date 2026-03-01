@@ -1527,6 +1527,14 @@ export const appRouter = router({
       }),
     listOrders: adminProcedure
       .query(async () => adminListOrders()),
+    listShopItems: adminProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        const { shopItems } = await import("../drizzle/schema");
+        const { desc } = await import("drizzle-orm");
+        return db.select().from(shopItems).orderBy(shopItems.sortOrder, desc(shopItems.createdAt));
+      }),
     createShopItem: adminProcedure
       .input(z.object({
         name: z.string(),
@@ -1539,6 +1547,30 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => {
         await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category, maxPerUser: input.maxPerUser ?? null });
+        return { success: true };
+      }),
+    updateShopItem: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        imageUrl: z.string().optional(),
+        price: z.number().int().min(1).optional(),
+        stock: z.number().int().optional(),
+        category: z.enum(["physical", "digital", "bundle", "limited"]).optional(),
+        maxPerUser: z.number().int().min(1).nullable().optional(),
+        isActive: z.boolean().optional(),
+        isFeatured: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, imageUrl, ...rest } = input;
+        await adminUpdateShopItem(id, { ...rest, ...(imageUrl !== undefined ? { image: imageUrl } : {}) });
+        return { success: true };
+      }),
+    deleteShopItem: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteShopItem(input.id);
         return { success: true };
       }),
     listAds: adminProcedure

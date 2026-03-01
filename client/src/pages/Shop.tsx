@@ -317,14 +317,22 @@ export default function Shop() {
                 ? Math.round((1 - item.price / item.originalPrice) * 100)
                 : null;
               const outOfStock = item.stock === 0;
+              // Check if user has reached the per-user purchase limit for this item
+              const purchasedCount = isAuthenticated
+                ? (myOrders as Array<{ itemId?: number; quantity: number; status: string }>)
+                    .filter(o => (o as any).itemId === item.id && o.status !== "cancelled")
+                    .reduce((sum, o) => sum + (o.quantity ?? 1), 0)
+                : 0;
+              const limitReached = !!(item.maxPerUser && purchasedCount >= item.maxPerUser);
+              const isDisabled = outOfStock || limitReached;
 
               return (
                 <div
                   key={item.id}
                   className={`rounded-xl border bg-zinc-900 overflow-hidden transition-all hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(255,0,0,0.1)] ${
-                    outOfStock ? "opacity-60" : "cursor-pointer"
+                    isDisabled ? "opacity-70" : "cursor-pointer"
                   } ${item.isFeatured ? "border-yellow-500/30" : "border-white/10"}`}
-                  onClick={() => !outOfStock && setSelectedItem(item.id)}
+                  onClick={() => !isDisabled && setSelectedItem(item.id)}
                 >
                   {/* Image */}
                   <div className="relative aspect-video bg-zinc-800 overflow-hidden">
@@ -362,6 +370,15 @@ export default function Shop() {
                         <span className="text-red-400 font-bold font-mono text-lg">AGOTADO</span>
                       </div>
                     )}
+                    {!outOfStock && limitReached && (
+                      <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1">
+                        <CheckCircle className="w-8 h-8 text-green-400" />
+                        <span className="text-green-400 font-bold font-mono text-sm">YA COMPRADO</span>
+                        {item.maxPerUser && (
+                          <span className="text-green-600 text-xs font-mono">{purchasedCount}/{item.maxPerUser} unidades</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Info */}
@@ -393,6 +410,11 @@ export default function Shop() {
                           <Lock className="w-3 h-3" />
                           Login
                         </a>
+                      ) : limitReached ? (
+                        <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-mono">
+                          <CheckCircle className="w-3 h-3" />
+                          Adquirido
+                        </span>
                       ) : (
                         <button
                           disabled={outOfStock}

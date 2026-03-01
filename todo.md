@@ -838,3 +838,12 @@
 - [x] Backend: getShopOrders incluye deliveryCode (deliveryNote del pedido entregado)
 - [x] Frontend Shop.tsx: sección "Entregados" en Mis Pedidos con código/seguimiento visible
 - [x] Frontend AdminPanel: campo maxPerUser en formulario de creación/edición de producto
+
+## Badge YA COMPRADO + Editar Producto V38
+- [x] Backend: procedure admin.listShopItems (lista todos los productos incluyendo inactivos)
+- [x] Backend: procedure admin.updateShopItem (editar nombre, descripción, precio, stock, maxPerUser, imageUrl, isActive, isFeatured)
+- [x] Backend: procedure admin.deleteShopItem (eliminar producto)
+- [x] Frontend Shop.tsx: badge "YA COMPRADO" / "LÍMITE ALCANZADO" en tarjeta cuando el usuario llegó al máximo
+- [x] Frontend Shop.tsx: botón COMPRAR deshabilitado cuando se alcanza el límite
+- [x] Frontend AdminPanel: sección "Catálogo de Productos" con botón editar y eliminar en cada producto
+- [x] Frontend AdminPanel: modal de edición inline con todos los campos (nombre, imagen, precio, stock, categoría, límite, activo, destacado)

@@ -11,7 +11,7 @@ import {
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
   BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database,
-  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap
+  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -181,16 +181,44 @@ function ShopTab() {
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
   const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "all">("pending");
+  // Edit product modal state
+  const [editingItem, setEditingItem] = useState<null | { id: number; name: string; description: string; imageUrl: string; price: string; stock: string; category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean }>(null);
+  const [uploadingEditImg, setUploadingEditImg] = useState(false);
   const { data: orders, refetch: refetchOrders } = trpc.admin.listOrders.useQuery();
+  const { data: shopItemsList = [], refetch: refetchItems } = trpc.admin.listShopItems.useQuery();
   const uploadImage = trpc.admin.uploadImage.useMutation();
   const createItem = trpc.admin.createShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital", maxPerUser: null }); },
+    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital", maxPerUser: null }); refetchItems(); },
+    onError: e => toast.error(e.message),
+  });
+  const updateItem = trpc.admin.updateShopItem.useMutation({
+    onSuccess: () => { toast.success("Producto actualizado"); setEditingItem(null); refetchItems(); },
+    onError: e => toast.error(e.message),
+  });
+  const deleteItem = trpc.admin.deleteShopItem.useMutation({
+    onSuccess: () => { toast.success("Producto eliminado"); refetchItems(); },
     onError: e => toast.error(e.message),
   });
   const updateOrder = trpc.admin.updateOrderStatus.useMutation({
     onSuccess: () => { toast.success("Pedido actualizado"); refetchOrders(); },
     onError: e => toast.error(e.message),
   });
+
+  const handleEditImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
+    setUploadingEditImg(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = (reader.result as string).split(",")[1];
+        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "shop/products" });
+        setEditingItem(ei => ei ? { ...ei, imageUrl: result.url } : ei);
+        setUploadingEditImg(false);
+      };
+      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingEditImg(false); };
+      reader.readAsDataURL(file);
+    } catch { toast.error("Error al subir imagen"); setUploadingEditImg(false); }
+  };
 
   const handleImageUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
@@ -471,6 +499,172 @@ function ShopTab() {
           )}
         </div>
       </div>
+
+      {/* Product list with edit/delete */}
+      <div>
+        <h3 className="text-sm font-orbitron text-gray-400 mb-3 flex items-center gap-2">
+          <ShoppingBag className="w-4 h-4" />
+          CATÁLOGO DE PRODUCTOS ({shopItemsList.length})
+        </h3>
+        {shopItemsList.length === 0 ? (
+          <p className="text-gray-600 text-sm font-rajdhani text-center py-6">No hay productos creados</p>
+        ) : (
+          <div className="space-y-2">
+            {shopItemsList.map((item: any) => (
+              <div key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                item.isActive ? "bg-gray-900/60 border-gray-700/40" : "bg-gray-900/30 border-gray-800/40 opacity-60"
+              }`}>
+                {item.image ? (
+                  <img src={item.image} alt={item.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center flex-shrink-0">
+                    <ShoppingBag className="w-5 h-5 text-gray-600" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-white font-rajdhani font-semibold text-sm truncate">{item.name}</p>
+                    <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${
+                      isPhysicalCat(item.category) ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
+                    }`}>{isPhysicalCat(item.category) ? "FÍSICO" : "DIGITAL"}</span>
+                    {!item.isActive && <span className="text-xs px-1.5 py-0.5 rounded font-mono border text-red-400 border-red-500/30 bg-red-500/10">INACTIVO</span>}
+                    {item.isFeatured && <span className="text-xs px-1.5 py-0.5 rounded font-mono border text-yellow-400 border-yellow-500/30 bg-yellow-500/10">DESTACADO</span>}
+                  </div>
+                  <p className="text-gray-500 text-xs">
+                    {item.price} RLC · Stock: {item.stock === -1 ? "∞" : item.stock}
+                    {item.maxPerUser ? ` · Límite: ${item.maxPerUser}/usuario` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-1.5 flex-shrink-0">
+                  <Button size="sm"
+                    onClick={() => setEditingItem({
+                      id: item.id,
+                      name: item.name,
+                      description: item.description ?? "",
+                      imageUrl: item.image ?? "",
+                      price: String(item.price),
+                      stock: String(item.stock),
+                      category: item.category,
+                      maxPerUser: item.maxPerUser ?? null,
+                      isActive: item.isActive ?? true,
+                      isFeatured: item.isFeatured ?? false,
+                    })}
+                    className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-700/40 font-orbitron text-xs h-7 px-2"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button size="sm"
+                    onClick={() => { if (confirm(`¿Eliminar "${item.name}"?`)) deleteItem.mutate({ id: item.id }); }}
+                    className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron text-xs h-7 px-2"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Edit Product Modal */}
+      {editingItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)" }}>
+          <div className="bg-gray-900 border border-red-900/40 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-orbitron text-sm">EDITAR PRODUCTO</h3>
+              <button onClick={() => setEditingItem(null)} className="text-gray-500 hover:text-white transition-colors">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Nombre</label>
+                <input value={editingItem.name} onChange={e => setEditingItem(ei => ei ? { ...ei, name: e.target.value } : ei)}
+                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Imagen</label>
+                <div className="flex items-center gap-2">
+                  {editingItem.imageUrl && <img src={editingItem.imageUrl} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
+                  <label className="cursor-pointer flex-1">
+                    <div className="bg-gray-800 hover:bg-gray-700 border border-dashed border-gray-600 rounded-lg px-2 py-2 text-gray-400 text-xs flex items-center justify-center gap-1 transition-colors">
+                      {uploadingEditImg ? <><div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Subiendo...</> : <><Plus className="w-3 h-3" /> Cambiar</>}
+                    </div>
+                    <input type="file" accept="image/*" className="hidden" disabled={uploadingEditImg} onChange={e => e.target.files?.[0] && handleEditImageUpload(e.target.files[0])} />
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Precio (RLC)</label>
+                <input type="number" value={editingItem.price} onChange={e => setEditingItem(ei => ei ? { ...ei, price: e.target.value } : ei)}
+                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Stock (-1 = ∞)</label>
+                <input type="number" value={editingItem.stock} onChange={e => setEditingItem(ei => ei ? { ...ei, stock: e.target.value } : ei)}
+                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Categoría</label>
+                <Select value={editingItem.category} onValueChange={v => setEditingItem(ei => ei ? { ...ei, category: v } : ei)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="physical">Físico</SelectItem>
+                    <SelectItem value="digital">Digital</SelectItem>
+                    <SelectItem value="bundle">Paquete</SelectItem>
+                    <SelectItem value="limited">Edición Limitada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Límite por usuario</label>
+                <input type="number" value={editingItem.maxPerUser ?? ""} min={1}
+                  onChange={e => setEditingItem(ei => ei ? { ...ei, maxPerUser: e.target.value ? parseInt(e.target.value) : null } : ei)}
+                  placeholder="Sin límite"
+                  className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-xs text-gray-400 mb-1 font-rajdhani uppercase">Descripción</label>
+                <textarea value={editingItem.description} onChange={e => setEditingItem(ei => ei ? { ...ei, description: e.target.value } : ei)}
+                  rows={2} className="w-full bg-black border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none" />
+              </div>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={editingItem.isActive} onChange={e => setEditingItem(ei => ei ? { ...ei, isActive: e.target.checked } : ei)} className="w-4 h-4 accent-red-500" />
+                  <span className="text-xs text-gray-400 font-rajdhani">Activo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={editingItem.isFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, isFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-yellow-500" />
+                  <span className="text-xs text-gray-400 font-rajdhani">Destacado</span>
+                </label>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => updateItem.mutate({
+                  id: editingItem.id,
+                  name: editingItem.name,
+                  description: editingItem.description || undefined,
+                  imageUrl: editingItem.imageUrl || undefined,
+                  price: parseInt(editingItem.price) || undefined,
+                  stock: parseInt(editingItem.stock) !== undefined ? parseInt(editingItem.stock) : undefined,
+                  category: editingItem.category as any,
+                  maxPerUser: editingItem.maxPerUser,
+                  isActive: editingItem.isActive,
+                  isFeatured: editingItem.isFeatured,
+                })}
+                disabled={!editingItem.name || !editingItem.price || updateItem.isPending}
+                className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
+              >
+                {updateItem.isPending ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+              </Button>
+              <Button onClick={() => setEditingItem(null)} variant="outline" className="border-gray-700 text-gray-400 font-orbitron text-xs">
+                CANCELAR
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
