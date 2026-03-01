@@ -1,0 +1,1 @@
+ALTER TABLE `shop_orders` ADD `shippingAddress` text;

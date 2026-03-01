@@ -1545,7 +1545,7 @@ export async function createShopItem(data: InsertShopItem) {
   return result;
 }
 
-export async function buyShopItem(userId: number, itemId: number, quantity: number, userNote?: string) {
+export async function buyShopItem(userId: number, itemId: number, quantity: number, userNote?: string, shippingAddress?: string) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
 
@@ -1588,6 +1588,7 @@ export async function buyShopItem(userId: number, itemId: number, quantity: numb
     totalPrice,
     status: "pending",
     userNote: userNote ?? null,
+    shippingAddress: shippingAddress ?? null,
   });
 
   return { orderId: (order as { insertId: number }).insertId, totalPrice, newBalance };
@@ -2008,11 +2009,16 @@ export async function adminListOrders() {
       totalPrice: shopOrders.totalPrice,
       status: shopOrders.status,
       deliveryNote: shopOrders.deliveryNote,
+      userNote: shopOrders.userNote,
+      shippingAddress: shopOrders.shippingAddress,
       createdAt: shopOrders.createdAt,
+      updatedAt: shopOrders.updatedAt,
       userName: users.name,
       userEmail: users.email,
       userNickname: users.nickname,
       itemName: shopItems.name,
+      itemCategory: shopItems.category,
+      itemImage: shopItems.image,
     })
     .from(shopOrders)
     .innerJoin(users, eq(shopOrders.userId, users.id))

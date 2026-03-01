@@ -358,8 +358,9 @@ export const shopOrders = mysqlTable("shop_orders", {
   quantity: int("quantity").default(1).notNull(),
   totalPrice: int("totalPrice").notNull(), // RLC Coins spent
   status: mysqlEnum("status", ["pending", "processing", "delivered", "cancelled"]).default("pending").notNull(),
-  deliveryNote: text("deliveryNote"), // admin note when delivering
+  deliveryNote: text("deliveryNote"), // admin note when delivering (also used for digital codes)
   userNote: text("userNote"), // buyer's note/instructions
+  shippingAddress: text("shippingAddress"), // JSON: { fullName, address, city, state, country, postalCode, contact }
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

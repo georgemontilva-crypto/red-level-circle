@@ -2,12 +2,11 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { SectionBanner } from "@/components/SectionBanner";
 import { toast } from "sonner";
 import {
   ShoppingBag, Coins, Package, Zap, Star, Clock, CheckCircle,
-  AlertCircle, Lock, ChevronRight, Tag
+  AlertCircle, Lock, Tag, MapPin, Mail, Phone, User, Globe, Hash, Key
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import {
@@ -40,6 +39,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
   cancelled: { label: "Cancelado", color: "text-red-400 bg-red-400/10 border-red-400/30", icon: <AlertCircle className="w-3 h-3" /> },
 };
 
+const isPhysicalCategory = (cat: string) => cat === "physical" || cat === "bundle";
+
 export default function Shop() {
   const { isAuthenticated } = useAuth();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -47,6 +48,16 @@ export default function Shop() {
   const [userNote, setUserNote] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [showOrders, setShowOrders] = useState(false);
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [shippingForm, setShippingForm] = useState({
+    fullName: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+    contact: "",
+  });
 
   const { data: items = [], refetch } = trpc.shop.list.useQuery({
     category: activeCategory === "all" ? undefined : activeCategory,
@@ -58,15 +69,21 @@ export default function Shop() {
 
   const { data: me, refetch: refetchMe } = trpc.auth.me.useQuery();
 
+  const resetModal = () => {
+    setSelectedItem(null);
+    setUserNote("");
+    setQuantity(1);
+    setConfirmEmail("");
+    setShippingForm({ fullName: "", address: "", city: "", state: "", country: "", postalCode: "", contact: "" });
+  };
+
   const buyMutation = trpc.shop.buy.useMutation({
     onSuccess: (data) => {
       toast.success(`¡Compra realizada! Nuevo balance: ${data.newBalance} RLC Coins`, {
         description: "El administrador procesará tu pedido pronto.",
         style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
       });
-      setSelectedItem(null);
-      setUserNote("");
-      setQuantity(1);
+      resetModal();
       refetch();
       refetchOrders();
       refetchMe();
@@ -81,6 +98,30 @@ export default function Shop() {
   const itemToBuy = items.find((i) => i.id === selectedItem);
   const totalCost = itemToBuy ? itemToBuy.price * quantity : 0;
   const userBalance = (me as { rlcBalance?: number } | null)?.rlcBalance ?? 0;
+  const isPhysical = itemToBuy ? isPhysicalCategory(itemToBuy.category) : false;
+
+  const shippingValid = !isPhysical || (
+    shippingForm.fullName.trim() &&
+    shippingForm.address.trim() &&
+    shippingForm.city.trim() &&
+    shippingForm.country.trim() &&
+    shippingForm.postalCode.trim() &&
+    shippingForm.contact.trim()
+  );
+
+  const handleBuy = () => {
+    if (!itemToBuy) return;
+    const shippingJson = isPhysical ? JSON.stringify(shippingForm) : undefined;
+    const noteWithEmail = !isPhysical && confirmEmail
+      ? `Email: ${confirmEmail}${userNote ? ` | ${userNote}` : ""}`
+      : (userNote || undefined);
+    buyMutation.mutate({
+      itemId: itemToBuy.id,
+      quantity,
+      userNote: noteWithEmail,
+      shippingAddress: shippingJson,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-black text-white">
@@ -90,6 +131,19 @@ export default function Shop() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* My Orders toggle */}
+        {isAuthenticated && (
+          <div className="mb-6">
+            <button
+              onClick={() => setShowOrders(!showOrders)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border border-white/10 bg-zinc-900 text-gray-300 hover:border-red-500/50 hover:text-white transition-all text-sm font-mono"
+            >
+              <Package className="w-4 h-4" />
+              MIS PEDIDOS {myOrders.length > 0 && `(${myOrders.length})`}
+            </button>
+          </div>
+        )}
+
         {/* My Orders Panel */}
         {showOrders && isAuthenticated && (
           <div className="mb-10 rounded-xl border border-white/10 bg-zinc-900 overflow-hidden">
@@ -105,37 +159,71 @@ export default function Shop() {
                   id: number;
                   itemName?: string | null;
                   itemImage?: string | null;
+                  itemCategory?: string | null;
                   quantity: number;
                   totalPrice: number;
                   status: string;
                   deliveryNote?: string | null;
                   userNote?: string | null;
+                  shippingAddress?: string | null;
                   createdAt: Date;
                 }>).map((order) => {
                   const statusCfg = STATUS_CONFIG[order.status] ?? STATUS_CONFIG.pending;
+                  const isOrderPhysical = order.itemCategory ? isPhysicalCategory(order.itemCategory) : false;
+                  let parsedShipping: Record<string, string> | null = null;
+                  if (order.shippingAddress) {
+                    try { parsedShipping = JSON.parse(order.shippingAddress); } catch {}
+                  }
                   return (
-                    <div key={order.id} className="px-6 py-4 flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {order.itemImage ? (
-                          <img src={order.itemImage} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <ShoppingBag className="w-6 h-6 text-gray-600" />
-                        )}
+                    <div key={order.id} className="px-6 py-4 space-y-2">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {order.itemImage ? (
+                            <img src={order.itemImage} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <ShoppingBag className="w-6 h-6 text-gray-600" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-bold text-white truncate">{order.itemName ?? "Producto"}</p>
+                            {order.itemCategory && (
+                              <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${isOrderPhysical ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"}`}>
+                                {isOrderPhysical ? "FÍSICO" : "DIGITAL"}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-gray-500 text-sm">x{order.quantity} · {order.totalPrice} RLC · #{order.id}</p>
+                        </div>
+                        <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${statusCfg.color}`}>
+                          {statusCfg.icon}
+                          {statusCfg.label}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-white truncate">{order.itemName ?? "Producto"}</p>
-                        <p className="text-gray-500 text-sm">Cantidad: {order.quantity} · {order.totalPrice} RLC</p>
-                        {order.deliveryNote && (
-                          <p className="text-green-400 text-xs mt-1 flex items-center gap-1"><Package size={11} />{order.deliveryNote}</p>
-                        )}
-                      </div>
-                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${statusCfg.color}`}>
-                        {statusCfg.icon}
-                        {statusCfg.label}
-                      </div>
-                      <div className="text-gray-600 text-xs font-mono">
-                        #{order.id}
-                      </div>
+                      {/* Delivery code for digital */}
+                      {!isOrderPhysical && order.deliveryNote && (
+                        <div className="ml-16 flex items-start gap-2 p-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-300 text-xs">
+                          <Key className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-semibold mb-0.5">Código / Acceso:</p>
+                            <p className="font-mono break-all">{order.deliveryNote}</p>
+                          </div>
+                        </div>
+                      )}
+                      {/* Shipping info for physical */}
+                      {isOrderPhysical && parsedShipping && (
+                        <div className="ml-16 flex items-start gap-2 p-2 rounded-lg bg-zinc-800/60 border border-white/5 text-gray-400 text-xs">
+                          <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-orange-400" />
+                          <span>{parsedShipping.fullName}, {parsedShipping.address}, {parsedShipping.city}, {parsedShipping.country} {parsedShipping.postalCode}</span>
+                        </div>
+                      )}
+                      {/* Delivery note for physical */}
+                      {isOrderPhysical && order.deliveryNote && (
+                        <div className="ml-16 flex items-center gap-2 text-blue-300 text-xs">
+                          <Package size={11} />
+                          <span>{order.deliveryNote}</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -204,6 +292,17 @@ export default function Shop() {
                         <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded font-mono">-{discount}%</span>
                       )}
                     </div>
+                    {/* Category badge */}
+                    <div className="absolute top-2 right-2">
+                      <span className={`px-2 py-0.5 text-xs font-bold rounded font-mono flex items-center gap-1 ${
+                        isPhysicalCategory(item.category)
+                          ? "bg-orange-500/80 text-white"
+                          : "bg-blue-500/80 text-white"
+                      }`}>
+                        {isPhysicalCategory(item.category) ? <Package className="w-2.5 h-2.5" /> : <Zap className="w-2.5 h-2.5" />}
+                        {isPhysicalCategory(item.category) ? "FÍSICO" : "DIGITAL"}
+                      </span>
+                    </div>
                     {outOfStock && (
                       <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                         <span className="text-red-400 font-bold font-mono text-lg">AGOTADO</span>
@@ -258,30 +357,41 @@ export default function Shop() {
       </div>
 
       {/* Buy Dialog */}
-      <Dialog open={selectedItem !== null} onOpenChange={() => { setSelectedItem(null); setUserNote(""); setQuantity(1); }}>
-        <DialogContent className="bg-zinc-900 border border-red-500/30 text-white max-w-md">
+      <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
+        <DialogContent className="bg-zinc-900 border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="font-mono text-xl text-red-400">CONFIRMAR COMPRA</DialogTitle>
+            <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
+              {isPhysical
+                ? <><Package className="w-5 h-5" /> PEDIDO FÍSICO</>
+                : <><Key className="w-5 h-5" /> ENTREGA DIGITAL</>}
+            </DialogTitle>
             <DialogDescription className="text-gray-400">
-              Revisa los detalles antes de confirmar
+              {isPhysical
+                ? "Necesitamos tu dirección de envío para procesar el pedido."
+                : "Recibirás el código o acceso por notificación en la plataforma."}
             </DialogDescription>
           </DialogHeader>
+
           {itemToBuy && (
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Product summary */}
               <div className="flex gap-3 p-3 rounded-lg bg-zinc-800 border border-white/10">
                 {itemToBuy.image ? (
-                  <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover" />
+                  <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover flex-shrink-0" />
                 ) : (
-                  <div className="w-16 h-16 rounded bg-zinc-700 flex items-center justify-center">
+                  <div className="w-16 h-16 rounded bg-zinc-700 flex items-center justify-center flex-shrink-0">
                     <ShoppingBag className="w-8 h-8 text-gray-600" />
                   </div>
                 )}
-                <div>
-                  <p className="font-bold text-white">{itemToBuy.name}</p>
-                  <p className="text-gray-400 text-sm">{CATEGORY_LABELS[itemToBuy.category]}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-white truncate">{itemToBuy.name}</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {CATEGORY_ICONS[itemToBuy.category]}
+                    <span className="text-gray-400 text-xs font-mono">{CATEGORY_LABELS[itemToBuy.category]}</span>
+                  </div>
                   <div className="flex items-center gap-1 mt-1">
                     <Coins className="w-3 h-3 text-yellow-400" />
-                    <span className="text-yellow-400 font-mono font-bold">{itemToBuy.price} RLC</span>
+                    <span className="text-yellow-400 font-mono font-bold">{itemToBuy.price} RLC / ud.</span>
                   </div>
                 </div>
               </div>
@@ -289,29 +399,86 @@ export default function Shop() {
               {/* Quantity */}
               {itemToBuy.stock !== 1 && (
                 <div>
-                  <label className="text-sm text-gray-400 font-mono mb-2 block">CANTIDAD</label>
+                  <label className="text-xs text-gray-400 font-mono mb-2 block uppercase">Cantidad</label>
                   <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-8 h-8 rounded border border-white/20 text-white hover:border-red-500 transition-colors"
-                    >-</button>
+                    <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded border border-white/20 text-white hover:border-red-500 transition-colors">-</button>
                     <span className="font-bold font-mono text-lg w-8 text-center">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(Math.min(itemToBuy.stock === -1 ? 99 : itemToBuy.stock, quantity + 1))}
-                      className="w-8 h-8 rounded border border-white/20 text-white hover:border-red-500 transition-colors"
-                    >+</button>
+                    <button onClick={() => setQuantity(Math.min(itemToBuy.stock === -1 ? 99 : itemToBuy.stock, quantity + 1))} className="w-8 h-8 rounded border border-white/20 text-white hover:border-red-500 transition-colors">+</button>
                   </div>
                 </div>
               )}
 
-              {/* Note */}
+              {/* PHYSICAL / BUNDLE: Shipping address form */}
+              {isPhysical && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-mono text-orange-400 uppercase">
+                    <MapPin className="w-3.5 h-3.5" />
+                    Dirección de envío (obligatoria)
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Nombre completo *</label>
+                      <input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" /> Dirección *</label>
+                      <input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Ciudad *</label>
+                      <input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 block">Provincia / Estado</label>
+                      <input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Globe className="w-3 h-3" /> País *</label>
+                      <input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Hash className="w-3 h-3" /> Código postal *</label>
+                      <input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Phone className="w-3 h-3" /> Discord o teléfono de contacto *</label>
+                      <input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs">
+                    <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    Tus datos de envío son confidenciales y solo se usarán para procesar este pedido.
+                  </div>
+                </div>
+              )}
+
+              {/* DIGITAL / LIMITED: Info + optional email */}
+              {!isPhysical && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs font-mono text-blue-400 uppercase">
+                    <Mail className="w-3.5 h-3.5" />
+                    Entrega digital
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-sm space-y-1">
+                    <p className="font-semibold">¿Cómo recibirás tu producto?</p>
+                    <p className="text-xs text-blue-400">Una vez procesado, el código o acceso aparecerá en tu historial de pedidos y recibirás una notificación in-app.</p>
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Mail className="w-3 h-3" /> Email de confirmación (opcional)</label>
+                    <input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} placeholder="tu@email.com" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    <p className="text-xs text-gray-600 mt-1">Si lo dejas vacío, solo recibirás la notificación en la plataforma.</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Optional note */}
               <div>
-                <label className="text-sm text-gray-400 font-mono mb-2 block">NOTA PARA EL ADMIN (opcional)</label>
+                <label className="text-xs text-gray-400 font-mono mb-2 block uppercase">Nota adicional (opcional)</label>
                 <textarea
                   value={userNote}
                   onChange={(e) => setUserNote(e.target.value)}
-                  placeholder="Ej: Talla M, color azul, nombre de usuario..."
-                  rows={3}
+                  placeholder={isPhysical ? "Ej: Talla M, color azul, instrucciones especiales..." : "Ej: Nombre de usuario, plataforma preferida..."}
+                  rows={2}
                   className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none resize-none"
                 />
               </div>
@@ -319,7 +486,7 @@ export default function Shop() {
               {/* Summary */}
               <div className="p-3 rounded-lg bg-black border border-white/10 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-400">Subtotal</span>
+                  <span className="text-gray-400">Subtotal ({quantity}x)</span>
                   <span className="font-mono">{totalCost} RLC</span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -328,9 +495,7 @@ export default function Shop() {
                 </div>
                 <div className="border-t border-white/10 pt-2 flex justify-between font-bold">
                   <span>Balance restante</span>
-                  <span className={`font-mono ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>
-                    {userBalance - totalCost} RLC
-                  </span>
+                  <span className={`font-mono ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>{userBalance - totalCost} RLC</span>
                 </div>
               </div>
 
@@ -341,9 +506,16 @@ export default function Shop() {
                 </div>
               )}
 
+              {isPhysical && !shippingValid && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  Completa todos los campos obligatorios de envío (*) para continuar.
+                </div>
+              )}
+
               <Button
-                onClick={() => buyMutation.mutate({ itemId: itemToBuy.id, quantity, userNote: userNote || undefined })}
-                disabled={buyMutation.isPending || userBalance < totalCost}
+                onClick={handleBuy}
+                disabled={buyMutation.isPending || userBalance < totalCost || !shippingValid}
                 className="w-full bg-red-500 hover:bg-red-600 text-white font-mono font-bold"
               >
                 {buyMutation.isPending ? "Procesando..." : `Confirmar — ${totalCost} RLC`}

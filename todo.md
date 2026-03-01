@@ -817,3 +817,17 @@
 ## Modal Anular + Cuotas Dinámicas V35
 - [x] AdminPanel: modal de confirmación con datos de la apuesta antes de anular
 - [x] Betting: desglose de cuotas dinámicas en tiempo real en tarjetas VS (% apostado por equipo, multiplicador actual)
+
+## Tienda Opción B - Flujo Diferenciado por Tipo V36
+- [x] Schema: añadir shippingAddress (JSON text) a shopOrders + migrar BD
+- [x] Schema: añadir itemCategory a adminListOrders para que el admin vea el tipo
+- [x] Backend: buyShopItem acepta shippingAddress y lo guarda en la orden
+- [x] Backend: adminListOrders incluye userNote, userEmail, itemCategory, shippingAddress
+- [x] Backend: updateOrderStatus notifica al comprador (push in-app) en cada cambio de estado
+- [x] Backend: procedure shop.adminUpdateOrder con campo deliveryCode para productos digitales
+- [x] Frontend Shop.tsx: modal diferenciado - físico/bundle pide formulario de envío completo
+- [x] Frontend Shop.tsx: modal diferenciado - digital/limited pide email de confirmación
+- [x] Frontend Shop.tsx: historial de pedidos muestra código de entrega para digitales
+- [x] Frontend AdminPanel ShopTab: tarjeta de pedido muestra tipo, email, datos de envío y nota del usuario
+- [x] Frontend AdminPanel ShopTab: campo de código al marcar entregado (productos digitales)
+- [x] Frontend AdminPanel ShopTab: filtro por estado (todos/pendiente/procesando/entregado/cancelado)

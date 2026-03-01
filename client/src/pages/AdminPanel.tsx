@@ -10,7 +10,8 @@ import {
   Users, ShoppingBag, Star, Megaphone, Gift, Newspaper,
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
-  BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database
+  BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database,
+  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -171,10 +172,15 @@ function UsersTab() {
 }
 
 // ─── Shop Tab ─────────────────────────────────────────────────────────────────
+const isPhysicalCat = (cat?: string | null) => cat === "physical" || cat === "bundle";
+
 function ShopTab() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any });
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
+  const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "all">("pending");
   const { data: orders, refetch: refetchOrders } = trpc.admin.listOrders.useQuery();
   const uploadImage = trpc.admin.uploadImage.useMutation();
   const createItem = trpc.admin.createShopItem.useMutation({
@@ -305,40 +311,151 @@ function ShopTab() {
 
       {/* Orders */}
       <div>
-        <h3 className="font-orbitron text-gray-400 text-xs tracking-widest mb-3">PEDIDOS PENDIENTES</h3>
-        <div className="space-y-2">
-          {orders?.filter(o => o.status === "pending").map(order => (
-            <div key={order.id} className="bg-gray-900/60 border border-yellow-900/30 rounded-xl p-4 flex items-center gap-4 flex-wrap">
-              <Package className="w-5 h-5 text-yellow-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-white font-rajdhani font-semibold text-sm">Pedido #{order.id}</p>
-                <p className="text-gray-500 text-xs">
-                  {new Date(order.createdAt).toLocaleString("es")} · {order.quantity}x item
-                </p>
-                {order.deliveryNote && <p className="text-gray-400 text-xs mt-0.5">Nota: {order.deliveryNote}</p>}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  onClick={() => updateOrder.mutate({ orderId: order.id, status: "delivered" })}
-                  className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-700/40 font-orbitron text-xs h-7"
-                >
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  ENTREGADO
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => updateOrder.mutate({ orderId: order.id, status: "cancelled" })}
-                  className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron text-xs h-7"
-                >
-                  <XCircle className="w-3 h-3 mr-1" />
-                  CANCELAR
-                </Button>
-              </div>
-            </div>
+        {/* Filter tabs */}
+        <div className="flex items-center gap-2 mb-4">
+          {(["pending", "processing", "all"] as const).map(f => (
+            <button key={f} onClick={() => setStatusFilter(f)}
+              className={`px-3 py-1 rounded-full text-xs font-orbitron border transition-all ${
+                statusFilter === f ? "border-red-500 bg-red-500/10 text-red-400" : "border-gray-700 text-gray-500 hover:border-gray-500"
+              }`}>
+              {f === "pending" ? "PENDIENTES" : f === "processing" ? "EN PROCESO" : "TODOS"}
+              <span className="ml-1.5 opacity-60">
+                ({orders?.filter(o => f === "all" ? true : o.status === f).length ?? 0})
+              </span>
+            </button>
           ))}
-          {!orders?.filter(o => o.status === "pending").length && (
-            <p className="text-gray-600 text-sm font-rajdhani text-center py-6">Sin pedidos pendientes</p>
+        </div>
+
+        <div className="space-y-3">
+          {orders?.filter(o => statusFilter === "all" ? o.status !== "delivered" && o.status !== "cancelled" : o.status === statusFilter).map(order => {
+            const physical = isPhysicalCat((order as any).itemCategory);
+            let shipping: Record<string, string> | null = null;
+            if ((order as any).shippingAddress) {
+              try { shipping = JSON.parse((order as any).shippingAddress); } catch {}
+            }
+            const isExpanded = expandedOrder === order.id;
+            const code = deliveryCodes[order.id] ?? "";
+
+            return (
+              <div key={order.id} className={`bg-gray-900/60 border rounded-xl overflow-hidden transition-all ${
+                order.status === "pending" ? "border-yellow-900/40" : "border-blue-900/30"
+              }`}>
+                {/* Header row */}
+                <div className="p-4 flex items-center gap-3 flex-wrap cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                    physical ? "bg-orange-500/20" : "bg-blue-500/20"
+                  }`}>
+                    {physical ? <Package className="w-4 h-4 text-orange-400" /> : <Zap className="w-4 h-4 text-blue-400" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-white font-rajdhani font-semibold text-sm">Pedido #{order.id}</p>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${
+                        physical ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
+                      }`}>{physical ? "FÍSICO" : "DIGITAL"}</span>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${
+                        order.status === "pending" ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
+                      }`}>{order.status === "pending" ? "PENDIENTE" : "EN PROCESO"}</span>
+                    </div>
+                    <p className="text-gray-500 text-xs">
+                      {new Date(order.createdAt).toLocaleString("es")} · x{order.quantity} · {order.totalPrice ?? "?"} RLC
+                    </p>
+                    {(order as any).userName && (
+                      <p className="text-gray-400 text-xs mt-0.5">Usuario: <span className="text-white">{(order as any).userName}</span></p>
+                    )}
+                    {(order as any).userEmail && (
+                      <p className="text-gray-400 text-xs">Email: <span className="text-blue-300">{(order as any).userEmail}</span></p>
+                    )}
+                  </div>
+                  <ChevronRight className={`w-4 h-4 text-gray-600 transition-transform flex-shrink-0 ${isExpanded ? "rotate-90" : ""}`} />
+                </div>
+
+                {/* Expanded details */}
+                {isExpanded && (
+                  <div className="px-4 pb-4 space-y-3 border-t border-white/5 pt-3">
+                    {/* Shipping address for physical */}
+                    {physical && shipping && (
+                      <div className="p-3 rounded-lg bg-orange-500/5 border border-orange-500/20 space-y-1">
+                        <p className="text-xs font-mono text-orange-400 mb-2 flex items-center gap-1"><MapPin className="w-3 h-3" /> DIRECCIÓN DE ENVÍO</p>
+                        <p className="text-white text-sm font-semibold">{shipping.fullName}</p>
+                        <p className="text-gray-300 text-xs">{shipping.address}</p>
+                        <p className="text-gray-300 text-xs">{shipping.city}{shipping.state ? `, ${shipping.state}` : ""} · {shipping.postalCode}</p>
+                        <p className="text-gray-300 text-xs">{shipping.country}</p>
+                        <p className="text-gray-400 text-xs mt-1 flex items-center gap-1"><Phone className="w-3 h-3" /> {shipping.contact}</p>
+                      </div>
+                    )}
+
+                    {/* User note */}
+                    {(order as any).userNote && (
+                      <div className="p-2 rounded-lg bg-zinc-800/60 border border-white/5">
+                        <p className="text-xs text-gray-500 mb-1">Nota del usuario:</p>
+                        <p className="text-gray-300 text-sm">{(order as any).userNote}</p>
+                      </div>
+                    )}
+
+                    {/* Delivery code field for digital */}
+                    {!physical && (
+                      <div>
+                        <label className="text-xs text-gray-400 font-mono mb-1 block flex items-center gap-1"><Key className="w-3 h-3" /> CÓDIGO / ACCESO DIGITAL</label>
+                        <div className="flex gap-2">
+                          <input
+                            value={code}
+                            onChange={e => setDeliveryCodes(d => ({...d, [order.id]: e.target.value}))}
+                            placeholder="Ej: XXXX-XXXX-XXXX o URL de acceso"
+                            className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-blue-500 focus:outline-none font-mono"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-600 mt-1">El código se enviará al usuario como notificación in-app al marcar como entregado.</p>
+                      </div>
+                    )}
+
+                    {/* Tracking number for physical */}
+                    {physical && (
+                      <div>
+                        <label className="text-xs text-gray-400 font-mono mb-1 block flex items-center gap-1"><Package className="w-3 h-3" /> NÚMERO DE SEGUIMIENTO (opcional)</label>
+                        <input
+                          value={code}
+                          onChange={e => setDeliveryCodes(d => ({...d, [order.id]: e.target.value}))}
+                          placeholder="Ej: ES123456789ES"
+                          className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-orange-500 focus:outline-none font-mono"
+                        />
+                      </div>
+                    )}
+
+                    {/* Action buttons */}
+                    <div className="flex gap-2 flex-wrap">
+                      {order.status === "pending" && (
+                        <Button size="sm"
+                          onClick={() => updateOrder.mutate({ orderId: order.id, status: "processing" })}
+                          className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-700/40 font-orbitron text-xs h-7"
+                        >
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          EN PROCESO
+                        </Button>
+                      )}
+                      <Button size="sm"
+                        onClick={() => updateOrder.mutate({ orderId: order.id, status: "delivered", deliveryNote: code || undefined })}
+                        disabled={!physical && !code.trim()}
+                        className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-700/40 font-orbitron text-xs h-7 disabled:opacity-40"
+                      >
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        {physical ? "ENTREGADO" : "ENTREGAR CÓDIGO"}
+                      </Button>
+                      <Button size="sm"
+                        onClick={() => updateOrder.mutate({ orderId: order.id, status: "cancelled" })}
+                        className="bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron text-xs h-7"
+                      >
+                        <XCircle className="w-3 h-3 mr-1" />
+                        CANCELAR
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {!orders?.filter(o => statusFilter === "all" ? o.status !== "delivered" && o.status !== "cancelled" : o.status === statusFilter).length && (
+            <p className="text-gray-600 text-sm font-rajdhani text-center py-6">Sin pedidos en esta categoría</p>
           )}
         </div>
       </div>

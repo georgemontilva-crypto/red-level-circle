@@ -1452,6 +1452,43 @@ export const appRouter = router({
       .input(z.object({ orderId: z.number(), status: z.string(), deliveryNote: z.string().optional() }))
       .mutation(async ({ input }) => {
         await updateOrderStatus(input.orderId, input.status, input.deliveryNote);
+        // Notify buyer about status change
+        try {
+          const db = await getDb();
+          if (db) {
+            const { shopOrders: so, users: u, shopItems: si } = await import("../drizzle/schema");
+            const rows = await db.select({
+              userId: so.userId,
+              itemName: si.name,
+              itemCategory: si.category,
+            }).from(so)
+              .innerJoin(si, eq(so.itemId, si.id))
+              .where(eq(so.id, input.orderId))
+              .limit(1);
+            if (rows[0]) {
+              const { notifications } = await import("../drizzle/schema");
+              const statusMessages: Record<string, string> = {
+                processing: `Tu pedido de "${rows[0].itemName}" está siendo procesado. Te contactaremos pronto.`,
+                delivered: rows[0].itemCategory === "digital" || rows[0].itemCategory === "limited"
+                  ? `Tu pedido de "${rows[0].itemName}" ha sido entregado. Revisa la nota de entrega para tu código/acceso.`
+                  : `Tu pedido de "${rows[0].itemName}" ha sido enviado. ${input.deliveryNote ? `Nota: ${input.deliveryNote}` : ""}`,
+                cancelled: `Tu pedido de "${rows[0].itemName}" ha sido cancelado. Los RLC Coins serán reembolsados.`,
+              };
+              const msg = statusMessages[input.status];
+              if (msg) {
+                await db.insert(notifications).values({
+                  userId: rows[0].userId,
+                  type: "order_confirmed",
+                  title: `🛒 Pedido #${input.orderId} — ${input.status === "processing" ? "En proceso" : input.status === "delivered" ? "Entregado" : "Cancelado"}`,
+                  message: msg,
+                  isRead: false,
+                  referenceId: input.orderId,
+                  referenceType: "order",
+                });
+              }
+            }
+          }
+        } catch {}
         return { success: true };
       }),
     createBrandAd: adminProcedure
@@ -1702,16 +1739,23 @@ export const appRouter = router({
         itemId: z.number(),
         quantity: z.number().int().min(1).default(1),
         userNote: z.string().optional(),
+        shippingAddress: z.string().optional(), // JSON string for physical/bundle products
       }))
       .mutation(async ({ ctx, input }) => {
-        const result = await buyShopItem(ctx.user.id, input.itemId, input.quantity, input.userNote);
-        // Notify admin
         const item = await getShopItemById(input.itemId);
+        // Validate: physical/bundle products require shippingAddress
+        if ((item?.category === "physical" || item?.category === "bundle") && !input.shippingAddress) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Los productos físicos requieren dirección de envío" });
+        }
+        const result = await buyShopItem(ctx.user.id, input.itemId, input.quantity, input.userNote, input.shippingAddress);
+        // Notify admin
         try {
           const { notifyOwner } = await import("./_core/notification");
+          const categoryLabel = (item?.category === "physical" || item?.category === "bundle") ? "📦 FÍSICO" : "💻 DIGITAL";
+          const shippingInfo = input.shippingAddress ? (() => { try { const a = JSON.parse(input.shippingAddress!); return `\nEnvío: ${a.fullName}, ${a.address}, ${a.city}, ${a.country} ${a.postalCode} | Contacto: ${a.contact}`; } catch { return ""; } })() : "";
           await notifyOwner({
-            title: `🛒 Nueva compra en la tienda`,
-            content: `${ctx.user.name ?? ctx.user.openId} compró ${input.quantity}x "${item?.name}" por ${result.totalPrice} RLC Coins. Pedido #${result.orderId} — Estado: Pendiente de entrega.`,
+            title: `🛒 [${categoryLabel}] Nueva compra — Pedido #${result.orderId}`,
+            content: `${ctx.user.name ?? ctx.user.openId} (${ctx.user.email ?? "sin email"}) compró ${input.quantity}x "${item?.name}" por ${result.totalPrice} RLC Coins.${shippingInfo}`,
           });
         } catch {}
         return result;
