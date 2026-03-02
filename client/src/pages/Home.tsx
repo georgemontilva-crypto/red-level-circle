@@ -679,8 +679,44 @@ export default function Home() {
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-10">
 
-        {/* 1. Hero banner limpio */}
-        <HeroSection />
+        {/* 1. Banner publicitario — ocupa la posición principal */}
+        <div className="flex gap-3">
+          <div className="flex-1 min-w-0">
+            <AdBannerSection ads={sideAds ?? []} />
+          </div>
+          {/* Sidebar: Featured tournaments */}
+          <div className="hidden lg:flex flex-col w-72 gap-1.5 overflow-y-auto scrollbar-none">
+            {(featuredTournaments ?? []).length === 0 ? (
+              <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-800/50 flex items-center justify-center">
+                <p className="text-zinc-600 text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
+              </div>
+            ) : (featuredTournaments ?? []).map((t: any) => {
+              const st = statusLabel(t.status ?? "");
+              return (
+                <Link key={t.id} href={`/tournaments/${t.id}`}>
+                  <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border bg-zinc-900/60 border-zinc-800/50 hover:bg-zinc-800/80 hover:border-zinc-700">
+                    <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
+                      {t.banner ? (
+                        <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Trophy size={16} className="text-red-500/50" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-sm font-semibold truncate">{t.name}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
+                        <span className={`text-xs truncate ${st.color}`}>{st.text}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
 
         {/* 2. Stats */}
         <PlatformStats />
@@ -758,10 +794,6 @@ export default function Home() {
             {missions!.map((m: any) => <MissionCard key={m.id} m={m} />)}
           </HScrollSection>
         )}
-
-        {/* 6. Banner publicitario — ancho completo */}
-        <AdBannerSection ads={sideAds ?? []} />
-
 
         {/* 8. Noticias */}
         {(news?.length ?? 0) > 0 && (
