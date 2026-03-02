@@ -55,11 +55,8 @@ function HeroSection() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [progress, setProgress] = useState(0);
   const [transitioning, setTransitioning] = useState(false);
-  const [paused, setPaused] = useState(false);
   const progressRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number>(Date.now());
-  const pausedAtRef = useRef<number>(0);
-  const elapsedBeforePauseRef = useRef<number>(0);
 
   const goTo = useCallback((idx: number) => {
     if (idx === activeIdx) return;
@@ -68,16 +65,15 @@ function HeroSection() {
     setTimeout(() => {
       setActiveIdx(idx);
       setProgress(0);
-      elapsedBeforePauseRef.current = 0;
       startTimeRef.current = Date.now();
       setTransitioning(false);
     }, 250);
   }, [activeIdx]);
 
-  // Tick de progreso
+  // Tick de progreso — siempre activo, sin pausa
   useEffect(() => {
-    if (slides.length === 0 || paused) return;
-    startTimeRef.current = Date.now() - elapsedBeforePauseRef.current;
+    if (slides.length === 0) return;
+    startTimeRef.current = Date.now();
     const tick = () => {
       const elapsed = Date.now() - startTimeRef.current;
       const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
@@ -85,7 +81,6 @@ function HeroSection() {
       if (pct >= 100) {
         const next = (activeIdx + 1) % slides.length;
         setTransitioning(true);
-        elapsedBeforePauseRef.current = 0;
         setTimeout(() => {
           setActiveIdx(next);
           setProgress(0);
@@ -98,17 +93,7 @@ function HeroSection() {
     };
     progressRef.current = setTimeout(tick, 30);
     return () => { if (progressRef.current) clearTimeout(progressRef.current); };
-  }, [activeIdx, slides.length, paused]);
-
-  // Pausa: guardar progreso actual
-  const handlePause = () => {
-    if (progressRef.current) clearTimeout(progressRef.current);
-    elapsedBeforePauseRef.current = (progress / 100) * SLIDE_DURATION;
-    setPaused(true);
-  };
-  const handleResume = () => {
-    setPaused(false);
-  };
+  }, [activeIdx, slides.length]);
 
   // Track impression
   useEffect(() => {
@@ -134,8 +119,6 @@ function HeroSection() {
     <div
       className="lg:grid max-lg:block w-full"
       style={{ gridTemplateColumns: "3fr 1fr", gap: "24px" }}
-      onMouseEnter={handlePause}
-      onMouseLeave={handleResume}
     >
       {/* ─── BANNER PRINCIPAL ─── */}
       <div
