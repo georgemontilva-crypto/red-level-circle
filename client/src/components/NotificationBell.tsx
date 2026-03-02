@@ -69,16 +69,36 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
 
   const unreadCount = unreadData?.count ?? 0;
 
-  function handleNotificationClick(n: { id: number; isRead: boolean; link?: string | null }) {
+  // Fallback destinations for old notifications that don't have a link stored
+  const TYPE_LINKS: Record<string, string> = {
+    order_confirmed:      "/shop?tab=orders",
+    coins_earned:         "/shop?tab=orders",
+    coins_spent:          "/shop?tab=orders",
+    bracket_ready:        "/tournaments",
+    match_scheduled:      "/betting",
+    match_result:         "/betting",
+    tournament_full:      "/tournaments",
+    mission_approved:     "/missions",
+    mission_rejected:     "/missions",
+    team_invite:          "/teams",
+    team_invite_accepted: "/teams",
+    team_invite_rejected: "/teams",
+    creator_verified:     "/creators",
+    creator_rejected:     "/creators",
+    general:              "",
+  };
+
+  function handleNotificationClick(n: { id: number; isRead: boolean; link?: string | null; type: string }) {
     if (!n.isRead) markOneRead.mutate({ id: n.id });
-    if (n.link) {
+    const dest = n.link || TYPE_LINKS[n.type] || "";
+    if (dest) {
       onClose();
       // Use window.location for links with query strings (e.g. /shop?tab=orders)
       // so the target page can read the params on mount
-      if (n.link.includes("?")) {
-        window.location.href = n.link;
+      if (dest.includes("?")) {
+        window.location.href = dest;
       } else {
-        navigate(n.link);
+        navigate(dest);
       }
     }
   }
@@ -113,40 +133,43 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
             <p className="text-zinc-500 text-sm">Sin notificaciones</p>
           </div>
         ) : (
-          [...notifications].reverse().map((n) => (
-            <div
-              key={n.id}
-              onClick={() => handleNotificationClick(n)}
-              className={`flex gap-3 px-4 py-3 transition-colors group ${
-                n.link ? "cursor-pointer hover:bg-zinc-800/60" : "cursor-default hover:bg-zinc-800/30"
-              } ${
-                !n.isRead ? "bg-red-500/5" : ""
-              }`}
-            >
-              <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center">
-                {TYPE_ICONS[n.type] ?? <Info className="w-4 h-4 text-zinc-400" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-zinc-300"}`}>
-                    {n.title}
-                  </p>
-                  <span className="text-[10px] text-zinc-500 shrink-0 mt-0.5">
-                    {timeAgo(n.createdAt)}
-                  </span>
+          [...notifications].reverse().map((n) => {
+            const dest = n.link || TYPE_LINKS[n.type] || "";
+            return (
+              <div
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={`flex gap-3 px-4 py-3 transition-colors group ${
+                  dest ? "cursor-pointer hover:bg-zinc-800/60" : "cursor-default hover:bg-zinc-800/30"
+                } ${
+                  !n.isRead ? "bg-red-500/5" : ""
+                }`}
+              >
+                <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center">
+                  {TYPE_ICONS[n.type] ?? <Info className="w-4 h-4 text-zinc-400" />}
                 </div>
-                <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
-                {n.link && (
-                  <p className="text-[10px] text-red-400/60 mt-1 flex items-center gap-0.5 group-hover:text-red-400 transition-colors">
-                    <ChevronRight className="w-3 h-3" /> Ver detalles
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-zinc-300"}`}>
+                      {n.title}
+                    </p>
+                    <span className="text-[10px] text-zinc-500 shrink-0 mt-0.5">
+                      {timeAgo(n.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
+                  {dest && (
+                    <p className="text-[10px] text-red-400/60 mt-1 flex items-center gap-0.5 group-hover:text-red-400 transition-colors">
+                      <ChevronRight className="w-3 h-3" /> Ver detalles
+                    </p>
+                  )}
+                </div>
+                {!n.isRead && (
+                  <div className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-red-500" />
                 )}
               </div>
-              {!n.isRead && (
-                <div className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
