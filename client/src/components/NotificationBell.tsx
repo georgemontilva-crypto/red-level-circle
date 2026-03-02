@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Bell, CheckCheck, Trophy, Zap, ShoppingBag,
-  Users, Star, Info, X,
+  Users, Star, Info, X, ChevronRight,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -45,9 +45,13 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
   const utils = trpc.useUtils();
 
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
   });
-  const { data: notifications, isLoading } = trpc.notifications.list.useQuery({ limit: 20 });
+  const { data: notifications, isLoading } = trpc.notifications.list.useQuery({ limit: 20 }, {
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
+  });
 
   const markAllRead = trpc.notifications.markAllRead.useMutation({
     onSuccess: () => {
@@ -67,7 +71,16 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
 
   function handleNotificationClick(n: { id: number; isRead: boolean; link?: string | null }) {
     if (!n.isRead) markOneRead.mutate({ id: n.id });
-    if (n.link) { onClose(); navigate(n.link); }
+    if (n.link) {
+      onClose();
+      // Use window.location for links with query strings (e.g. /shop?tab=orders)
+      // so the target page can read the params on mount
+      if (n.link.includes("?")) {
+        window.location.href = n.link;
+      } else {
+        navigate(n.link);
+      }
+    }
   }
 
   return (
@@ -104,7 +117,9 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
             <div
               key={n.id}
               onClick={() => handleNotificationClick(n)}
-              className={`flex gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-zinc-800/50 ${
+              className={`flex gap-3 px-4 py-3 transition-colors group ${
+                n.link ? "cursor-pointer hover:bg-zinc-800/60" : "cursor-default hover:bg-zinc-800/30"
+              } ${
                 !n.isRead ? "bg-red-500/5" : ""
               }`}
             >
@@ -121,6 +136,11 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
                   </span>
                 </div>
                 <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
+                {n.link && (
+                  <p className="text-[10px] text-red-400/60 mt-1 flex items-center gap-0.5 group-hover:text-red-400 transition-colors">
+                    <ChevronRight className="w-3 h-3" /> Ver detalles
+                  </p>
+                )}
               </div>
               {!n.isRead && (
                 <div className="mt-1.5 shrink-0 w-2 h-2 rounded-full bg-red-500" />
@@ -164,7 +184,8 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [fixedPos, setFixedPos] = useState({ top: 0, left: 0 });
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
   });
   const unreadCount = unreadData?.count ?? 0;
 
@@ -240,7 +261,8 @@ export function TopbarNotificationBell() {
   const [fixedPos, setFixedPos] = useState({ top: 0, right: 0 });
 
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
+    refetchIntervalInBackground: true,
   });
   const unreadCount = unreadData?.count ?? 0;
 
@@ -314,7 +336,7 @@ export function NotificationBell({ variant = "sidebar" }: { variant?: "sidebar" 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, { refetchInterval: 30_000 });
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, { refetchInterval: 5_000, refetchIntervalInBackground: true });
   const unreadCount = unreadData?.count ?? 0;
 
   useEffect(() => {

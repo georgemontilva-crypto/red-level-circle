@@ -1482,6 +1482,7 @@ export const appRouter = router({
                   title: `🛒 Pedido #${input.orderId} — ${input.status === "processing" ? "En proceso" : input.status === "delivered" ? "Entregado" : "Cancelado"}`,
                   message: msg,
                   isRead: false,
+                  link: "/shop?tab=orders",
                   referenceId: input.orderId,
                   referenceType: "order",
                 });

@@ -161,7 +161,15 @@ function CosmeticPurchaseModal({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Shop() {
   const { user, isAuthenticated } = useAuth();
-  const [mainTab, setMainTab] = useState<"all" | "products" | "cosmetics" | "orders">("all");
+
+  // Read ?tab= from URL to allow deep-linking from notifications
+  const initialTab = (() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
+    if (t === "orders" || t === "products" || t === "cosmetics") return t;
+    return "all";
+  })();
+  const [mainTab, setMainTab] = useState<"all" | "products" | "cosmetics" | "orders">(initialTab);
 
   // Products state
   const [activeCategory, setActiveCategory] = useState("all");
