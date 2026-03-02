@@ -132,15 +132,15 @@ function HeroSection() {
 
   return (
     <div
-      style={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: "24px" }}
-      className="max-lg:block"
+      className="lg:grid max-lg:block w-full"
+      style={{ gridTemplateColumns: "3fr 1fr", gap: "24px" }}
       onMouseEnter={handlePause}
       onMouseLeave={handleResume}
     >
       {/* ─── BANNER PRINCIPAL ─── */}
       <div
-        className="relative overflow-hidden cursor-pointer"
-        style={{ height: "clamp(260px, 45vw, 420px)", borderRadius: "16px", overflow: "hidden" }}
+        className="relative overflow-hidden cursor-pointer w-full"
+        style={{ height: "clamp(240px, 50vw, 420px)", borderRadius: "12px", overflow: "hidden" }}
         onClick={() => {
           if (current?.destinationUrl) {
             trackClick.mutate({ adId: current.id });
