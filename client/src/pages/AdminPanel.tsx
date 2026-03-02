@@ -393,14 +393,25 @@ function ShopTab() {
               }`}>
                 {/* Header row */}
                 <div className="p-4 flex items-center gap-3 flex-wrap cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    physical ? "bg-orange-500/20" : "bg-blue-500/20"
-                  }`}>
-                    {physical ? <Package className="w-4 h-4 text-orange-400" /> : <Zap className="w-4 h-4 text-blue-400" />}
+                  {/* Product thumbnail */}
+                  <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border border-white/10">
+                    {(order as any).itemImage ? (
+                      <img src={(order as any).itemImage} alt={(order as any).itemName ?? ""} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center ${
+                        physical ? "bg-orange-500/20" : "bg-blue-500/20"
+                      }`}>
+                        {physical ? <Package className="w-5 h-5 text-orange-400" /> : <Zap className="w-5 h-5 text-blue-400" />}
+                      </div>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
+                    {/* Product name */}
+                    {(order as any).itemName && (
+                      <p className="text-white font-rajdhani font-bold text-sm leading-tight mb-0.5">{(order as any).itemName}</p>
+                    )}
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white font-rajdhani font-semibold text-sm">Pedido #{order.id}</p>
+                      <p className="text-gray-500 font-mono text-xs">#{order.id}</p>
                       <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${
                         physical ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
                       }`}>{physical ? "FÍSICO" : "DIGITAL"}</span>
