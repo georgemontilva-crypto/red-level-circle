@@ -180,7 +180,7 @@ function ShopTab() {
   const [uploadingImg, setUploadingImg] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
-  const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "all">("pending");
+  const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "delivered" | "cancelled" | "all">("all");
   // Edit product modal state
   const [editingItem, setEditingItem] = useState<null | { id: number; name: string; description: string; imageUrl: string; price: string; stock: string; category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean }>(null);
   const [uploadingEditImg, setUploadingEditImg] = useState(false);
@@ -351,14 +351,22 @@ function ShopTab() {
 
       {/* Orders */}
       <div>
+        {/* Section header */}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-orbitron text-white flex items-center gap-2">
+            <Package className="w-4 h-4 text-red-400" />
+            PEDIDOS
+            <span className="text-xs text-gray-500 font-mono">({orders?.length ?? 0} total)</span>
+          </h3>
+        </div>
         {/* Filter tabs */}
-        <div className="flex items-center gap-2 mb-4">
-          {(["pending", "processing", "all"] as const).map(f => (
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          {(["all", "pending", "processing", "delivered", "cancelled"] as const).map(f => (
             <button key={f} onClick={() => setStatusFilter(f)}
               className={`px-3 py-1 rounded-full text-xs font-orbitron border transition-all ${
                 statusFilter === f ? "border-red-500 bg-red-500/10 text-red-400" : "border-gray-700 text-gray-500 hover:border-gray-500"
               }`}>
-              {f === "pending" ? "PENDIENTES" : f === "processing" ? "EN PROCESO" : "TODOS"}
+              {f === "pending" ? "PENDIENTES" : f === "processing" ? "EN PROCESO" : f === "delivered" ? "ENTREGADOS" : f === "cancelled" ? "CANCELADOS" : "TODOS"}
               <span className="ml-1.5 opacity-60">
                 ({orders?.filter(o => f === "all" ? true : o.status === f).length ?? 0})
               </span>
@@ -367,7 +375,7 @@ function ShopTab() {
         </div>
 
         <div className="space-y-3">
-          {orders?.filter(o => statusFilter === "all" ? o.status !== "delivered" && o.status !== "cancelled" : o.status === statusFilter).map(order => {
+          {orders?.filter(o => statusFilter === "all" ? true : o.status === statusFilter).map(order => {
             const physical = isPhysicalCat((order as any).itemCategory);
             let shipping: Record<string, string> | null = null;
             if ((order as any).shippingAddress) {
@@ -378,7 +386,10 @@ function ShopTab() {
 
             return (
               <div key={order.id} className={`bg-gray-900/60 border rounded-xl overflow-hidden transition-all ${
-                order.status === "pending" ? "border-yellow-900/40" : "border-blue-900/30"
+                order.status === "pending" ? "border-yellow-900/40" :
+                order.status === "processing" ? "border-blue-900/30" :
+                order.status === "delivered" ? "border-green-900/30" :
+                "border-red-900/20 opacity-70"
               }`}>
                 {/* Header row */}
                 <div className="p-4 flex items-center gap-3 flex-wrap cursor-pointer" onClick={() => setExpandedOrder(isExpanded ? null : order.id)}>
@@ -394,8 +405,13 @@ function ShopTab() {
                         physical ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
                       }`}>{physical ? "FÍSICO" : "DIGITAL"}</span>
                       <span className={`text-xs px-1.5 py-0.5 rounded font-mono border ${
-                        order.status === "pending" ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"
-                      }`}>{order.status === "pending" ? "PENDIENTE" : "EN PROCESO"}</span>
+                        order.status === "pending" ? "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" :
+                        order.status === "processing" ? "text-blue-400 border-blue-500/30 bg-blue-500/10" :
+                        order.status === "delivered" ? "text-green-400 border-green-500/30 bg-green-500/10" :
+                        "text-red-400 border-red-500/30 bg-red-500/10"
+                      }`}>
+                        {order.status === "pending" ? "PENDIENTE" : order.status === "processing" ? "EN PROCESO" : order.status === "delivered" ? "ENTREGADO" : "CANCELADO"}
+                      </span>
                     </div>
                     <p className="text-gray-500 text-xs">
                       {new Date(order.createdAt).toLocaleString("es")} · x{order.quantity} · {order.totalPrice ?? "?"} RLC
@@ -494,7 +510,7 @@ function ShopTab() {
               </div>
             );
           })}
-          {!orders?.filter(o => statusFilter === "all" ? o.status !== "delivered" && o.status !== "cancelled" : o.status === statusFilter).length && (
+          {!orders?.filter(o => statusFilter === "all" ? true : o.status === statusFilter).length && (
             <p className="text-gray-600 text-sm font-rajdhani text-center py-6">Sin pedidos en esta categoría</p>
           )}
         </div>

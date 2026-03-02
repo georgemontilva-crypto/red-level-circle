@@ -850,6 +850,10 @@
 
 ## Tienda Unificada V39
 - [x] Reescribir Shop.tsx con tabs: TODOS / PRODUCTOS / COSMÉTICOS / MIS PEDIDOS
+
+## Bug Fix: Pedidos en AdminPanel V40
+- [ ] Investigar por qué la sección de pedidos no es visible en el ShopTab del admin
+- [ ] Asegurar que el admin puede ver pedidos y asignar código de entrega a productos digitales
 - [x] Integrar el grid de cosméticos (con preview de marco/aura) dentro de la nueva Shop.tsx
 - [x] Eliminar la ruta /shop/cosmetics de App.tsx (redirigir a /shop?tab=cosmeticos)
 - [x] Actualizar el sidebar para que solo haya un enlace "Tienda" → /shop
