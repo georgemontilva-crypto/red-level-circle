@@ -616,8 +616,7 @@ function AdBannerSection({ ads }: { ads: any[] }) {
 
   if (!currentAd) return null;
   return (
-    <section className="relative w-full rounded-2xl overflow-hidden"
-      style={{ border: "1px solid oklch(0.20 0.01 0)" }}>
+    <section className="relative w-full overflow-hidden">
       <a
         href={currentAd.destinationUrl || "#"}
         target={currentAd.destinationUrl ? "_blank" : "_self"}
@@ -677,17 +676,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-10">
 
-        {/* 1. Banner publicitario — ocupa la posición principal */}
-        <div className="flex gap-3">
+        {/* 1. Banner publicitario — full-width sin padding, al estilo Epic Games */}
+        <div className="w-full flex gap-0">
+          {/* Banner principal — ocupa todo el ancho */}
           <div className="flex-1 min-w-0">
             <AdBannerSection ads={sideAds ?? []} />
           </div>
-          {/* Sidebar: Featured tournaments */}
-          <div className="hidden lg:flex flex-col w-72 gap-1.5 overflow-y-auto scrollbar-none">
+          {/* Sidebar: Featured tournaments — anclado a la derecha del banner */}
+          <div className="hidden xl:flex flex-col w-80 gap-1.5 overflow-y-auto scrollbar-none bg-zinc-950 border-l border-zinc-800/60 px-3 py-3">
+            <p className="text-zinc-500 text-[10px] font-mono uppercase tracking-widest px-1 mb-1">Torneos Destacados</p>
             {(featuredTournaments ?? []).length === 0 ? (
-              <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-800/50 flex items-center justify-center">
+              <div className="flex-1 rounded-xl bg-zinc-900/40 border border-zinc-800/40 flex items-center justify-center py-8">
                 <p className="text-zinc-600 text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
               </div>
             ) : (featuredTournaments ?? []).map((t: any) => {
@@ -717,6 +717,9 @@ export default function Home() {
             })}
           </div>
         </div>
+
+      {/* Resto del contenido con padding interno */}
+      <div className="px-4 sm:px-6 py-6 space-y-10">
 
         {/* 2. Stats */}
         <PlatformStats />
