@@ -307,7 +307,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </div>
 
       {/* Main content */}
-      <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0 overflow-x-hidden min-w-0">
+      {/* TopNav is fixed, so we need pt-14 on desktop to push content below it */}
+      <main className="flex-1 md:ml-60 min-h-screen pt-14 overflow-x-hidden min-w-0">
         <TopNav />
         {children}
       </main>

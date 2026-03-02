@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X } from "lucide-react";
+import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X, Crown, Shield } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 
 export function TopNav() {
   const [, navigate] = useLocation();
@@ -10,7 +11,10 @@ export function TopNav() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  const isAdmin = user?.role === "admin";
+  const isPremium = user?.role === "premium" || user?.role === "admin";
 
   // Cart count
   const { data: cartData } = trpc.shop.getCart.useQuery(undefined, {
@@ -32,21 +36,23 @@ export function TopNav() {
     { label: "Noticias", href: "/news" },
   ];
 
-  const canGoBack = window.history.length > 1;
+  // Get user initials for avatar fallback
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
   return (
     <div
-      className="hidden md:flex items-center h-16 px-6 gap-5 border-b sticky top-0 z-30 backdrop-blur-md"
+      className="hidden md:flex items-center h-14 px-5 gap-4 border-b fixed top-0 z-40 backdrop-blur-md"
       style={{
-        background: "rgba(14,14,16,0.95)",
+        background: "rgba(11,11,13,0.97)",
         borderColor: "var(--border-main)",
+        left: "240px",   /* sidebar width */
+        right: 0,
       }}
     >
       {/* Back button */}
       <button
         onClick={() => window.history.back()}
-        disabled={!canGoBack}
-        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 disabled:opacity-30"
+        className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 flex-shrink-0"
         style={{ color: "var(--text-secondary)" }}
         onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-hover)")}
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
@@ -57,11 +63,11 @@ export function TopNav() {
 
       {/* Search bar */}
       <div
-        className="relative flex items-center rounded-full transition-all duration-200"
+        className="relative flex items-center rounded-full transition-all duration-200 flex-shrink-0"
         style={{
           background: searchFocused ? "var(--bg-hover)" : "var(--bg-card)",
-          border: `1px solid ${searchFocused ? "var(--border-main)" : "transparent"}`,
-          width: searchFocused ? "280px" : "220px",
+          border: `1px solid ${searchFocused ? "rgba(255,255,255,0.15)" : "transparent"}`,
+          width: searchFocused ? "300px" : "240px",
         }}
       >
         <Search className="w-4 h-4 ml-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
@@ -84,7 +90,7 @@ export function TopNav() {
               searchRef.current?.blur();
             }
           }}
-          className="flex-1 bg-transparent text-sm py-2 px-2 outline-none"
+          className="flex-1 bg-transparent text-sm py-2 px-2 outline-none min-w-0"
           style={{ color: "var(--text-primary)" }}
         />
         {searchQuery && (
@@ -99,22 +105,32 @@ export function TopNav() {
       </div>
 
       {/* Nav links */}
-      <nav className="flex items-center gap-1">
+      <nav className="flex items-center gap-0.5">
         {navLinks.map(link => {
           const active = location === link.href || location.startsWith(link.href + "/");
           return (
             <button
               key={link.href}
               onClick={() => navigate(link.href)}
-              className="px-4 py-2 text-sm font-semibold rounded transition-all duration-150"
+              className="relative px-4 h-14 text-sm font-semibold transition-all duration-150 flex items-center"
               style={{
                 color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                borderBottom: active ? "2px solid var(--accent-red)" : "2px solid transparent",
               }}
-              onMouseEnter={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)"; }}
-              onMouseLeave={e => { if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
+              onMouseEnter={e => {
+                if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={e => {
+                if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+              }}
             >
               {link.label}
+              {/* Active underline */}
+              {active && (
+                <span
+                  className="absolute bottom-0 left-0 right-0 h-0.5"
+                  style={{ background: "var(--accent-red)" }}
+                />
+              )}
             </button>
           );
         })}
@@ -124,7 +140,7 @@ export function TopNav() {
       <div className="flex-1" />
 
       {/* Action icons */}
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-0.5">
         {/* Wishlist / Favoritos */}
         <button
           onClick={() => navigate("/shop?tab=wishlist")}
@@ -194,6 +210,43 @@ export function TopNav() {
             </span>
           )}
         </button>
+
+        {/* Separator */}
+        <div className="w-px h-6 mx-2" style={{ background: "var(--border-main)" }} />
+
+        {/* User avatar / login */}
+        {isAuthenticated && user ? (
+          <button
+            onClick={() => navigate(`/profile/${user.id}`)}
+            className="relative flex items-center justify-center w-9 h-9 rounded-full overflow-hidden border-2 transition-all duration-150 flex-shrink-0"
+            style={{ borderColor: isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)" }}
+            title={user.name ?? "Mi perfil"}
+          >
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center font-bold text-sm"
+                style={{ background: isAdmin ? "#3a2e00" : "var(--bg-hover)", color: isAdmin ? "#FFD700" : "var(--text-primary)" }}
+              >
+                {userInitial}
+              </div>
+            )}
+            {/* Online dot */}
+            <span
+              className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2"
+              style={{ background: "#22c55e", borderColor: "var(--bg-main)" }}
+            />
+          </button>
+        ) : (
+          <a
+            href={getLoginUrl()}
+            className="flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-150"
+            style={{ background: "var(--accent-red)", color: "#fff" }}
+          >
+            Iniciar sesión
+          </a>
+        )}
       </div>
     </div>
   );
