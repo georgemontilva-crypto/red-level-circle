@@ -20,8 +20,8 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   match_scheduled:      <Trophy   className="w-4 h-4 text-blue-400"   />,
   match_result:         <Trophy   className="w-4 h-4 text-yellow-400" />,
   coins_earned:         <Zap      className="w-4 h-4 text-yellow-400" />,
-  coins_spent:          <ShoppingBag className="w-4 h-4 text-zinc-400" />,
-  general:              <Info     className="w-4 h-4 text-zinc-400"   />,
+  coins_spent:          <ShoppingBag className="w-4 h-4 text-muted-foreground" />,
+  general:              <Info     className="w-4 h-4 text-muted-foreground"   />,
 };
 
 function timeAgo(date: Date | string): string {
@@ -106,16 +106,16 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
   return (
     <div
       ref={dropdownRef}
-      className="bg-zinc-900 border border-zinc-700/50 rounded-xl shadow-2xl overflow-hidden"
+      className="bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden"
       style={{ ...style, animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both" }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-700/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
         <span className="text-sm font-semibold text-white">Notificaciones</span>
         {unreadCount > 0 && (
           <button
             onClick={() => markAllRead.mutate()}
-            className="flex items-center gap-1 text-xs text-zinc-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white transition-colors"
           >
             <CheckCheck className="w-3.5 h-3.5" />
             Marcar todas
@@ -126,11 +126,11 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
       {/* Lista */}
       <div className="max-h-80 overflow-y-auto divide-y divide-zinc-800/60">
         {isLoading ? (
-          <div className="py-8 text-center text-zinc-500 text-sm">Cargando...</div>
+          <div className="py-8 text-center text-muted-foreground text-sm">Cargando...</div>
         ) : !notifications || notifications.length === 0 ? (
           <div className="py-10 text-center">
             <Bell className="w-8 h-8 text-zinc-700 mx-auto mb-2" />
-            <p className="text-zinc-500 text-sm">Sin notificaciones</p>
+            <p className="text-muted-foreground text-sm">Sin notificaciones</p>
           </div>
         ) : (
           [...notifications].reverse().map((n) => {
@@ -140,24 +140,24 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
                 key={n.id}
                 onClick={() => handleNotificationClick(n)}
                 className={`flex gap-3 px-4 py-3 transition-colors group ${
-                  dest ? "cursor-pointer hover:bg-zinc-800/60" : "cursor-default hover:bg-zinc-800/30"
+                  dest ? "cursor-pointer hover:bg-secondary/60" : "cursor-default hover:bg-secondary/30"
                 } ${
                   !n.isRead ? "bg-red-500/5" : ""
                 }`}
               >
-                <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-zinc-800 flex items-center justify-center">
-                  {TYPE_ICONS[n.type] ?? <Info className="w-4 h-4 text-zinc-400" />}
+                <div className="mt-0.5 shrink-0 w-7 h-7 rounded-full bg-secondary flex items-center justify-center">
+                  {TYPE_ICONS[n.type] ?? <Info className="w-4 h-4 text-muted-foreground" />}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-zinc-300"}`}>
                       {n.title}
                     </p>
-                    <span className="text-[10px] text-zinc-500 shrink-0 mt-0.5">
+                    <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">
                       {timeAgo(n.createdAt)}
                     </span>
                   </div>
-                  <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">{n.message}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.message}</p>
                   {dest && (
                     <p className="text-[10px] text-red-400/60 mt-1 flex items-center gap-0.5 group-hover:text-red-400 transition-colors">
                       <ChevronRight className="w-3 h-3" /> Ver detalles
@@ -175,8 +175,8 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
 
       {/* Footer */}
       {notifications && notifications.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-zinc-700/50 text-center">
-          <span className="text-xs text-zinc-500">
+        <div className="px-4 py-2.5 border-t border-border/50 text-center">
+          <span className="text-xs text-muted-foreground">
             {unreadCount === 0 ? "Todo al día" : `${unreadCount} sin leer`}
           </span>
         </div>
@@ -256,7 +256,7 @@ export function SidebarNotificationBell({ cardRef }: SidebarNotificationBellProp
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
+        className="relative p-2 text-muted-foreground hover:text-white transition-colors rounded-lg hover:bg-secondary/60"
         aria-label="Notificaciones"
       >
         <Bell className="w-5 h-5" />
@@ -329,7 +329,7 @@ export function TopbarNotificationBell() {
       <button
         ref={buttonRef}
         onClick={handleToggle}
-        className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
+        className="relative p-2 text-muted-foreground hover:text-white transition-colors rounded-lg hover:bg-secondary/60"
         aria-label="Notificaciones"
       >
         <Bell className="w-5 h-5" />
@@ -377,7 +377,7 @@ export function NotificationBell({ variant = "sidebar" }: { variant?: "sidebar" 
       <button
         ref={buttonRef}
         onClick={() => setOpen((v) => !v)}
-        className="relative p-2 text-zinc-400 hover:text-white transition-colors rounded-lg hover:bg-zinc-800/60"
+        className="relative p-2 text-muted-foreground hover:text-white transition-colors rounded-lg hover:bg-secondary/60"
         aria-label="Notificaciones"
       >
         <Bell className="w-5 h-5" />

@@ -145,8 +145,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {isAuthenticated && user && (
         <div
           ref={profileCardRef}
-          className="mx-3 mb-4 px-3 py-3 rounded-xl bg-zinc-800/40 border border-zinc-700/30"
-          style={{ position: "relative", overflow: "visible" }}
+          className="mx-3 mb-4 px-3 py-3 rounded-xl border"
+          style={{ background: "var(--bg-hover)", borderColor: "var(--border-main)", position: "relative", overflow: "visible" }}
         >
           <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
@@ -177,11 +177,11 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </Link>
 
           {wallet && (
-            <div className="mt-2 flex items-center justify-between pt-2 border-t border-zinc-700/30">
+              <div className="mt-2 flex items-center justify-between pt-2 border-t" style={{ borderColor: "var(--border-main)" }}>
               <div className="flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-yellow-400" />
                 <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
-                <span className="text-xs text-zinc-600 font-mono">RLC</span>
+                <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>RLC</span>
               </div>
               {/* Bell button + dropdown anchored to this card */}
               <SidebarNotificationBell cardRef={profileCardRef} />
@@ -194,7 +194,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       <nav className="flex-1 overflow-y-auto px-3 space-y-5 pb-4">
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="text-xs font-mono text-zinc-600 tracking-widest px-2 mb-1.5">{section.title}</p>
+            <p className="text-xs font-mono tracking-widest px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>{section.title}</p>
             <div className="space-y-0.5">
               {section.items.map((item) => {
                 if (item.requiresAuth && !isAuthenticated) return null;
@@ -206,14 +206,14 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                   <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
                     <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group relative ${
                       active
-                        ? "bg-red-500/10 text-white"
-                        : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
+                        ? "text-white"
+                        : "hover:text-white"
                     }`}>
                       {active && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
                       )}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 transition-colors ${active ? "text-red-400" : "text-zinc-500 group-hover:text-zinc-300"}`} />
-                      <span className="font-rajdhani font-semibold text-sm flex-1">{item.label}</span>
+                      <item.icon className={`w-4 h-4 flex-shrink-0 transition-colors`} style={{ color: active ? "var(--accent-red)" : "var(--text-muted)" }} />
+                      <span className="font-semibold text-sm flex-1" style={{ color: active ? "var(--text-primary)" : "var(--text-secondary)" }}>{item.label}</span>
                       {item.badge !== undefined && item.badge > 0 && (
                         <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
                           {item.badge}
@@ -229,10 +229,10 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
         {!isAuthenticated && !loading && (
           <div className="mt-2">
-            <p className="text-xs font-mono text-zinc-600 tracking-widest px-2 mb-1.5">CUENTA</p>
+            <p className="text-xs font-mono tracking-widest px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>CUENTA</p>
             <a href={getLoginUrl()} onClick={() => setMobileOpen(false)}>
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all duration-150">
-                <Shield className="w-4 h-4 text-zinc-500" />
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150" style={{ color: "var(--text-secondary)" }}>
+                <Shield className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
                 <span className="font-rajdhani font-semibold text-sm">Iniciar Sesión</span>
               </div>
             </a>
@@ -241,37 +241,34 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </nav>
 
       {/* Bottom: logout + version */}
-      <div className="px-3 pb-5 pt-2 border-t border-zinc-800/50 mt-auto">
+      <div className="px-3 pb-5 pt-2 mt-auto border-t" style={{ borderColor: "var(--border-main)" }}>
         {isAuthenticated && (
           <>
             <Link href="/settings" onClick={() => setMobileOpen(false)}>
-              <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group mb-1 ${
-                location === "/settings" ? "bg-red-500/10 text-white" : "text-zinc-400 hover:text-white hover:bg-zinc-800/60"
-              }`}>
-                <Settings className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                  location === "/settings" ? "text-red-400" : "text-zinc-500 group-hover:text-zinc-300"
-                }`} />
-                <span className="font-rajdhani font-semibold text-sm">Configuración</span>
+              <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group mb-1`} style={{ color: location === "/settings" ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                <Settings className="w-4 h-4 flex-shrink-0 transition-colors" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-muted)" }} />
+                <span className="font-semibold text-sm">Configuración</span>
               </div>
             </Link>
             <button
               onClick={() => { logout(); setMobileOpen(false); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/5 transition-all duration-150 group"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group"
+              style={{ color: "var(--text-muted)" }}
             >
-              <LogOut className="w-4 h-4 group-hover:text-red-400 transition-colors" />
-              <span className="font-rajdhani font-semibold text-sm">Cerrar sesión</span>
+              <LogOut className="w-4 h-4 transition-colors" />
+              <span className="font-semibold text-sm">Cerrar sesión</span>
             </button>
           </>
         )}
-        <p className="text-center text-xs text-zinc-700 font-mono mt-3">Red Level Circle v2.0</p>
+        <p className="text-center text-xs font-mono mt-3" style={{ color: "var(--text-muted)" }}>Red Level Circle v2.0</p>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-black text-white flex overflow-x-hidden">
+    <div className="min-h-screen flex overflow-x-hidden" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 bg-zinc-950 border-r border-zinc-800/50 flex-col fixed h-full z-40 overflow-visible">
+      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "var(--sidebar)", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 
@@ -284,12 +281,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       )}
 
       {/* Mobile sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-zinc-950 border-r border-zinc-800/50 z-50 md:hidden transition-transform duration-300 ease-in-out ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}>
+      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "var(--sidebar)", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 h-14 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/50 z-30 flex items-center justify-between px-4 md:hidden">
+      <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-md border-b z-30 flex items-center justify-between px-4 md:hidden" style={{ background: "rgba(14,14,16,0.92)", borderColor: "var(--border-main)" }}>
         <span className="font-orbitron font-black text-base tracking-widest">
           <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
         </span>

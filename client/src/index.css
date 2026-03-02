@@ -1,11 +1,11 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* Override Tailwind's default mono font to use Inter for readability */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-mono: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -45,72 +45,87 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   DESIGN TOKENS — Epic Games Store Premium Dark Theme
+   #0E0E10 background · #18181B cards · #FF2D2D accent
+───────────────────────────────────────────────────────────────────────────── */
 :root {
-  /* Epic Games Store inspired theme — dark blue-grey with red accent */
-  --radius: 0.5rem;
+  /* ── Semantic theme tokens (used by shadcn/ui & Tailwind) ── */
+  --radius: 0.75rem;
 
-  /* Main content area: #121212 → oklch(0.11 0.005 255) */
-  --background: oklch(0.11 0.004 255);
-  --foreground: oklch(0.93 0.005 255);
+  /* #0E0E10 → oklch(0.09 0.002 264) */
+  --background:          oklch(0.09 0.002 264);
+  --foreground:          oklch(1.00 0 0);           /* #FFFFFF */
 
-  /* Cards: #2a2a2f → oklch(0.20 0.006 255) */
-  --card: oklch(0.20 0.006 255);
-  --card-foreground: oklch(0.93 0.005 255);
+  /* #18181B → oklch(0.13 0.003 264) */
+  --card:                oklch(0.13 0.003 264);
+  --card-foreground:     oklch(1.00 0 0);
 
-  /* Popover: slightly lighter than card */
-  --popover: oklch(0.22 0.006 255);
-  --popover-foreground: oklch(0.93 0.005 255);
+  /* popover slightly lighter than card */
+  --popover:             oklch(0.16 0.003 264);
+  --popover-foreground:  oklch(1.00 0 0);
 
-  /* Primary accent: Red Level red */
-  --primary: oklch(0.55 0.22 25);
-  --primary-foreground: oklch(0.98 0 0);
+  /* #FF2D2D → oklch(0.58 0.24 25) */
+  --primary:             oklch(0.58 0.24 25);
+  --primary-foreground:  oklch(1.00 0 0);
 
-  /* Secondary: #2a2a2f */
-  --secondary: oklch(0.20 0.006 255);
-  --secondary-foreground: oklch(0.85 0.005 255);
+  /* #232326 → oklch(0.18 0.003 264) */
+  --secondary:           oklch(0.18 0.003 264);
+  --secondary-foreground: oklch(0.85 0.003 264);
 
-  /* Muted: #1c1c21 */
-  --muted: oklch(0.16 0.006 255);
-  --muted-foreground: oklch(0.55 0.005 255);
+  /* #232326 hover surface */
+  --muted:               oklch(0.18 0.003 264);
+  /* #71717A → oklch(0.52 0.005 264) */
+  --muted-foreground:    oklch(0.52 0.005 264);
 
-  /* Accent: red */
-  --accent: oklch(0.55 0.22 25);
-  --accent-foreground: oklch(0.98 0 0);
+  /* accent = red */
+  --accent:              oklch(0.58 0.24 25);
+  --accent-foreground:   oklch(1.00 0 0);
 
-  /* Destructive: red */
-  --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  /* destructive = red */
+  --destructive:         oklch(0.58 0.24 25);
+  --destructive-foreground: oklch(1.00 0 0);
 
-  /* Borders: subtle blue-grey */
-  --border: oklch(0.28 0.008 255);
-  --input: oklch(0.18 0.006 255);
-  --ring: oklch(0.55 0.22 25);
+  /* #2A2A2E → oklch(0.21 0.003 264) */
+  --border:              oklch(0.21 0.003 264);
+  --input:               oklch(0.16 0.003 264);
+  --ring:                oklch(0.58 0.24 25);
 
-  /* Sidebar: #202024 → oklch(0.17 0.006 255) */
-  --sidebar: oklch(0.17 0.006 255);
-  --sidebar-foreground: oklch(0.85 0.005 255);
-  --sidebar-primary: oklch(0.55 0.22 25);
-  --sidebar-primary-foreground: oklch(0.98 0 0);
-  --sidebar-accent: oklch(0.55 0.22 25 / 0.12);
-  --sidebar-accent-foreground: oklch(0.70 0.28 25);
-  --sidebar-border: oklch(0.25 0.008 255);
-  --sidebar-ring: oklch(0.55 0.22 25);
+  /* Sidebar: slightly lighter than background */
+  --sidebar:             oklch(0.11 0.002 264);
+  --sidebar-foreground:  oklch(0.85 0.003 264);
+  --sidebar-primary:     oklch(0.58 0.24 25);
+  --sidebar-primary-foreground: oklch(1.00 0 0);
+  --sidebar-accent:      oklch(0.58 0.24 25 / 0.10);
+  --sidebar-accent-foreground: oklch(0.70 0.24 25);
+  --sidebar-border:      oklch(0.21 0.003 264);
+  --sidebar-ring:        oklch(0.58 0.24 25);
 
-  --chart-1: oklch(0.55 0.22 25);
-  --chart-2: oklch(0.65 0.18 80);
-  --chart-3: oklch(0.55 0.18 145);
-  --chart-4: oklch(0.55 0.18 220);
+  /* Charts */
+  --chart-1: oklch(0.58 0.24 25);
+  --chart-2: oklch(0.62 0.18 250);
+  --chart-3: oklch(0.78 0.20 85);
+  --chart-4: oklch(0.55 0.18 145);
   --chart-5: oklch(0.55 0.18 300);
-}
 
-/* Dark mode = same as root since we use dark theme by default */
+  /* ── Custom design tokens (used directly in components) ── */
+  --bg-main:           #0E0E10;
+  --bg-card:           #18181B;
+  --bg-hover:          #232326;
+  --border-main:       #2A2A2E;
+  --text-primary:      #FFFFFF;
+  --text-secondary:    #A1A1AA;
+  --text-muted:        #71717A;
+  --accent-red:        #FF2D2D;
+  --accent-red-hover:  #FF3B3B;
+  --accent-blue:       #3B82F6;
+  --accent-gold:       #FFD700;
+}
 
 /* ── Horizontal scroll carrusel: ocultar scrollbar ── */
-.games-scroll::-webkit-scrollbar {
-  display: none;
-}
+.games-scroll::-webkit-scrollbar { display: none; }
 
-/* Cards del carrusel de juegos: 2 visibles en móvil, 4 en desktop */
+/* Cards del carrusel de juegos */
 .games-card {
   flex: 0 0 calc((100% - 1 * 1rem) / 2);
   min-width: calc((100% - 1 * 1rem) / 2);
@@ -134,7 +149,7 @@
   }
   html, body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -142,13 +157,14 @@
     overflow-x: hidden;
     max-width: 100%;
   }
+  /* Headings keep Orbitron for brand identity */
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Orbitron', sans-serif;
     letter-spacing: 0.04em;
     line-height: 1.2;
   }
   p, span, li, td, th, label, input, textarea, select, button {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
@@ -162,142 +178,133 @@
     @apply cursor-pointer;
   }
   ::-webkit-scrollbar { width: 5px; height: 5px; }
-  ::-webkit-scrollbar-track { background: oklch(0.08 0.005 0); }
-  ::-webkit-scrollbar-thumb { background: oklch(0.55 0.22 25); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: oklch(0.65 0.26 25); }
+  ::-webkit-scrollbar-track { background: var(--bg-main); }
+  ::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent-red); }
 }
 
 @layer utilities {
   .font-display { font-family: 'Orbitron', sans-serif; }
-  .font-tech { font-family: 'Share Tech Mono', monospace; }
+  .font-orbitron { font-family: 'Orbitron', sans-serif; }
+  .font-tech { font-family: 'Inter', monospace; }
   .font-body { font-family: 'Inter', sans-serif; }
-  .font-grotesk { font-family: 'Space Grotesk', sans-serif; }
 
+  /* ── Epic-style card ── */
+  .epic-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    border-radius: 12px;
+    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .epic-card:hover {
+    background: var(--bg-hover);
+    border-color: oklch(0.30 0.003 264);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+
+  /* ── Legacy neon utilities (kept for backward compat) ── */
   .neon-text {
-    color: oklch(0.70 0.28 25);
-    text-shadow: 0 0 7px oklch(0.70 0.28 25 / 0.9), 0 0 15px oklch(0.60 0.26 25 / 0.7), 0 0 30px oklch(0.55 0.22 25 / 0.5);
+    color: var(--accent-red);
+    text-shadow: 0 0 7px rgba(255,45,45,0.7), 0 0 15px rgba(255,45,45,0.4);
   }
   .neon-text-sm {
-    color: oklch(0.70 0.28 25);
-    text-shadow: 0 0 4px oklch(0.70 0.28 25 / 0.8), 0 0 10px oklch(0.60 0.26 25 / 0.5);
+    color: var(--accent-red);
+    text-shadow: 0 0 4px rgba(255,45,45,0.6);
   }
   .neon-border {
-    border-color: oklch(0.55 0.22 25);
-    box-shadow: 0 0 5px oklch(0.55 0.22 25 / 0.5), inset 0 0 5px oklch(0.55 0.22 25 / 0.1);
+    border-color: var(--accent-red);
+    box-shadow: 0 0 5px rgba(255,45,45,0.4), inset 0 0 5px rgba(255,45,45,0.08);
   }
   .card-neon {
-    background: oklch(0.10 0.005 0);
-    border: 1px solid oklch(0.20 0.01 0);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background: var(--bg-card);
+    border: 1px solid var(--border-main);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .card-neon:hover {
-    border-color: oklch(0.55 0.22 25 / 0.5);
-    box-shadow: 0 0 20px oklch(0.55 0.22 25 / 0.1);
+    border-color: rgba(255,45,45,0.4);
+    box-shadow: 0 0 16px rgba(255,45,45,0.08);
   }
   .gradient-text {
-    background: linear-gradient(135deg, oklch(0.75 0.28 25), oklch(0.55 0.22 25));
+    background: linear-gradient(135deg, #FF3B3B, #FF2D2D);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+
+  /* ── Status badges ── */
   .badge-pending {
-    background: oklch(0.65 0.18 80 / 0.15);
-    border: 1px solid oklch(0.65 0.18 80 / 0.5);
-    color: oklch(0.75 0.18 80);
+    background: rgba(255,215,0,0.12);
+    border: 1px solid rgba(255,215,0,0.4);
+    color: #FFD700;
   }
   .badge-approved {
-    background: oklch(0.55 0.18 145 / 0.15);
-    border: 1px solid oklch(0.55 0.18 145 / 0.5);
-    color: oklch(0.65 0.18 145);
+    background: rgba(34,197,94,0.12);
+    border: 1px solid rgba(34,197,94,0.4);
+    color: #4ade80;
   }
   .badge-rejected {
-    background: oklch(0.55 0.22 25 / 0.15);
-    border: 1px solid oklch(0.55 0.22 25 / 0.5);
-    color: oklch(0.65 0.22 25);
+    background: rgba(255,45,45,0.12);
+    border: 1px solid rgba(255,45,45,0.4);
+    color: #FF3B3B;
   }
   .badge-cancelled {
-    background: oklch(0.35 0.005 0 / 0.15);
-    border: 1px solid oklch(0.35 0.005 0 / 0.5);
-    color: oklch(0.55 0.005 0);
+    background: rgba(113,113,122,0.12);
+    border: 1px solid rgba(113,113,122,0.4);
+    color: #71717A;
   }
   .neon-circle {
     border-radius: 50%;
-    border: 2px solid oklch(0.55 0.22 25);
-    box-shadow: 0 0 20px oklch(0.55 0.22 25 / 0.6), 0 0 60px oklch(0.55 0.22 25 / 0.3), inset 0 0 20px oklch(0.55 0.22 25 / 0.1);
+    border: 2px solid var(--accent-red);
+    box-shadow: 0 0 16px rgba(255,45,45,0.5), 0 0 40px rgba(255,45,45,0.2);
   }
 }
 
+/* ── Animations ── */
 @keyframes neon-pulse {
-  0%, 100% { box-shadow: 0 0 5px oklch(0.55 0.22 25 / 0.5), 0 0 15px oklch(0.55 0.22 25 / 0.3); }
-  50% { box-shadow: 0 0 15px oklch(0.55 0.22 25 / 0.8), 0 0 40px oklch(0.55 0.22 25 / 0.5); }
+  0%, 100% { box-shadow: 0 0 5px rgba(255,45,45,0.4), 0 0 15px rgba(255,45,45,0.2); }
+  50%       { box-shadow: 0 0 15px rgba(255,45,45,0.7), 0 0 40px rgba(255,45,45,0.4); }
 }
 @keyframes neon-text-pulse {
-  0%, 100% { text-shadow: 0 0 7px oklch(0.70 0.28 25 / 0.9), 0 0 15px oklch(0.60 0.26 25 / 0.7); }
-  50% { text-shadow: 0 0 15px oklch(0.70 0.28 25), 0 0 30px oklch(0.60 0.26 25 / 0.9), 0 0 60px oklch(0.55 0.22 25 / 0.5); }
+  0%, 100% { text-shadow: 0 0 7px rgba(255,45,45,0.8), 0 0 15px rgba(255,45,45,0.5); }
+  50%       { text-shadow: 0 0 15px rgba(255,45,45,1), 0 0 30px rgba(255,45,45,0.7); }
 }
 .animate-neon-pulse { animation: neon-pulse 2s ease-in-out infinite; }
-.animate-neon-text { animation: neon-text-pulse 2.5s ease-in-out infinite; }
+.animate-neon-text  { animation: neon-text-pulse 2.5s ease-in-out infinite; }
 
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
-
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.92) translateY(8px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-
 @keyframes coinPop {
-  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
-  60% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(5deg); opacity: 1; }
   100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
-
 @keyframes sparkle {
-  0% { transform: scale(0); opacity: 1; }
+  0%   { transform: scale(0); opacity: 1; }
   100% { transform: scale(2) translate(8px, -8px); opacity: 0; }
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
-
   .flex {
     min-height: 0;
     min-width: 0;
   }
-
   @media (min-width: 640px) {
-    .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
-      padding-right: 1.5rem;
-    }
+    .container { padding-left: 1.5rem; padding-right: 1.5rem; }
   }
-
   @media (min-width: 1024px) {
-    .container {
-      padding-left: 2rem; /* 32px - desktop padding */
-      padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
-    }
+    .container { padding-left: 2rem; padding-right: 2rem; max-width: 1280px; }
   }
 }

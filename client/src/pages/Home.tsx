@@ -85,7 +85,7 @@ function HeroSection() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white text-sm font-semibold truncate">{t.name}</p>
+                  <p className="text-foreground text-sm font-semibold truncate">{t.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                     <span className={`text-xs truncate ${st.color}`}>{st.text}</span>
@@ -117,7 +117,7 @@ function PlatformStats() {
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1">{item.label}</p>
-              <p className="font-orbitron font-black text-2xl text-white">{item.value}</p>
+              <p className="font-orbitron font-black text-2xl text-foreground">{item.value}</p>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "oklch(0.15 0.01 0)" }}>
               {item.icon}
@@ -143,15 +143,15 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+        <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           {icon}{title}
         </h2>
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex gap-1">
-            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <ChevronLeft size={14} />
             </button>
-            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <ChevronRight size={14} />
             </button>
           </div>
@@ -189,20 +189,20 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
   return (
     <section>
       <div className="flex items-center justify-between mb-5">
-        <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+        <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           <Gamepad2 size={18} className="text-red-500" /> Juegos
         </h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Anterior"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Siguiente"
           >
             <ChevronRight size={14} />
@@ -255,10 +255,10 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                 style={{ background: "linear-gradient(to top, oklch(0.55 0.22 25 / 0.25) 0%, transparent 60%)" }} />
               <div className="absolute bottom-0 left-0 right-0 p-4">
-                <p className="font-orbitron font-bold text-white text-sm leading-tight mb-1.5 group-hover:text-red-300 transition-colors">{g.name}</p>
+                <p className="font-orbitron font-bold text-foreground text-sm leading-tight mb-1.5 group-hover:text-red-300 transition-colors">{g.name}</p>
                 <div className="flex items-center gap-1.5">
                   <Trophy size={11} className="text-red-400" />
-                  <span className="text-xs font-mono text-zinc-400">{countByGame[g.name] ?? 0} torneo{(countByGame[g.name] ?? 0) !== 1 ? "s" : ""}</span>
+                  <span className="text-xs font-mono text-muted-foreground">{countByGame[g.name] ?? 0} torneo{(countByGame[g.name] ?? 0) !== 1 ? "s" : ""}</span>
                 </div>
               </div>
               {(countByGame[g.name] ?? 0) > 0 && (
@@ -305,7 +305,7 @@ function MissionCard({ m }: { m: any }) {
         {/* Body */}
         <div className="p-4 space-y-2">
           {m.sponsorName && <p className="text-muted-foreground text-xs font-mono truncate">{m.sponsorName}</p>}
-          <p className="text-white font-bold text-sm line-clamp-2 leading-snug group-hover:text-green-300 transition-colors">{m.title}</p>
+          <p className="text-foreground font-bold text-sm line-clamp-2 leading-snug group-hover:text-green-300 transition-colors">{m.title}</p>
           {m.durationSeconds && (
             <div className="flex items-center gap-1 text-muted-foreground text-xs font-mono">
               <Clock size={10} /> {Math.ceil(m.durationSeconds / 60)} min
@@ -336,7 +336,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
         {c.banner && <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />}
         <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 50%, oklch(0.12 0.005 0) 100%)" }} />
         {isLive && (
-          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-white font-bold text-xs tracking-wider" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.7)" }}>
+          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-foreground font-bold text-xs tracking-wider" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.7)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             EN VIVO
           </div>
@@ -351,7 +351,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
       {/* Body */}
       <div className="pt-10 px-4 pb-4">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <p className="text-white font-bold text-sm truncate">{name}</p>
+          <p className="text-foreground font-bold text-sm truncate">{name}</p>
           {c.isVerified && <VerifiedBadge size={14} />}
         </div>
         {c.category && <p className="text-red-400 text-xs font-mono capitalize mb-1">{c.category}</p>}
@@ -399,7 +399,7 @@ function NewsCard({ n }: { n: any }) {
         </div>
         <div className="p-3">
           {n.category && <span className="text-xs font-mono text-red-400 uppercase tracking-wider">{n.category}</span>}
-          <p className="text-white font-semibold text-sm mt-1 line-clamp-2 leading-snug">{n.title}</p>
+          <p className="text-foreground font-semibold text-sm mt-1 line-clamp-2 leading-snug">{n.title}</p>
           <p className="text-muted-foreground text-xs mt-1">{new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</p>
         </div>
       </div>
@@ -471,12 +471,12 @@ function TeamsAndPeopleSection() {
   return (
     <section>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+        <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           <Users size={18} className="text-blue-400" /> Comunidad
         </h2>
         <button
           onClick={handleManualRefresh}
-          className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors"
           title="Actualizar"
         >
           <RefreshCw size={13} /> Actualizar
@@ -486,10 +486,10 @@ function TeamsAndPeopleSection() {
         {/* Left: Top Teams */}
         <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-            <h3 className="font-orbitron font-bold text-sm text-white flex items-center gap-2">
+            <h3 className="font-orbitron font-bold text-sm text-foreground flex items-center gap-2">
               <Shield size={15} className="text-red-400" /> Top Equipos
             </h3>
-            <Link href="/teams" className="text-xs font-mono text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
+            <Link href="/teams" className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
               Ver todos <ArrowRight size={12} />
             </Link>
           </div>
@@ -520,7 +520,7 @@ function TeamsAndPeopleSection() {
                   </div>
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate group-hover:text-red-300 transition-colors">{team.name}</p>
+                    <p className="text-foreground font-semibold text-sm truncate group-hover:text-red-300 transition-colors">{team.name}</p>
                     {team.game && <p className="text-muted-foreground text-xs font-mono truncate">{team.game}</p>}
                   </div>
                   {/* Points */}
@@ -537,10 +537,10 @@ function TeamsAndPeopleSection() {
         {/* Right: People you may know */}
         <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
-            <h3 className="font-orbitron font-bold text-sm text-white flex items-center gap-2">
+            <h3 className="font-orbitron font-bold text-sm text-foreground flex items-center gap-2">
               <User2 size={15} className="text-blue-400" /> {isAuthenticated ? "Quizás Conozcas" : "Nuevos Jugadores"}
             </h3>
-            <Link href="/community" className="text-xs font-mono text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
+            <Link href="/community" className="text-xs font-mono text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
               Ver todos <ArrowRight size={12} />
             </Link>
           </div>
@@ -561,7 +561,7 @@ function TeamsAndPeopleSection() {
                     className="shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white font-semibold text-sm truncate group-hover:text-blue-300 transition-colors">
+                    <p className="text-foreground font-semibold text-sm truncate group-hover:text-blue-300 transition-colors">
                       {u.nickname ?? u.name ?? "Usuario"}
                     </p>
                     <p className="text-muted-foreground text-xs font-mono truncate">@{u.name ?? "user"}</p>
@@ -728,10 +728,10 @@ export default function Home() {
         {liveCreatorsList.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-orbitron font-bold text-white text-lg flex items-center gap-2">
+              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                 Creadores en Vivo Ahora
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold text-white" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.5)" }}>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.5)" }}>
                   {liveCreatorsList.length}
                 </span>
               </h2>
@@ -754,7 +754,7 @@ export default function Home() {
                       )}
                       <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
                       {/* EN VIVO badge */}
-                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-white" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.6)" }}>
+                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.6)" }}>
                         <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                         EN VIVO
                       </div>
@@ -762,7 +762,7 @@ export default function Home() {
                     <div className="p-3 flex items-center gap-2.5">
                       <UserAvatar avatar={c.avatar} name={c.displayName} size="sm" />
                       <div className="min-w-0">
-                        <p className="text-white text-sm font-bold truncate">{c.displayName}</p>
+                        <p className="text-foreground text-sm font-bold truncate">{c.displayName}</p>
                         <p className="text-muted-foreground text-xs truncate">{c.category ?? "Creador"}</p>
                       </div>
                     </div>
@@ -803,7 +803,7 @@ export default function Home() {
           <HScrollSection
             title="Últimas Noticias"
             href="/news"
-            icon={<Newspaper size={18} className="text-zinc-400" />}
+            icon={<Newspaper size={18} className="text-muted-foreground" />}
           >
             {news!.map(n => <NewsCard key={n.id} n={n} />)}
           </HScrollSection>
@@ -820,15 +820,15 @@ export default function Home() {
               style={{ backgroundImage: "repeating-linear-gradient(45deg, #ff0000 0, #ff0000 1px, transparent 0, transparent 50%)", backgroundSize: "20px 20px" }} />
             <div className="relative p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div>
-                <h2 className="font-orbitron font-black text-2xl sm:text-3xl text-white mb-2">¿Listo para competir?</h2>
-                <p className="text-zinc-400 text-sm max-w-md">Únete a la plataforma de esports más grande. Inscríbete en torneos, crea tu equipo y escala en el ranking global.</p>
+                <h2 className="font-orbitron font-black text-2xl sm:text-3xl text-foreground mb-2">¿Listo para competir?</h2>
+                <p className="text-muted-foreground text-sm max-w-md">Únete a la plataforma de esports más grande. Inscríbete en torneos, crea tu equipo y escala en el ranking global.</p>
               </div>
               <div className="flex gap-3 shrink-0">
-                <a href={getLoginUrl()} className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all hover:scale-105"
+                <a href={getLoginUrl()} className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-foreground transition-all hover:scale-105"
                   style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)" }}>
                   REGISTRARSE
                 </a>
-                <Link href="/tournaments" className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white border border-border hover:border-zinc-500 transition-colors bg-card/60">
+                <Link href="/tournaments" className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-foreground border border-border hover:border-zinc-500 transition-colors bg-card/60">
                   VER TORNEOS
                 </Link>
               </div>
@@ -847,7 +847,7 @@ export default function Home() {
                   <span className="font-orbitron text-sm text-purple-400 tracking-wider">CREADORES DE CONTENIDO</span>
                 </div>
                 <div>
-                  <h3 className="font-orbitron font-bold text-white text-lg">Conoce a nuestros creadores</h3>
+                  <h3 className="font-orbitron font-bold text-foreground text-lg">Conoce a nuestros creadores</h3>
                   <p className="text-muted-foreground text-xs mt-1">Streamers, YouTubers y creadores verificados de la plataforma</p>
                 </div>
                 <div className="flex items-center gap-1 text-purple-400 text-xs font-mono group-hover:gap-2 transition-all">
@@ -865,7 +865,7 @@ export default function Home() {
                   <span className="font-orbitron text-sm text-red-400 tracking-wider">¿ERES CREADOR?</span>
                 </div>
                 <div>
-                  <h3 className="font-orbitron font-bold text-white text-lg">Aplica como creador oficial</h3>
+                  <h3 className="font-orbitron font-bold text-foreground text-lg">Aplica como creador oficial</h3>
                   <p className="text-muted-foreground text-xs mt-1">Obtén tu badge verificado y aparece en la plataforma</p>
                 </div>
                 <div className="flex items-center gap-1 text-red-400 text-xs font-mono group-hover:gap-2 transition-all">

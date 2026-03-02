@@ -21,13 +21,13 @@ export function tournamentStatusInfo(s: string | null | undefined) {
     registration_open: { text: "Inscripciones abiertas", color: "text-green-400", dot: "bg-green-500" },
     in_progress:       { text: "En curso",               color: "text-yellow-400", dot: "bg-yellow-400 animate-pulse" },
     upcoming:          { text: "Próximamente",            color: "text-blue-400",   dot: "bg-blue-500" },
-    completed:         { text: "Finalizado",              color: "text-zinc-500",   dot: "bg-zinc-600" },
+    completed:         { text: "Finalizado",              color: "text-muted-foreground",   dot: "bg-zinc-600" },
     cancelled:         { text: "Cancelado",               color: "text-red-600",    dot: "bg-red-700" },
-    draft:             { text: "Borrador",                color: "text-zinc-600",   dot: "bg-zinc-700" },
+    draft:             { text: "Borrador",                color: "text-muted-foreground",   dot: "bg-zinc-700" },
     pending_approval:  { text: "Pendiente de aprobación", color: "text-orange-400", dot: "bg-orange-500" },
-    registration_closed: { text: "Inscripciones cerradas", color: "text-zinc-500", dot: "bg-zinc-600" },
+    registration_closed: { text: "Inscripciones cerradas", color: "text-muted-foreground", dot: "bg-zinc-600" },
   };
-  return map[s ?? ""] ?? { text: s ?? "", color: "text-zinc-500", dot: "bg-zinc-600" };
+  return map[s ?? ""] ?? { text: s ?? "", color: "text-muted-foreground", dot: "bg-zinc-600" };
 }
 
 export function formatTournamentDate(d: Date | string | null | undefined) {
@@ -109,7 +109,7 @@ export function TournamentCard({
         onClick={onClick}
       >
         {/* Thumbnail */}
-        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
+        <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
           {t.banner ? (
             <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
           ) : (
@@ -120,7 +120,7 @@ export function TournamentCard({
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">{t.name}</p>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-            {t.game && <span className="text-zinc-500 text-xs font-mono">{t.game}</span>}
+            {t.game && <span className="text-muted-foreground text-xs font-mono">{t.game}</span>}
             <span className={`flex items-center gap-1 text-xs ${st.color}`}>
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${st.dot}`} />{st.text}
             </span>
@@ -151,7 +151,7 @@ export function TournamentCard({
         onClick={onClick}
       >
         {/* Banner lateral */}
-        <div className="w-28 h-24 shrink-0 bg-zinc-900 overflow-hidden relative">
+        <div className="w-28 h-24 shrink-0 bg-card overflow-hidden relative">
           {t.banner ? (
             <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
           ) : (
@@ -175,17 +175,17 @@ export function TournamentCard({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {t.bracketType && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-zinc-800/80 text-zinc-500">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-secondary/80 text-muted-foreground">
                 <GitBranch size={9} /> {bracketLabel(t.bracketType)}
               </span>
             )}
             {formatLabel && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-zinc-800/80 text-zinc-500">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-secondary/80 text-muted-foreground">
                 <Users size={9} /> {formatLabel}
               </span>
             )}
             {t.maxTeams != null && (
-              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-zinc-800/80 text-zinc-500">
+              <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-mono bg-secondary/80 text-muted-foreground">
                 <Hash size={9} /> {t.registeredCount ?? 0}/{t.maxTeams}
               </span>
             )}
@@ -211,7 +211,7 @@ export function TournamentCard({
       onClick={onClick}
     >
       {/* Banner */}
-      <div className="relative h-36 bg-zinc-900 overflow-hidden">
+      <div className="relative h-36 bg-card overflow-hidden">
         {t.banner ? (
           <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
         ) : (
@@ -271,14 +271,14 @@ export function TournamentCard({
         {/* Organizador */}
         {t.creatorName && (
           <div className="flex items-center gap-1.5">
-            <span className="text-zinc-600 text-xs font-mono">Organizado por</span>
-            <span className="text-zinc-400 text-xs font-semibold truncate">{t.creatorName}</span>
+            <span className="text-muted-foreground text-xs font-mono">Organizado por</span>
+            <span className="text-muted-foreground text-xs font-semibold truncate">{t.creatorName}</span>
           </div>
         )}
 
         {/* Fecha + Premio */}
-        <div className="flex items-center justify-between pt-1 border-t border-zinc-800/60">
-          <span className="text-zinc-500 text-xs flex items-center gap-1 font-mono">
+        <div className="flex items-center justify-between pt-1 border-t border-border/60">
+          <span className="text-muted-foreground text-xs flex items-center gap-1 font-mono">
             <Calendar size={10} />{formatTournamentDate(t.startDate)}
           </span>
           {(t.prizeAmount ?? 0) > 0 && (
