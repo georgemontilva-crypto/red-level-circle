@@ -54,16 +54,16 @@
   /* Aligned with Epic Games Store palette */
   --radius: 0.75rem;
 
-  /* bg-main: #0E0E10 */
-  --background:          #0E0E10;
+  /* bg-main: #0f1115 — Epic Games Store exact */
+  --background:          #0f1115;
   --foreground:          #FFFFFF;
 
-  /* bg-card: #18181C */
-  --card:                #18181C;
+  /* bg-card: rgba semi-transparente sobre fondo oscuro */
+  --card:                rgba(255,255,255,0.03);
   --card-foreground:     #FFFFFF;
 
   /* popover */
-  --popover:             #202024;
+  --popover:             #1a1d24;
   --popover-foreground:  #FFFFFF;
 
   /* primary = blue accent Epic style */
@@ -71,11 +71,11 @@
   --primary-foreground:  #FFFFFF;
 
   /* secondary = hover */
-  --secondary:           #202024;
+  --secondary:           rgba(255,255,255,0.06);
   --secondary-foreground: #9A9A9A;
 
   /* muted */
-  --muted:               #202024;
+  --muted:               rgba(255,255,255,0.04);
   --muted-foreground:    #9A9A9A;
 
   /* accent = blue */
@@ -92,7 +92,7 @@
   --ring:                #2F6BFF;
 
   /* Sidebar: same as body */
-  --sidebar:             #0E0E10;
+  --sidebar:             #0f1115;
   --sidebar-foreground:  #9A9A9A;
   --sidebar-primary:     #2F6BFF;
   --sidebar-primary-foreground: #FFFFFF;
@@ -109,10 +109,10 @@
   --chart-5: oklch(0.55 0.18 300);
 
   /* ── Custom design tokens (used directly in components) ── */
-  --bg-main:           #0E0E10;
-  --bg-card:           #18181C;
-  --bg-hover:          #202024;
-  --border-main:       rgba(255,255,255,0.06);
+  --bg-main:           #0f1115;
+  --bg-card:           rgba(255,255,255,0.03);
+  --bg-hover:          rgba(255,255,255,0.06);
+  --border-main:       transparent;
   --text-primary:      #FFFFFF;
   --text-secondary:    #9A9A9A;
   --text-muted:        #6B6B6B;
