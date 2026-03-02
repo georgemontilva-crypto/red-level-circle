@@ -42,57 +42,171 @@ function statusLabel(s: string) {
   return map[s] ?? { text: s, color: "text-muted-foreground", dot: "bg-zinc-600" };
 }
 
-// ─── Hero Section (banner limpio, sin textos) ─────────────────────────────────
+// ─── Hero Section — carrusel automático estilo Epic Games ──────────────────────
+const SLIDE_DURATION = 6000; // ms por slide
+
 function HeroSection() {
-  const { data: homeBanner } = trpc.banners.getSection.useQuery({ sectionKey: "home" });
-  const { data: featuredTournaments } = trpc.home.featuredTournaments.useQuery();
-  const sidebarItems = featuredTournaments ?? [];
-  const heroBgImage = homeBanner?.isActive ? homeBanner.imageUrl : null;
+  const { data: adsData } = trpc.ads.list.useQuery();
+  const trackClick = trpc.ads.trackClick.useMutation();
+  const trackImpression = trpc.ads.trackImpression.useMutation();
+
+  // Filtrar solo ads activos con banner
+  const slides = (adsData ?? []).filter((a: any) => a.isActive && a.bannerImage);
+
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const progressRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+
+  const goTo = useCallback((idx: number) => {
+    if (idx === activeIdx) return;
+    setTransitioning(true);
+    setTimeout(() => {
+      setActiveIdx(idx);
+      setProgress(0);
+      startTimeRef.current = Date.now();
+      setTransitioning(false);
+    }, 300);
+  }, [activeIdx]);
+
+  // Barra de progreso animada
+  useEffect(() => {
+    if (slides.length === 0) return;
+    startTimeRef.current = Date.now();
+    setProgress(0);
+    const tick = () => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
+      setProgress(pct);
+      if (pct >= 100) {
+        const next = (activeIdx + 1) % slides.length;
+        setTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(next);
+          setProgress(0);
+          startTimeRef.current = Date.now();
+          setTransitioning(false);
+        }, 300);
+        return;
+      }
+      progressRef.current = setTimeout(tick, 30);
+    };
+    progressRef.current = setTimeout(tick, 30);
+    return () => { if (progressRef.current) clearTimeout(progressRef.current); };
+  }, [activeIdx, slides.length]);
+
+  // Track impression on slide change
+  useEffect(() => {
+    if (slides.length > 0 && slides[activeIdx]) {
+      trackImpression.mutate({ adId: slides[activeIdx].id });
+    }
+  }, [activeIdx, slides.length]);
+
+  const current = slides[activeIdx];
+
+  // Fallback si no hay ads
+  if (slides.length === 0) {
+    return (
+      <div className="flex gap-3 h-[420px] sm:h-[480px]">
+        <div className="relative flex-1 rounded-2xl overflow-hidden" style={{ background: "#18181C" }}>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Añade marcas desde el panel admin para ver el carrusel</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex gap-3 h-[420px] sm:h-[480px]">
-      {/* Main hero — banner limpio sin textos */}
-      <div className="relative flex-1 rounded-2xl overflow-hidden">
-        {heroBgImage ? (
+      {/* Main hero banner */}
+      <div className="relative flex-1 rounded-2xl overflow-hidden cursor-pointer"
+        onClick={() => {
+          if (current?.destinationUrl) {
+            trackClick.mutate({ adId: current.id });
+            window.open(current.destinationUrl, "_blank");
+          }
+        }}
+      >
+        {/* Banner image con fade */}
+        <div
+          className="absolute inset-0 transition-opacity duration-300"
+          style={{ opacity: transitioning ? 0 : 1 }}
+        >
           <img
-            src={heroBgImage}
-            alt="Banner"
+            src={current?.bannerImage ?? ""}
+            alt={current?.brandName ?? ""}
             className="absolute inset-0 w-full h-full object-cover"
           />
-        ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-red-950/30 to-black" />
-        )}
-        {/* Gradient overlay sutil solo en bordes */}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to right, rgba(0,0,0,0.15) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.15) 100%)" }} />
-      </div>
-      {/* Sidebar: Featured tournaments */}
-      <div className="hidden lg:flex flex-col w-72 gap-1.5 overflow-y-auto scrollbar-none">
-        {sidebarItems.length === 0 ? (
-          <div className="flex-1 rounded-xl flex items-center justify-center" style={{ background: "var(--bg-card)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
-            <p className="text-xs font-mono text-center px-4" style={{ color: "var(--text-muted)" }}>Los torneos destacados aparecerán aquí</p>
+          {/* Gradient overlay inferior para legibilidad */}
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.2) 40%, transparent 70%)" }} />
+        </div>
+
+        {/* Contenido inferior del banner */}
+        {current && (
+          <div className="absolute bottom-0 left-0 right-0 p-6 transition-opacity duration-300" style={{ opacity: transitioning ? 0 : 1 }}>
+            {current.logoImage && (
+              <img src={current.logoImage} alt={current.brandName} className="h-10 mb-3 object-contain" />
+            )}
+            {current.tagline && (
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: current.accentColor ?? "#fff" }}>{current.tagline}</p>
+            )}
+            <h2 className="text-2xl font-bold text-white mb-3 line-clamp-2">{current.title}</h2>
+            {current.destinationUrl && (
+              <button
+                className="px-5 py-2 rounded-lg text-sm font-bold text-black transition-opacity hover:opacity-90"
+                style={{ background: current.accentColor ?? "#fff" }}
+              >
+                {current.ctaLabel ?? "Ver más"}
+              </button>
+            )}
           </div>
-        ) : sidebarItems.map((t, i) => {
-          const st = statusLabel(t.status ?? "");
+        )}
+
+        {/* Publicidad badge */}
+        <div className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs font-mono" style={{ background: "rgba(0,0,0,0.6)", color: "rgba(255,255,255,0.5)" }}>Publicidad</div>
+      </div>
+
+      {/* Sidebar: lista de marcas con barra de progreso */}
+      <div className="hidden lg:flex flex-col w-72 gap-0 overflow-y-auto scrollbar-none">
+        {slides.map((ad: any, i: number) => {
+          const isActive = i === activeIdx;
           return (
-            <Link key={t.id} href={`/tournaments/${t.id}`}>
-              <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all" style={{ background: "var(--bg-card)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }} onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-hover)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--bg-card)")}>
-                <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-muted">
-                  {t.banner ? (
-                    <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Trophy size={16} className="text-red-500/50" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-foreground text-sm font-semibold truncate">{t.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                    <span className={`text-xs truncate ${st.color}`}>{st.text}</span>
-                  </div>
-                </div>
+            <div
+              key={ad.id}
+              className="relative flex items-center gap-3 px-3 py-3 cursor-pointer transition-colors duration-150"
+              style={{ background: isActive ? "var(--bg-hover)" : "transparent", borderRadius: "8px" }}
+              onClick={() => goTo(i)}
+              onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"; }}
+              onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+            >
+              {/* Thumbnail */}
+              <div className="w-16 h-11 rounded-lg overflow-hidden shrink-0" style={{ background: "#111" }}>
+                <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
               </div>
-            </Link>
+              {/* Info */}
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-semibold truncate">{ad.brandName}</p>
+                <p className="text-xs truncate" style={{ color: "var(--text-muted)" }}>{ad.title}</p>
+              </div>
+              {/* Barra de progreso vertical izquierda (solo activo) */}
+              {isActive && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-0.5 rounded-full overflow-hidden"
+                  style={{ background: "rgba(255,255,255,0.1)" }}
+                >
+                  <div
+                    className="w-full"
+                    style={{
+                      height: `${progress}%`,
+                      background: "#fff",
+                      transition: "height 30ms linear",
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
