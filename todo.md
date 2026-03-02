@@ -869,3 +869,12 @@
 - [x] Tab "Favoritos" en Shop.tsx con grid de productos favoritos
 - [x] Iconos de corazón y carrito en hover sobre tarjetas de productos (group hover)
 - [x] Deep-linking desde URL: /shop?tab=cart y /shop?tab=wishlist
+
+## Rediseño Visual Epic Games Store V7
+- [x] Variables CSS globales: #0E0E10 body, #18181C cards, #202024 hover, accent #2F6BFF
+- [x] Sidebar transparente, sin bordes, integrado con el fondo general
+- [x] TopNav fijo 75px, fondo unificado con body, sin borde inferior visible
+- [x] Stats cards: sin gradientes, sin bordes, tarjetas flotantes con shadow
+- [x] TournamentCard: todas las variantes sin bordes, shadow flotante, hover suave
+- [x] epic-card y card-neon: sin bordes, transform hover
+- [x] Paleta actualizada: texto secundario #9A9A9A, hover #202024

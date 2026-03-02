@@ -101,19 +101,18 @@ export function TournamentCard({
       <div
         className={`flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all duration-200 ${className}`}
         style={{
-          background: "var(--bg-card)",
-        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
-        borderRadius: "12px",
-      }}
+          background: selected ? "var(--bg-hover)" : "var(--bg-card)",
+          border: "none",
+          borderRadius: "12px",
+          boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 20px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.4)",
+        }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
       }}
         onClick={onClick}
       >
@@ -152,19 +151,18 @@ export function TournamentCard({
       <div
         className={`flex gap-4 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${className}`}
         style={{
-        background: "var(--bg-card)",
-        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
-        borderRadius: "12px",
-      }}
+          background: selected ? "var(--bg-hover)" : "var(--bg-card)",
+          border: "none",
+          borderRadius: "12px",
+          boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 20px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.4)",
+        }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
       }}
         onClick={onClick}
       >
@@ -220,20 +218,20 @@ export function TournamentCard({
       className={`shrink-0 w-64 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
       style={{
         scrollSnapAlign: "start",
-        background: "var(--bg-card)",
-        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
+        background: selected ? "var(--bg-hover)" : "var(--bg-card)",
+        border: "none",
         borderRadius: "12px",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 24px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.4)",
       }}
       onMouseEnter={e => {
         (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.5)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = selected ? "0 0 0 2px var(--accent-red), 0 4px 24px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.4)";
       }}
       onClick={onClick}
     >

@@ -67,14 +67,14 @@ function HeroSection() {
       {/* Sidebar: Featured tournaments */}
       <div className="hidden lg:flex flex-col w-72 gap-1.5 overflow-y-auto scrollbar-none">
         {sidebarItems.length === 0 ? (
-          <div className="flex-1 rounded-xl bg-card/60 border border-border/50 flex items-center justify-center">
-            <p className="text-muted-foreground text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
+          <div className="flex-1 rounded-xl flex items-center justify-center" style={{ background: "var(--bg-card)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+            <p className="text-xs font-mono text-center px-4" style={{ color: "var(--text-muted)" }}>Los torneos destacados aparecerán aquí</p>
           </div>
         ) : sidebarItems.map((t, i) => {
           const st = statusLabel(t.status ?? "");
           return (
             <Link key={t.id} href={`/tournaments/${t.id}`}>
-              <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border bg-card/60 border-border/50 hover:bg-secondary/80 hover:border-border">
+              <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all" style={{ background: "var(--bg-card)", boxShadow: "0 2px 12px rgba(0,0,0,0.3)" }} onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-hover)")} onMouseLeave={e => (e.currentTarget.style.background = "var(--bg-card)")}>
                 <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-muted">
                   {t.banner ? (
                     <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
@@ -104,24 +104,21 @@ function HeroSection() {
 function PlatformStats() {
   const { data: stats } = trpc.home.stats.useQuery();
   const items = [
-    { icon: <Users size={20} className="text-blue-400" />, label: "Jugadores", value: stats ? formatNumber(stats.totalUsers) : "—", color: "from-blue-950/40 to-transparent", border: "border-blue-900/30" },
-    { icon: <Trophy size={20} className="text-yellow-400" />, label: "Torneos", value: stats ? formatNumber(stats.totalTournaments) : "—", color: "from-yellow-950/40 to-transparent", border: "border-yellow-900/30" },
-    { icon: <Swords size={20} className="text-red-400" />, label: "Equipos", value: stats ? formatNumber(stats.totalTeams) : "—", color: "from-red-950/40 to-transparent", border: "border-red-900/30" },
-    { icon: <Flame size={20} className="text-orange-400" />, label: "Activos ahora", value: stats ? formatNumber(stats.activeTournaments) : "—", color: "from-orange-950/40 to-transparent", border: "border-orange-900/30" },
+    { icon: <Users size={20} className="text-blue-400" />, label: "Jugadores", value: stats ? formatNumber(stats.totalUsers) : "—", iconBg: "rgba(47,107,255,0.1)" },
+    { icon: <Trophy size={20} className="text-yellow-400" />, label: "Torneos", value: stats ? formatNumber(stats.totalTournaments) : "—", iconBg: "rgba(255,215,0,0.1)" },
+    { icon: <Swords size={20} className="text-red-400" />, label: "Equipos", value: stats ? formatNumber(stats.totalTeams) : "—", iconBg: "rgba(239,68,68,0.1)" },
+    { icon: <Flame size={20} className="text-orange-400" />, label: "Activos ahora", value: stats ? formatNumber(stats.activeTournaments) : "—", iconBg: "rgba(251,146,60,0.1)" },
   ];
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {items.map((item, i) => (
-        <div key={i} className={`relative rounded-2xl overflow-hidden border ${item.border} p-4`} style={{ background: "var(--bg-card)" }}>
-          <div className={`absolute inset-0 bg-gradient-to-br ${item.color}`} />
-          <div className="relative flex items-start justify-between">
-            <div>
-              <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1">{item.label}</p>
-              <p className="font-orbitron font-black text-2xl text-foreground">{item.value}</p>
-            </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--bg-hover)" }}>
-              {item.icon}
-            </div>
+        <div key={i} className="rounded-2xl p-4 flex items-start justify-between" style={{ background: "var(--bg-card)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}>
+          <div>
+            <p className="text-xs font-mono uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>{item.label}</p>
+            <p className="font-orbitron font-black text-2xl text-white">{item.value}</p>
+          </div>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: item.iconBg }}>
+            {item.icon}
           </div>
         </div>
       ))}

@@ -58,48 +58,48 @@
   --background:          #0E0E10;
   --foreground:          #FFFFFF;
 
-  /* bg-card: #18181B */
-  --card:                #18181B;
+  /* bg-card: #18181C */
+  --card:                #18181C;
   --card-foreground:     #FFFFFF;
 
-  /* popover: slightly lighter than card */
-  --popover:             #232326;
+  /* popover */
+  --popover:             #202024;
   --popover-foreground:  #FFFFFF;
 
-  /* accent-red: #FF2D2D */
-  --primary:             #FF2D2D;
+  /* primary = blue accent Epic style */
+  --primary:             #2F6BFF;
   --primary-foreground:  #FFFFFF;
 
-  /* bg-hover: #232326 */
-  --secondary:           #232326;
-  --secondary-foreground: #A1A1AA;
+  /* secondary = hover */
+  --secondary:           #202024;
+  --secondary-foreground: #9A9A9A;
 
-  /* muted: bg-hover */
-  --muted:               #232326;
-  --muted-foreground:    #71717A;
+  /* muted */
+  --muted:               #202024;
+  --muted-foreground:    #9A9A9A;
 
-  /* accent = red */
-  --accent:              #FF2D2D;
+  /* accent = blue */
+  --accent:              #2F6BFF;
   --accent-foreground:   #FFFFFF;
 
-  /* destructive = red */
-  --destructive:         #FF2D2D;
+  /* destructive = red (kept for errors) */
+  --destructive:         #EF4444;
   --destructive-foreground: #FFFFFF;
 
-  /* border-main: #2A2A2E */
-  --border:              #2A2A2E;
-  --input:               #232326;
-  --ring:                #FF2D2D;
+  /* border: very subtle, almost invisible */
+  --border:              rgba(255,255,255,0.06);
+  --input:               #202024;
+  --ring:                #2F6BFF;
 
-  /* Sidebar: #0B0B0D */
-  --sidebar:             #0B0B0D;
-  --sidebar-foreground:  #A1A1AA;
-  --sidebar-primary:     #FF2D2D;
+  /* Sidebar: same as body */
+  --sidebar:             #0E0E10;
+  --sidebar-foreground:  #9A9A9A;
+  --sidebar-primary:     #2F6BFF;
   --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent:      rgba(255,45,45,0.10);
-  --sidebar-accent-foreground: #FF6B6B;
-  --sidebar-border:      #2A2A2E;
-  --sidebar-ring:        #FF2D2D;
+  --sidebar-accent:      rgba(47,107,255,0.10);
+  --sidebar-accent-foreground: #2F6BFF;
+  --sidebar-border:      transparent;
+  --sidebar-ring:        #2F6BFF;
 
   /* Charts */
   --chart-1: oklch(0.58 0.24 25);
@@ -110,15 +110,15 @@
 
   /* ── Custom design tokens (used directly in components) ── */
   --bg-main:           #0E0E10;
-  --bg-card:           #18181B;
-  --bg-hover:          #232326;
-  --border-main:       #2A2A2E;
+  --bg-card:           #18181C;
+  --bg-hover:          #202024;
+  --border-main:       rgba(255,255,255,0.06);
   --text-primary:      #FFFFFF;
-  --text-secondary:    #A1A1AA;
-  --text-muted:        #71717A;
+  --text-secondary:    #9A9A9A;
+  --text-muted:        #6B6B6B;
   --accent-red:        #FF2D2D;
   --accent-red-hover:  #FF3B3B;
-  --accent-blue:       #3B82F6;
+  --accent-blue:       #2F6BFF;
   --accent-gold:       #FFD700;
   --radius-main:       12px;
 }
@@ -146,7 +146,13 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply outline-ring/50;
+    /* Remove all borders by default — spacing only */
+    border-color: transparent;
+  }
+  /* Only restore borders where explicitly needed */
+  [class*="border"] {
+    border-color: var(--border-main);
   }
   html, body {
     @apply bg-background text-foreground;
@@ -193,14 +199,14 @@
   /* ── Epic-style card ── */
   .epic-card {
     background: var(--bg-card);
-    border: 1px solid var(--border-main);
+    border: none;
     border-radius: 12px;
-    transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .epic-card:hover {
-    background: var(--bg-hover);
-    border-color: oklch(0.30 0.003 264);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
 
   /* ── Legacy neon utilities (kept for backward compat) ── */
@@ -218,12 +224,14 @@
   }
   .card-neon {
     background: var(--bg-card);
-    border: 1px solid var(--border-main);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
   .card-neon:hover {
-    border-color: rgba(255,45,45,0.4);
-    box-shadow: 0 0 16px rgba(255,45,45,0.08);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
   .gradient-text {
     background: linear-gradient(135deg, #FF3B3B, var(--accent-red));

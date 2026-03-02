@@ -41,8 +41,8 @@ export function TopNav() {
 
   return (
     <div
-      className="hidden md:flex items-center px-5 gap-4 border-b fixed top-0 z-40 backdrop-blur-md"
-      style={{ height: "75px", background: "rgba(11,11,13,0.97)", borderColor: "var(--border-main)", left: "240px", right: 0 }}
+      className="hidden md:flex items-center px-5 gap-4 fixed top-0 z-40 backdrop-blur-md"
+      style={{ height: "75px", background: "rgba(14,14,16,0.96)", borderBottom: "1px solid rgba(255,255,255,0.05)", left: "240px", right: 0 }}
 
     >
       {/* Back button */}

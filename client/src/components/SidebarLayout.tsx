@@ -146,8 +146,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {isAuthenticated && user && (
         <div
           ref={profileCardRef}
-          className="mx-3 mb-4 px-3 py-3 rounded-xl border"
-          style={{ background: "var(--bg-hover)", borderColor: "var(--border-main)", position: "relative", overflow: "visible" }}
+          className="mx-3 mb-4 px-3 py-3 rounded-xl"
+          style={{ background: "var(--bg-card)", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", position: "relative", overflow: "visible" }}
         >
           <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
             <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
@@ -178,7 +178,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </Link>
 
           {wallet && (
-              <div className="mt-2 flex items-center justify-between pt-2 border-t" style={{ borderColor: "var(--border-main)" }}>
+              <div className="mt-2 flex items-center justify-between pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               <div className="flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-yellow-400" />
                 <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
@@ -246,7 +246,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </nav>
 
       {/* Bottom: logout + version */}
-      <div className="px-3 pb-5 pt-2 mt-auto border-t" style={{ borderColor: "var(--border-main)" }}>
+      <div className="px-3 pb-5 pt-2 mt-auto">
         {isAuthenticated && (
           <>
             <Link href="/settings" onClick={() => setMobileOpen(false)}>
@@ -273,7 +273,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   return (
     <div className="min-h-screen flex overflow-x-hidden" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "var(--bg-main)", borderColor: "var(--border-main)" }}>
+      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible" style={{ background: "transparent" }}>
         <SidebarContent />
       </aside>
 
