@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
+import { TopNav } from "./TopNav";
 
 interface NavItem {
   label: string;
@@ -307,6 +308,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       {/* Main content */}
       <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0 overflow-x-hidden min-w-0">
+        <TopNav />
         {children}
       </main>
     </div>

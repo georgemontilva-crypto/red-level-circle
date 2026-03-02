@@ -1797,6 +1797,120 @@ export const appRouter = router({
 
     myOrders: protectedProcedure
       .query(async ({ ctx }) => getShopOrders(ctx.user.id)),
+
+    // ── Cart ──────────────────────────────────────────────────────────────
+    getCart: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { cartItems, shopItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) return { items: [] };
+        const { eq } = await import("drizzle-orm");
+        const items = await db
+          .select({ cartItem: cartItems, product: shopItems })
+          .from(cartItems)
+          .innerJoin(shopItems, eq(cartItems.itemId, shopItems.id))
+          .where(eq(cartItems.userId, ctx.user.id));
+        return { items };
+      }),
+
+    addToCart: protectedProcedure
+      .input(z.object({ itemId: z.number(), quantity: z.number().int().min(1).default(1) }))
+      .mutation(async ({ ctx, input }) => {
+        const { cartItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB not available" });
+        const { eq, and } = await import("drizzle-orm");
+        // Check if already in cart
+        const existing = await db.select().from(cartItems)
+          .where(and(eq(cartItems.userId, ctx.user.id), eq(cartItems.itemId, input.itemId)))
+          .limit(1);
+        if (existing.length > 0) {
+          await db.update(cartItems)
+            .set({ quantity: existing[0].quantity + input.quantity })
+            .where(eq(cartItems.id, existing[0].id));
+        } else {
+          await db.insert(cartItems).values({ userId: ctx.user.id, itemId: input.itemId, quantity: input.quantity });
+        }
+        return { success: true };
+      }),
+
+    removeFromCart: protectedProcedure
+      .input(z.object({ cartItemId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { cartItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB not available" });
+        const { eq, and } = await import("drizzle-orm");
+        await db.delete(cartItems)
+          .where(and(eq(cartItems.id, input.cartItemId), eq(cartItems.userId, ctx.user.id)));
+        return { success: true };
+      }),
+
+    clearCart: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const { cartItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB not available" });
+        const { eq } = await import("drizzle-orm");
+        await db.delete(cartItems).where(eq(cartItems.userId, ctx.user.id));
+        return { success: true };
+      }),
+
+    // ── Wishlist ───────────────────────────────────────────────────────────
+    getWishlist: protectedProcedure
+      .query(async ({ ctx }) => {
+        const { wishlistItems, shopItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) return { items: [] };
+        const { eq } = await import("drizzle-orm");
+        const items = await db
+          .select({ wishlistItem: wishlistItems, product: shopItems })
+          .from(wishlistItems)
+          .innerJoin(shopItems, eq(wishlistItems.itemId, shopItems.id))
+          .where(eq(wishlistItems.userId, ctx.user.id));
+        return { items };
+      }),
+
+    addToWishlist: protectedProcedure
+      .input(z.object({ itemId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { wishlistItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB not available" });
+        const { eq, and } = await import("drizzle-orm");
+        const existing = await db.select().from(wishlistItems)
+          .where(and(eq(wishlistItems.userId, ctx.user.id), eq(wishlistItems.itemId, input.itemId)))
+          .limit(1);
+        if (existing.length === 0) {
+          await db.insert(wishlistItems).values({ userId: ctx.user.id, itemId: input.itemId });
+        }
+        return { success: true };
+      }),
+
+    removeFromWishlist: protectedProcedure
+      .input(z.object({ itemId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const { wishlistItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB not available" });
+        const { eq, and } = await import("drizzle-orm");
+        await db.delete(wishlistItems)
+          .where(and(eq(wishlistItems.userId, ctx.user.id), eq(wishlistItems.itemId, input.itemId)));
+        return { success: true };
+      }),
+
+    isInWishlist: protectedProcedure
+      .input(z.object({ itemId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const { wishlistItems } = await import("../drizzle/schema");
+        const db = await getDb();
+        if (!db) return { inWishlist: false };
+        const { eq, and } = await import("drizzle-orm");
+        const existing = await db.select().from(wishlistItems)
+          .where(and(eq(wishlistItems.userId, ctx.user.id), eq(wishlistItems.itemId, input.itemId)))
+          .limit(1);
+        return { inWishlist: existing.length > 0 };
+      }),
   }),
 
   // ─── Cosmetics ─────────────────────────────────────────────────────────────

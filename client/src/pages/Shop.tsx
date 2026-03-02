@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import {
   ShoppingBag, Coins, Package, Zap, Star, Clock, CheckCircle,
   AlertCircle, Lock, MapPin, Mail, Phone, User, Globe, Hash, Key,
-  Sparkles, Shield, X, Check, ShoppingCart,
+  Sparkles, Shield, X, Check, ShoppingCart, Heart, Trash2, Plus, Minus, Bookmark,
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import {
@@ -166,10 +166,10 @@ export default function Shop() {
   const initialTab = (() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("tab");
-    if (t === "orders" || t === "products" || t === "cosmetics") return t;
+    if (t === "orders" || t === "products" || t === "cosmetics" || t === "cart" || t === "wishlist") return t;
     return "all";
   })();
-  const [mainTab, setMainTab] = useState<"all" | "products" | "cosmetics" | "orders">(initialTab);
+  const [mainTab, setMainTab] = useState<"all" | "products" | "cosmetics" | "orders" | "cart" | "wishlist">(initialTab);
 
   // Products state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -198,6 +198,38 @@ export default function Shop() {
   const { data: me, refetch: refetchMe } = trpc.auth.me.useQuery();
 
   const userBalance = (me as any)?.rlcBalance ?? 0;
+
+  // Cart & Wishlist queries
+  const { data: cartData, refetch: refetchCart } = trpc.shop.getCart.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: wishlistData, refetch: refetchWishlist } = trpc.shop.getWishlist.useQuery(undefined, { enabled: isAuthenticated });
+  const cartItems = cartData?.items ?? [];
+  const wishlistItems = wishlistData?.items ?? [];
+
+  // Cart mutations
+  const addToCartMutation = trpc.shop.addToCart.useMutation({
+    onSuccess: () => { refetchCart(); toast.success("Añadido al carrito", { style: { background: "var(--bg-main)", border: "1px solid var(--accent-blue)", color: "var(--text-primary)" } }); },
+    onError: (err) => toast.error(err.message),
+  });
+  const removeFromCartMutation = trpc.shop.removeFromCart.useMutation({
+    onSuccess: () => refetchCart(),
+    onError: (err) => toast.error(err.message),
+  });
+  const clearCartMutation = trpc.shop.clearCart.useMutation({
+    onSuccess: () => refetchCart(),
+  });
+
+  // Wishlist mutations
+  const addToWishlistMutation = trpc.shop.addToWishlist.useMutation({
+    onSuccess: () => { refetchWishlist(); toast.success("Añadido a favoritos", { style: { background: "var(--bg-main)", border: "1px solid var(--accent-blue)", color: "var(--text-primary)" } }); },
+    onError: (err) => toast.error(err.message),
+  });
+  const removeFromWishlistMutation = trpc.shop.removeFromWishlist.useMutation({
+    onSuccess: () => refetchWishlist(),
+    onError: (err) => toast.error(err.message),
+  });
+
+  const wishlistItemIds = new Set(wishlistItems.map((w: any) => w.wishlistItem?.itemId));
+  const cartItemIds = new Set(cartItems.map((c: any) => c.cartItem?.itemId));
 
   // Products mutations
   const resetModal = () => {
@@ -255,12 +287,16 @@ export default function Shop() {
     { id: "products",  label: "Productos",   icon: <Package className="w-4 h-4" /> },
     { id: "cosmetics", label: "Cosméticos",  icon: <Sparkles className="w-4 h-4" /> },
     ...(isAuthenticated ? [{ id: "orders", label: `Mis Pedidos${pendingOrdersCount > 0 ? ` (${pendingOrdersCount})` : ""}`, icon: <Clock className="w-4 h-4" /> }] : []),
+    ...(isAuthenticated ? [{ id: "cart", label: `Carrito${cartItems.length > 0 ? ` (${cartItems.length})` : ""}`, icon: <ShoppingCart className="w-4 h-4" /> }] : []),
+    ...(isAuthenticated ? [{ id: "wishlist", label: `Favoritos${wishlistItems.length > 0 ? ` (${wishlistItems.length})` : ""}`, icon: <Heart className="w-4 h-4" /> }] : []),
   ] as const;
 
   // ─── Render helpers ──────────────────────────────────────────────────────────
   const showProducts = mainTab === "all" || mainTab === "products";
   const showCosmetics = mainTab === "all" || mainTab === "cosmetics";
   const showOrders = mainTab === "orders";
+  const showCart = mainTab === "cart";
+  const showWishlist = mainTab === "wishlist";
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -299,6 +335,114 @@ export default function Shop() {
             </button>
           ))}
         </div>
+
+        {/* ── CART TAB ───────────────────────────────────────────────────────── */}
+        {showCart && (
+          <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5 text-blue-400" />
+              <h2 className="font-bold font-mono text-lg">MI CARRITO</h2>
+              <span className="ml-auto text-muted-foreground text-sm font-mono">{cartItems.length} {cartItems.length === 1 ? "producto" : "productos"}</span>
+              {cartItems.length > 0 && (
+                <button onClick={() => clearCartMutation.mutate()} className="text-xs text-red-400 hover:text-red-300 font-mono ml-2">Vaciar</button>
+              )}
+            </div>
+            {cartItems.length === 0 ? (
+              <div className="p-12 text-center">
+                <ShoppingCart className="w-14 h-14 text-blue-400/20 mx-auto mb-4" />
+                <p className="text-muted-foreground font-mono mb-4">Tu carrito está vacío</p>
+                <button onClick={() => setMainTab("all")} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-mono text-sm">Ver productos</button>
+              </div>
+            ) : (
+              <div>
+                <div className="divide-y divide-white/5">
+                  {cartItems.map((ci: any) => {
+                    const product = ci.product;
+                    const cartItem = ci.cartItem;
+                    if (!product) return null;
+                    return (
+                      <div key={cartItem.id} className="px-6 py-4 flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-lg bg-secondary overflow-hidden flex-shrink-0">
+                          {product.image ? <img src={product.image} alt={product.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-8 h-8 text-muted-foreground m-auto mt-4" />}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-white truncate">{product.name}</p>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Coins className="w-3.5 h-3.5 text-yellow-400" />
+                            <span className="text-yellow-400 font-mono text-sm">{product.price * cartItem.quantity} RLC</span>
+                            <span className="text-muted-foreground text-xs ml-1">({product.price} × {cartItem.quantity})</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => { if (cartItem.quantity > 1) addToCartMutation.mutate({ itemId: product.id, quantity: -1 }); else removeFromCartMutation.mutate({ cartItemId: cartItem.id }); }} className="w-7 h-7 rounded-full bg-secondary hover:bg-white/10 flex items-center justify-center text-white transition-colors"><Minus className="w-3.5 h-3.5" /></button>
+                          <span className="font-mono text-sm w-6 text-center">{cartItem.quantity}</span>
+                          <button onClick={() => addToCartMutation.mutate({ itemId: product.id, quantity: 1 })} className="w-7 h-7 rounded-full bg-secondary hover:bg-white/10 flex items-center justify-center text-white transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+                        </div>
+                        <button onClick={() => removeFromCartMutation.mutate({ cartItemId: cartItem.id })} className="p-2 text-muted-foreground hover:text-red-400 transition-colors"><Trash2 className="w-4 h-4" /></button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm">Total</p>
+                    <div className="flex items-center gap-1">
+                      <Coins className="w-4 h-4 text-yellow-400" />
+                      <span className="text-yellow-400 font-bold font-mono text-xl">
+                        {cartItems.reduce((sum: number, ci: any) => sum + (ci.product?.price ?? 0) * (ci.cartItem?.quantity ?? 1), 0)} RLC
+                      </span>
+                    </div>
+                  </div>
+                  <button onClick={() => setMainTab("all")} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono font-bold transition-colors">Ir a comprar</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── WISHLIST TAB ───────────────────────────────────────────────────── */}
+        {showWishlist && (
+          <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
+              <Heart className="w-5 h-5 text-red-400" />
+              <h2 className="font-bold font-mono text-lg">MIS FAVORITOS</h2>
+              <span className="ml-auto text-muted-foreground text-sm font-mono">{wishlistItems.length} {wishlistItems.length === 1 ? "producto" : "productos"}</span>
+            </div>
+            {wishlistItems.length === 0 ? (
+              <div className="p-12 text-center">
+                <Heart className="w-14 h-14 text-red-400/20 mx-auto mb-4" />
+                <p className="text-muted-foreground font-mono mb-4">No tienes productos favoritos aún</p>
+                <button onClick={() => setMainTab("all")} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono text-sm">Explorar tienda</button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
+                {wishlistItems.map((wi: any) => {
+                  const product = wi.product;
+                  const wishlistItem = wi.wishlistItem;
+                  if (!product) return null;
+                  return (
+                    <div key={wishlistItem.id} className="rounded-xl border border-white/10 bg-secondary overflow-hidden hover:border-red-500/40 transition-all">
+                      <div className="relative aspect-video bg-card overflow-hidden">
+                        {product.image ? <img src={product.image} alt={product.name} className="w-full h-full object-cover" /> : <ShoppingBag className="w-12 h-12 text-gray-700 m-auto mt-8" />}
+                        <button onClick={() => removeFromWishlistMutation.mutate({ itemId: product.id })} className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/60 flex items-center justify-center text-red-400 hover:bg-black/80 transition-colors"><Heart className="w-3.5 h-3.5 fill-red-400" /></button>
+                      </div>
+                      <div className="p-4">
+                        <p className="font-bold text-white truncate mb-2">{product.name}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Coins className="w-4 h-4 text-yellow-400" />
+                            <span className="text-yellow-400 font-bold font-mono">{product.price} RLC</span>
+                          </div>
+                          <button onClick={() => { addToCartMutation.mutate({ itemId: product.id, quantity: 1 }); setMainTab("cart"); }} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-mono rounded-lg transition-colors flex items-center gap-1"><ShoppingCart className="w-3 h-3" />Carrito</button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── ORDERS TAB ─────────────────────────────────────────────────────── */}
         {showOrders && (() => {
@@ -460,7 +604,7 @@ export default function Shop() {
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-xl border bg-card overflow-hidden transition-all hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(255,0,0,0.1)] ${isDisabled ? "opacity-70" : "cursor-pointer"} ${item.isFeatured ? "border-yellow-500/30" : "border-white/10"}`}
+                      className={`group rounded-xl border bg-card overflow-hidden transition-all hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(255,0,0,0.1)] ${isDisabled ? "opacity-70" : "cursor-pointer"} ${item.isFeatured ? "border-yellow-500/30" : "border-white/10"}`}
                       onClick={() => !isDisabled && setSelectedItem(item.id)}
                     >
                       <div className="relative aspect-video bg-secondary overflow-hidden">
@@ -482,6 +626,27 @@ export default function Shop() {
                             <CheckCircle className="w-8 h-8 text-green-400" />
                             <span className="text-green-400 font-bold font-mono text-sm">YA COMPRADO</span>
                             {item.maxPerUser && <span className="text-green-600 text-xs font-mono">{purchasedCount}/{item.maxPerUser} unidades</span>}
+                          </div>
+                        )}
+                        {/* Wishlist & Cart quick-action icons */}
+                        {isAuthenticated && (
+                          <div className="absolute bottom-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={e => { e.stopPropagation(); wishlistItemIds.has(item.id) ? removeFromWishlistMutation.mutate({ itemId: item.id }) : addToWishlistMutation.mutate({ itemId: item.id }); }}
+                              className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center transition-colors hover:bg-black/90"
+                              title={wishlistItemIds.has(item.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+                            >
+                              <Heart className={`w-4 h-4 ${wishlistItemIds.has(item.id) ? "fill-red-400 text-red-400" : "text-white"}`} />
+                            </button>
+                            {!isDisabled && (
+                              <button
+                                onClick={e => { e.stopPropagation(); addToCartMutation.mutate({ itemId: item.id, quantity: 1 }); }}
+                                className="w-8 h-8 rounded-full bg-black/70 backdrop-blur-sm flex items-center justify-center transition-colors hover:bg-black/90"
+                                title="Añadir al carrito"
+                              >
+                                <ShoppingCart className={`w-4 h-4 ${cartItemIds.has(item.id) ? "text-blue-400" : "text-white"}`} />
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

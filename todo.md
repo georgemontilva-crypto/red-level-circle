@@ -858,3 +858,14 @@
 - [x] Eliminar la ruta /shop/cosmetics de App.tsx (redirigir a /shop?tab=cosmeticos)
 - [x] Actualizar el sidebar para que solo haya un enlace "Tienda" → /shop
 - [x] Mantener la funcionalidad completa: compra, equipar cosméticos, historial de pedidos
+
+## TopNav + Carrito + Favoritos V52
+- [x] Backend: procedures getCart, addToCart, removeFromCart, clearCart en shop router
+- [x] Backend: procedures getWishlist, addToWishlist, removeFromWishlist, isInWishlist en shop router
+- [x] Tablas cart_items y wishlist_items en base de datos (db:push aplicado)
+- [x] Componente TopNav con búsqueda, links de navegación, iconos carrito/favoritos con badges
+- [x] TopNav integrado en SidebarLayout (visible en todas las páginas desktop)
+- [x] Tab "Carrito" en Shop.tsx con lista de productos, controles de cantidad, total y vaciar
+- [x] Tab "Favoritos" en Shop.tsx con grid de productos favoritos
+- [x] Iconos de corazón y carrito en hover sobre tarjetas de productos (group hover)
+- [x] Deep-linking desde URL: /shop?tab=cart y /shop?tab=wishlist

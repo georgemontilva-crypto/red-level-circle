@@ -169,6 +169,13 @@
       "when": 1772389532791,
       "tag": "0023_fluffy_hercules",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "5",
+      "when": 1772486787768,
+      "tag": "0024_curly_marauders",
+      "breakpoints": true
     }
   ]
 }
