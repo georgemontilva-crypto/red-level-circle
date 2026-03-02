@@ -133,14 +133,14 @@ function HeroSection() {
   return (
     <div
       style={{ display: "grid", gridTemplateColumns: "3fr 1fr", gap: "24px" }}
-      className="max-lg:flex max-lg:flex-col max-lg:gap-4"
+      className="max-lg:block"
       onMouseEnter={handlePause}
       onMouseLeave={handleResume}
     >
       {/* ─── BANNER PRINCIPAL ─── */}
       <div
         className="relative overflow-hidden cursor-pointer"
-        style={{ height: "420px", borderRadius: "16px", overflow: "hidden" }}
+        style={{ height: "clamp(260px, 45vw, 420px)", borderRadius: "16px", overflow: "hidden" }}
         onClick={() => {
           if (current?.destinationUrl) {
             trackClick.mutate({ adId: current.id });
@@ -162,20 +162,20 @@ function HeroSection() {
         {/* Contenido inferior */}
         {current && (
           <div
-            className="absolute bottom-0 left-0 right-0 p-7"
+            className="absolute bottom-0 left-0 right-0 p-5 sm:p-7"
             style={{ opacity: transitioning ? 0 : 1, transition: "opacity 250ms ease" }}
           >
             {current.logoImage && (
-              <img src={current.logoImage} alt={current.brandName} className="h-9 mb-3 object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))" }} />
+              <img src={current.logoImage} alt={current.brandName} className="h-7 sm:h-9 mb-2 sm:mb-3 object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))" }} />
             )}
             {current.tagline && (
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: current.accentColor ?? "rgba(255,255,255,0.7)" }}>{current.tagline}</p>
+              <p className="text-xs font-semibold uppercase tracking-widest mb-1 sm:mb-1.5" style={{ color: current.accentColor ?? "rgba(255,255,255,0.7)" }}>{current.tagline}</p>
             )}
-            <h2 className="text-2xl font-bold text-white mb-4 leading-tight" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>{current.title}</h2>
+            <h2 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 leading-tight" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>{current.title}</h2>
             {/* UN Único botón minimalista */}
             {current.destinationUrl && (
               <button
-                className="px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-150"
+                className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold transition-all duration-150"
                 style={{ background: "rgba(255,255,255,0.92)", color: "#111", backdropFilter: "blur(4px)" }}
                 onMouseEnter={e => (e.currentTarget.style.background = "#fff")}
                 onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.92)")}
@@ -190,8 +190,7 @@ function HeroSection() {
         <div className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs" style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.45)" }}>Publicidad</div>
       </div>
 
-      {/* ─── TARJETAS LATERALES ─── */}
-      {/* Desktop: columna vertical */}
+      {/* ─── TARJETAS LATERALES — solo desktop ─── */}
       <div className="hidden lg:flex flex-col gap-0">
         {slides.map((ad: any, i: number) => {
           const isActive = i === activeIdx;
@@ -243,43 +242,7 @@ function HeroSection() {
         })}
       </div>
 
-      {/* Móvil: scroll horizontal de tarjetas */}
-      <div
-        className="lg:hidden flex gap-2 overflow-x-auto pb-1"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        {slides.map((ad: any, i: number) => {
-          const isActive = i === activeIdx;
-          return (
-            <div
-              key={ad.id}
-              className="relative cursor-pointer shrink-0 transition-colors duration-150"
-              style={{
-                width: "140px",
-                height: "72px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "10px",
-                borderRadius: "12px",
-                background: isActive ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-              }}
-              onClick={() => goTo(i)}
-            >
-              <div className="shrink-0 rounded-md overflow-hidden" style={{ width: "36px", height: "36px" }}>
-                <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
-              </div>
-              <p className="text-white text-xs font-semibold truncate flex-1">{ad.brandName}</p>
-              {/* Barra de progreso */}
-              <div className="absolute bottom-0 left-0 right-0" style={{ height: "3px", background: "#333", borderRadius: "0 0 12px 12px", overflow: "hidden" }}>
-                {isActive && (
-                  <div style={{ height: "100%", width: `${progress}%`, background: "#fff", transition: "width 30ms linear" }} />
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* En móvil no se muestran tarjetas laterales — solo el banner */}
     </div>
   );
 }
@@ -859,12 +822,12 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
         {/* 1. Hero carousel — estilo Epic Games Store */}
-        <div style={{ paddingLeft: "40px", paddingRight: "40px", paddingTop: "15px" }}>
+        <div className="px-3 sm:px-6 lg:px-10" style={{ paddingTop: "15px" }}>
           <HeroSection />
         </div>
 
       {/* Resto del contenido con padding interno */}
-      <div className="px-10 py-6 space-y-10">
+      <div className="px-3 sm:px-6 lg:px-10 py-6 space-y-10">
 
         {/* 2. Stats */}
         <PlatformStats />
