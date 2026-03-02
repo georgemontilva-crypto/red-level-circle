@@ -36,7 +36,7 @@ export function TopNav() {
 
   return (
     <div
-      className="hidden md:flex items-center h-12 px-4 gap-4 border-b sticky top-0 z-30 backdrop-blur-md"
+      className="hidden md:flex items-center h-16 px-6 gap-5 border-b sticky top-0 z-30 backdrop-blur-md"
       style={{
         background: "rgba(14,14,16,0.95)",
         borderColor: "var(--border-main)",
@@ -46,7 +46,7 @@ export function TopNav() {
       <button
         onClick={() => window.history.back()}
         disabled={!canGoBack}
-        className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 disabled:opacity-30"
+        className="flex items-center justify-center w-9 h-9 rounded-full transition-all duration-200 disabled:opacity-30"
         style={{ color: "var(--text-secondary)" }}
         onMouseEnter={e => (e.currentTarget.style.background = "var(--bg-hover)")}
         onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
@@ -61,14 +61,14 @@ export function TopNav() {
         style={{
           background: searchFocused ? "var(--bg-hover)" : "var(--bg-card)",
           border: `1px solid ${searchFocused ? "var(--border-main)" : "transparent"}`,
-          width: searchFocused ? "260px" : "200px",
+          width: searchFocused ? "280px" : "220px",
         }}
       >
-        <Search className="w-4 h-4 ml-3 shrink-0" style={{ color: "var(--text-muted)" }} />
+        <Search className="w-4 h-4 ml-3.5 shrink-0" style={{ color: "var(--text-muted)" }} />
         <input
           ref={searchRef}
           type="text"
-          placeholder="Buscar..."
+          placeholder="Buscar en la tienda"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           onFocus={() => setSearchFocused(true)}
@@ -84,7 +84,7 @@ export function TopNav() {
               searchRef.current?.blur();
             }
           }}
-          className="flex-1 bg-transparent text-sm py-1.5 px-2 outline-none"
+          className="flex-1 bg-transparent text-sm py-2 px-2 outline-none"
           style={{ color: "var(--text-primary)" }}
         />
         {searchQuery && (
@@ -106,7 +106,7 @@ export function TopNav() {
             <button
               key={link.href}
               onClick={() => navigate(link.href)}
-              className="px-3 py-1.5 text-sm font-semibold rounded transition-all duration-150"
+              className="px-4 py-2 text-sm font-semibold rounded transition-all duration-150"
               style={{
                 color: active ? "var(--text-primary)" : "var(--text-secondary)",
                 borderBottom: active ? "2px solid var(--accent-red)" : "2px solid transparent",
@@ -128,7 +128,7 @@ export function TopNav() {
         {/* Wishlist / Favoritos */}
         <button
           onClick={() => navigate("/shop?tab=wishlist")}
-          className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150"
+          className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150"
           style={{ color: "var(--text-secondary)" }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
@@ -154,7 +154,7 @@ export function TopNav() {
         {/* Gifts / Recompensas */}
         <button
           onClick={() => navigate("/rewards")}
-          className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150"
+          className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150"
           style={{ color: "var(--text-secondary)" }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
@@ -172,7 +172,7 @@ export function TopNav() {
         {/* Cart */}
         <button
           onClick={() => navigate("/shop?tab=cart")}
-          className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150"
+          className="relative flex items-center justify-center w-10 h-10 rounded-full transition-all duration-150"
           style={{ color: "var(--text-secondary)" }}
           onMouseEnter={e => {
             (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
