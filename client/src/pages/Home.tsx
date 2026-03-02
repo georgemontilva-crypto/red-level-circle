@@ -37,9 +37,9 @@ function statusLabel(s: string) {
     registration_open: { text: "Inscripciones abiertas", color: "text-green-400", dot: "bg-green-500" },
     in_progress: { text: "En curso", color: "text-yellow-400", dot: "bg-yellow-400 animate-pulse" },
     upcoming: { text: "Próximamente", color: "text-blue-400", dot: "bg-blue-500" },
-    completed: { text: "Finalizado", color: "text-zinc-500", dot: "bg-zinc-600" },
+    completed: { text: "Finalizado", color: "text-muted-foreground", dot: "bg-zinc-600" },
   };
-  return map[s] ?? { text: s, color: "text-zinc-500", dot: "bg-zinc-600" };
+  return map[s] ?? { text: s, color: "text-muted-foreground", dot: "bg-zinc-600" };
 }
 
 // ─── Hero Section (banner limpio, sin textos) ─────────────────────────────────
@@ -67,15 +67,15 @@ function HeroSection() {
       {/* Sidebar: Featured tournaments */}
       <div className="hidden lg:flex flex-col w-72 gap-1.5 overflow-y-auto scrollbar-none">
         {sidebarItems.length === 0 ? (
-          <div className="flex-1 rounded-xl bg-zinc-900/60 border border-zinc-800/50 flex items-center justify-center">
-            <p className="text-zinc-600 text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
+          <div className="flex-1 rounded-xl bg-card/60 border border-border/50 flex items-center justify-center">
+            <p className="text-muted-foreground text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
           </div>
         ) : sidebarItems.map((t, i) => {
           const st = statusLabel(t.status ?? "");
           return (
             <Link key={t.id} href={`/tournaments/${t.id}`}>
-              <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border bg-zinc-900/60 border-zinc-800/50 hover:bg-zinc-800/80 hover:border-zinc-700">
-                <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
+              <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border bg-card/60 border-border/50 hover:bg-secondary/80 hover:border-border">
+                <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-muted">
                   {t.banner ? (
                     <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
                   ) : (
@@ -116,7 +116,7 @@ function PlatformStats() {
           <div className={`absolute inset-0 bg-gradient-to-br ${item.color}`} />
           <div className="relative flex items-start justify-between">
             <div>
-              <p className="text-zinc-500 text-xs font-mono uppercase tracking-wider mb-1">{item.label}</p>
+              <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1">{item.label}</p>
               <p className="font-orbitron font-black text-2xl text-white">{item.value}</p>
             </div>
             <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "oklch(0.15 0.01 0)" }}>
@@ -148,10 +148,10 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
         </h2>
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex gap-1">
-            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
               <ChevronLeft size={14} />
             </button>
-            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
               <ChevronRight size={14} />
             </button>
           </div>
@@ -195,14 +195,14 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Anterior"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
             aria-label="Siguiente"
           >
             <ChevronRight size={14} />
@@ -236,7 +236,7 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
             style={{ scrollSnapAlign: "start" }}
           >
             <div
-              className="group relative rounded-2xl overflow-hidden cursor-pointer bg-zinc-900"
+              className="group relative rounded-2xl overflow-hidden cursor-pointer bg-card"
               style={{
                 width: "100%",
                 aspectRatio: "3 / 4",
@@ -283,7 +283,7 @@ function MissionCard({ m }: { m: any }) {
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)"; }}
       >
         {/* Thumbnail */}
-        <div className="relative h-44 bg-zinc-900 overflow-hidden">
+        <div className="relative h-44 bg-card overflow-hidden">
           {m.thumbnailUrl ? (
             <img src={m.thumbnailUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
           ) : m.sponsorLogoUrl ? (
@@ -304,15 +304,15 @@ function MissionCard({ m }: { m: any }) {
         </div>
         {/* Body */}
         <div className="p-4 space-y-2">
-          {m.sponsorName && <p className="text-zinc-500 text-xs font-mono truncate">{m.sponsorName}</p>}
+          {m.sponsorName && <p className="text-muted-foreground text-xs font-mono truncate">{m.sponsorName}</p>}
           <p className="text-white font-bold text-sm line-clamp-2 leading-snug group-hover:text-green-300 transition-colors">{m.title}</p>
           {m.durationSeconds && (
-            <div className="flex items-center gap-1 text-zinc-600 text-xs font-mono">
+            <div className="flex items-center gap-1 text-muted-foreground text-xs font-mono">
               <Clock size={10} /> {Math.ceil(m.durationSeconds / 60)} min
             </div>
           )}
-          <div className="flex items-center justify-between pt-2 border-t border-zinc-800/60">
-            <span className="text-zinc-500 text-xs font-mono">Recompensa</span>
+          <div className="flex items-center justify-between pt-2 border-t border-border/60">
+            <span className="text-muted-foreground text-xs font-mono">Recompensa</span>
             <span className="font-orbitron font-black text-base text-yellow-400">+{m.reward} RLC</span>
           </div>
         </div>
@@ -355,27 +355,27 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
           {c.isVerified && <VerifiedBadge size={14} />}
         </div>
         {c.category && <p className="text-red-400 text-xs font-mono capitalize mb-1">{c.category}</p>}
-        {c.bio && <p className="text-zinc-500 text-xs line-clamp-2 mb-3">{c.bio}</p>}
+        {c.bio && <p className="text-muted-foreground text-xs line-clamp-2 mb-3">{c.bio}</p>}
         {/* Social links */}
         <div className="flex items-center gap-2.5">
           {c.youtube && (
             <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="text-zinc-500 hover:text-red-500 transition-colors"><Youtube size={15} /></a>
+              className="text-muted-foreground hover:text-red-500 transition-colors"><Youtube size={15} /></a>
           )}
           {c.twitch && (
             <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="text-zinc-500 hover:text-purple-400 transition-colors"><Twitch size={15} /></a>
+              className="text-muted-foreground hover:text-purple-400 transition-colors"><Twitch size={15} /></a>
           )}
           {c.twitter && (
             <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="text-zinc-500 hover:text-sky-400 transition-colors"><Twitter size={15} /></a>
+              className="text-muted-foreground hover:text-sky-400 transition-colors"><Twitter size={15} /></a>
           )}
           {c.instagram && (
             <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
-              className="text-zinc-500 hover:text-pink-400 transition-colors"><Instagram size={15} /></a>
+              className="text-muted-foreground hover:text-pink-400 transition-colors"><Instagram size={15} /></a>
           )}
           {c.subscribers && (
-            <span className="ml-auto text-zinc-600 text-xs font-mono">{formatNumber(c.subscribers)} subs</span>
+            <span className="ml-auto text-muted-foreground text-xs font-mono">{formatNumber(c.subscribers)} subs</span>
           )}
         </div>
       </div>
@@ -387,20 +387,20 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
 function NewsCard({ n }: { n: any }) {
   return (
     <Link href={`/news/${n.slug ?? n.id}`}>
-      <div className="shrink-0 w-64 rounded-xl overflow-hidden bg-zinc-900 border border-zinc-800/50 hover:border-zinc-700 transition-all cursor-pointer group" style={{ scrollSnapAlign: "start" }}>
-        <div className="h-36 bg-zinc-800 overflow-hidden">
+      <div className="shrink-0 w-64 rounded-xl overflow-hidden bg-card border border-border/50 hover:border-border transition-all cursor-pointer group" style={{ scrollSnapAlign: "start" }}>
+        <div className="h-36 bg-muted overflow-hidden">
           {n.imageUrl ? (
             <img src={n.imageUrl} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-              <Newspaper size={28} className="text-zinc-600" />
+              <Newspaper size={28} className="text-muted-foreground" />
             </div>
           )}
         </div>
         <div className="p-3">
           {n.category && <span className="text-xs font-mono text-red-400 uppercase tracking-wider">{n.category}</span>}
           <p className="text-white font-semibold text-sm mt-1 line-clamp-2 leading-snug">{n.title}</p>
-          <p className="text-zinc-600 text-xs mt-1">{new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</p>
+          <p className="text-muted-foreground text-xs mt-1">{new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</p>
         </div>
       </div>
     </Link>
@@ -476,7 +476,7 @@ function TeamsAndPeopleSection() {
         </h2>
         <button
           onClick={handleManualRefresh}
-          className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 hover:text-white transition-colors"
+          className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-white transition-colors"
           title="Actualizar"
         >
           <RefreshCw size={13} /> Actualizar
@@ -484,12 +484,12 @@ function TeamsAndPeopleSection() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Top Teams */}
-        <div className="rounded-2xl border border-zinc-800/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
+        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
             <h3 className="font-orbitron font-bold text-sm text-white flex items-center gap-2">
               <Shield size={15} className="text-red-400" /> Top Equipos
             </h3>
-            <Link href="/teams" className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1">
+            <Link href="/teams" className="text-xs font-mono text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
               Ver todos <ArrowRight size={12} />
             </Link>
           </div>
@@ -497,11 +497,11 @@ function TeamsAndPeopleSection() {
           <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
             {displayedTeams.length === 0 ? (
               <div className="flex items-center justify-center h-32">
-                <p className="text-zinc-600 text-xs font-mono">No hay equipos aún</p>
+                <p className="text-muted-foreground text-xs font-mono">No hay equipos aún</p>
               </div>
             ) : displayedTeams.map((team: any, i: number) => (
               <Link key={`${team.id}-${i}`} href={`/teams/${team.id}`}>
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/30 hover:bg-zinc-800/40 transition-colors cursor-pointer group last:border-0">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-muted/40 transition-colors cursor-pointer group last:border-0">
                   {/* Rank */}
                   <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 font-orbitron font-black text-xs"
                     style={{
@@ -511,17 +511,17 @@ function TeamsAndPeopleSection() {
                     {i < 3 ? medals[i] : `#${teamOffset + i + 1}`}
                   </div>
                   {/* Logo */}
-                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-zinc-800 flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-muted flex items-center justify-center">
                     {team.logo ? (
                       <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
                     ) : (
-                      <Shield size={14} className="text-zinc-600" />
+                      <Shield size={14} className="text-muted-foreground" />
                     )}
                   </div>
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm truncate group-hover:text-red-300 transition-colors">{team.name}</p>
-                    {team.game && <p className="text-zinc-600 text-xs font-mono truncate">{team.game}</p>}
+                    {team.game && <p className="text-muted-foreground text-xs font-mono truncate">{team.game}</p>}
                   </div>
                   {/* Points */}
                   <div className="text-right shrink-0">
@@ -535,12 +535,12 @@ function TeamsAndPeopleSection() {
         </div>
 
         {/* Right: People you may know */}
-        <div className="rounded-2xl border border-zinc-800/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800/50">
+        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
             <h3 className="font-orbitron font-bold text-sm text-white flex items-center gap-2">
               <User2 size={15} className="text-blue-400" /> {isAuthenticated ? "Quizás Conozcas" : "Nuevos Jugadores"}
             </h3>
-            <Link href="/community" className="text-xs font-mono text-zinc-500 hover:text-white transition-colors flex items-center gap-1">
+            <Link href="/community" className="text-xs font-mono text-muted-foreground hover:text-white transition-colors flex items-center gap-1">
               Ver todos <ArrowRight size={12} />
             </Link>
           </div>
@@ -548,11 +548,11 @@ function TeamsAndPeopleSection() {
           <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
             {displayedPeople.length === 0 ? (
               <div className="flex items-center justify-center h-32">
-                <p className="text-zinc-600 text-xs font-mono">No hay jugadores aún</p>
+                <p className="text-muted-foreground text-xs font-mono">No hay jugadores aún</p>
               </div>
             ) : displayedPeople.map((u: any, i: number) => (
               <Link key={`${u.id}-${i}`} href={`/profile/${u.id}`}>
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-800/30 hover:bg-zinc-800/40 transition-colors cursor-pointer group last:border-0">
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 hover:bg-muted/40 transition-colors cursor-pointer group last:border-0">
                   <UserAvatar
                     avatar={u.avatar}
                     name={u.nickname ?? u.name}
@@ -564,7 +564,7 @@ function TeamsAndPeopleSection() {
                     <p className="text-white font-semibold text-sm truncate group-hover:text-blue-300 transition-colors">
                       {u.nickname ?? u.name ?? "Usuario"}
                     </p>
-                    <p className="text-zinc-600 text-xs font-mono truncate">@{u.name ?? "user"}</p>
+                    <p className="text-muted-foreground text-xs font-mono truncate">@{u.name ?? "user"}</p>
                   </div>
                   {isAuthenticated && user?.id !== u.id && (
                     <button
@@ -675,7 +675,7 @@ export default function Home() {
   const liveCreatorsList = (creators ?? []).filter((c: any) => liveSet.has(c.userId));
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
         {/* 1. Banner publicitario — con 15px de margen lateral */}
         <div className="w-full flex gap-0" style={{ paddingLeft: "40px", paddingRight: "40px", paddingTop: "15px" }}>
@@ -684,31 +684,31 @@ export default function Home() {
             <AdBannerSection ads={sideAds ?? []} />
           </div>
           {/* Sidebar: Featured tournaments — anclado a la derecha del banner */}
-          <div className="hidden xl:flex flex-col w-80 gap-1.5 overflow-y-auto scrollbar-none bg-zinc-950 border-l border-zinc-800/60 px-3 py-3">
-            <p className="text-zinc-500 text-[10px] font-mono uppercase tracking-widest px-1 mb-1">Torneos Destacados</p>
+          <div className="hidden xl:flex flex-col w-72 gap-0 overflow-y-auto scrollbar-none border-l border-border" style={{ background: "var(--sidebar)" }}>
+            <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest px-4 pt-4 pb-2">Torneos Destacados</p>
             {(featuredTournaments ?? []).length === 0 ? (
-              <div className="flex-1 rounded-xl bg-zinc-900/40 border border-zinc-800/40 flex items-center justify-center py-8">
-                <p className="text-zinc-600 text-xs font-mono text-center px-4">Los torneos destacados aparecerán aquí</p>
+              <div className="flex-1 flex items-center justify-center py-8 px-4">
+                <p className="text-muted-foreground text-xs font-mono text-center">Los torneos destacados aparecerán aquí</p>
               </div>
             ) : (featuredTournaments ?? []).map((t: any) => {
               const st = statusLabel(t.status ?? "");
               return (
                 <Link key={t.id} href={`/tournaments/${t.id}`}>
-                  <div className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border bg-zinc-900/60 border-zinc-800/50 hover:bg-zinc-800/80 hover:border-zinc-700">
-                    <div className="w-14 h-10 rounded-lg overflow-hidden shrink-0 bg-zinc-800">
+                  <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-accent/10 border-b border-border/50">
+                    <div className="w-16 h-9 rounded overflow-hidden shrink-0 bg-muted">
                       {t.banner ? (
                         <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <Trophy size={16} className="text-red-500/50" />
+                          <Trophy size={14} className="text-primary/50" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-semibold truncate">{t.name}</p>
+                      <p className="text-foreground text-xs font-semibold truncate">{t.name}</p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                        <span className={`text-xs truncate ${st.color}`}>{st.text}</span>
+                        <span className={`text-[10px] truncate ${st.color}`}>{st.text}</span>
                       </div>
                     </div>
                   </div>
@@ -719,7 +719,7 @@ export default function Home() {
         </div>
 
       {/* Resto del contenido con padding interno */}
-      <div className="px-4 sm:px-6 py-6 space-y-10">
+      <div className="px-10 py-6 space-y-10">
 
         {/* 2. Stats */}
         <PlatformStats />
@@ -763,7 +763,7 @@ export default function Home() {
                       <UserAvatar avatar={c.avatar} name={c.displayName} size="sm" />
                       <div className="min-w-0">
                         <p className="text-white text-sm font-bold truncate">{c.displayName}</p>
-                        <p className="text-zinc-500 text-xs truncate">{c.category ?? "Creador"}</p>
+                        <p className="text-muted-foreground text-xs truncate">{c.category ?? "Creador"}</p>
                       </div>
                     </div>
                   </div>
@@ -828,7 +828,7 @@ export default function Home() {
                   style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.4)" }}>
                   REGISTRARSE
                 </a>
-                <Link href="/tournaments" className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white border border-zinc-700 hover:border-zinc-500 transition-colors bg-zinc-900/60">
+                <Link href="/tournaments" className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white border border-border hover:border-zinc-500 transition-colors bg-card/60">
                   VER TORNEOS
                 </Link>
               </div>
@@ -848,7 +848,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-orbitron font-bold text-white text-lg">Conoce a nuestros creadores</h3>
-                  <p className="text-zinc-500 text-xs mt-1">Streamers, YouTubers y creadores verificados de la plataforma</p>
+                  <p className="text-muted-foreground text-xs mt-1">Streamers, YouTubers y creadores verificados de la plataforma</p>
                 </div>
                 <div className="flex items-center gap-1 text-purple-400 text-xs font-mono group-hover:gap-2 transition-all">
                   Ver creadores <ArrowRight size={12} />
@@ -866,7 +866,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-orbitron font-bold text-white text-lg">Aplica como creador oficial</h3>
-                  <p className="text-zinc-500 text-xs mt-1">Obtén tu badge verificado y aparece en la plataforma</p>
+                  <p className="text-muted-foreground text-xs mt-1">Obtén tu badge verificado y aparece en la plataforma</p>
                 </div>
                 <div className="flex items-center gap-1 text-red-400 text-xs font-mono group-hover:gap-2 transition-all">
                   Aplicar ahora <ArrowRight size={12} />
