@@ -277,19 +277,19 @@ export function TournamentCard({
         <div className="flex flex-wrap gap-1.5">
           {t.bracketType && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.55 0.01 0)" }}>
+              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
               <GitBranch size={10} /> {bracketLabel(t.bracketType)}
             </span>
           )}
           {formatLabel && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.55 0.01 0)" }}>
+              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
               <Users size={10} /> {formatLabel}
             </span>
           )}
           {t.maxTeams != null && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "oklch(0.18 0.01 0)", color: "oklch(0.55 0.01 0)" }}>
+              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
               <Hash size={10} /> {t.registeredCount ?? 0} / {t.maxTeams}
             </span>
           )}

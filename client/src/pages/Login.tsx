@@ -113,7 +113,7 @@ export default function Login() {
               style={{
                 background: "transparent",
                 border: "1px solid oklch(0.55 0.22 25)",
-                color: "oklch(0.90 0.005 0)",
+                color: "var(--text-primary)",
                 boxShadow: "0 0 8px oklch(0.55 0.22 25 / 0.3)",
               }}
               onMouseEnter={(e) => {
@@ -135,16 +135,16 @@ export default function Login() {
 
             {/* Divider */}
             <div className="relative flex items-center gap-4">
-              <div className="flex-1 h-px" style={{ background: "oklch(0.22 0.01 0)" }} />
+              <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
               <span className="text-muted-foreground text-sm">ó</span>
-              <div className="flex-1 h-px" style={{ background: "oklch(0.22 0.01 0)" }} />
+              <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
             </div>
 
             {/* Info box */}
             <div
               className="rounded-xl p-4 text-center"
               style={{
-                background: "oklch(0.10 0.005 0)",
+                background: "var(--bg-card)",
                 border: "1px solid oklch(0.20 0.01 0)",
               }}
             >
@@ -175,20 +175,20 @@ export default function Login() {
           </div>
 
           {/* Features preview */}
-          <div className="pt-6 border-t" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+          <div className="pt-6 border-t" style={{ borderColor: "var(--border-main)" }}>
             <p className="text-xs text-muted-foreground text-center mb-4 tracking-widest uppercase font-display">
               Plataforma de Esports
             </p>
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="rounded-lg p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 <div className="flex justify-center mb-1"><Trophy size={20} style={{ color: "oklch(0.65 0.18 80)" }} /></div>
                 <div className="text-xs text-muted-foreground font-display tracking-wider">Torneos</div>
               </div>
-              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="rounded-lg p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 <div className="flex justify-center mb-1"><Swords size={20} style={{ color: "oklch(0.55 0.22 25)" }} /></div>
                 <div className="text-xs text-muted-foreground font-display tracking-wider">Equipos</div>
               </div>
-              <div className="rounded-lg p-3 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="rounded-lg p-3 text-center" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 <div className="flex justify-center mb-1"><BarChart3 size={20} style={{ color: "oklch(0.55 0.18 220)" }} /></div>
                 <div className="text-xs text-muted-foreground font-display tracking-wider">Rankings</div>
               </div>

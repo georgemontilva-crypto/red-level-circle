@@ -10,7 +10,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   registration_open: { label: "Inscripciones Abiertas", color: "oklch(0.65 0.18 145)" },
   registration_closed: { label: "Inscripciones Cerradas", color: "oklch(0.55 0.22 25)" },
   in_progress: { label: "En Curso", color: "oklch(0.65 0.18 80)" },
-  completed: { label: "Finalizado", color: "oklch(0.50 0.005 0)" },
+  completed: { label: "Finalizado", color: "var(--text-muted)" },
   cancelled: { label: "Cancelado", color: "oklch(0.40 0.005 0)" },
 };
 
@@ -94,7 +94,7 @@ export default function Dashboard() {
               <div
                 className="rounded-xl p-5 cursor-pointer transition-all duration-300 relative overflow-hidden"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: stat.highlight
                     ? `1px solid ${stat.color}60`
                     : "1px solid oklch(0.18 0.01 0)",
@@ -148,7 +148,7 @@ export default function Dashboard() {
           <div
             className="rounded-xl p-6 relative overflow-hidden"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.55 0.22 25 / 0.3)",
               boxShadow: "0 0 30px oklch(0.55 0.22 25 / 0.08)",
             }}
@@ -186,7 +186,7 @@ export default function Dashboard() {
                 className="shrink-0 px-6 py-3 rounded-lg font-display text-sm tracking-widest transition-all duration-300 disabled:opacity-50"
                 style={{
                   background: "oklch(0.55 0.22 25)",
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)",
                 }}
               >
@@ -207,7 +207,7 @@ export default function Dashboard() {
                 <div
                   className="rounded-xl p-5 cursor-pointer transition-all duration-300 flex items-center gap-4"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                   onMouseEnter={(e) => {
@@ -244,7 +244,7 @@ export default function Dashboard() {
                 <div
                   className="rounded-xl p-5 cursor-pointer transition-all duration-300 flex items-center gap-4"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                   onMouseEnter={(e) => {
@@ -303,20 +303,20 @@ export default function Dashboard() {
                   <div
                     key={i}
                     className="rounded-xl h-16 animate-pulse"
-                    style={{ background: "oklch(0.10 0.005 0)" }}
+                    style={{ background: "var(--bg-card)" }}
                   />
                 ))}
               </div>
             ) : myTournaments && myTournaments.length > 0 ? (
               <div className="space-y-3">
                 {myTournaments.slice(0, 3).map((t) => {
-                  const statusInfo = STATUS_LABELS[t.status] ?? { label: t.status, color: "oklch(0.55 0.005 0)" };
+                  const statusInfo = STATUS_LABELS[t.status] ?? { label: t.status, color: "var(--text-muted)" };
                   return (
                     <Link key={t.id} href={`/dashboard/tournament/${t.id}`}>
                       <div
                         className="rounded-xl p-4 cursor-pointer transition-all duration-200 flex items-center gap-4"
                         style={{
-                          background: "oklch(0.10 0.005 0)",
+                          background: "var(--bg-card)",
                           border: "1px solid oklch(0.18 0.01 0)",
                         }}
                         onMouseEnter={(e) => {
@@ -360,7 +360,7 @@ export default function Dashboard() {
               <div
                 className="rounded-xl p-8 text-center"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px solid oklch(0.18 0.01 0)",
                 }}
               >

@@ -360,7 +360,7 @@ export default function Creators() {
               className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold font-mono transition-all ${
                 activeFilter === "live" ? "text-white" : "text-red-400 hover:text-white border border-red-800/50 hover:border-red-600"
               }`}
-              style={activeFilter === "live" ? { background: "oklch(0.50 0.22 25)", boxShadow: "0 0 12px oklch(0.50 0.22 25 / 0.5)" } : { background: "oklch(0.12 0.04 25)" }}
+              style={activeFilter === "live" ? { background: "oklch(0.50 0.22 25)", boxShadow: "0 0 12px oklch(0.50 0.22 25 / 0.5)" } : { background: "var(--bg-card)" }}
             >
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
               EN VIVO ({liveCount})

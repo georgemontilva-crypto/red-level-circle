@@ -90,16 +90,16 @@ export default function Betting() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen" style={{ background: "oklch(0.07 0.005 0)" }}>
+      <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
         <div className="pt-24 pb-16 max-w-2xl mx-auto px-4 text-center">
-          <div className="rounded-2xl p-12" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+          <div className="rounded-2xl p-12" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "oklch(0.55 0.22 25 / 0.1)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
               <Lock className="w-10 h-10" style={{ color: "oklch(0.65 0.22 25)" }} />
             </div>
             <h2 className="font-display font-black text-2xl text-foreground mb-3 tracking-wider">ACCESO RESTRINGIDO</h2>
             <p className="text-muted-foreground mb-6">Debes iniciar sesion para acceder al centro de apuestas y usar tus RLC Coins.</p>
             <a href={getLoginUrl()}>
-              <Button className="font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}>
+              <Button className="font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }}>
                 INICIAR SESION
               </Button>
             </a>
@@ -119,7 +119,7 @@ export default function Betting() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "oklch(0.07 0.005 0)" }}>
+    <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
       <div className="pt-6 sm:pt-24 pb-16 max-w-7xl mx-auto px-4 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
@@ -130,7 +130,7 @@ export default function Betting() {
             </div>
             <p className="text-muted-foreground text-sm">Apuesta RLC Coins al ganador de cada partido en tiempo real</p>
           </div>
-          <div className="rounded-xl px-6 py-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
+          <div className="rounded-xl px-6 py-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}>
             <p className="text-xs font-mono text-muted-foreground mb-1">TU SALDO</p>
             <div className="flex items-center gap-2">
               <Coins className="w-5 h-5" style={{ color: "oklch(0.75 0.18 80)" }} />
@@ -165,7 +165,7 @@ export default function Betting() {
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-28 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
+                  <div key={i} className="h-28 rounded-xl animate-pulse" style={{ background: "var(--bg-card)" }} />
                 ))}
               </div>
             ) : openMatches && openMatches.length > 0 ? (
@@ -189,7 +189,7 @@ export default function Betting() {
                       }}
                       className="rounded-xl p-4 transition-all duration-300 cursor-pointer"
                       style={{
-                        background: "oklch(0.10 0.005 0)",
+                        background: "var(--bg-card)",
                         border: isSelected ? "1px solid oklch(0.55 0.22 25 / 0.6)" : isClosed ? "1px solid oklch(0.18 0.005 0)" : "1px solid oklch(0.18 0.01 0)",
                         boxShadow: isSelected ? "0 0 20px oklch(0.55 0.22 25 / 0.1)" : "none",
                         opacity: isClosed ? 0.6 : 1,
@@ -244,14 +244,14 @@ export default function Betting() {
 
                       {/* Bet distribution bar + volume breakdown */}
                       <div className="mb-3">
-                        <div className="flex rounded-full overflow-hidden h-1.5" style={{ background: "oklch(0.18 0.005 0)" }}>
+                        <div className="flex rounded-full overflow-hidden h-1.5" style={{ background: "var(--bg-hover)" }}>
                           {totalBets > 0 ? (
                             <>
                               <div style={{ width: `${t1Pct}%`, background: "oklch(0.55 0.22 25)", transition: "width 0.5s ease" }} />
                               <div style={{ width: `${t2Pct}%`, background: "oklch(0.55 0.18 220)", transition: "width 0.5s ease" }} />
                             </>
                           ) : (
-                            <div className="w-full h-full" style={{ background: "oklch(0.18 0.005 0)" }} />
+                            <div className="w-full h-full" style={{ background: "var(--bg-hover)" }} />
                           )}
                         </div>
                         {totalBets === 0 ? (
@@ -269,7 +269,7 @@ export default function Betting() {
                       {isSelected && !isClosed && (
                         <div
                           className="mt-3 pt-3 rounded-xl p-3"
-                          style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                          style={{ background: "var(--bg-main)", border: "1px solid oklch(0.18 0.01 0)" }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           <p className="text-xs font-display tracking-wider text-muted-foreground mb-3">ELIGE TU EQUIPO</p>
@@ -286,8 +286,8 @@ export default function Betting() {
                                   onClick={() => setSelectedTeamId(team.id)}
                                   className="p-3 rounded-xl text-left transition-all duration-200"
                                   style={isChosen
-                                    ? { background: "oklch(0.13 0.005 0)", border: `1px solid ${team.color}`, boxShadow: `0 0 12px ${team.color} / 0.2` }
-                                    : { background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }
+                                    ? { background: "var(--bg-card)", border: `1px solid ${team.color}`, boxShadow: `0 0 12px ${team.color} / 0.2` }
+                                    : { background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }
                                   }
                                 >
                                   <div className="flex items-center gap-2 mb-1">
@@ -308,8 +308,8 @@ export default function Betting() {
                                 onClick={() => setBetAmount(amount)}
                                 className="flex-1 py-1.5 text-xs font-mono rounded-lg transition-all duration-200"
                                 style={betAmount === amount
-                                  ? { background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }
-                                  : { background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.50 0.005 0)" }
+                                  ? { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }
+                                  : { background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }
                                 }
                               >
                                 {amount}
@@ -323,7 +323,7 @@ export default function Betting() {
                             min={10}
                             max={10000}
                             className="w-full px-3 py-2 rounded-lg text-sm font-mono mb-2"
-                            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                            style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
                           />
 
                           {selectedTeamId && (
@@ -348,7 +348,7 @@ export default function Betting() {
                             }}
                             disabled={!selectedTeamId || placeOnMatch.isPending || betAmount > balance}
                             className="w-full font-display text-xs tracking-wider disabled:opacity-50"
-                            style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}
+                            style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }}
                           >
                             {placeOnMatch.isPending
                               ? "PROCESANDO..."
@@ -365,12 +365,12 @@ export default function Betting() {
                 })}
               </div>
             ) : (
-              <div className="text-center py-16 rounded-xl" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="text-center py-16 rounded-xl" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 <Trophy className="w-12 h-12 mx-auto mb-3" style={{ color: "oklch(0.25 0.005 0)" }} />
                 <p className="font-display text-sm tracking-wider" style={{ color: "oklch(0.40 0.005 0)" }}>NO HAY PARTIDOS DISPONIBLES</p>
                 <p className="text-muted-foreground text-xs mt-1">Los partidos aparecen aqui cuando el organizador les asigna fecha y hora</p>
                 <Link href="/tournaments">
-                  <Button className="mt-4 font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)" }}>
+                  <Button className="mt-4 font-display text-xs tracking-wider" style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }}>
                     VER TORNEOS
                   </Button>
                 </Link>
@@ -380,7 +380,7 @@ export default function Betting() {
 
           {/* Sidebar */}
           <div className="space-y-4">
-            <div className="rounded-xl p-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+            <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
               <h3 className="font-display font-bold text-xs text-muted-foreground tracking-wider mb-4">MIS APUESTAS</h3>
               {myBets && myBets.length > 0 ? (
                 <div className="space-y-3">
@@ -390,11 +390,11 @@ export default function Betting() {
                       : b.status === "lost"
                       ? { bg: "oklch(0.55 0.22 25 / 0.12)", color: "oklch(0.65 0.22 25)", label: "PERDIDA" }
                       : b.status === "cancelled"
-                      ? { bg: "oklch(0.25 0.005 0)", color: "oklch(0.50 0.005 0)", label: "ANULADA" }
-                      : { bg: "oklch(0.20 0.005 0)", color: "oklch(0.55 0.005 0)", label: "PENDIENTE" };
+                      ? { bg: "oklch(0.25 0.005 0)", color: "var(--text-muted)", label: "ANULADA" }
+                      : { bg: "oklch(0.20 0.005 0)", color: "var(--text-muted)", label: "PENDIENTE" };
                     const vsLabel = b.team1Name && b.team2Name ? `${b.team1Name} vs ${b.team2Name}` : null;
                     return (
-                      <div key={b.id} className="rounded-lg p-3 space-y-1.5" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+                      <div key={b.id} className="rounded-lg p-3 space-y-1.5" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
                         {/* Tournament name */}
                         {b.tournamentName && (
                           <p className="text-xs font-display tracking-wider" style={{ color: "oklch(0.55 0.22 25)" }}>{b.tournamentName}</p>
@@ -431,11 +431,11 @@ export default function Betting() {
             </div>
 
             {wallet?.transactions && wallet.transactions.length > 0 && (
-              <div className="rounded-xl p-4" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 <h3 className="font-display font-bold text-xs text-muted-foreground tracking-wider mb-4">TRANSACCIONES</h3>
                 <div className="space-y-2">
                   {wallet.transactions.slice(0, 8).map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                    <div key={tx.id} className="flex items-center justify-between text-xs py-1.5 border-b last:border-0" style={{ borderColor: "var(--border-main)" }}>
                       <span className="text-muted-foreground line-clamp-1 flex-1">{tx.description ?? tx.type}</span>
                       <span className="font-mono ml-2" style={{ color: tx.amount > 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
                         {tx.amount > 0 ? "+" : ""}{tx.amount}

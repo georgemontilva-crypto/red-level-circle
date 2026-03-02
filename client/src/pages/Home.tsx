@@ -112,14 +112,14 @@ function PlatformStats() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       {items.map((item, i) => (
-        <div key={i} className={`relative rounded-2xl overflow-hidden border ${item.border} p-4`} style={{ background: "oklch(0.10 0.005 0)" }}>
+        <div key={i} className={`relative rounded-2xl overflow-hidden border ${item.border} p-4`} style={{ background: "var(--bg-card)" }}>
           <div className={`absolute inset-0 bg-gradient-to-br ${item.color}`} />
           <div className="relative flex items-start justify-between">
             <div>
               <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1">{item.label}</p>
               <p className="font-orbitron font-black text-2xl text-foreground">{item.value}</p>
             </div>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "oklch(0.15 0.01 0)" }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: "var(--bg-hover)" }}>
               {item.icon}
             </div>
           </div>
@@ -278,7 +278,7 @@ function MissionCard({ m }: { m: any }) {
     <Link href="/rewards">
       <div
         className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-        style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
+        style={{ scrollSnapAlign: "start", background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
         onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.45 0.18 145 / 0.5)"; }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)"; }}
       >
@@ -328,7 +328,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   return (
     <div
       className="shrink-0 w-60 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-      style={{ scrollSnapAlign: "start", background: "oklch(0.12 0.005 0)", border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 16px oklch(0.50 0.22 25 / 0.25)" : undefined }}
+      style={{ scrollSnapAlign: "start", background: "var(--bg-card)", border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 16px oklch(0.50 0.22 25 / 0.25)" : undefined }}
       onClick={() => navigate(`/profile/${c.userId}`)}
     >
       {/* Banner */}
@@ -484,7 +484,7 @@ function TeamsAndPeopleSection() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Left: Top Teams */}
-        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
+        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "var(--bg-card)" }}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
             <h3 className="font-orbitron font-bold text-sm text-foreground flex items-center gap-2">
               <Shield size={15} className="text-red-400" /> Top Equipos
@@ -535,7 +535,7 @@ function TeamsAndPeopleSection() {
         </div>
 
         {/* Right: People you may know */}
-        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "oklch(0.10 0.005 0)" }}>
+        <div className="rounded-2xl border border-border/50 overflow-hidden" style={{ background: "var(--bg-card)" }}>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">
             <h3 className="font-orbitron font-bold text-sm text-foreground flex items-center gap-2">
               <User2 size={15} className="text-blue-400" /> {isAuthenticated ? "Quizás Conozcas" : "Nuevos Jugadores"}
@@ -744,7 +744,7 @@ export default function Home() {
                 <Link key={c.id} href={`/profile/${c.userId}`}>
                   <div
                     className="shrink-0 w-52 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", boxShadow: "0 0 16px oklch(0.55 0.22 25 / 0.2)" }}
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", boxShadow: "0 0 16px oklch(0.55 0.22 25 / 0.2)" }}
                   >
                     <div className="relative h-32 overflow-hidden">
                       {c.banner ? (

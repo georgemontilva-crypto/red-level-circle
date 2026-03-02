@@ -49,7 +49,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
       onComplete();
       toast.success("¡Bienvenido a Red Level Circle!", {
         description: "Tu perfil ha sido configurado. ¡Comienza a competir!",
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
     },
     onError: (err) => {

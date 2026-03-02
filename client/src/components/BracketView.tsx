@@ -96,7 +96,7 @@ function ScoreModal({
       <div
         className="w-full max-w-sm rounded-2xl p-6"
         style={{
-          background: "oklch(0.10 0.005 0)",
+          background: "var(--bg-card)",
           border: "1px solid oklch(0.55 0.22 25 / 0.35)",
           boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.18)",
           animation: "fadeInScale 0.18s ease-out",
@@ -135,7 +135,7 @@ function ScoreModal({
               autoFocus
               className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
               style={{
-                background: "oklch(0.09 0.005 0)",
+                background: "var(--bg-main)",
                 border: valid && !isDraw && n1 > n2
                   ? "1px solid oklch(0.65 0.18 145 / 0.7)"
                   : "1px solid oklch(0.25 0.01 0)",
@@ -149,9 +149,9 @@ function ScoreModal({
 
           {/* Divider */}
           <div className="flex items-center gap-2 px-1">
-            <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+            <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
             <span className="text-xs font-mono text-zinc-700">VS</span>
-            <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+            <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
           </div>
 
           {/* Team 2 */}
@@ -174,7 +174,7 @@ function ScoreModal({
               placeholder="0"
               className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
               style={{
-                background: "oklch(0.09 0.005 0)",
+                background: "var(--bg-main)",
                 border: valid && !isDraw && n2 > n1
                   ? "1px solid oklch(0.65 0.18 145 / 0.7)"
                   : "1px solid oklch(0.25 0.01 0)",
@@ -218,7 +218,7 @@ function ScoreModal({
             style={{
               background: "transparent",
               border: "1px solid oklch(0.22 0.01 0)",
-              color: "oklch(0.55 0.005 0)",
+              color: "var(--text-muted)",
             }}
           >
             CANCELAR
@@ -229,7 +229,7 @@ function ScoreModal({
             className="flex-1 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-40"
             style={{
               background: "oklch(0.55 0.22 25)",
-              color: "oklch(0.98 0 0)",
+              color: "var(--text-primary)",
               boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.35)",
             }}
           >
@@ -361,7 +361,7 @@ function MatchCard({
       {/* Teams */}
       <div className="flex flex-col justify-center h-full pt-3 gap-0">
         <TeamRow teamId={match.team1Id} teamName={match.team1Name} score={match.team1Score} />
-        <div className="h-px mx-3" style={{ background: "oklch(0.18 0.01 0)" }} />
+        <div className="h-px mx-3" style={{ background: "var(--bg-hover)" }} />
         <TeamRow teamId={match.team2Id} teamName={match.team2Name} score={match.team2Score} />
       </div>
     </div>

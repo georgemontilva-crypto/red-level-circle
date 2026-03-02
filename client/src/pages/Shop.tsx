@@ -208,17 +208,17 @@ export default function Shop() {
     onSuccess: (data) => {
       toast.success(`¡Compra realizada! Nuevo balance: ${data.newBalance} RLC Coins`, {
         description: "El administrador procesará tu pedido pronto.",
-        style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
       });
       resetModal(); refetchItems(); refetchOrders(); refetchMe();
     },
-    onError: (err) => toast.error(err.message, { style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } }),
+    onError: (err) => toast.error(err.message, { style: { background: "var(--bg-main)", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } }),
   });
 
   // Cosmetics mutations
   const buyCosmeticMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: () => {
-      toast.success("¡Cosmético adquirido! Ve a tu perfil para equiparlo.", { style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" } });
+      toast.success("¡Cosmético adquirido! Ve a tu perfil para equiparlo.", { style: { background: "var(--bg-main)", border: "1px solid #22c55e", color: "var(--text-primary)" } });
       setConfirmCosmetic(null); setBuyError(null);
       refetchCosmetics(); refetchOwned(); refetchMe();
     },
@@ -226,7 +226,7 @@ export default function Shop() {
   });
   const equipMutation = trpc.cosmetics.equip.useMutation({
     onSuccess: () => {
-      toast.success("¡Cosmético equipado! Visible en tu perfil.", { style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } });
+      toast.success("¡Cosmético equipado! Visible en tu perfil.", { style: { background: "var(--bg-main)", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } });
       refetchOwned(); refetchMe();
     },
   });

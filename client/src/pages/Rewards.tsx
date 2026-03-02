@@ -685,7 +685,7 @@ export default function Rewards() {
     : typedTasks;
 
   return (
-    <div className="min-h-screen" style={{ background: "#0b0b0d" }}>
+    <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
       {/* ── Header bar ── */}
       <div className="sticky top-0 z-30 border-b border-border/60" style={{ background: "var(--bg-card)214" }}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">

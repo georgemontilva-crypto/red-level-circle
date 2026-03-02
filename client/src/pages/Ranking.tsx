@@ -49,7 +49,7 @@ function HighlightCard({
     <button
       onClick={onClick}
       className="flex-1 min-w-[200px] rounded-2xl p-4 text-left transition-all duration-300"
-      style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${accent}22` }}
+      style={{ background: "var(--bg-main)", border: `1px solid ${accent}22` }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.borderColor = `${accent}55`;
         (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 20px ${accent}18`;
@@ -66,7 +66,7 @@ function HighlightCard({
       <div className="flex items-center gap-3">
         <div
           className="w-10 h-10 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-          style={{ background: "oklch(0.14 0.005 0)", border: `1px solid ${accent}33` }}
+          style={{ background: "var(--bg-hover)", border: `1px solid ${accent}33` }}
         >
           {team.logo ? (
             <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
@@ -107,7 +107,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
         className="fixed top-0 right-0 h-full z-50 flex flex-col overflow-hidden"
         style={{
           width: "min(480px, 100vw)",
-          background: "oklch(0.07 0.005 0)",
+          background: "var(--bg-main)",
           borderLeft: `1px solid ${c.accent}22`,
           boxShadow: "-20px 0 60px rgba(0,0,0,0.8)",
           animation: "slideInRight 300ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -124,7 +124,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
-            style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
           >
@@ -134,7 +134,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
             <div
               className="w-16 h-16 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
               style={{
-                background: "oklch(0.12 0.005 0)",
+                background: "var(--bg-card)",
                 border: `2px solid ${c.accent}44`,
                 boxShadow: `0 0 20px ${c.glow}`,
               }}
@@ -179,7 +179,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                 <div
                   key={stat.label}
                   className="rounded-xl px-3.5 py-3"
-                  style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+                  style={{ background: "var(--bg-card)", border: "1px solid oklch(0.16 0.01 0)" }}
                 >
                   <p className="font-orbitron font-black text-xl" style={{ color: stat.color }}>{stat.value}</p>
                   <p className="text-muted-foreground text-xs font-mono mt-0.5">{stat.sub}</p>
@@ -226,7 +226,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
+                  <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "var(--bg-card)" }} />
                 ))}
               </div>
             ) : !history || history.filter(Boolean).length === 0 ? (
@@ -242,7 +242,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                     <Link key={h.tournamentId} href={`/tournaments/${h.tournamentId}`}>
                       <div
                         className="flex items-center gap-3 px-3.5 py-3 rounded-xl cursor-pointer transition-all duration-200"
-                        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+                        style={{ background: "var(--bg-card)", border: "1px solid oklch(0.16 0.01 0)" }}
                         onMouseEnter={(e) => {
                           (e.currentTarget as HTMLDivElement).style.borderColor = `${hc.accent}44`;
                           (e.currentTarget as HTMLDivElement).style.background = "oklch(0.12 0.005 0)";
@@ -254,7 +254,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                       >
                         <div
                           className="w-10 h-10 rounded-lg overflow-hidden shrink-0 flex items-center justify-center"
-                          style={{ background: "oklch(0.14 0.005 0)", border: `1px solid ${hc.accent}33` }}
+                          style={{ background: "var(--bg-hover)", border: `1px solid ${hc.accent}33` }}
                         >
                           {h.tournamentBanner ? (
                             <img src={h.tournamentBanner || undefined} alt={h.tournamentName} className="w-full h-full object-cover" />
@@ -401,7 +401,7 @@ function RankingRow({
           className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
           style={{
             border: isTop3 ? `1px solid ${medalColors[rank - 1]}44` : "1px solid oklch(0.20 0.01 0)",
-            background: "oklch(0.12 0.005 0)",
+            background: "var(--bg-card)",
           }}
         >
           {team.logo ? (
@@ -481,7 +481,7 @@ function Top5Cards({ teams, onSelect, selectedTeamId }: { teams: any[]; onSelect
       <div className="flex items-center gap-2 mb-4">
         <Trophy size={14} className="text-yellow-400" />
         <h2 className="font-orbitron font-bold text-sm text-white uppercase tracking-wider">TOP 5 EQUIPOS</h2>
-        <div className="flex-1 h-px" style={{ background: "oklch(0.18 0.01 0)" }} />
+        <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
         {top5.map((team, i) => {
@@ -519,7 +519,7 @@ function Top5Cards({ teams, onSelect, selectedTeamId }: { teams: any[]; onSelect
                 <div className="relative">
                   <div
                     className="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center"
-                    style={{ background: "oklch(0.14 0.005 0)", border: `2px solid ${medal}44` }}
+                    style={{ background: "var(--bg-hover)", border: `2px solid ${medal}44` }}
                   >
                     {team.logo ? (
                       <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
@@ -529,7 +529,7 @@ function Top5Cards({ teams, onSelect, selectedTeamId }: { teams: any[]; onSelect
                   </div>
                   <div
                     className="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-xs font-black font-mono shadow-lg"
-                    style={{ background: "oklch(0.09 0.005 0)", border: `1.5px solid ${medal}`, color: medal }}
+                    style={{ background: "var(--bg-main)", border: `1.5px solid ${medal}`, color: medal }}
                   >
                     {MEDAL_LABELS[i]}
                   </div>
@@ -576,7 +576,7 @@ function GameStrengthSidebar({ data }: { data: { gameSlug: string; avgPoints: nu
   return (
     <div
       className="rounded-2xl p-4"
-      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}
     >
       <div className="flex items-center gap-2 mb-4">
         <Target size={14} className="text-red-500" />
@@ -721,7 +721,7 @@ export default function Ranking() {
             return (
               <div
                 className="flex items-center gap-4 px-5 py-4 rounded-2xl mb-6"
-                style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${activeColor.accent}18` }}
+                style={{ background: "var(--bg-main)", border: `1px solid ${activeColor.accent}18` }}
               >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
@@ -750,7 +750,7 @@ export default function Ranking() {
               <>
                 <div
                   className="flex items-center gap-3 px-4 py-2.5 rounded-xl mb-4"
-                  style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+                  style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
                 >
                   <Zap size={12} className="text-yellow-500" />
                   <p className="text-yellow-500 text-xs font-mono">
@@ -834,7 +834,7 @@ export default function Ranking() {
                 <button
                   onClick={() => scrollChips("left")}
                   className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
-                  style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                  style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
                 >
@@ -878,7 +878,7 @@ export default function Ranking() {
                 <button
                   onClick={() => scrollChips("right")}
                   className="shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
-                  style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                  style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)" }}
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
                 >
@@ -948,13 +948,13 @@ export default function Ranking() {
                 {loadingMatches ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[1,2,3,4].map((i) => (
-                      <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
+                      <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "var(--bg-card)" }} />
                     ))}
                   </div>
                 ) : !upcomingMatches || upcomingMatches.length === 0 ? (
                   <div
                     className="flex items-center gap-3 px-4 py-5 rounded-xl"
-                    style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${activeColor.accent}18` }}
+                    style={{ background: "var(--bg-main)", border: `1px solid ${activeColor.accent}18` }}
                   >
                     <Clock size={16} className="text-muted-foreground" />
                     <div>
@@ -971,7 +971,7 @@ export default function Ranking() {
                           key={match.id}
                           className="relative rounded-xl overflow-hidden"
                           style={{
-                            background: "oklch(0.09 0.005 0)",
+                            background: "var(--bg-main)",
                             border: isLive ? `1px solid ${activeColor.accent}55` : "1px solid oklch(0.16 0.01 0)",
                             boxShadow: isLive ? `0 0 16px ${activeColor.glow}` : "none",
                           }}
@@ -1001,7 +1001,7 @@ export default function Ranking() {
                             <div className="flex items-center gap-2 flex-1 min-w-0">
                               <div
                                 className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-                                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                                style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)" }}
                               >
                                 {match.team1Logo ? (
                                   <img src={match.team1Logo || undefined} alt={match.team1Name ?? ""} className="w-full h-full object-cover" />
@@ -1024,7 +1024,7 @@ export default function Ranking() {
                             <div className="flex items-center gap-2 flex-1 min-w-0 flex-row-reverse">
                               <div
                                 className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-                                style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+                                style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)" }}
                               >
                                 {match.team2Logo ? (
                                   <img src={match.team2Logo || undefined} alt={match.team2Name ?? ""} className="w-full h-full object-cover" />
@@ -1075,7 +1075,7 @@ export default function Ranking() {
             {isLoading ? (
               <div className="space-y-1.5">
                 {Array.from({ length: 12 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />
+                  <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "var(--bg-card)" }} />
                 ))}
               </div>
             ) : teams.length > 0 ? (
@@ -1085,7 +1085,7 @@ export default function Ranking() {
                   className="grid items-center gap-2 px-4 py-3"
                   style={{
                     gridTemplateColumns: "44px 1fr 90px 50px 50px 90px",
-                    background: "oklch(0.09 0.005 0)",
+                    background: "var(--bg-main)",
                     borderBottom: "1px solid oklch(0.16 0.01 0)",
                   }}
                 >
@@ -1124,7 +1124,7 @@ export default function Ranking() {
               <GameStrengthSidebar data={gameStrength} />
               <div
                 className="rounded-2xl p-4 mt-4"
-                style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
+                style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}
               >
                 <div className="flex items-center gap-2 mb-3">
                   <Shield size={14} className="text-muted-foreground" />

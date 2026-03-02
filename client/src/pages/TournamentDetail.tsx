@@ -85,7 +85,7 @@ function TeamCard({
       <div
         className="flex-shrink-0 w-52 rounded-xl p-4 cursor-pointer transition-all duration-200 hover:scale-105"
         style={{
-          background: "oklch(0.10 0.005 0)",
+          background: "var(--bg-card)",
           border: "1px solid oklch(0.18 0.01 0)",
         }}
         onMouseEnter={(e) => {
@@ -190,7 +190,7 @@ function ResultRow({
     <div
       className="rounded-xl p-4 transition-all duration-200"
       style={{
-        background: "oklch(0.10 0.005 0)",
+        background: "var(--bg-card)",
         border: "1px solid oklch(0.18 0.01 0)",
       }}
     >
@@ -268,7 +268,7 @@ function ResultRow({
         {/* Divider */}
         <div
           className="h-px mx-2"
-          style={{ background: "oklch(0.20 0.01 0)" }}
+          style={{ background: "var(--bg-hover)" }}
         />
         {/* Team 2 */}
         <div className="flex items-center justify-between">
@@ -634,7 +634,7 @@ export default function TournamentDetail() {
       <div
         className="sticky top-0 z-30"
         style={{
-          background: "oklch(0.08 0.005 0 / 0.95)",
+          background: "var(--bg-main)",
           borderBottom: "1px solid oklch(0.18 0.01 0)",
           backdropFilter: "blur(12px)",
         }}
@@ -711,7 +711,7 @@ export default function TournamentDetail() {
                     key={info.label}
                     className="rounded-xl p-4 text-center"
                     style={{
-                      background: "oklch(0.10 0.005 0)",
+                      background: "var(--bg-card)",
                       border: "1px solid oklch(0.18 0.01 0)",
                     }}
                   >
@@ -729,7 +729,7 @@ export default function TournamentDetail() {
                 <div
                   className="rounded-xl p-6"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                 >
@@ -798,7 +798,7 @@ export default function TournamentDetail() {
                 <div
                   className="rounded-xl p-6"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                 >
@@ -816,7 +816,7 @@ export default function TournamentDetail() {
                 <div
                   className="rounded-xl p-6"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                 >
@@ -830,7 +830,7 @@ export default function TournamentDetail() {
                         key={m.id}
                         className="flex items-center justify-between p-3 rounded-lg"
                         style={{
-                          background: "oklch(0.12 0.005 0)",
+                          background: "var(--bg-card)",
                           border: "1px solid oklch(0.20 0.01 0)",
                         }}
                       >
@@ -874,7 +874,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-5"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px solid oklch(0.18 0.01 0)",
                 }}
               >
@@ -957,7 +957,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-5"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px solid oklch(0.18 0.01 0)",
                 }}
               >
@@ -1003,7 +1003,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-5"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px solid oklch(0.18 0.01 0)",
                 }}
               >
@@ -1040,7 +1040,7 @@ export default function TournamentDetail() {
                 ) : (
                   <div
                     className="flex items-center gap-2 text-sm"
-                    style={{ color: "oklch(0.50 0.005 0)" }}
+                    style={{ color: "var(--text-muted)" }}
                   >
                     <AlertCircle size={16} />
                     <span className="font-display tracking-wider text-xs">
@@ -1064,7 +1064,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-12 text-center"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px dashed oklch(0.22 0.01 0)",
                 }}
               >
@@ -1127,7 +1127,7 @@ export default function TournamentDetail() {
                   disabled={generateBracketMutation.isPending}
                   className="px-4 py-1.5 rounded-lg font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-50"
                   style={{
-                    background: "oklch(0.12 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.55 0.22 25 / 0.4)",
                     color: "oklch(0.70 0.28 25)",
                   }}
@@ -1140,7 +1140,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-12 text-center"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px dashed oklch(0.22 0.01 0)",
                 }}
               >
@@ -1172,7 +1172,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl overflow-x-auto"
                 style={{
-                  background: "oklch(0.08 0.005 0)",
+                  background: "var(--bg-main)",
                   border: "1px solid oklch(0.15 0.01 0)",
                 }}
               >
@@ -1216,7 +1216,7 @@ export default function TournamentDetail() {
               <div
                 className="rounded-xl p-12 text-center"
                 style={{
-                  background: "oklch(0.10 0.005 0)",
+                  background: "var(--bg-card)",
                   border: "1px dashed oklch(0.22 0.01 0)",
                 }}
               >
@@ -1237,7 +1237,7 @@ export default function TournamentDetail() {
                         <div className="flex items-center gap-3 mb-4">
                           <div
                             className="h-px flex-1"
-                            style={{ background: "oklch(0.20 0.01 0)" }}
+                            style={{ background: "var(--bg-hover)" }}
                           />
                           <span
                             className="font-display text-xs tracking-widest px-3 py-1 rounded-full"
@@ -1251,7 +1251,7 @@ export default function TournamentDetail() {
                           </span>
                           <div
                             className="h-px flex-1"
-                            style={{ background: "oklch(0.20 0.01 0)" }}
+                            style={{ background: "var(--bg-hover)" }}
                           />
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -1278,7 +1278,7 @@ export default function TournamentDetail() {
           <div
             className="w-full max-w-md rounded-2xl p-6"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.55 0.22 25 / 0.3)",
               boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)",
             }}
@@ -1319,7 +1319,7 @@ export default function TournamentDetail() {
                               border: "1px solid oklch(0.55 0.22 25 / 0.5)",
                             }
                           : {
-                              background: "oklch(0.12 0.005 0)",
+                              background: "var(--bg-card)",
                               border: "1px solid oklch(0.20 0.01 0)",
                             }
                       }
@@ -1362,9 +1362,9 @@ export default function TournamentDetail() {
                     rows={3}
                     className="w-full px-4 py-3 rounded-lg text-sm font-sans resize-none transition-all duration-200"
                     style={{
-                      background: "oklch(0.09 0.005 0)",
+                      background: "var(--bg-main)",
                       border: "1px solid oklch(0.22 0.01 0)",
-                      color: "oklch(0.90 0.005 0)",
+                      color: "var(--text-primary)",
                       outline: "none",
                     }}
                   />

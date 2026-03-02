@@ -118,7 +118,7 @@ function EmptyState({ selectedGame, selectedStatus, games, onClear }: {
         <button
           onClick={onClear}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold transition-all duration-200"
-          style={{ background: "oklch(0.15 0.005 0)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.70 0.01 0)" }}
+          style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.70 0.01 0)" }}
         >
           <X size={14} /> Limpiar filtros
         </button>
@@ -193,7 +193,7 @@ export default function Tournaments() {
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               className="w-full pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-muted-foreground font-rajdhani text-sm outline-none transition-all duration-200"
-              style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.5)"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "oklch(0.20 0.01 0)"; }}
             />
@@ -296,7 +296,7 @@ export default function Tournaments() {
         {isLoading ? (
           <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
             {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="rounded-2xl animate-pulse" style={{ height: "280px", background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }} />
+              <div key={i} className="rounded-2xl animate-pulse" style={{ height: "280px", background: "var(--bg-card)", border: "1px solid oklch(0.16 0.01 0)" }} />
             ))}
           </div>
         ) : tournaments && tournaments.length > 0 ? (

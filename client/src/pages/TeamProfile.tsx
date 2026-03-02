@@ -46,7 +46,7 @@ const TOURNAMENT_STATUS: Record<string, { label: string; color: string; bg: stri
 function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value: string | number; label: string; accent: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 p-4 rounded-2xl text-center"
-      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div style={{ color: accent }}>{icon}</div>
       <span className="text-2xl font-black font-mono" style={{ color: accent }}>{value}</span>
       <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{label}</span>
@@ -60,12 +60,12 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   const color = rate === null ? "#52525b" : rate >= 60 ? "#4ade80" : rate >= 40 ? "#facc15" : "#f87171";
   return (
     <div className="flex flex-col gap-1.5 p-4 rounded-2xl"
-      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tasa de Victoria</span>
         <span className="text-lg font-black font-mono" style={{ color }}>{rate !== null ? `${rate}%` : "—"}</span>
       </div>
-      <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.16 0.01 0)" }}>
+      <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-hover)" }}>
         {rate !== null && (
           <div className="h-full rounded-full transition-all duration-700" style={{ width: `${rate}%`, background: color }} />
         )}
@@ -96,7 +96,7 @@ function PerformanceChart({ history, accent }: { history: any[]; accent: string 
   if (chartData.length === 0) return null;
 
   return (
-    <div className="rounded-2xl p-5 mb-6" style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+    <div className="rounded-2xl p-5 mb-6" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div className="flex items-center gap-2 mb-4">
         <TrendingUp size={16} style={{ color: accent }} />
         <h3 className="font-mono font-bold text-sm text-white uppercase tracking-wider">Rendimiento Mensual</h3>
@@ -107,7 +107,7 @@ function PerformanceChart({ history, accent }: { history: any[]; accent: string 
           <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip
-            contentStyle={{ background: "#0a0a0a", border: "1px solid #27272a", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }}
+            contentStyle={{ background: "var(--bg-main)", border: "1px solid #27272a", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }}
             labelStyle={{ color: "var(--text-secondary)" }}
             cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
@@ -225,7 +225,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
 
       {manualAchievements.length === 0 && unlockedAutoIds.size === 0 && (
         <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
-          style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+          style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
           <Award size={36} className="text-zinc-700 mb-3" />
           <p className="font-mono text-muted-foreground">Aún no hay logros desbloqueados</p>
           <p className="font-mono text-zinc-700 text-xs mt-1">Participa en torneos para desbloquear logros</p>
@@ -260,7 +260,7 @@ function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; team
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 animate-pulse" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "oklch(0.12 0.005 0)" }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "var(--bg-card)" }}>
               <Swords size={14} className="text-muted-foreground" />
             </div>
           )}
@@ -396,7 +396,7 @@ export default function TeamProfile() {
         <div className="-mt-20 relative z-10 px-6">
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
-              style={{ border: `3px solid ${c.accent}55`, background: "oklch(0.10 0.005 0)", boxShadow: `0 0 40px ${c.glow}` }}>
+              style={{ border: `3px solid ${c.accent}55`, background: "var(--bg-card)", boxShadow: `0 0 40px ${c.glow}` }}>
               {team.logo ? (
                 <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
               ) : (
@@ -505,7 +505,7 @@ export default function TeamProfile() {
           </div>
 
           <div className="flex gap-1 mb-6 p-1 rounded-xl"
-            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
+            style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)", width: "fit-content" }}>
             {([
               { key: "roster",       label: "Alineación",  icon: <Users size={14} />,  count: team.members?.length },
               { key: "history",      label: "Torneos", icon: <Trophy size={14} />, count: tournamentHistory?.length },
@@ -525,7 +525,7 @@ export default function TeamProfile() {
                 {tab.label}
                 {(tab.count ?? 0) > 0 && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full"
-                    style={{ background: "oklch(0.14 0.005 0)", color: "var(--text-muted)" }}>
+                    style={{ background: "var(--bg-hover)", color: "var(--text-muted)" }}>
                     {tab.count}
                   </span>
                 )}
@@ -568,7 +568,7 @@ export default function TeamProfile() {
                 <div>
                   <div className="mb-4">
                     <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
-                      style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
+                      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
                       <Trophy size={32} className="text-zinc-700 mb-3" />
                       <p className="font-mono text-muted-foreground">Sin historial de torneos</p>
                     </div>

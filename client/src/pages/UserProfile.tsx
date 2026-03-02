@@ -206,7 +206,7 @@ export default function UserProfile() {
         {/* Card body — avatar sits at the top-left, overlapping the banner above */}
         <div
           className="pb-4 px-4 sm:px-6"
-          style={{ background: "oklch(0.10 0.005 0)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px" }}
+          style={{ background: "var(--bg-card)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px" }}
         >
           {/* Avatar row — pulled up to overlap the banner */}
           <div className="flex items-end justify-between mb-3" style={{ marginTop: "-72px" }}>
@@ -392,7 +392,7 @@ export default function UserProfile() {
       {/* ── Tabs ── */}
       <div className="mt-4 max-w-5xl mx-auto px-4 sm:px-6">
         {/* Tab bar */}
-        <div className="flex border-b overflow-x-auto" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+        <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)" }}>
           {(["overview", "cosmetics", "followers", "following", "roster"] as const).map((tab) => (
             <button
               key={tab}
@@ -435,7 +435,7 @@ export default function UserProfile() {
                   <div
                     key={stat.label}
                     className="rounded-xl p-4 text-center"
-                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
                     <div className="flex justify-center mb-1" style={{ color: "oklch(0.55 0.22 25)" }}>
                       {stat.icon === "coins" && <Coins size={22} />}
@@ -450,19 +450,19 @@ export default function UserProfile() {
 
               {/* Team memberships */}
               {teamMemberships && teamMemberships.length > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
                     <Shield className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
                     <span className="text-xs font-display tracking-wider text-foreground">EQUIPOS</span>
                   </div>
-                  <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+                  <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
                     {teamMemberships.map((m: any) => (
                       <Link key={m.teamId} href={`/teams/${m.teamId}`}>
                         <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
                           {m.teamLogo ? (
                             <img src={m.teamLogo} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" style={{ border: "1px solid oklch(0.55 0.22 25 / 0.3)" }} />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
                               <Shield size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
                             </div>
                           )}
@@ -482,7 +482,7 @@ export default function UserProfile() {
                             </div>
                           </div>
                           {m.teamTag && (
-                            <span className="text-xs font-mono shrink-0" style={{ color: "oklch(0.50 0.005 0)" }}>[{m.teamTag}]</span>
+                            <span className="text-xs font-mono shrink-0" style={{ color: "var(--text-muted)" }}>[{m.teamTag}]</span>
                           )}
                         </div>
                       </Link>
@@ -494,12 +494,12 @@ export default function UserProfile() {
 
               {/* Stream history */}
               {(streamHistory as any[]).length > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
                     <Tv2 className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
                     <span className="text-xs font-display tracking-wider text-foreground">STREAMS</span>
                   </div>
-                  <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+                  <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
                     {(streamHistory as any[]).map((s) => (
                       <a
                         key={s.id}
@@ -511,7 +511,7 @@ export default function UserProfile() {
                         {s.thumbnailUrl ? (
                           <img src={s.thumbnailUrl} alt="" className="w-16 h-9 rounded object-cover shrink-0" style={{ border: "1px solid oklch(0.22 0.01 0)" }} />
                         ) : (
-                          <div className="w-16 h-9 rounded flex items-center justify-center shrink-0" style={{ background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                          <div className="w-16 h-9 rounded flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
                             <Tv2 size={14} style={{ color: "oklch(0.40 0.005 0)" }} />
                           </div>
                         )}
@@ -535,7 +535,7 @@ export default function UserProfile() {
                               {new Date(s.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                             </span>
                           )}
-                          <span className="text-xs font-mono capitalize" style={{ color: "oklch(0.50 0.005 0)" }}>{s.platform ?? ""}</span>
+                          <span className="text-xs font-mono capitalize" style={{ color: "var(--text-muted)" }}>{s.platform ?? ""}</span>
                         </div>
                       </a>
                     ))}
@@ -544,7 +544,7 @@ export default function UserProfile() {
               )}
               {/* Bet Stats */}
               {betStats && betStats.total > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
                     <Coins className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
                     <span className="text-xs font-display tracking-wider text-foreground">APUESTAS</span>
@@ -556,7 +556,7 @@ export default function UserProfile() {
                         <span className="text-xs text-muted-foreground font-mono">% ACIERTO</span>
                         <span className="text-sm font-orbitron" style={{ color: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>{betStats.winRate}%</span>
                       </div>
-                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.18 0.005 0)" }}>
+                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-hover)" }}>
                         <div
                           className="h-full rounded-full transition-all duration-700"
                           style={{ width: `${betStats.winRate}%`, background: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}
@@ -565,26 +565,26 @@ export default function UserProfile() {
                     </div>
                     {/* Stats grid */}
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
                         <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>{betStats.won}</p>
                         <p className="text-xs text-muted-foreground font-mono">GANADAS</p>
                       </div>
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
                         <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.22 25)" }}>{betStats.lost}</p>
                         <p className="text-xs text-muted-foreground font-mono">PERDIDAS</p>
                       </div>
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.13 0.005 0)" }}>
+                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
                         <p className="text-lg font-orbitron text-foreground">{betStats.pending}</p>
                         <p className="text-xs text-muted-foreground font-mono">PENDIENTES</p>
                       </div>
                     </div>
                     {/* Volume + profit */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg p-2.5" style={{ background: "oklch(0.13 0.005 0)" }}>
+                      <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
                         <p className="text-xs text-muted-foreground font-mono mb-0.5">VOLUMEN</p>
                         <p className="text-sm font-mono text-foreground">{betStats.totalWagered.toLocaleString()} RLC</p>
                       </div>
-                      <div className="rounded-lg p-2.5" style={{ background: "oklch(0.13 0.005 0)" }}>
+                      <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
                         <p className="text-xs text-muted-foreground font-mono mb-0.5">BENEFICIO NETO</p>
                         <p className="text-sm font-mono" style={{ color: betStats.netProfit >= 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
                           {betStats.netProfit >= 0 ? "+" : ""}{betStats.netProfit.toLocaleString()} RLC
@@ -598,7 +598,7 @@ export default function UserProfile() {
               {/* No activity placeholder */}
               <div
                 className="rounded-xl p-6 text-center"
-                style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
                 <Trophy className="w-8 h-8 text-white/30 mx-auto mb-2" />
                 <p className="text-muted-foreground text-sm font-mono">Historial de torneos próximamente</p>
@@ -625,7 +625,7 @@ export default function UserProfile() {
                 myCosmetics.length === 0 ? (
                   <div
                     className="rounded-xl p-8 text-center"
-                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
                     <Palette size={36} className="mx-auto mb-3 text-muted-foreground" />
                     <p className="text-muted-foreground font-mono text-sm">No tienes cosméticos aún</p>
@@ -652,7 +652,7 @@ export default function UserProfile() {
                           key={c.id}
                           className="rounded-lg transition-all"
                           style={{
-                            background: "oklch(0.10 0.005 0)",
+                            background: "var(--bg-card)",
                             outline: c.isEquipped ? `1px solid ${rarityColor[rarity]}` : `1px solid oklch(0.18 0.01 0)`,
                             outlineOffset: "0px",
                           }}
@@ -691,7 +691,7 @@ export default function UserProfile() {
                 !profile.equippedCosmetics || profile.equippedCosmetics.length === 0 ? (
                   <div
                     className="rounded-xl p-8 text-center"
-                    style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
                     <Palette size={36} className="mx-auto mb-3 text-muted-foreground" />
                     <p className="text-muted-foreground font-mono text-sm">Sin cosméticos equipados</p>
@@ -717,7 +717,7 @@ export default function UserProfile() {
                           key={c.id}
                           className="rounded-lg transition-all"
                           style={{
-                            background: "oklch(0.10 0.005 0)",
+                            background: "var(--bg-card)",
                             outline: `1px solid ${rarityColor[rarity]}`,
                             outlineOffset: "0px",
                           }}
@@ -764,7 +764,7 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
     return (
       <div
         className="rounded-xl p-8 text-center"
-        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+        style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
       >
         <Users className="w-8 h-8 text-white/30 mx-auto mb-2" />
         <p className="text-muted-foreground font-mono text-sm">{emptyText}</p>
@@ -777,7 +777,7 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
         <Link key={u.id} href={`/profile/${u.id}`}>
           <div
             className="flex items-center gap-3 p-3 rounded-xl transition-all duration-200 cursor-pointer"
-            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
             onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)")}
             onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)")}
           >
@@ -989,7 +989,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
               ) : (
                 <div
                   className="flex items-start gap-2 px-3 py-2.5 rounded-lg w-full"
-                  style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+                  style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
                 >
                   <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "oklch(0.40 0.005 0)" }} />
                   <p className="text-xs font-mono" style={{ color: "oklch(0.45 0.005 0)" }}>
@@ -1019,7 +1019,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
               {/* Game + Role */}
               <div
                 className="rounded-xl p-4 space-y-4"
-                style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
                 <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
                   <Gamepad2 className="w-3.5 h-3.5" /> JUEGO Y ROL
@@ -1052,7 +1052,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
               {/* Rank + Region + GameID + Score */}
               <div
                 className="rounded-xl p-4 space-y-4"
-                style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
                 <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
                   <Star className="w-3.5 h-3.5 text-white" /> RANGO Y ESTADÍSTICAS
@@ -1112,7 +1112,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
             /* ── View mode ── */
             <div
               className="rounded-xl p-5 space-y-4"
-              style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
             >
               {/* Role badge — source of truth, no duplicate text */}
               {profile.gameRole && (
@@ -1175,7 +1175,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                     <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">ID en el juego</p>
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono"
-                      style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)" }}
+                      style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)" }}
                     >
                       <Gamepad2 className="w-3.5 h-3.5 text-white" /> {profile.gameId}
                     </span>

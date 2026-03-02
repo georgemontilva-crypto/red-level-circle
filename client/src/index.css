@@ -51,55 +51,55 @@
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Semantic theme tokens (used by shadcn/ui & Tailwind) ── */
+  /* Aligned with Epic Games Store palette */
   --radius: 0.75rem;
 
-  /* var(--bg-main) → oklch(0.09 0.002 264) */
-  --background:          oklch(0.09 0.002 264);
-  --foreground:          oklch(1.00 0 0);           /* var(--text-primary) */
+  /* bg-main: #0E0E10 */
+  --background:          #0E0E10;
+  --foreground:          #FFFFFF;
 
-  /* var(--bg-card) → oklch(0.13 0.003 264) */
-  --card:                oklch(0.13 0.003 264);
-  --card-foreground:     oklch(1.00 0 0);
+  /* bg-card: #18181B */
+  --card:                #18181B;
+  --card-foreground:     #FFFFFF;
 
-  /* popover slightly lighter than card */
-  --popover:             oklch(0.16 0.003 264);
-  --popover-foreground:  oklch(1.00 0 0);
+  /* popover: slightly lighter than card */
+  --popover:             #232326;
+  --popover-foreground:  #FFFFFF;
 
-  /* var(--accent-red) → oklch(0.58 0.24 25) */
-  --primary:             oklch(0.58 0.24 25);
-  --primary-foreground:  oklch(1.00 0 0);
+  /* accent-red: #FF2D2D */
+  --primary:             #FF2D2D;
+  --primary-foreground:  #FFFFFF;
 
-  /* var(--bg-hover) → oklch(0.18 0.003 264) */
-  --secondary:           oklch(0.18 0.003 264);
-  --secondary-foreground: oklch(0.85 0.003 264);
+  /* bg-hover: #232326 */
+  --secondary:           #232326;
+  --secondary-foreground: #A1A1AA;
 
-  /* var(--bg-hover) hover surface */
-  --muted:               oklch(0.18 0.003 264);
-  /* var(--text-muted) → oklch(0.52 0.005 264) */
-  --muted-foreground:    oklch(0.52 0.005 264);
+  /* muted: bg-hover */
+  --muted:               #232326;
+  --muted-foreground:    #71717A;
 
   /* accent = red */
-  --accent:              oklch(0.58 0.24 25);
-  --accent-foreground:   oklch(1.00 0 0);
+  --accent:              #FF2D2D;
+  --accent-foreground:   #FFFFFF;
 
   /* destructive = red */
-  --destructive:         oklch(0.58 0.24 25);
-  --destructive-foreground: oklch(1.00 0 0);
+  --destructive:         #FF2D2D;
+  --destructive-foreground: #FFFFFF;
 
-  /* var(--border-main) → oklch(0.21 0.003 264) */
-  --border:              oklch(0.21 0.003 264);
-  --input:               oklch(0.16 0.003 264);
-  --ring:                oklch(0.58 0.24 25);
+  /* border-main: #2A2A2E */
+  --border:              #2A2A2E;
+  --input:               #232326;
+  --ring:                #FF2D2D;
 
-  /* Sidebar: slightly lighter than background */
-  --sidebar:             oklch(0.11 0.002 264);
-  --sidebar-foreground:  oklch(0.85 0.003 264);
-  --sidebar-primary:     oklch(0.58 0.24 25);
-  --sidebar-primary-foreground: oklch(1.00 0 0);
-  --sidebar-accent:      oklch(0.58 0.24 25 / 0.10);
-  --sidebar-accent-foreground: oklch(0.70 0.24 25);
-  --sidebar-border:      oklch(0.21 0.003 264);
-  --sidebar-ring:        oklch(0.58 0.24 25);
+  /* Sidebar: #0B0B0D */
+  --sidebar:             #0B0B0D;
+  --sidebar-foreground:  #A1A1AA;
+  --sidebar-primary:     #FF2D2D;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent:      rgba(255,45,45,0.10);
+  --sidebar-accent-foreground: #FF6B6B;
+  --sidebar-border:      #2A2A2E;
+  --sidebar-ring:        #FF2D2D;
 
   /* Charts */
   --chart-1: oklch(0.58 0.24 25);

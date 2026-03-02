@@ -272,7 +272,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   return (
     <div className="min-h-screen flex overflow-x-hidden" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "#0B0B0D", borderColor: "var(--border-main)" }}>
+      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "var(--bg-main)", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 
@@ -285,7 +285,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       )}
 
       {/* Mobile sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "#0B0B0D", borderColor: "var(--border-main)" }}>
+      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "var(--bg-main)", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 

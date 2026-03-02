@@ -69,7 +69,7 @@ export function PlayerRosterCard({
         width: W,
         height: H,
         borderRadius: R,
-        background: "#0a0a0a",
+        background: "var(--bg-main)",
         border: `1px solid ${borderColor}30`,
         boxShadow: `0 8px 32px rgba(0,0,0,0.65), 0 0 0 1px ${borderColor}18`,
         flexShrink: 0,

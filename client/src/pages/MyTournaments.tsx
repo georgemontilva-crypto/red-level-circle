@@ -8,7 +8,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   registration_open: { label: "Inscripciones Abiertas", color: "oklch(0.65 0.18 145)" },
   registration_closed: { label: "Inscripciones Cerradas", color: "oklch(0.55 0.22 25)" },
   in_progress: { label: "En Curso", color: "oklch(0.65 0.18 80)" },
-  completed: { label: "Finalizado", color: "oklch(0.50 0.005 0)" },
+  completed: { label: "Finalizado", color: "var(--text-muted)" },
   cancelled: { label: "Cancelado", color: "oklch(0.40 0.005 0)" },
 };
 
@@ -37,7 +37,7 @@ export default function MyTournaments() {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-300"
               style={{
                 background: "oklch(0.55 0.22 25)",
-                color: "oklch(0.98 0 0)",
+                color: "var(--text-primary)",
                 boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
               }}
             >
@@ -52,7 +52,7 @@ export default function MyTournaments() {
               <div
                 key={i}
                 className="rounded-xl h-24 animate-pulse"
-                style={{ background: "oklch(0.10 0.005 0)" }}
+                style={{ background: "var(--bg-card)" }}
               />
             ))}
           </div>
@@ -60,7 +60,7 @@ export default function MyTournaments() {
           <div
             className="rounded-2xl p-16 text-center"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.18 0.01 0)",
             }}
           >
@@ -76,7 +76,7 @@ export default function MyTournaments() {
                 className="px-8 py-3 rounded-xl font-display text-sm tracking-widest transition-all duration-300"
                 style={{
                   background: "oklch(0.55 0.22 25)",
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)",
                 }}
               >
@@ -87,13 +87,13 @@ export default function MyTournaments() {
         ) : (
           <div className="space-y-4">
             {tournaments.map((t) => {
-              const statusInfo = STATUS_LABELS[t.status] ?? { label: t.status, color: "oklch(0.55 0.005 0)" };
+              const statusInfo = STATUS_LABELS[t.status] ?? { label: t.status, color: "var(--text-muted)" };
               return (
                 <div
                   key={t.id}
                   className="rounded-xl p-5 transition-all duration-200"
                   style={{
-                    background: "oklch(0.10 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.18 0.01 0)",
                   }}
                   onMouseEnter={(e) => {
@@ -119,8 +119,8 @@ export default function MyTournaments() {
                         <span
                           className="text-xs font-tech px-2 py-0.5 rounded"
                           style={{
-                            background: "oklch(0.13 0.005 0)",
-                            color: "oklch(0.55 0.005 0)",
+                            background: "var(--bg-card)",
+                            color: "var(--text-muted)",
                           }}
                         >
                           {t.game}
@@ -161,7 +161,7 @@ export default function MyTournaments() {
                         <button
                           className="px-3 py-2 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
                           style={{
-                            background: "oklch(0.13 0.005 0)",
+                            background: "var(--bg-card)",
                             border: "1px solid oklch(0.22 0.01 0)",
                             color: "oklch(0.60 0.005 0)",
                           }}
@@ -173,7 +173,7 @@ export default function MyTournaments() {
                         <button
                           className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
                           style={{
-                            background: "oklch(0.13 0.005 0)",
+                            background: "var(--bg-card)",
                             border: "1px solid oklch(0.55 0.22 25 / 0.4)",
                             color: "oklch(0.65 0.22 25)",
                           }}

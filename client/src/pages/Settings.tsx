@@ -305,7 +305,7 @@ function CreatorChannelsSection() {
   const updateChannels = trpc.creators.updateChannels.useMutation({
     onSuccess: () => {
       toast.success("Canales actualizados. El sistema detectará tu stream automáticamente.", {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       utils.creators.getMyApplication.invalidate();
       setSavingChannels(false);
@@ -522,7 +522,7 @@ export default function Settings() {
   const updateMutation = trpc.profile.updateMine.useMutation({
     onSuccess: () => {
       toast.success("Perfil actualizado correctamente", {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       refetch();
       setSaving(false);

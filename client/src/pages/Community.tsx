@@ -79,7 +79,7 @@ function UserCard({ user, myId }: UserCardProps) {
   return (
     <div
       className="rounded-2xl overflow-hidden transition-all duration-200 group"
-      style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+      style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
       onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.35)")}
       onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)")}
     >
@@ -231,7 +231,7 @@ export default function Community() {
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Buscar por nombre o nickname..."
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-muted-foreground focus:outline-none transition-colors"
-            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
             onFocus={(e) => (e.target.style.borderColor = "oklch(0.55 0.22 25 / 0.6)")}
             onBlur={(e) => (e.target.style.borderColor = "oklch(0.20 0.01 0)")}
           />
@@ -246,7 +246,7 @@ export default function Community() {
               className="px-3 py-2 rounded-xl text-xs font-mono tracking-wider transition-all duration-200"
               style={typeFilter === f.value
                 ? { background: "oklch(0.55 0.22 25 / 0.2)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", color: "oklch(0.65 0.22 25)" }
-                : { background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)", color: "oklch(0.50 0.005 0)" }
+                : { background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)", color: "var(--text-muted)" }
               }
             >
               {f.label}
@@ -269,7 +269,7 @@ export default function Community() {
       ) : !filtered || filtered.length === 0 ? (
         <div
           className="rounded-2xl p-12 text-center"
-          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+          style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
         >
           <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
           <p className="text-muted-foreground font-mono text-sm">No se encontraron usuarios</p>

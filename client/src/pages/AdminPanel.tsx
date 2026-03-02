@@ -929,7 +929,7 @@ function ImageUploader({
       <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">{label}</label>
       <div
         className="relative rounded-lg border-2 border-dashed border-red-900/50 hover:border-red-600/70 transition-colors cursor-pointer overflow-hidden"
-        style={{ aspectRatio, background: "#0a0a0a" }}
+        style={{ aspectRatio, background: "var(--bg-main)" }}
         onClick={() => inputRef.current?.click()}
         onDragOver={(e) => e.preventDefault()}
         onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f); }}
@@ -1623,19 +1623,19 @@ function BetsTab() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+        <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
           <p className="text-xs text-muted-foreground mb-1">Total apuestas</p>
           <p className="text-2xl font-orbitron text-white">{allBets?.length ?? 0}</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+        <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
           <p className="text-xs text-muted-foreground mb-1">Pendientes</p>
           <p className="text-2xl font-orbitron text-yellow-400">{allBets?.filter(b => b.status === "pending").length ?? 0}</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+        <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
           <p className="text-xs text-muted-foreground mb-1">Volumen total (RLC)</p>
           <p className="text-2xl font-orbitron text-red-400">{(allBets?.reduce((s, b) => s + b.amount, 0) ?? 0).toLocaleString()}</p>
         </div>
-        <div className="rounded-xl p-4" style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+        <div className="rounded-xl p-4" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
           <p className="text-xs text-muted-foreground mb-1">Partidos con apuestas</p>
           <p className="text-2xl font-orbitron text-blue-400">{matchGroups.length}</p>
         </div>
@@ -1643,11 +1643,11 @@ function BetsTab() {
 
       {/* Per-match summary */}
       {matchGroups.length > 0 && (
-        <div className="rounded-xl p-4 space-y-3" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
+        <div className="rounded-xl p-4 space-y-3" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
           <p className="text-xs font-orbitron text-muted-foreground tracking-wider">RESUMEN POR PARTIDO</p>
           <div className="space-y-2">
             {matchGroups.map((g, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-2 border-b last:border-0" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+              <div key={i} className="flex items-center justify-between text-sm py-2 border-b last:border-0" style={{ borderColor: "var(--border-main)" }}>
                 <div>
                   <p className="text-white font-mono text-xs">
                     {g.team1Name && g.team2Name ? `${g.team1Name} vs ${g.team2Name}` : g.tournamentName ?? `Partido #${g.matchId}`}
@@ -1701,7 +1701,7 @@ function BetsTab() {
           <div
             className="w-full max-w-sm rounded-2xl p-6 space-y-5"
             style={{
-              background: "oklch(0.11 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.55 0.22 25 / 0.4)",
               boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
               animation: "scaleIn 0.2s cubic-bezier(0.34,1.56,0.64,1)",
@@ -1716,7 +1716,7 @@ function BetsTab() {
                 <p className="text-xs text-muted-foreground mt-0.5">Esta acción reembolsará los RLC al usuario</p>
               </div>
             </div>
-            <div className="rounded-xl p-4 space-y-2" style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+            <div className="rounded-xl p-4 space-y-2" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.18 0.01 0)" }}>
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">Usuario</span>
                 <span className="text-white font-mono">{cancelTarget.userLabel}</span>
@@ -1731,7 +1731,7 @@ function BetsTab() {
                   <span className="text-blue-300 font-mono">{cancelTarget.chosenTeamName}</span>
                 </div>
               )}
-              <div className="flex justify-between text-xs border-t pt-2" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+              <div className="flex justify-between text-xs border-t pt-2" style={{ borderColor: "var(--border-main)" }}>
                 <span className="text-muted-foreground">Monto a reembolsar</span>
                 <span className="font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>+{cancelTarget.amount.toLocaleString()} RLC</span>
               </div>
@@ -1755,7 +1755,7 @@ function BetsTab() {
                 onClick={() => setCancelTarget(null)}
                 disabled={cancelBet.isPending}
                 className="px-4 py-2.5 rounded-xl text-xs font-orbitron tracking-wider transition-all duration-200"
-                style={{ background: "oklch(0.15 0.005 0)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.65 0.005 0)" }}
+                style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.25 0.01 0)", color: "var(--text-secondary)" }}
               >
                 CANCELAR
               </button>
@@ -1773,7 +1773,7 @@ function BetsTab() {
         <div className="rounded-xl overflow-hidden" style={{ border: "1px solid oklch(0.20 0.01 0)" }}>
           <table className="w-full text-xs">
             <thead>
-              <tr style={{ background: "oklch(0.12 0.005 0)" }}>
+              <tr style={{ background: "var(--bg-card)" }}>
                 <th className="text-left p-3 text-muted-foreground font-orbitron">USUARIO</th>
                 <th className="text-left p-3 text-muted-foreground font-orbitron">PARTIDO</th>
                 <th className="text-left p-3 text-muted-foreground font-orbitron">EQUIPO</th>
@@ -1788,7 +1788,7 @@ function BetsTab() {
                 const statusColor = b.status === "won" ? "text-green-400" : b.status === "lost" ? "text-red-400" : b.status === "cancelled" ? "text-muted-foreground" : "text-yellow-400";
                 const vsLabel = b.team1Name && b.team2Name ? `${b.team1Name} vs ${b.team2Name}` : b.tournamentName ?? `#${b.matchId}`;
                 return (
-                  <tr key={b.id} className="border-t" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+                  <tr key={b.id} className="border-t" style={{ borderColor: "var(--border-main)" }}>
                     <td className="p-3">
                       <p className="text-white">{b.userNickname ?? b.userName ?? `#${b.userId}`}</p>
                     </td>
@@ -2709,7 +2709,7 @@ function BannersTab() {
           return (
             <div key={key} className={`bg-card/60 border rounded-xl overflow-hidden transition-colors ${isActive ? "border-red-900/40" : "border-border opacity-60"}`}>
               {/* Desktop banner preview */}
-              <div className="relative w-full" style={{ aspectRatio: "16/5", background: "#0a0a0a" }}>
+              <div className="relative w-full" style={{ aspectRatio: "16/5", background: "var(--bg-main)" }}>
                 {banner?.imageUrl ? (
                   <>
                     <img src={banner.imageUrl} alt={label} className="w-full h-full object-cover" />

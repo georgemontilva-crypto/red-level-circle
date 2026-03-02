@@ -63,7 +63,7 @@ function NeonInput({ label, type = "text", value, onChange, placeholder, require
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder} required={required} min={min} max={max}
         className="w-full px-4 py-3 rounded-xl text-sm font-sans transition-all duration-200"
-        style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+        style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
         onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
         onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
       />
@@ -80,7 +80,7 @@ function NeonTextarea({ label, value, onChange, placeholder, rows = 4 }: {
       <textarea
         value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={rows}
         className="w-full px-4 py-3 rounded-xl text-sm font-sans resize-none transition-all duration-200"
-        style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+        style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
         onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
         onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
       />
@@ -231,8 +231,8 @@ export default function EditTournament() {
                 className="w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold transition-all duration-300"
                 style={
                   step >= s
-                    ? { background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)" }
-                    : { background: "oklch(0.13 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.45 0.005 0)" }
+                    ? { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)" }
+                    : { background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.45 0.005 0)" }
                 }
               >
                 {s}
@@ -253,7 +253,7 @@ export default function EditTournament() {
         {/* Form card */}
         <div
           className="rounded-2xl p-6 space-y-5"
-          style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
+          style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
         >
           {/* Step 1: Basic info */}
           {step === 1 && (
@@ -286,7 +286,7 @@ export default function EditTournament() {
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">BANNER DEL TORNEO</label>
                 <div
                   className="relative w-full h-32 rounded-xl overflow-hidden cursor-pointer group"
-                  style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "oklch(0.09 0.005 0)" }}
+                  style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "var(--bg-main)" }}
                   onClick={() => document.getElementById("edit-tournament-banner-input")?.click()}
                 >
                   {form.banner ? (
@@ -348,7 +348,7 @@ export default function EditTournament() {
                       style={
                         form.bracketType === bt.value
                           ? { background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.5)" }
-                          : { background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }
+                          : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }
                       }
                     >
                       <div className="flex items-center gap-3">
@@ -390,7 +390,7 @@ export default function EditTournament() {
                 <NeonInput label="FECHA DE INICIO" type="datetime-local" value={form.startDate} onChange={set("startDate")} />
                 <NeonInput label="FECHA DE FIN" type="datetime-local" value={form.endDate} onChange={set("endDate")} />
               </div>
-              <div className="rounded-xl p-4" style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} style={{ color: "oklch(0.65 0.18 80)" }} />
                   <span className="font-display text-sm font-bold tracking-wider text-foreground">PREMIO</span>
@@ -445,7 +445,7 @@ export default function EditTournament() {
                   setStep((s) => s + 1);
                 }}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300"
-                style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 SIGUIENTE <ChevronRight size={14} />
               </button>
@@ -454,7 +454,7 @@ export default function EditTournament() {
                 onClick={handleSubmit}
                 disabled={updateMutation.isPending}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 {updateMutation.isPending ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
                 <Trophy size={14} />

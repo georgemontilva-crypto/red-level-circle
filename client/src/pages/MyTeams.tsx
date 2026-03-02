@@ -46,7 +46,7 @@ function TeamImageUpload({
         {displayUrl ? (
           <img src={displayUrl} alt="Logo" className="w-16 h-16 rounded-full object-cover" style={{ border: "2px solid oklch(0.55 0.22 25 / 0.5)" }} />
         ) : (
-          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black" style={{ background: "oklch(0.13 0.005 0)", border: "2px solid oklch(0.22 0.01 0)", color: "oklch(0.55 0.22 25)" }}>
+          <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-black" style={{ background: "var(--bg-card)", border: "2px solid oklch(0.22 0.01 0)", color: "oklch(0.55 0.22 25)" }}>
             <Shield size={24} />
           </div>
         )}
@@ -59,7 +59,7 @@ function TeamImageUpload({
   }
 
   return (
-    <div className="relative w-full h-24 rounded-xl cursor-pointer group overflow-hidden" style={{ border: "1px dashed oklch(0.30 0.01 0)", background: "oklch(0.09 0.005 0)" }} onClick={() => inputRef.current?.click()}>
+    <div className="relative w-full h-24 rounded-xl cursor-pointer group overflow-hidden" style={{ border: "1px dashed oklch(0.30 0.01 0)", background: "var(--bg-main)" }} onClick={() => inputRef.current?.click()}>
       {displayUrl ? <img src={displayUrl} alt="Banner" className="w-full h-full object-cover" /> : (
         <div className="w-full h-full flex items-center justify-center gap-2">
           <Camera className="w-4 h-4" style={{ color: "oklch(0.40 0.005 0)" }} />
@@ -110,7 +110,7 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Buscar por @nickname o nombre..."
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm"
-            style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+            style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
             onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
             onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
           />
@@ -119,7 +119,7 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
           value={selectedRole}
           onChange={(e) => setSelectedRole(e.target.value as any)}
           className="px-3 py-2.5 rounded-xl text-xs font-display tracking-wider"
-          style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)", outline: "none" }}
+          style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)", outline: "none" }}
         >
           {(["player", "substitute", "coach"] as const).map((r) => (
             <option key={r} value={r}>{ROLE_LABELS[r]}</option>
@@ -140,7 +140,7 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
               <p className="text-xs text-muted-foreground">No se encontraron usuarios con ese nickname</p>
             </div>
           ) : (
-            <div className="divide-y" style={{ borderColor: "oklch(0.15 0.005 0)" }}>
+            <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
               {results.map((user) => (
                 <div key={user.id} className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
                   <UserAvatar
@@ -197,7 +197,7 @@ function TransferCaptaincyModal({ team, members, onClose, onSuccess }: {
     >
       <div
         className="w-full max-w-md rounded-2xl p-6"
-        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.18 80 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.18 80 / 0.15)" }}
+        style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.18 80 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.18 80 / 0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -206,7 +206,7 @@ function TransferCaptaincyModal({ team, members, onClose, onSuccess }: {
             <h3 className="font-display text-lg font-bold tracking-wider text-foreground">TRANSFERIR CAPITANÍA</h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-            <X size={16} style={{ color: "oklch(0.55 0.005 0)" }} />
+            <X size={16} style={{ color: "var(--text-muted)" }} />
           </button>
         </div>
 
@@ -229,7 +229,7 @@ function TransferCaptaincyModal({ team, members, onClose, onSuccess }: {
                 className="w-full flex items-center gap-3 p-3 rounded-xl transition-all duration-200"
                 style={selectedUserId === member.userId
                   ? { background: "oklch(0.55 0.18 80 / 0.15)", border: "1px solid oklch(0.55 0.18 80 / 0.5)" }
-                  : { background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.15 0.005 0)" }
+                  : { background: "var(--bg-main)", border: "1px solid oklch(0.15 0.005 0)" }
                 }
               >
                 <UserAvatar avatar={member.avatar} name={member.nickname ?? member.userName} activeFrameImage={member.activeFrameImage} size={36} />
@@ -241,7 +241,7 @@ function TransferCaptaincyModal({ team, members, onClose, onSuccess }: {
                 </div>
                 {selectedUserId === member.userId && (
                   <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: "oklch(0.55 0.18 80)" }}>
-                    <CheckCircle size={12} style={{ color: "oklch(0.98 0 0)" }} />
+                    <CheckCircle size={12} style={{ color: "var(--text-primary)" }} />
                   </div>
                 )}
               </button>
@@ -295,7 +295,7 @@ function DissolveTeamDialog({ team, onClose, onSuccess }: {
     >
       <div
         className="w-full max-w-md rounded-2xl p-6"
-        style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
+        style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-5">
@@ -304,7 +304,7 @@ function DissolveTeamDialog({ team, onClose, onSuccess }: {
             <h3 className="font-display text-lg font-bold tracking-wider text-foreground">DISOLVER EQUIPO</h3>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-            <X size={16} style={{ color: "oklch(0.55 0.005 0)" }} />
+            <X size={16} style={{ color: "var(--text-muted)" }} />
           </button>
         </div>
 
@@ -324,7 +324,7 @@ function DissolveTeamDialog({ team, onClose, onSuccess }: {
             onChange={(e) => setConfirmName(e.target.value)}
             placeholder={team.name}
             className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-            style={{ background: "oklch(0.09 0.005 0)", border: `1px solid ${isConfirmed ? "oklch(0.55 0.22 25)" : "oklch(0.22 0.01 0)"}`, color: "oklch(0.90 0.005 0)", outline: "none" }}
+            style={{ background: "var(--bg-main)", border: `1px solid ${isConfirmed ? "oklch(0.55 0.22 25)" : "oklch(0.22 0.01 0)"}`, color: "var(--text-primary)", outline: "none" }}
           />
         </div>
 
@@ -340,7 +340,7 @@ function DissolveTeamDialog({ team, onClose, onSuccess }: {
             onClick={() => dissolveMutation.mutate({ teamId: team.id })}
             disabled={!isConfirmed || dissolveMutation.isPending}
             className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: isConfirmed ? "0 0 12px oklch(0.55 0.22 25 / 0.4)" : "none" }}
+            style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: isConfirmed ? "0 0 12px oklch(0.55 0.22 25 / 0.4)" : "none" }}
           >
             {dissolveMutation.isPending ? "DISOLVIENDO..." : "DISOLVER EQUIPO"}
           </button>
@@ -385,7 +385,7 @@ function TeamRoster({ team, onMemberRemoved, onTeamChanged }: { team: any; onMem
             className="px-2 py-0.5 rounded-full text-xs font-display tracking-wider"
             style={isAtLimit
               ? { background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.65 0.22 25)", border: "1px solid oklch(0.55 0.22 25 / 0.4)" }
-              : { background: "oklch(0.15 0.005 0)", color: "oklch(0.55 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }
+              : { background: "var(--bg-hover)", color: "var(--text-muted)", border: "1px solid oklch(0.22 0.01 0)" }
             }
           >
             {allMembers.length}/{MAX_MEMBERS}
@@ -400,7 +400,7 @@ function TeamRoster({ team, onMemberRemoved, onTeamChanged }: { team: any; onMem
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
           style={showAddPlayer
             ? { background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", color: "oklch(0.65 0.22 25)" }
-            : { background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.55 0.005 0)" }
+            : { background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "var(--text-muted)" }
           }
           title={isAtLimit ? "El equipo está completo (máximo 10 miembros)" : ""}
         >
@@ -411,7 +411,7 @@ function TeamRoster({ team, onMemberRemoved, onTeamChanged }: { team: any; onMem
 
       {/* Add player search */}
       {showAddPlayer && !isAtLimit && (
-        <div className="mb-4 p-3 rounded-xl" style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
+        <div className="mb-4 p-3 rounded-xl" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
           <p className="text-xs text-muted-foreground mb-3 font-display tracking-wider">Busca un jugador registrado en la plataforma:</p>
           <PlayerSearch teamId={team.id} onAdded={() => { refetch(); setShowAddPlayer(false); }} />
         </div>
@@ -425,7 +425,7 @@ function TeamRoster({ team, onMemberRemoved, onTeamChanged }: { team: any; onMem
       ) : (
         <div className="space-y-2">
           {allMembers.map((member: any) => (
-            <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl group" style={{ background: "oklch(0.08 0.005 0)" }}>
+            <div key={member.id} className="flex items-center gap-3 p-2.5 rounded-xl group" style={{ background: "var(--bg-main)" }}>
               <UserAvatar
                 avatar={member.avatar}
                 name={member.nickname ?? member.userName}
@@ -552,8 +552,8 @@ export default function MyTeams() {
               disabled={isAlreadyCaptain}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-40 disabled:cursor-not-allowed"
               style={isAlreadyCaptain
-                ? { background: "oklch(0.20 0.005 0)", color: "oklch(0.45 0.005 0)", border: "1px solid oklch(0.25 0.01 0)" }
-                : { background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }
+                ? { background: "var(--bg-hover)", color: "oklch(0.45 0.005 0)", border: "1px solid oklch(0.25 0.01 0)" }
+                : { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }
               }
               title={isAlreadyCaptain ? `Ya eres capitán de "${captainTeam?.name}"` : "Crear nuevo equipo"}
             >
@@ -569,17 +569,17 @@ export default function MyTeams() {
 
         {isLoading ? (
           <div className="grid grid-cols-1 gap-4">
-            {[1, 2].map((i) => <div key={i} className="rounded-xl h-40 animate-pulse" style={{ background: "oklch(0.10 0.005 0)" }} />)}
+            {[1, 2].map((i) => <div key={i} className="rounded-xl h-40 animate-pulse" style={{ background: "var(--bg-card)" }} />)}
           </div>
         ) : !teams || teams.length === 0 ? (
-          <div className="rounded-2xl p-16 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+          <div className="rounded-2xl p-16 text-center" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
             <Users size={48} className="mx-auto mb-4" style={{ color: "oklch(0.25 0.01 0)" }} />
             <h3 className="font-display text-xl font-bold tracking-wider text-foreground mb-2">SIN EQUIPOS</h3>
             <p className="text-muted-foreground text-sm mb-6">Crea tu equipo para participar en torneos</p>
             <button
               onClick={() => setShowCreate(true)}
               className="px-8 py-3 rounded-xl font-display text-sm tracking-widest"
-              style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)" }}
+              style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)" }}
             >
               CREAR EQUIPO
             </button>
@@ -587,7 +587,7 @@ export default function MyTeams() {
         ) : (
           <div className="space-y-4">
             {teams.map((team) => (
-              <div key={team.id} className="rounded-2xl overflow-hidden" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}>
+              <div key={team.id} className="rounded-2xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                 {/* Banner */}
                 <TeamImageUpload
                   teamId={team.id}
@@ -620,7 +620,7 @@ export default function MyTeams() {
                       </div>
                       {team.game && (
                         <div className="flex items-center gap-1 mt-1">
-                          <Gamepad2 size={12} style={{ color: "oklch(0.50 0.005 0)" }} />
+                          <Gamepad2 size={12} style={{ color: "var(--text-muted)" }} />
                           <span className="text-xs text-muted-foreground">{team.game}</span>
                         </div>
                       )}
@@ -651,7 +651,7 @@ export default function MyTeams() {
                       <span className="text-xs text-muted-foreground">{(team as any).wins ?? 0}V / {(team as any).losses ?? 0}D</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Gamepad2 size={12} style={{ color: "oklch(0.50 0.005 0)" }} />
+                      <Gamepad2 size={12} style={{ color: "var(--text-muted)" }} />
                       <span className="text-xs text-muted-foreground">{(team as any).tournamentsPlayed ?? 0} torneos</span>
                     </div>
                   </div>
@@ -674,13 +674,13 @@ export default function MyTeams() {
         >
           <div
             className="w-full max-w-md rounded-2xl p-6 overflow-y-auto max-h-[90vh]"
-            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
+            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-display text-lg font-bold tracking-wider text-foreground">CREAR EQUIPO</h3>
               <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-                <X size={16} style={{ color: "oklch(0.55 0.005 0)" }} />
+                <X size={16} style={{ color: "var(--text-muted)" }} />
               </button>
             </div>
 
@@ -698,7 +698,7 @@ export default function MyTeams() {
                     onChange={(e) => setter(e.target.value)}
                     placeholder={placeholder}
                     className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
                     onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
                     onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
                   />
@@ -712,7 +712,7 @@ export default function MyTeams() {
                   placeholder="Descripción del equipo..."
                   rows={3}
                   className="w-full px-4 py-3 rounded-xl text-sm resize-none transition-all duration-200"
-                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
                   onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
                   onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
                 />
@@ -726,7 +726,7 @@ export default function MyTeams() {
                   <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
                   {val && <img src={val} alt="" className={`w-full ${field === "banner" ? "h-16" : "h-12"} object-cover rounded-lg mb-2 border border-white/10`} />}
                   <label className="cursor-pointer block">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-display tracking-wider transition-colors" style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.60 0.005 0)" }}>
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-display tracking-wider transition-colors" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.60 0.005 0)" }}>
                       {uploadingCreate === field ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus size={12} />}
                       {uploadingCreate === field ? "SUBIENDO..." : "SUBIR IMAGEN"}
                     </div>
@@ -772,7 +772,7 @@ export default function MyTeams() {
                 }}
                 disabled={createMutation.isPending}
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{ background: "oklch(0.55 0.22 25)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 {createMutation.isPending ? "CREANDO..." : "CREAR EQUIPO"}
               </button>

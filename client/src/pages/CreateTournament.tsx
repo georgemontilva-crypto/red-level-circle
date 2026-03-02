@@ -110,9 +110,9 @@ function NeonInput({
         max={max}
         className="w-full px-4 py-3 rounded-xl text-sm font-sans transition-all duration-200"
         style={{
-          background: "oklch(0.09 0.005 0)",
+          background: "var(--bg-main)",
           border: "1px solid oklch(0.22 0.01 0)",
-          color: "oklch(0.90 0.005 0)",
+          color: "var(--text-primary)",
           outline: "none",
         }}
         onFocus={(e) => {
@@ -153,9 +153,9 @@ function NeonTextarea({
         rows={rows}
         className="w-full px-4 py-3 rounded-xl text-sm font-sans resize-none transition-all duration-200"
         style={{
-          background: "oklch(0.09 0.005 0)",
+          background: "var(--bg-main)",
           border: "1px solid oklch(0.22 0.01 0)",
-          color: "oklch(0.90 0.005 0)",
+          color: "var(--text-primary)",
           outline: "none",
         }}
         onFocus={(e) => {
@@ -251,11 +251,11 @@ export default function CreateTournament() {
                   step >= s
                     ? {
                         background: "oklch(0.55 0.22 25)",
-                        color: "oklch(0.98 0 0)",
+                        color: "var(--text-primary)",
                         boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)",
                       }
                     : {
-                        background: "oklch(0.13 0.005 0)",
+                        background: "var(--bg-card)",
                         border: "1px solid oklch(0.22 0.01 0)",
                         color: "oklch(0.45 0.005 0)",
                       }
@@ -285,7 +285,7 @@ export default function CreateTournament() {
         <div
           className="rounded-2xl p-6"
           style={{
-            background: "oklch(0.10 0.005 0)",
+            background: "var(--bg-card)",
             border: "1px solid oklch(0.18 0.01 0)",
           }}
         >
@@ -356,7 +356,7 @@ export default function CreateTournament() {
                 </label>
                 <div
                   className="relative w-full h-32 rounded-xl overflow-hidden cursor-pointer group"
-                  style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "oklch(0.09 0.005 0)" }}
+                  style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "var(--bg-main)" }}
                   onClick={() => document.getElementById("tournament-banner-input")?.click()}
                 >
                   {form.banner ? (
@@ -441,7 +441,7 @@ export default function CreateTournament() {
                               border: "1px solid oklch(0.55 0.22 25 / 0.5)",
                             }
                           : {
-                              background: "oklch(0.09 0.005 0)",
+                              background: "var(--bg-main)",
                               border: "1px solid oklch(0.22 0.01 0)",
                             }
                       }
@@ -552,7 +552,7 @@ export default function CreateTournament() {
               <div
                 className="rounded-xl p-4"
                 style={{
-                  background: "oklch(0.09 0.005 0)",
+                  background: "var(--bg-main)",
                   border: "1px solid oklch(0.22 0.01 0)",
                 }}
               >
@@ -647,7 +647,7 @@ export default function CreateTournament() {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300"
                 style={{
                   background: "oklch(0.55 0.22 25)",
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
                 }}
               >
@@ -660,7 +660,7 @@ export default function CreateTournament() {
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                 style={{
                   background: "oklch(0.55 0.22 25)",
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
                 }}
               >

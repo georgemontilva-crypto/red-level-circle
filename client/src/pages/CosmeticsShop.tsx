@@ -219,7 +219,7 @@ export default function CosmeticsShop() {
   const buyMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: (data) => {
       toast.success(`¡Cosmético adquirido! Ve a tu perfil para equiparlo.`, {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       setConfirmCosmetic(null);
       setBuyError(null);
@@ -239,7 +239,7 @@ export default function CosmeticsShop() {
   const equipMutation = trpc.cosmetics.equip.useMutation({
     onSuccess: () => {
       toast.success("¡Cosmético equipado! Visible en tu perfil.", {
-        style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
+        style: { background: "var(--bg-main)", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
       });
       refetchOwned();
       refetchMe();

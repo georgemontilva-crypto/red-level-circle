@@ -181,7 +181,7 @@ export function SectionBanner({
         >
           <div
             className="w-full sm:w-[480px] rounded-t-2xl sm:rounded-2xl p-6 space-y-4 animate-in slide-in-from-bottom-4 duration-300"
-            style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}
           >
             {/* Header */}
             <div className="flex items-center justify-between">
@@ -197,7 +197,7 @@ export function SectionBanner({
             {/* Image upload */}
             <div
               className="relative rounded-xl overflow-hidden cursor-pointer group"
-              style={{ height: "120px", border: "1px dashed oklch(0.30 0.01 0)", background: "oklch(0.08 0.005 0)" }}
+              style={{ height: "120px", border: "1px dashed oklch(0.30 0.01 0)", background: "var(--bg-main)" }}
               onClick={() => fileRef.current?.click()}
             >
               {previewUrl ? (
@@ -235,7 +235,7 @@ export function SectionBanner({
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Título del banner"
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
-                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
                   onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
                   onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
                 />
@@ -248,7 +248,7 @@ export function SectionBanner({
                   onChange={(e) => setSubtitle(e.target.value)}
                   placeholder="Descripción corta"
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
-                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
                   onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
                   onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
                 />
@@ -261,7 +261,7 @@ export function SectionBanner({
                   onChange={(e) => setLinkUrl(e.target.value)}
                   placeholder="https://..."
                   className="w-full px-3 py-2.5 rounded-xl text-sm text-white"
-                  style={{ background: "oklch(0.08 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", outline: "none" }}
                   onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; }}
                   onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
                 />

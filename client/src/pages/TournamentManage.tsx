@@ -28,7 +28,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   registration_open: { label: "Inscripciones Abiertas", color: "oklch(0.65 0.18 145)" },
   registration_closed: { label: "Inscripciones Cerradas", color: "oklch(0.55 0.22 25)" },
   in_progress: { label: "En Curso", color: "oklch(0.65 0.18 80)" },
-  completed: { label: "Finalizado", color: "oklch(0.50 0.005 0)" },
+  completed: { label: "Finalizado", color: "var(--text-muted)" },
   cancelled: { label: "Cancelado", color: "oklch(0.40 0.005 0)" },
 };
 
@@ -140,7 +140,7 @@ export default function TournamentManage() {
     );
   }
 
-  const statusInfo = STATUS_LABELS[tournament.status] ?? { label: tournament.status, color: "oklch(0.55 0.005 0)" };
+  const statusInfo = STATUS_LABELS[tournament.status] ?? { label: tournament.status, color: "var(--text-muted)" };
   const approvedCount = registrations?.length ?? 0;
   const pendingCount = allRegistrations?.filter((r) => r.status === "Pendiente").length ?? 0;
   const completedMatches = matches?.filter((m) => m.status === "completed").length ?? 0;
@@ -156,7 +156,7 @@ export default function TournamentManage() {
         <div
           className="rounded-2xl p-6 relative overflow-hidden"
           style={{
-            background: "oklch(0.10 0.005 0)",
+            background: "var(--bg-card)",
             border: "1px solid oklch(0.18 0.01 0)",
           }}
         >
@@ -193,7 +193,7 @@ export default function TournamentManage() {
                   <button
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
                     style={{
-                      background: "oklch(0.13 0.005 0)",
+                      background: "var(--bg-card)",
                       border: "1px solid oklch(0.55 0.22 25 / 0.4)",
                       color: "oklch(0.65 0.22 25)",
                     }}
@@ -206,7 +206,7 @@ export default function TournamentManage() {
                   <button
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
                     style={{
-                      background: "oklch(0.13 0.005 0)",
+                      background: "var(--bg-card)",
                       border: "1px solid oklch(0.22 0.01 0)",
                       color: "oklch(0.60 0.005 0)",
                     }}
@@ -227,7 +227,7 @@ export default function TournamentManage() {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                     style={{
                       background: "oklch(0.55 0.22 25)",
-                      color: "oklch(0.98 0 0)",
+                      color: "var(--text-primary)",
                       boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.3)",
                     }}
                   >
@@ -243,7 +243,7 @@ export default function TournamentManage() {
                     className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                     style={{
                       background: "oklch(0.55 0.22 25)",
-                      color: "oklch(0.98 0 0)",
+                      color: "var(--text-primary)",
                       boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.3)",
                     }}
                   >
@@ -295,7 +295,7 @@ export default function TournamentManage() {
         <div
           className="rounded-xl p-5"
           style={{
-            background: "oklch(0.10 0.005 0)",
+            background: "var(--bg-card)",
             border: "1px solid oklch(0.18 0.01 0)",
           }}
         >
@@ -325,7 +325,7 @@ export default function TournamentManage() {
                   key={reg.id}
                   className="flex items-center gap-2 p-3 rounded-lg"
                   style={{
-                    background: "oklch(0.12 0.005 0)",
+                    background: "var(--bg-card)",
                     border: "1px solid oklch(0.20 0.01 0)",
                   }}
                 >
@@ -352,7 +352,7 @@ export default function TournamentManage() {
           <div
             className="rounded-xl p-5"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.18 0.01 0)",
             }}
           >
@@ -362,7 +362,7 @@ export default function TournamentManage() {
                 PARTIDAS DEL TORNEO
               </h2>
               {/* View toggle */}
-              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: "oklch(0.08 0.005 0)" }}>
+              <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: "var(--bg-main)" }}>
                 <button
                   onClick={() => setBracketView(true)}
                   className="px-3 py-1 rounded-md text-xs font-mono tracking-wider transition-all duration-200"
@@ -420,7 +420,7 @@ export default function TournamentManage() {
                               key={match.id}
                               className="flex items-center justify-between p-4 rounded-xl transition-all duration-200"
                               style={{
-                                background: "oklch(0.12 0.005 0)",
+                                background: "var(--bg-card)",
                                 border: isCompleted
                                   ? "1px solid oklch(0.65 0.18 145 / 0.2)"
                                   : "1px solid oklch(0.20 0.01 0)",
@@ -496,7 +496,7 @@ export default function TournamentManage() {
           <div
             className="rounded-2xl p-6 text-center relative overflow-hidden"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.65 0.18 80 / 0.4)",
               boxShadow: "0 0 30px oklch(0.65 0.18 80 / 0.1)",
             }}
@@ -537,7 +537,7 @@ export default function TournamentManage() {
             <div
               className="w-full max-w-sm rounded-2xl p-6"
               style={{
-                background: "oklch(0.10 0.005 0)",
+                background: "var(--bg-card)",
                 border: "1px solid oklch(0.55 0.22 25 / 0.3)",
                 boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)",
               }}
@@ -572,7 +572,7 @@ export default function TournamentManage() {
                     placeholder="0"
                     className="w-16 px-2 py-2 rounded-lg text-center text-lg font-mono font-bold transition-all duration-200"
                     style={{
-                      background: "oklch(0.09 0.005 0)",
+                      background: "var(--bg-main)",
                       border: scoresValid && !isDraw && s1 > s2
                         ? "1px solid oklch(0.65 0.18 145 / 0.7)"
                         : "1px solid oklch(0.22 0.01 0)",
@@ -586,9 +586,9 @@ export default function TournamentManage() {
 
                 {/* Divider */}
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
+                  <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
                   <span className="text-xs font-mono text-muted-foreground">VS</span>
-                  <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
+                  <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
                 </div>
 
                 {/* Team 2 row */}
@@ -611,7 +611,7 @@ export default function TournamentManage() {
                     placeholder="0"
                     className="w-16 px-2 py-2 rounded-lg text-center text-lg font-mono font-bold transition-all duration-200"
                     style={{
-                      background: "oklch(0.09 0.005 0)",
+                      background: "var(--bg-main)",
                       border: scoresValid && !isDraw && s2 > s1
                         ? "1px solid oklch(0.65 0.18 145 / 0.7)"
                         : "1px solid oklch(0.22 0.01 0)",
@@ -660,9 +660,9 @@ export default function TournamentManage() {
                   placeholder="Observaciones del partido..."
                   className="w-full px-3 py-2 rounded-lg text-sm transition-all duration-200"
                   style={{
-                    background: "oklch(0.09 0.005 0)",
+                    background: "var(--bg-main)",
                     border: "1px solid oklch(0.22 0.01 0)",
-                    color: "oklch(0.90 0.005 0)",
+                    color: "var(--text-primary)",
                     outline: "none",
                   }}
                 />
@@ -696,7 +696,7 @@ export default function TournamentManage() {
                   className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                   style={{
                     background: "oklch(0.55 0.22 25)",
-                    color: "oklch(0.98 0 0)",
+                    color: "var(--text-primary)",
                     boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
                   }}
                 >
@@ -718,7 +718,7 @@ export default function TournamentManage() {
           <div
             className="w-full max-w-sm rounded-2xl p-6"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.55 0.18 220 / 0.4)",
               boxShadow: "0 0 40px oklch(0.55 0.18 220 / 0.15)",
             }}
@@ -738,7 +738,7 @@ export default function TournamentManage() {
                   value={scheduleDate}
                   onChange={(e) => setScheduleDate(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
                 />
               </div>
               <div>
@@ -748,7 +748,7 @@ export default function TournamentManage() {
                   value={scheduleTime}
                   onChange={(e) => setScheduleTime(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg text-sm"
-                  style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.90 0.005 0)", outline: "none" }}
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
                 />
               </div>
               <div>
@@ -763,7 +763,7 @@ export default function TournamentManage() {
                       className="flex-1 py-2 rounded-lg text-xs font-mono transition-all duration-200"
                       style={betsCloseMinutes === m
                         ? { background: "oklch(0.55 0.18 220 / 0.3)", border: "1px solid oklch(0.55 0.18 220 / 0.6)", color: "oklch(0.75 0.18 220)" }
-                        : { background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.50 0.005 0)" }
+                        : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }
                       }
                     >
                       {m}m
@@ -799,7 +799,7 @@ export default function TournamentManage() {
                 }}
                 disabled={!scheduleDate || !scheduleTime || scheduleMatchMutation.isPending}
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{ background: "oklch(0.55 0.18 220)", color: "oklch(0.98 0 0)", boxShadow: "0 0 12px oklch(0.55 0.18 220 / 0.4)" }}
+                style={{ background: "oklch(0.55 0.18 220)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.18 220 / 0.4)" }}
               >
                 {scheduleMatchMutation.isPending ? "GUARDANDO..." : "CONFIRMAR"}
               </button>
@@ -818,7 +818,7 @@ export default function TournamentManage() {
           <div
             className="w-full max-w-md rounded-2xl p-6"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.65 0.18 80 / 0.4)",
               boxShadow: "0 0 40px oklch(0.65 0.18 80 / 0.15)",
             }}
@@ -848,7 +848,7 @@ export default function TournamentManage() {
                           border: "1px solid oklch(0.65 0.18 80 / 0.5)",
                         }
                       : {
-                          background: "oklch(0.12 0.005 0)",
+                          background: "var(--bg-card)",
                           border: "1px solid oklch(0.20 0.01 0)",
                         }
                   }
@@ -893,7 +893,7 @@ export default function TournamentManage() {
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                 style={{
                   background: "oklch(0.65 0.18 80)",
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: "0 0 12px oklch(0.65 0.18 80 / 0.4)",
                 }}
               >

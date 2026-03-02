@@ -100,7 +100,7 @@ export default function ManageRegistrations() {
         <div
           className="rounded-xl p-5"
           style={{
-            background: "oklch(0.10 0.005 0)",
+            background: "var(--bg-card)",
             border: "1px solid oklch(0.18 0.01 0)",
           }}
         >
@@ -123,11 +123,11 @@ export default function ManageRegistrations() {
                     selectedTournamentId === t.id
                       ? {
                           background: "oklch(0.55 0.22 25)",
-                          color: "oklch(0.98 0 0)",
+                          color: "var(--text-primary)",
                           boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)",
                         }
                       : {
-                          background: "oklch(0.13 0.005 0)",
+                          background: "var(--bg-card)",
                           border: "1px solid oklch(0.22 0.01 0)",
                           color: "oklch(0.60 0.005 0)",
                         }
@@ -157,7 +157,7 @@ export default function ManageRegistrations() {
                             border: `1px solid ${cfg.color}50`,
                           }
                         : {
-                            background: "oklch(0.10 0.005 0)",
+                            background: "var(--bg-card)",
                             border: "1px solid oklch(0.18 0.01 0)",
                           }
                     }
@@ -183,7 +183,7 @@ export default function ManageRegistrations() {
             <div
               className="rounded-xl p-4 flex flex-col sm:flex-row gap-3"
               style={{
-                background: "oklch(0.10 0.005 0)",
+                background: "var(--bg-card)",
                 border: "1px solid oklch(0.18 0.01 0)",
               }}
             >
@@ -200,9 +200,9 @@ export default function ManageRegistrations() {
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full pl-9 pr-4 py-2 rounded-lg text-sm transition-all duration-200"
                   style={{
-                    background: "oklch(0.09 0.005 0)",
+                    background: "var(--bg-main)",
                     border: "1px solid oklch(0.22 0.01 0)",
-                    color: "oklch(0.90 0.005 0)",
+                    color: "var(--text-primary)",
                     outline: "none",
                   }}
                   onFocus={(e) => {
@@ -232,7 +232,7 @@ export default function ManageRegistrations() {
             <div
               className="rounded-xl overflow-hidden"
               style={{
-                background: "oklch(0.10 0.005 0)",
+                background: "var(--bg-card)",
                 border: "1px solid oklch(0.18 0.01 0)",
               }}
             >
@@ -240,9 +240,9 @@ export default function ManageRegistrations() {
               <div
                 className="grid grid-cols-12 gap-3 px-5 py-3 text-xs font-display tracking-wider"
                 style={{
-                  background: "oklch(0.09 0.005 0)",
+                  background: "var(--bg-main)",
                   borderBottom: "1px solid oklch(0.18 0.01 0)",
-                  color: "oklch(0.50 0.005 0)",
+                  color: "var(--text-muted)",
                 }}
               >
                 <div className="col-span-3">EQUIPO</div>
@@ -344,8 +344,8 @@ export default function ManageRegistrations() {
                           onClick={() => setAuditModal(reg.id)}
                           className="p-1.5 rounded-lg transition-all duration-150"
                           style={{
-                            background: "oklch(0.13 0.005 0)",
-                            color: "oklch(0.55 0.005 0)",
+                            background: "var(--bg-card)",
+                            color: "var(--text-muted)",
                           }}
                           title="Ver historial"
                         >
@@ -402,7 +402,7 @@ export default function ManageRegistrations() {
                             className="p-1.5 rounded-lg transition-all duration-150"
                             style={{
                               background: "oklch(0.45 0.005 0 / 0.2)",
-                              color: "oklch(0.55 0.005 0)",
+                              color: "var(--text-muted)",
                             }}
                             title="Cancelar"
                           >
@@ -429,7 +429,7 @@ export default function ManageRegistrations() {
           <div
             className="w-full max-w-md rounded-2xl p-6"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: `1px solid ${STATUS_CONFIG[actionModal.action]?.color ?? "oklch(0.55 0.22 25)"}40`,
               boxShadow: `0 0 40px ${STATUS_CONFIG[actionModal.action]?.color ?? "oklch(0.55 0.22 25)"}15`,
             }}
@@ -474,9 +474,9 @@ export default function ManageRegistrations() {
                 rows={3}
                 className="w-full px-4 py-3 rounded-xl text-sm font-sans resize-none transition-all duration-200"
                 style={{
-                  background: "oklch(0.09 0.005 0)",
+                  background: "var(--bg-main)",
                   border: "1px solid oklch(0.22 0.01 0)",
-                  color: "oklch(0.90 0.005 0)",
+                  color: "var(--text-primary)",
                   outline: "none",
                 }}
                 onFocus={(e) => {
@@ -514,7 +514,7 @@ export default function ManageRegistrations() {
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
                 style={{
                   background: STATUS_CONFIG[actionModal.action]?.color,
-                  color: "oklch(0.98 0 0)",
+                  color: "var(--text-primary)",
                   boxShadow: `0 0 12px ${STATUS_CONFIG[actionModal.action]?.color}50`,
                 }}
               >
@@ -535,7 +535,7 @@ export default function ManageRegistrations() {
           <div
             className="w-full max-w-lg rounded-2xl p-6 max-h-[80vh] overflow-y-auto"
             style={{
-              background: "oklch(0.10 0.005 0)",
+              background: "var(--bg-card)",
               border: "1px solid oklch(0.22 0.01 0)",
             }}
             onClick={(e) => e.stopPropagation()}
@@ -559,7 +559,7 @@ export default function ManageRegistrations() {
                       key={log.id}
                       className="p-4 rounded-xl"
                       style={{
-                        background: "oklch(0.12 0.005 0)",
+                        background: "var(--bg-card)",
                         border: "1px solid oklch(0.20 0.01 0)",
                       }}
                     >
