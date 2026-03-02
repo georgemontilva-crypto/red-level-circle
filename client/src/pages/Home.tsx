@@ -858,45 +858,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
-        {/* 1. Banner publicitario — con 15px de margen lateral */}
-        <div className="w-full flex gap-0" style={{ paddingLeft: "40px", paddingRight: "40px", paddingTop: "15px" }}>
-          {/* Banner principal — ocupa todo el ancho */}
-          <div className="flex-1 min-w-0">
-            <AdBannerSection ads={sideAds ?? []} />
-          </div>
-          {/* Sidebar: Featured tournaments — anclado a la derecha del banner */}
-          <div className="hidden xl:flex flex-col w-72 gap-0 overflow-y-auto scrollbar-none border-l border-border" style={{ background: "var(--sidebar)" }}>
-            <p className="text-muted-foreground text-[10px] font-mono uppercase tracking-widest px-4 pt-4 pb-2">Torneos Destacados</p>
-            {(featuredTournaments ?? []).length === 0 ? (
-              <div className="flex-1 flex items-center justify-center py-8 px-4">
-                <p className="text-muted-foreground text-xs font-mono text-center">Los torneos destacados aparecerán aquí</p>
-              </div>
-            ) : (featuredTournaments ?? []).map((t: any) => {
-              const st = statusLabel(t.status ?? "");
-              return (
-                <Link key={t.id} href={`/tournaments/${t.id}`}>
-                  <div className="flex items-center gap-3 px-3 py-2.5 cursor-pointer transition-all hover:bg-accent/10 border-b border-border/50">
-                    <div className="w-16 h-9 rounded overflow-hidden shrink-0 bg-muted">
-                      {t.banner ? (
-                        <img src={t.banner} alt={t.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Trophy size={14} className="text-primary/50" />
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-foreground text-xs font-semibold truncate">{t.name}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-                        <span className={`text-[10px] truncate ${st.color}`}>{st.text}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+        {/* 1. Hero carousel — estilo Epic Games Store */}
+        <div style={{ paddingLeft: "40px", paddingRight: "40px", paddingTop: "15px" }}>
+          <HeroSection />
         </div>
 
       {/* Resto del contenido con padding interno */}
