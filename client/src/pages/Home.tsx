@@ -140,7 +140,7 @@ function HeroSection() {
       {/* ─── BANNER PRINCIPAL ─── */}
       <div
         className="relative overflow-hidden cursor-pointer w-full"
-        style={{ height: "clamp(240px, 50vw, 420px)", borderRadius: "12px", overflow: "hidden" }}
+        style={{ height: "clamp(240px, 50vw, 480px)", borderRadius: "12px", overflow: "hidden" }}
         onClick={() => {
           if (current?.destinationUrl) {
             trackClick.mutate({ adId: current.id });
@@ -197,54 +197,46 @@ function HeroSection() {
           return (
             <div
               key={ad.id}
-              className="relative cursor-pointer transition-all duration-200"
+              className="relative cursor-pointer overflow-hidden"
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "14px",
                 padding: "10px 12px",
                 borderRadius: "8px",
-                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
+                background: "rgba(255,255,255,0.04)",
+                isolation: "isolate",
               }}
               onClick={() => goTo(i)}
-              onMouseEnter={e => {
-                if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLDivElement).style.background = isActive ? "rgba(255,255,255,0.08)" : "transparent";
-              }}
             >
+              {/* Fondo de progreso que se llena — el contenedor mismo */}
+              {isActive && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    width: `${progress}%`,
+                    transition: "width 30ms linear",
+                    borderRadius: "8px",
+                    zIndex: 0,
+                  }}
+                />
+              )}
               {/* Portada vertical estilo Epic */}
               <div
-                className="shrink-0 overflow-hidden"
+                className="shrink-0 overflow-hidden relative z-10"
                 style={{ width: "56px", height: "72px", borderRadius: "6px", background: "#1a1a1f" }}
               >
                 <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
               </div>
               {/* Texto */}
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 relative z-10">
                 <p
                   className="text-sm font-semibold leading-snug"
-                  style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.75)", wordBreak: "break-word", whiteSpace: "normal" }}
+                  style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.65)", wordBreak: "break-word", whiteSpace: "normal" }}
                 >
                   {ad.brandName}
                 </p>
-              </div>
-              {/* Barra de progreso horizontal inferior */}
-              <div
-                className="absolute bottom-0 left-0 right-0"
-                style={{ height: "2px", background: "rgba(255,255,255,0.08)", borderRadius: "0 0 8px 8px", overflow: "hidden" }}
-              >
-                {isActive && (
-                  <div
-                    style={{
-                      height: "100%",
-                      width: `${progress}%`,
-                      background: "rgba(255,255,255,0.7)",
-                      transition: "width 30ms linear",
-                    }}
-                  />
-                )}
               </div>
             </div>
           );
