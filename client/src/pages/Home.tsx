@@ -191,47 +191,56 @@ function HeroSection() {
       </div>
 
       {/* ─── TARJETAS LATERALES — solo desktop ─── */}
-      <div className="hidden lg:flex flex-col gap-0">
+      <div className="hidden lg:flex flex-col" style={{ gap: "4px" }}>
         {slides.map((ad: any, i: number) => {
           const isActive = i === activeIdx;
           return (
             <div
               key={ad.id}
-              className="relative cursor-pointer transition-colors duration-150"
+              className="relative cursor-pointer transition-all duration-200"
               style={{
-                height: "72px",
                 display: "flex",
                 alignItems: "center",
-                gap: "12px",
-                padding: "12px",
-                borderRadius: "12px",
-                background: isActive ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)",
-                marginBottom: "2px",
+                gap: "14px",
+                padding: "10px 12px",
+                borderRadius: "8px",
+                background: isActive ? "rgba(255,255,255,0.08)" : "transparent",
               }}
               onClick={() => goTo(i)}
-              onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.06)"; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = isActive ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.03)"; }}
+              onMouseEnter={e => {
+                if (!isActive) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLDivElement).style.background = isActive ? "rgba(255,255,255,0.08)" : "transparent";
+              }}
             >
-              {/* Thumbnail */}
-              <div className="shrink-0 rounded-lg overflow-hidden" style={{ width: "48px", height: "48px", background: "#0f1115" }}>
+              {/* Portada vertical estilo Epic */}
+              <div
+                className="shrink-0 overflow-hidden"
+                style={{ width: "56px", height: "72px", borderRadius: "6px", background: "#1a1a1f" }}
+              >
                 <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
               </div>
               {/* Texto */}
               <div className="flex-1 min-w-0">
-                <p className="text-white text-sm font-semibold truncate leading-tight">{ad.brandName}</p>
-                <p className="text-xs truncate mt-0.5" style={{ color: "var(--text-muted)" }}>{ad.title}</p>
+                <p
+                  className="text-sm font-semibold leading-snug"
+                  style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.75)", wordBreak: "break-word", whiteSpace: "normal" }}
+                >
+                  {ad.brandName}
+                </p>
               </div>
               {/* Barra de progreso horizontal inferior */}
               <div
                 className="absolute bottom-0 left-0 right-0"
-                style={{ height: "3px", background: "#333", borderRadius: "0 0 12px 12px", overflow: "hidden" }}
+                style={{ height: "2px", background: "rgba(255,255,255,0.08)", borderRadius: "0 0 8px 8px", overflow: "hidden" }}
               >
                 {isActive && (
                   <div
                     style={{
                       height: "100%",
                       width: `${progress}%`,
-                      background: "#fff",
+                      background: "rgba(255,255,255,0.7)",
                       transition: "width 30ms linear",
                     }}
                   />
