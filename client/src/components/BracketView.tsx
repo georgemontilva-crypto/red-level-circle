@@ -108,7 +108,7 @@ function ScoreModal({
           <h3 className="font-display text-sm font-bold tracking-widest text-foreground">
             REGISTRAR RESULTADO
           </h3>
-          <span className="ml-auto text-xs font-mono text-zinc-600">
+          <span className="ml-auto text-xs font-mono text-muted-foreground">
             #{match.matchNumber}
           </span>
         </div>
@@ -289,10 +289,10 @@ function MatchCard({
             isWinner
               ? "text-green-400"
               : isLoser
-              ? "text-zinc-600 line-through"
+              ? "text-muted-foreground line-through"
               : teamId === null
-              ? "text-zinc-600 italic"
-              : "text-zinc-300"
+              ? "text-muted-foreground italic"
+              : "text-secondary-foreground"
           }`}
         >
           {teamName ?? (teamId ? `Equipo ${teamId}` : "TBD")}
@@ -305,8 +305,8 @@ function MatchCard({
               ? isWinner
                 ? "text-green-400"
                 : isLoser
-                ? "text-zinc-600"
-                : "text-zinc-400"
+                ? "text-muted-foreground"
+                : "text-muted-foreground"
               : "text-zinc-700"
           }`}
           style={
@@ -386,7 +386,7 @@ export default function BracketView({
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <Trophy className="w-12 h-12 text-zinc-700 mb-3" />
-        <p className="text-zinc-500 font-mono text-sm">El bracket aún no ha sido generado</p>
+        <p className="text-muted-foreground font-mono text-sm">El bracket aún no ha sido generado</p>
         <p className="text-zinc-700 text-xs mt-1">Inicia el torneo para generar los enfrentamientos</p>
       </div>
     );

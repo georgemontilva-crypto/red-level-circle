@@ -21,13 +21,13 @@ const GAME_COVERS: Record<string, string> = {
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="flex flex-col bg-zinc-900 border border-zinc-800/60 rounded-xl overflow-hidden animate-pulse">
-      <div className="w-full aspect-video bg-zinc-800" />
+    <div className="flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden animate-pulse">
+      <div className="w-full aspect-video bg-secondary" />
       <div className="p-3 flex gap-3">
-        <div className="w-8 h-8 rounded-full bg-zinc-800 flex-shrink-0" />
+        <div className="w-8 h-8 rounded-full bg-secondary flex-shrink-0" />
         <div className="flex-1 space-y-2">
-          <div className="h-3 bg-zinc-700 rounded w-3/4" />
-          <div className="h-2 bg-zinc-700 rounded w-1/2" />
+          <div className="h-3 bg-muted rounded w-3/4" />
+          <div className="h-2 bg-muted rounded w-1/2" />
         </div>
       </div>
     </div>
@@ -39,12 +39,12 @@ function GameSectionHeader({ game, count }: { game: string; count: number }) {
   const cover = GAME_COVERS[game];
   return (
     <div className="flex items-center gap-4 mb-5">
-      <div className="flex-shrink-0 w-10 h-[54px] rounded-md overflow-hidden bg-zinc-800 border border-zinc-700/50 shadow-lg">
+      <div className="flex-shrink-0 w-10 h-[54px] rounded-md overflow-hidden bg-secondary border border-border/50 shadow-lg">
         {cover ? (
           <img src={cover} alt={game} className="w-full h-full object-cover" draggable={false} />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
-            <Tv className="w-5 h-5 text-zinc-600" />
+            <Tv className="w-5 h-5 text-muted-foreground" />
           </div>
         )}
       </div>
@@ -52,12 +52,12 @@ function GameSectionHeader({ game, count }: { game: string; count: number }) {
         <h2 className="font-orbitron font-black text-lg text-white tracking-wide leading-none">
           {game}
         </h2>
-        <p className="text-zinc-500 text-xs font-mono mt-1">
+        <p className="text-muted-foreground text-xs font-mono mt-1">
           {count} transmisión{count !== 1 ? "es" : ""} en vivo
         </p>
       </div>
       <Link href={`/streams?game=${encodeURIComponent(game)}`}>
-        <button className="flex items-center gap-1 text-xs font-mono text-zinc-400 hover:text-red-400 transition-colors border border-zinc-700/60 hover:border-red-500/50 px-3 py-1.5 rounded-lg whitespace-nowrap">
+        <button className="flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-red-400 transition-colors border border-border/60 hover:border-red-500/50 px-3 py-1.5 rounded-lg whitespace-nowrap">
           Mostrar todo
           <ChevronRight className="w-3.5 h-3.5" />
         </button>
@@ -75,7 +75,7 @@ export default function Streams() {
   const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
+    <div className="min-h-screen bg-card text-white">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-20">
 
         {/* ── Page header ── */}
@@ -92,7 +92,7 @@ export default function Streams() {
               </span>
             )}
           </div>
-          <p className="text-zinc-500 font-rajdhani text-base">
+          <p className="text-muted-foreground font-rajdhani text-base">
             Transmisiones agrupadas por juego · actualizado cada 30 segundos
           </p>
         </div>
@@ -104,10 +104,10 @@ export default function Streams() {
               <div key={i}>
                 <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-6" />
                 <div className="flex items-center gap-4 mb-5">
-                  <div className="w-10 h-[54px] bg-zinc-800 rounded-md animate-pulse" />
+                  <div className="w-10 h-[54px] bg-secondary rounded-md animate-pulse" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-zinc-800 rounded w-40 animate-pulse" />
-                    <div className="h-2 bg-zinc-800 rounded w-24 animate-pulse" />
+                    <div className="h-4 bg-secondary rounded w-40 animate-pulse" />
+                    <div className="h-2 bg-secondary rounded w-24 animate-pulse" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -121,13 +121,13 @@ export default function Streams() {
         {/* ── Empty state ── */}
         {!isLoading && (!groups || groups.length === 0) && (
           <div className="flex flex-col items-center justify-center py-32 text-center">
-            <div className="w-20 h-20 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-6">
+            <div className="w-20 h-20 rounded-full bg-card border border-border flex items-center justify-center mb-6">
               <Radio className="w-9 h-9 text-zinc-700" />
             </div>
-            <h3 className="font-orbitron font-black text-2xl text-zinc-600 mb-2 tracking-wide">
+            <h3 className="font-orbitron font-black text-2xl text-muted-foreground mb-2 tracking-wide">
               SIN TRANSMISIONES
             </h3>
-            <p className="text-zinc-600 font-rajdhani text-base max-w-sm">
+            <p className="text-muted-foreground font-rajdhani text-base max-w-sm">
               No hay transmisiones en vivo en este momento. Vuelve más tarde o activa una desde el panel de creador.
             </p>
           </div>

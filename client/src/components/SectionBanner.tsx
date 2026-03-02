@@ -141,7 +141,7 @@ export function SectionBanner({
               </h2>
             )}
             {displaySubtitle && (
-              <p className="text-zinc-300 text-sm font-rajdhani mt-1 drop-shadow transition-all duration-150">{displaySubtitle}</p>
+              <p className="text-secondary-foreground text-sm font-rajdhani mt-1 drop-shadow transition-all duration-150">{displaySubtitle}</p>
             )}
           </div>
         )}
@@ -187,9 +187,9 @@ export function SectionBanner({
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-mono font-black text-white text-sm tracking-widest">EDITAR BANNER</h3>
-                <p className="text-xs text-gray-500 font-mono mt-0.5">Sección: {sectionKey} · Los cambios se previsualiza en vivo</p>
+                <p className="text-xs text-muted-foreground font-mono mt-0.5">Sección: {sectionKey} · Los cambios se previsualiza en vivo</p>
               </div>
-              <button onClick={() => setEditing(false)} className="p-2 rounded-lg hover:bg-white/5 transition-colors text-gray-400 hover:text-white">
+              <button onClick={() => setEditing(false)} className="p-2 rounded-lg hover:bg-white/5 transition-colors text-muted-foreground hover:text-white">
                 <X size={16} />
               </button>
             </div>
@@ -209,7 +209,7 @@ export function SectionBanner({
                   <span className="text-xs" style={{ color: "oklch(0.30 0.005 0)" }}>JPG, PNG, WebP · máx 10MB</span>
                 </div>
               )}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+              <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                 {uploading ? (
                   <Loader2 size={20} className="text-white animate-spin" />
                 ) : (
@@ -228,7 +228,7 @@ export function SectionBanner({
             {/* Fields */}
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-mono text-gray-500 mb-1 block">TÍTULO (opcional)</label>
+                <label className="text-xs font-mono text-muted-foreground mb-1 block">TÍTULO (opcional)</label>
                 <input
                   type="text"
                   value={title}
@@ -241,7 +241,7 @@ export function SectionBanner({
                 />
               </div>
               <div>
-                <label className="text-xs font-mono text-gray-500 mb-1 block">SUBTÍTULO (opcional)</label>
+                <label className="text-xs font-mono text-muted-foreground mb-1 block">SUBTÍTULO (opcional)</label>
                 <input
                   type="text"
                   value={subtitle}
@@ -254,7 +254,7 @@ export function SectionBanner({
                 />
               </div>
               <div>
-                <label className="text-xs font-mono text-gray-500 mb-1 block">LINK (opcional)</label>
+                <label className="text-xs font-mono text-muted-foreground mb-1 block">LINK (opcional)</label>
                 <input
                   type="url"
                   value={linkUrl}

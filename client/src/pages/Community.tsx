@@ -108,7 +108,7 @@ function UserCard({ user, myId }: UserCardProps) {
             className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all duration-200"
             style={isFollowing
               ? { background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.2)", color: "#ccc" }
-              : { background: "oklch(0.55 0.22 25)", color: "#fff" }
+              : { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }
             }
           >
             {mutating || followLoading ? (
@@ -158,7 +158,7 @@ function UserCard({ user, myId }: UserCardProps) {
           {user.profileType && (
             <div className="flex items-center gap-1 mb-2">
               <ProfileTypeIcon type={user.profileType} />
-              <span className="text-xs text-zinc-500 font-mono">
+              <span className="text-xs text-muted-foreground font-mono">
                 {PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType}
               </span>
             </div>
@@ -166,11 +166,11 @@ function UserCard({ user, myId }: UserCardProps) {
 
           {/* Bio */}
           {user.bio && (
-            <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2 mb-2">{user.bio}</p>
+            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-2">{user.bio}</p>
           )}
 
           {/* Meta */}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-zinc-600">
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             {user.mainGame && (
               <span className="flex items-center gap-1">
                 <Gamepad2 className="w-3 h-3 text-red-600" />
@@ -217,20 +217,20 @@ export default function Community() {
           <Users className="w-6 h-6 text-red-500" />
           <h1 className="font-orbitron font-black text-2xl text-white tracking-wider">COMUNIDAD</h1>
         </div>
-        <p className="text-zinc-500 text-sm">Descubre jugadores, capitanes y creadores de la plataforma</p>
+        <p className="text-muted-foreground text-sm">Descubre jugadores, capitanes y creadores de la plataforma</p>
       </div>
 
       {/* Search + filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         {/* Search input */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Buscar por nombre o nickname..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-zinc-600 focus:outline-none transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-muted-foreground focus:outline-none transition-colors"
             style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
             onFocus={(e) => (e.target.style.borderColor = "oklch(0.55 0.22 25 / 0.6)")}
             onBlur={(e) => (e.target.style.borderColor = "oklch(0.20 0.01 0)")}
@@ -256,7 +256,7 @@ export default function Community() {
       </div>
 
       {/* Stats bar */}
-      <div className="flex items-center gap-2 mb-4 text-xs text-zinc-500 font-mono">
+      <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground font-mono">
         <Users className="w-3.5 h-3.5" />
         <span>{filtered?.length ?? 0} usuarios encontrados</span>
       </div>
@@ -272,7 +272,7 @@ export default function Community() {
           style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
         >
           <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-          <p className="text-zinc-500 font-mono text-sm">No se encontraron usuarios</p>
+          <p className="text-muted-foreground font-mono text-sm">No se encontraron usuarios</p>
           {search && (
             <button
               onClick={() => { setSearch(""); setDebouncedSearch(""); }}

@@ -31,13 +31,13 @@ function getGameColor(slug?: string | null): { from: string; to: string; glow: s
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   captain:    { label: "Capitán",  color: "#fbbf24" },
-  player:     { label: "Jugador",  color: "#a1a1aa" },
+  player:     { label: "Jugador",  color: "var(--text-secondary)" },
   substitute: { label: "Suplente", color: "#6366f1" },
   coach:      { label: "Entrenador",    color: "#22c55e" },
 };
 
 const TOURNAMENT_STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  completed:         { label: "Finalizado",    color: "#a1a1aa", bg: "rgba(161,161,170,0.08)" },
+  completed:         { label: "Finalizado",    color: "var(--text-secondary)", bg: "rgba(161,161,170,0.08)" },
   in_progress:       { label: "En curso",      color: "#facc15", bg: "rgba(250,204,21,0.08)"  },
   registration_open: { label: "Inscripciones", color: "#60a5fa", bg: "rgba(96,165,250,0.08)"  },
   cancelled:         { label: "Cancelado",     color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
@@ -49,7 +49,7 @@ function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value
       style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div style={{ color: accent }}>{icon}</div>
       <span className="text-2xl font-black font-mono" style={{ color: accent }}>{value}</span>
-      <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">{label}</span>
+      <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{label}</span>
     </div>
   );
 }
@@ -62,7 +62,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
     <div className="flex flex-col gap-1.5 p-4 rounded-2xl"
       style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
       <div className="flex items-center justify-between mb-1">
-        <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">Tasa de Victoria</span>
+        <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tasa de Victoria</span>
         <span className="text-lg font-black font-mono" style={{ color }}>{rate !== null ? `${rate}%` : "—"}</span>
       </div>
       <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.16 0.01 0)" }}>
@@ -104,11 +104,11 @@ function PerformanceChart({ history, accent }: { history: any[]; accent: string 
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={chartData} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.16 0.01 0)" vertical={false} />
-          <XAxis dataKey="month" tick={{ fill: "#71717a", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} />
-          <YAxis tick={{ fill: "#71717a", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} allowDecimals={false} />
+          <XAxis dataKey="month" tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} />
+          <YAxis tick={{ fill: "var(--text-muted)", fontSize: 10, fontFamily: "monospace" }} axisLine={false} tickLine={false} allowDecimals={false} />
           <Tooltip
             contentStyle={{ background: "#0a0a0a", border: "1px solid #27272a", borderRadius: "8px", fontFamily: "monospace", fontSize: "12px" }}
-            labelStyle={{ color: "#a1a1aa" }}
+            labelStyle={{ color: "var(--text-secondary)" }}
             cursor={{ fill: "rgba(255,255,255,0.03)" }}
           />
           <Bar dataKey="victorias" name="Victorias" fill="#4ade80" radius={[4, 4, 0, 0]} maxBarSize={32} />
@@ -130,7 +130,7 @@ type AchievementDef = {
 };
 
 const RARITY_COLORS = {
-  common:    { bg: "rgba(161,161,170,0.08)", border: "rgba(161,161,170,0.2)", text: "#a1a1aa", label: "Común" },
+  common:    { bg: "rgba(161,161,170,0.08)", border: "rgba(161,161,170,0.2)", text: "var(--text-secondary)", label: "Común" },
   rare:      { bg: "rgba(96,165,250,0.08)",  border: "rgba(96,165,250,0.25)",  text: "#60a5fa", label: "Raro" },
   epic:      { bg: "rgba(168,85,247,0.08)",  border: "rgba(168,85,247,0.25)",  text: "#a855f7", label: "Épico" },
   legendary: { bg: "rgba(250,204,21,0.08)",  border: "rgba(250,204,21,0.25)",  text: "#fbbf24", label: "Legendario" },
@@ -168,7 +168,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
     <div>
       {/* Auto-unlockable achievements */}
       <div className="mb-6">
-        <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Logros del Sistema</p>
+        <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3">Logros del Sistema</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {ACHIEVEMENT_DEFS.map((def) => {
             const unlocked = unlockedAutoIds.has(def.id);
@@ -190,7 +190,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
                     <p className="font-mono font-bold text-sm" style={{ color: unlocked ? "white" : "#52525b" }}>{def.title}</p>
                     <span className="text-xs font-mono px-1.5 py-0.5 rounded" style={{ background: unlocked ? r.bg : "transparent", color: unlocked ? r.text : "#3f3f46", border: `1px solid ${unlocked ? r.border : "#27272a"}` }}>{r.label}</span>
                   </div>
-                  <p className="text-xs font-mono mt-0.5" style={{ color: unlocked ? "#a1a1aa" : "#3f3f46" }}>{def.description}</p>
+                  <p className="text-xs font-mono mt-0.5" style={{ color: unlocked ? "var(--text-secondary)" : "#3f3f46" }}>{def.description}</p>
                 </div>
               </div>
             );
@@ -201,7 +201,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
       {/* Manual achievements from tournaments */}
       {manualAchievements.length > 0 && (
         <div>
-          <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Logros de Torneos</p>
+          <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3">Logros de Torneos</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {manualAchievements.map((ach: any) => (
               <div key={ach.id} className="flex items-start gap-3 p-4 rounded-2xl"
@@ -212,7 +212,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-mono font-bold text-white text-sm">{ach.title}</p>
-                  {ach.description && <p className="text-xs text-zinc-500 mt-0.5">{ach.description}</p>}
+                  {ach.description && <p className="text-xs text-muted-foreground mt-0.5">{ach.description}</p>}
                   <p className="text-xs font-mono text-zinc-700 mt-1">
                     {new Date(ach.awardedAt).toLocaleDateString("es-ES", { year: "numeric", month: "short" })}
                   </p>
@@ -227,7 +227,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
         <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
           style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
           <Award size={36} className="text-zinc-700 mb-3" />
-          <p className="font-mono text-zinc-500">Aún no hay logros desbloqueados</p>
+          <p className="font-mono text-muted-foreground">Aún no hay logros desbloqueados</p>
           <p className="font-mono text-zinc-700 text-xs mt-1">Participa en torneos para desbloquear logros</p>
         </div>
       )}
@@ -238,7 +238,7 @@ function AchievementsPanel({ achievements, tournamentHistory, wins, accent }: {
 function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; teamId: number }) {
   const isWinner = reg.tournamentWinnerId === teamId && reg.tournamentStatus === "completed";
   const isActive = reg.tournamentStatus === "in_progress";
-  const statusInfo = TOURNAMENT_STATUS[reg.tournamentStatus ?? ""] ?? { label: reg.tournamentStatus, color: "#a1a1aa", bg: "rgba(161,161,170,0.08)" };
+  const statusInfo = TOURNAMENT_STATUS[reg.tournamentStatus ?? ""] ?? { label: reg.tournamentStatus, color: "var(--text-secondary)", bg: "rgba(161,161,170,0.08)" };
   return (
     <Link href={`/tournaments/${reg.tournamentId}`}>
       <div
@@ -261,16 +261,16 @@ function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; team
             </div>
           ) : (
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "oklch(0.12 0.005 0)" }}>
-              <Swords size={14} className="text-zinc-600" />
+              <Swords size={14} className="text-muted-foreground" />
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-mono font-semibold text-white truncate group-hover:text-zinc-200 transition-colors">
+          <p className="text-sm font-mono font-semibold text-white truncate group-hover:text-secondary-foreground transition-colors">
             {reg.tournamentName}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
-            {reg.tournamentGame && <span className="text-xs font-mono text-zinc-600">{reg.tournamentGame}</span>}
+            {reg.tournamentGame && <span className="text-xs font-mono text-muted-foreground">{reg.tournamentGame}</span>}
             {reg.tournamentStartDate && (
               <span className="text-xs font-mono text-zinc-700">· {new Date(reg.tournamentStartDate).getFullYear()}</span>
             )}
@@ -288,7 +288,7 @@ function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; team
               {statusInfo.label}
             </span>
           )}
-          <ExternalLink size={12} className="text-zinc-700 group-hover:text-zinc-500 transition-colors" />
+          <ExternalLink size={12} className="text-zinc-700 group-hover:text-muted-foreground transition-colors" />
         </div>
       </div>
     </Link>
@@ -321,10 +321,10 @@ export default function TeamProfile() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-full border-2 border-red-600 border-t-transparent animate-spin" />
-          <p className="font-mono text-zinc-500 text-sm">Cargando perfil del equipo...</p>
+          <p className="font-mono text-muted-foreground text-sm">Cargando perfil del equipo...</p>
         </div>
       </div>
     );
@@ -332,7 +332,7 @@ export default function TeamProfile() {
 
   if (!team) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-white flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500/30 mx-auto mb-4" />
           <p className="font-mono text-xl mb-2 text-white">Equipo no encontrado</p>
@@ -373,9 +373,9 @@ export default function TeamProfile() {
               <button
                 onClick={() => window.history.back()}
                 className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "#a1a1aa" }}
+                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#a1a1aa"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
               >
                 <ChevronLeft size={14} /> Volver
               </button>
@@ -435,7 +435,7 @@ export default function TeamProfile() {
                   </span>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-zinc-500">
+              <div className="flex flex-wrap items-center gap-4 text-sm font-mono text-muted-foreground">
                 {(team.game || team.gameSlug) && (
                   <span className="flex items-center gap-1.5" style={{ color: c.accent }}>
                     <Target size={13} /> {team.game ?? team.gameSlug}
@@ -461,19 +461,19 @@ export default function TeamProfile() {
                 <div className="flex items-center gap-3 mt-3">
                   {team.socialDiscord && (
                     <a href={team.socialDiscord} target="_blank" rel="noopener noreferrer"
-                      className="text-zinc-600 hover:text-indigo-400 transition-colors">
+                      className="text-muted-foreground hover:text-indigo-400 transition-colors">
                       <MessageSquare size={16} />
                     </a>
                   )}
                   {team.socialTwitch && (
                     <a href={team.socialTwitch} target="_blank" rel="noopener noreferrer"
-                      className="text-zinc-600 hover:text-purple-400 transition-colors">
+                      className="text-muted-foreground hover:text-purple-400 transition-colors">
                       <Tv2 size={16} />
                     </a>
                   )}
                   {team.socialTwitter && (
                     <a href={team.socialTwitter} target="_blank" rel="noopener noreferrer"
-                      className="text-zinc-600 hover:text-sky-400 transition-colors">
+                      className="text-muted-foreground hover:text-sky-400 transition-colors">
                       <Twitter size={16} />
                     </a>
                   )}
@@ -517,7 +517,7 @@ export default function TeamProfile() {
                 className="flex items-center gap-2 px-4 py-2 rounded-lg font-mono text-xs font-semibold transition-all duration-200"
                 style={{
                   background: activeTab === tab.key ? c.accent + "18" : "transparent",
-                  color: activeTab === tab.key ? c.accent : "#71717a",
+                  color: activeTab === tab.key ? c.accent : "var(--text-muted)",
                   border: activeTab === tab.key ? `1px solid ${c.accent}33` : "1px solid transparent",
                 }}
               >
@@ -525,7 +525,7 @@ export default function TeamProfile() {
                 {tab.label}
                 {(tab.count ?? 0) > 0 && (
                   <span className="text-xs px-1.5 py-0.5 rounded-full"
-                    style={{ background: "oklch(0.14 0.005 0)", color: "#71717a" }}>
+                    style={{ background: "oklch(0.14 0.005 0)", color: "var(--text-muted)" }}>
                     {tab.count}
                   </span>
                 )}
@@ -538,7 +538,7 @@ export default function TeamProfile() {
               {!team.members || team.members.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16">
                   <Users size={32} className="text-zinc-700 mb-3" />
-                  <p className="text-sm text-zinc-500">Sin roster registrado aún</p>
+                  <p className="text-sm text-muted-foreground">Sin roster registrado aún</p>
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
@@ -570,14 +570,14 @@ export default function TeamProfile() {
                     <div className="flex flex-col items-center justify-center py-12 rounded-2xl"
                       style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}>
                       <Trophy size={32} className="text-zinc-700 mb-3" />
-                      <p className="font-mono text-zinc-500">Sin historial de torneos</p>
+                      <p className="font-mono text-muted-foreground">Sin historial de torneos</p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div>
                   <div className="mb-4">
-                    <p className="text-xs font-mono text-zinc-600 uppercase tracking-widest mb-3">Historial de Torneos</p>
+                    <p className="text-xs font-mono text-muted-foreground uppercase tracking-widest mb-3">Historial de Torneos</p>
                   </div>
                   <div className="mb-4">
                     {tournamentHistory.map((reg: any) => (

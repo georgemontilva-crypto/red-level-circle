@@ -109,7 +109,7 @@ function EmptyState({ selectedGame, selectedStatus, games, onClear }: {
         {game ? `Sin torneos de ${game.name}` : "Sin torneos"}
         {statusLabel && selectedStatus ? ` · ${statusLabel}` : ""}
       </h3>
-      <p className="text-zinc-500 font-rajdhani text-sm mb-8 max-w-xs">
+      <p className="text-muted-foreground font-rajdhani text-sm mb-8 max-w-xs">
         {game
           ? `Aún no hay torneos de ${game.name} con estos filtros. Prueba cambiando el estado o explora otros juegos.`
           : "No se encontraron torneos con los filtros seleccionados. Intenta ampliar la búsqueda."}
@@ -179,7 +179,7 @@ export default function Tournaments() {
   const hasFilters = !!(selectedGame || selectedStatus || searchText);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
 
         <SectionBanner sectionKey="tournaments" height="h-48 sm:h-64 lg:h-72" />
@@ -187,18 +187,18 @@ export default function Tournaments() {
         {/* ── Fila 1: Búsqueda ──────────────────────────────────────────────── */}
         <div className="mt-8 mb-5">
           <div className="relative max-w-xl">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
               placeholder="Buscar torneo por nombre..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-zinc-600 font-rajdhani text-sm outline-none transition-all duration-200"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-muted-foreground font-rajdhani text-sm outline-none transition-all duration-200"
               style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.5)"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "oklch(0.20 0.01 0)"; }}
             />
             {searchText && (
-              <button onClick={() => setSearchText("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors">
+              <button onClick={() => setSearchText("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors">
                 <X size={14} />
               </button>
             )}
@@ -235,7 +235,7 @@ export default function Tournaments() {
 
         {/* ── Fila 3: Estado ────────────────────────────────────────────────── */}
         <div className="mb-6">
-          <p className="text-zinc-600 text-xs font-mono mb-2 uppercase tracking-widest">Estado</p>
+          <p className="text-muted-foreground text-xs font-mono mb-2 uppercase tracking-widest">Estado</p>
           <div className="flex flex-wrap gap-2">
             {STATUS_CONFIG.map((s) => (
               <button
@@ -266,7 +266,7 @@ export default function Tournaments() {
             }}
           >
             <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: activeColor.accent }} />
-            <span className="text-zinc-500 text-xs font-mono">Ver también:</span>
+            <span className="text-muted-foreground text-xs font-mono">Ver también:</span>
             <Link
               href={`/teams?game=${selectedGame}`}
               className="flex items-center gap-1 text-xs font-mono font-semibold transition-colors hover:opacity-80"
@@ -281,12 +281,12 @@ export default function Tournaments() {
         {/* ── Resumen de filtros activos ────────────────────────────────────── */}
         {hasFilters && !isLoading && (
           <div className="flex items-center justify-between mb-4">
-            <p className="text-zinc-600 text-xs font-mono">
+            <p className="text-muted-foreground text-xs font-mono">
               {(tournaments?.length ?? 0) === 0
                 ? "Sin resultados"
                 : `${tournaments!.length} torneo${tournaments!.length !== 1 ? "s" : ""} encontrado${tournaments!.length !== 1 ? "s" : ""}`}
             </p>
-            <button onClick={clearAll} className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 hover:text-red-400 transition-colors">
+            <button onClick={clearAll} className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-red-400 transition-colors">
               <X size={12} /> Limpiar filtros
             </button>
           </div>

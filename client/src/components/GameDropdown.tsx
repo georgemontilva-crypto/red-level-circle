@@ -99,7 +99,7 @@ export function GameDropdown({
           "text-sm font-medium font-mono tracking-wide",
           "transition-all duration-200 ease-out",
           /* Colors */
-          "bg-zinc-950/80 text-white",
+          "bg-card/80 text-white",
           /* Border */
           open
             ? "border border-red-500 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]"
@@ -144,7 +144,7 @@ export function GameDropdown({
         }}
         className={[
           "absolute left-0 top-full mt-2 z-50 w-full",
-          "bg-zinc-950/98 backdrop-blur-xl",
+          "bg-card/98 backdrop-blur-xl",
           "border border-red-900/40 rounded-2xl",
           "shadow-2xl shadow-black/70",
           "overflow-hidden overflow-y-auto",

@@ -38,7 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.
 };
 
 const RARITY_COLORS: Record<string, string> = {
-  common:    "text-gray-400 border-gray-600",
+  common:    "text-muted-foreground border-gray-600",
   rare:      "text-blue-400 border-blue-500",
   epic:      "text-purple-400 border-purple-500",
   legendary: "text-yellow-400 border-yellow-500",
@@ -88,10 +88,10 @@ function CosmeticPurchaseModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl overflow-hidden bg-[#111] border border-white/10"
+        className="relative w-full max-w-md rounded-2xl overflow-hidden bg-[var(--bg-card)] border border-white/10"
         style={{ animation: "modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}
       >
-        <div className="relative h-44 bg-zinc-900 overflow-hidden">
+        <div className="relative h-44 bg-card overflow-hidden">
           {cosmetic.previewImage ? (
             <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
           ) : (
@@ -102,8 +102,8 @@ function CosmeticPurchaseModal({
               </div>
             </div>
           )}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #111 100%)" }} />
-          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors">
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, var(--bg-card) 100%)" }} />
+          <button onClick={onClose} className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/60 hover:bg-background/80 flex items-center justify-center transition-colors">
             <X className="w-4 h-4 text-white" />
           </button>
         </div>
@@ -120,21 +120,21 @@ function CosmeticPurchaseModal({
               <p className="text-red-400 text-sm">{error}</p>
             </div>
           )}
-          <p className="text-gray-400 text-xs font-mono uppercase tracking-widest mb-3">Detalles de la compra</p>
-          <div className={`flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl p-3 mb-4 ${rarityGlow}`}>
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
-              {cosmetic.previewImage ? <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-gray-500 m-auto" />}
+          <p className="text-muted-foreground text-xs font-mono uppercase tracking-widest mb-3">Detalles de la compra</p>
+          <div className={`flex items-center gap-3 bg-card border border-white/10 rounded-xl p-3 mb-4 ${rarityGlow}`}>
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
+              {cosmetic.previewImage ? <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-muted-foreground m-auto" />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm truncate">{cosmetic.name}</p>
-              <p className={`text-xs font-mono ${RARITY_COLORS[cosmetic.rarity]?.split(" ")[0] ?? "text-gray-400"}`}>{RARITY_LABELS[cosmetic.rarity]} · {TYPE_LABELS[cosmetic.type]}</p>
+              <p className={`text-xs font-mono ${RARITY_COLORS[cosmetic.rarity]?.split(" ")[0] ?? "text-muted-foreground"}`}>{RARITY_LABELS[cosmetic.rarity]} · {TYPE_LABELS[cosmetic.type]}</p>
             </div>
             <div className="flex items-center gap-1 flex-shrink-0">
               <Coins className="w-4 h-4 text-yellow-400" />
               <span className="text-yellow-400 font-bold font-mono text-sm">{cosmetic.price}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 mb-4">
+          <div className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 mb-4">
             <div className="w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center flex-shrink-0">
               <Coins className="w-4 h-4 text-yellow-400" />
             </div>
@@ -144,9 +144,9 @@ function CosmeticPurchaseModal({
             </div>
             {canAfford && <Check className="w-4 h-4 text-green-400 flex-shrink-0" />}
           </div>
-          <p className="text-gray-600 text-xs mb-4 leading-relaxed">Al hacer clic en "Comprar", el cosmético quedará disponible de inmediato en tu galería de perfil. Esta compra no es reembolsable.</p>
+          <p className="text-muted-foreground text-xs mb-4 leading-relaxed">Al hacer clic en "Comprar", el cosmético quedará disponible de inmediato en tu galería de perfil. Esta compra no es reembolsable.</p>
           <div className="flex gap-3">
-            <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-gray-400 hover:bg-white/5 text-xs">Cancelar</Button>
+            <Button variant="outline" onClick={onClose} className="flex-1 border-white/10 text-muted-foreground hover:bg-white/5 text-xs">Cancelar</Button>
             <Button onClick={onConfirm} disabled={!canAfford || isPending} className="flex-1 bg-red-600 hover:bg-red-700 text-white text-xs disabled:opacity-50">
               {isPending ? <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-2" />Procesando...</> : <><ShoppingCart className="w-3.5 h-3.5 mr-1.5" />Comprar</>}
             </Button>
@@ -208,17 +208,17 @@ export default function Shop() {
     onSuccess: (data) => {
       toast.success(`¡Compra realizada! Nuevo balance: ${data.newBalance} RLC Coins`, {
         description: "El administrador procesará tu pedido pronto.",
-        style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
       });
       resetModal(); refetchItems(); refetchOrders(); refetchMe();
     },
-    onError: (err) => toast.error(err.message, { style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" } }),
+    onError: (err) => toast.error(err.message, { style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } }),
   });
 
   // Cosmetics mutations
   const buyCosmeticMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: () => {
-      toast.success("¡Cosmético adquirido! Ve a tu perfil para equiparlo.", { style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" } });
+      toast.success("¡Cosmético adquirido! Ve a tu perfil para equiparlo.", { style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" } });
       setConfirmCosmetic(null); setBuyError(null);
       refetchCosmetics(); refetchOwned(); refetchMe();
     },
@@ -226,7 +226,7 @@ export default function Shop() {
   });
   const equipMutation = trpc.cosmetics.equip.useMutation({
     onSuccess: () => {
-      toast.success("¡Cosmético equipado! Visible en tu perfil.", { style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" } });
+      toast.success("¡Cosmético equipado! Visible en tu perfil.", { style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" } });
       refetchOwned(); refetchMe();
     },
   });
@@ -263,7 +263,7 @@ export default function Shop() {
   const showOrders = mainTab === "orders";
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="shop" height="h-48 sm:h-64 lg:h-72" />
@@ -291,7 +291,7 @@ export default function Shop() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-mono text-sm font-semibold transition-all ${
                 mainTab === tab.id
                   ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
-                  : "bg-zinc-900 border border-white/10 text-gray-400 hover:border-red-500/50 hover:text-white"
+                  : "bg-card border border-white/10 text-muted-foreground hover:border-red-500/50 hover:text-white"
               }`}
             >
               {tab.icon}
@@ -320,8 +320,8 @@ export default function Shop() {
             return (
               <div key={order.id} className="px-6 py-4 space-y-2">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-zinc-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {order.itemImage ? <img src={order.itemImage} alt="" className="w-full h-full object-cover" /> : <ShoppingBag className="w-6 h-6 text-gray-600" />}
+                  <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {order.itemImage ? <img src={order.itemImage} alt="" className="w-full h-full object-cover" /> : <ShoppingBag className="w-6 h-6 text-muted-foreground" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -332,7 +332,7 @@ export default function Shop() {
                         </span>
                       )}
                     </div>
-                    <p className="text-gray-500 text-sm">x{order.quantity} · {order.totalPrice} RLC · #{order.id} · {new Date(order.createdAt).toLocaleDateString("es")}</p>
+                    <p className="text-muted-foreground text-sm">x{order.quantity} · {order.totalPrice} RLC · #{order.id} · {new Date(order.createdAt).toLocaleDateString("es")}</p>
                   </div>
                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${statusCfg.color}`}>
                     {statusCfg.icon}{statusCfg.label}
@@ -348,12 +348,12 @@ export default function Shop() {
                   </div>
                 )}
                 {!isOrderPhysical && order.status !== "delivered" && (
-                  <div className="ml-16 flex items-center gap-2 p-2 rounded-lg bg-zinc-800/60 border border-white/5 text-gray-500 text-xs">
+                  <div className="ml-16 flex items-center gap-2 p-2 rounded-lg bg-secondary/60 border border-white/5 text-muted-foreground text-xs">
                     <Key className="w-3 h-3" /><span>El código o acceso aparecerá aquí cuando el pedido sea entregado.</span>
                   </div>
                 )}
                 {isOrderPhysical && parsedShipping && (
-                  <div className="ml-16 flex items-start gap-2 p-2 rounded-lg bg-zinc-800/60 border border-white/5 text-gray-400 text-xs">
+                  <div className="ml-16 flex items-start gap-2 p-2 rounded-lg bg-secondary/60 border border-white/5 text-muted-foreground text-xs">
                     <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-orange-400" />
                     <span>{parsedShipping.fullName}, {parsedShipping.address}, {parsedShipping.city}, {parsedShipping.country} {parsedShipping.postalCode}</span>
                   </div>
@@ -372,14 +372,14 @@ export default function Shop() {
           };
 
           return (
-            <div className="rounded-xl border border-white/10 bg-zinc-900 overflow-hidden">
+            <div className="rounded-xl border border-white/10 bg-card overflow-hidden">
               <div className="px-6 py-4 border-b border-white/10 flex items-center gap-2">
                 <Package className="w-5 h-5 text-red-500" />
                 <h2 className="font-bold font-mono text-lg">MIS PEDIDOS</h2>
-                <span className="ml-auto text-gray-600 text-sm font-mono">{allOrders.length} total</span>
+                <span className="ml-auto text-muted-foreground text-sm font-mono">{allOrders.length} total</span>
               </div>
               {allOrders.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 font-mono">No tienes pedidos aún</div>
+                <div className="p-8 text-center text-muted-foreground font-mono">No tienes pedidos aún</div>
               ) : (
                 <div>
                   {activeOrders.length > 0 && (
@@ -431,7 +431,7 @@ export default function Shop() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm transition-all ${
                     activeCategory === cat
                       ? "border-red-500 bg-red-500/10 text-red-400"
-                      : "border-white/10 bg-white/5 text-gray-400 hover:border-red-500/50 hover:text-white"
+                      : "border-white/10 bg-white/5 text-muted-foreground hover:border-red-500/50 hover:text-white"
                   }`}
                 >
                   {cat !== "all" && CATEGORY_ICONS[cat]}
@@ -443,7 +443,7 @@ export default function Shop() {
             {items.length === 0 ? (
               <div className="text-center py-16">
                 <ShoppingBag className="w-14 h-14 text-red-500/30 mx-auto mb-4" />
-                <p className="text-gray-500 font-mono">No hay productos disponibles</p>
+                <p className="text-muted-foreground font-mono">No hay productos disponibles</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -460,10 +460,10 @@ export default function Shop() {
                   return (
                     <div
                       key={item.id}
-                      className={`rounded-xl border bg-zinc-900 overflow-hidden transition-all hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(255,0,0,0.1)] ${isDisabled ? "opacity-70" : "cursor-pointer"} ${item.isFeatured ? "border-yellow-500/30" : "border-white/10"}`}
+                      className={`rounded-xl border bg-card overflow-hidden transition-all hover:border-red-500/50 hover:shadow-[0_0_20px_rgba(255,0,0,0.1)] ${isDisabled ? "opacity-70" : "cursor-pointer"} ${item.isFeatured ? "border-yellow-500/30" : "border-white/10"}`}
                       onClick={() => !isDisabled && setSelectedItem(item.id)}
                     >
-                      <div className="relative aspect-video bg-zinc-800 overflow-hidden">
+                      <div className="relative aspect-video bg-secondary overflow-hidden">
                         {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">{CATEGORY_ICONS[item.category] ?? <ShoppingBag className="w-12 h-12 text-gray-700" />}</div>}
                         <div className="absolute top-2 left-2 flex gap-1">
                           {item.isFeatured && <span className="px-2 py-0.5 bg-yellow-500 text-black text-xs font-bold rounded font-mono">DESTACADO</span>}
@@ -476,9 +476,9 @@ export default function Shop() {
                             {isPhysicalCategory(item.category) ? "FÍSICO" : "DIGITAL"}
                           </span>
                         </div>
-                        {outOfStock && <div className="absolute inset-0 bg-black/60 flex items-center justify-center"><span className="text-red-400 font-bold font-mono text-lg">AGOTADO</span></div>}
+                        {outOfStock && <div className="absolute inset-0 bg-background/60 flex items-center justify-center"><span className="text-red-400 font-bold font-mono text-lg">AGOTADO</span></div>}
                         {!outOfStock && limitReached && (
-                          <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1">
+                          <div className="absolute inset-0 bg-background/70 flex flex-col items-center justify-center gap-1">
                             <CheckCircle className="w-8 h-8 text-green-400" />
                             <span className="text-green-400 font-bold font-mono text-sm">YA COMPRADO</span>
                             {item.maxPerUser && <span className="text-green-600 text-xs font-mono">{purchasedCount}/{item.maxPerUser} unidades</span>}
@@ -488,22 +488,22 @@ export default function Shop() {
                       <div className="p-4">
                         <div className="flex items-center gap-1 mb-1">
                           {CATEGORY_ICONS[item.category]}
-                          <span className="text-xs text-gray-500 font-mono">{CATEGORY_LABELS[item.category]}</span>
+                          <span className="text-xs text-muted-foreground font-mono">{CATEGORY_LABELS[item.category]}</span>
                           {item.stock > 0 && item.stock <= 10 && <span className="ml-auto text-xs text-orange-400 font-mono">Quedan {item.stock}</span>}
                         </div>
                         <h3 className="font-bold text-white mb-1">{item.name}</h3>
-                        {item.description && <p className="text-gray-500 text-sm line-clamp-2 mb-3">{item.description}</p>}
+                        {item.description && <p className="text-muted-foreground text-sm line-clamp-2 mb-3">{item.description}</p>}
                         <div className="flex items-center justify-between">
                           <div>
-                            {item.originalPrice && item.originalPrice > item.price && <p className="text-gray-600 text-xs line-through font-mono">{item.originalPrice} RLC</p>}
+                            {item.originalPrice && item.originalPrice > item.price && <p className="text-muted-foreground text-xs line-through font-mono">{item.originalPrice} RLC</p>}
                             <div className="flex items-center gap-1">
                               <Coins className="w-4 h-4 text-yellow-400" />
                               <span className="text-yellow-400 font-bold font-mono text-lg">{item.price}</span>
-                              <span className="text-gray-500 text-sm">RLC</span>
+                              <span className="text-muted-foreground text-sm">RLC</span>
                             </div>
                           </div>
                           {!isAuthenticated ? (
-                            <a href={getLoginUrl()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-zinc-700 text-gray-400 text-sm font-mono hover:bg-zinc-600 transition-all"><Lock className="w-3 h-3" />Login</a>
+                            <a href={getLoginUrl()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-muted text-muted-foreground text-sm font-mono hover:bg-zinc-600 transition-all"><Lock className="w-3 h-3" />Login</a>
                           ) : limitReached ? (
                             <span className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400 text-xs font-mono"><CheckCircle className="w-3 h-3" />Adquirido</span>
                           ) : (
@@ -538,7 +538,7 @@ export default function Shop() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm transition-all ${
                     activeType === type
                       ? "border-purple-500 bg-purple-500/10 text-purple-400"
-                      : "border-white/10 bg-white/5 text-gray-400 hover:border-purple-500/50 hover:text-white"
+                      : "border-white/10 bg-white/5 text-muted-foreground hover:border-purple-500/50 hover:text-white"
                   }`}
                 >
                   {type !== "all" && TYPE_ICONS[type]}
@@ -550,10 +550,10 @@ export default function Shop() {
             {/* Collections */}
             {collections.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-6">
-                <span className="text-gray-500 text-sm font-mono self-center">Colecciones:</span>
-                <button onClick={() => setActiveCollection(undefined)} className={`px-3 py-1 rounded text-xs font-mono border transition-all ${!activeCollection ? "border-purple-500 text-purple-400 bg-purple-500/10" : "border-white/10 text-gray-500 hover:border-white/30"}`}>Todas</button>
+                <span className="text-muted-foreground text-sm font-mono self-center">Colecciones:</span>
+                <button onClick={() => setActiveCollection(undefined)} className={`px-3 py-1 rounded text-xs font-mono border transition-all ${!activeCollection ? "border-purple-500 text-purple-400 bg-purple-500/10" : "border-white/10 text-muted-foreground hover:border-white/30"}`}>Todas</button>
                 {collections.map((col) => (
-                  <button key={col} onClick={() => setActiveCollection(col === activeCollection ? undefined : col!)} className={`px-3 py-1 rounded text-xs font-mono border transition-all ${activeCollection === col ? "border-purple-500 text-purple-400 bg-purple-500/10" : "border-white/10 text-gray-500 hover:border-white/30"}`}>{col}</button>
+                  <button key={col} onClick={() => setActiveCollection(col === activeCollection ? undefined : col!)} className={`px-3 py-1 rounded text-xs font-mono border transition-all ${activeCollection === col ? "border-purple-500 text-purple-400 bg-purple-500/10" : "border-white/10 text-muted-foreground hover:border-white/30"}`}>{col}</button>
                 ))}
               </div>
             )}
@@ -561,7 +561,7 @@ export default function Shop() {
             {cosmetics.length === 0 ? (
               <div className="text-center py-16">
                 <Sparkles className="w-14 h-14 text-purple-500/30 mx-auto mb-4" />
-                <p className="text-gray-500 font-mono">No hay cosméticos disponibles aún</p>
+                <p className="text-muted-foreground font-mono">No hay cosméticos disponibles aún</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -572,8 +572,8 @@ export default function Shop() {
                   const glowClass = RARITY_GLOW[cosmetic.rarity] ?? "";
                   const discount = cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price ? Math.round((1 - cosmetic.price / cosmetic.originalPrice) * 100) : null;
                   return (
-                    <div key={cosmetic.id} className={`relative rounded-xl border bg-zinc-900 overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}>
-                      <div className="relative aspect-square bg-zinc-800 flex items-center justify-center overflow-hidden">
+                    <div key={cosmetic.id} className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}>
+                      <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
                         {cosmetic.previewImage ? (
                           <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
                         ) : (
@@ -589,7 +589,7 @@ export default function Shop() {
                         {owned && <div className="absolute top-2 right-2"><div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div></div>}
                       </div>
                       <div className="p-3">
-                        <div className="flex items-center gap-1 mb-1">{TYPE_ICONS[cosmetic.type]}<span className="text-xs text-gray-500 font-mono">{TYPE_LABELS[cosmetic.type]}</span></div>
+                        <div className="flex items-center gap-1 mb-1">{TYPE_ICONS[cosmetic.type]}<span className="text-xs text-muted-foreground font-mono">{TYPE_LABELS[cosmetic.type]}</span></div>
                         <p className="font-bold text-sm text-white leading-tight mb-1">{cosmetic.name}</p>
                         <Badge variant="outline" className={`text-xs ${rarityClass} mb-2`}>{RARITY_LABELS[cosmetic.rarity]}</Badge>
                         {(() => {
@@ -597,13 +597,13 @@ export default function Shop() {
                           return cols.length > 0 ? (
                             <div className="flex gap-1 mb-2">
                               {cols.slice(0, 4).map((color, i) => <div key={i} className="w-4 h-4 rounded-full border border-white/20" style={{ background: color }} />)}
-                              {cols.length > 4 && <span className="text-gray-500 text-xs self-center">+{cols.length - 4}</span>}
+                              {cols.length > 4 && <span className="text-muted-foreground text-xs self-center">+{cols.length - 4}</span>}
                             </div>
                           ) : null;
                         })()}
                         <div className="flex items-center justify-between mt-2">
                           <div>
-                            {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-gray-600 text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>}
+                            {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-muted-foreground text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>}
                             <div className="flex items-center gap-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-bold text-sm font-mono">{cosmetic.price}</span></div>
                           </div>
                           {owned ? (
@@ -611,7 +611,7 @@ export default function Shop() {
                           ) : isAuthenticated ? (
                             <button onClick={() => { setBuyError(null); setConfirmCosmetic(cosmetic); }} className="px-2 py-1 rounded text-xs font-mono font-bold bg-red-500 hover:bg-red-600 text-white transition-all">Comprar</button>
                           ) : (
-                            <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-zinc-700 text-gray-400 hover:bg-zinc-600 transition-all flex items-center gap-1"><Lock className="w-3 h-3" />Login</a>
+                            <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-muted text-muted-foreground hover:bg-zinc-600 transition-all flex items-center gap-1"><Lock className="w-3 h-3" />Login</a>
                           )}
                         </div>
                       </div>
@@ -625,14 +625,14 @@ export default function Shop() {
             {isAuthenticated && myCosmetics.length > 0 && (mainTab === "cosmetics") && (
               <div className="mt-16">
                 <h2 className="text-2xl font-black mb-2 font-mono tracking-wide">MI <span className="text-red-500">COLECCIÓN</span></h2>
-                <p className="text-gray-500 text-sm mb-6">Los cosméticos equipados se muestran sobre tu foto de perfil en toda la plataforma.</p>
+                <p className="text-muted-foreground text-sm mb-6">Los cosméticos equipados se muestran sobre tu foto de perfil en toda la plataforma.</p>
                 <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
                   {myCosmetics.map((uc) => (
-                    <div key={uc.id} className={`relative rounded-lg border p-2 text-center transition-all ${uc.isEquipped ? "border-green-500 bg-green-500/10" : "border-white/10 bg-zinc-900"}`}>
-                      <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
-                        {(uc as any).previewImage ? <img src={(uc as any).previewImage} alt={(uc as any).name ?? ""} className="w-full h-full object-cover" /> : <Sparkles className="w-6 h-6 text-gray-600" />}
+                    <div key={uc.id} className={`relative rounded-lg border p-2 text-center transition-all ${uc.isEquipped ? "border-green-500 bg-green-500/10" : "border-white/10 bg-card"}`}>
+                      <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
+                        {(uc as any).previewImage ? <img src={(uc as any).previewImage} alt={(uc as any).name ?? ""} className="w-full h-full object-cover" /> : <Sparkles className="w-6 h-6 text-muted-foreground" />}
                       </div>
-                      <p className="text-xs text-gray-400 truncate">{(uc as any).name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{(uc as any).name}</p>
                       {uc.isEquipped ? (
                         <span className="text-xs text-green-400 font-mono flex items-center gap-0.5 justify-center"><Check size={11} />Equipado</span>
                       ) : (
@@ -649,28 +649,28 @@ export default function Shop() {
 
       {/* Buy Product Dialog */}
       <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
-        <DialogContent className="bg-zinc-900 border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-card border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
               {isPhysical ? <><Package className="w-5 h-5" />PEDIDO FÍSICO</> : <><Key className="w-5 h-5" />ENTREGA DIGITAL</>}
             </DialogTitle>
-            <DialogDescription className="text-gray-400">
+            <DialogDescription className="text-muted-foreground">
               {isPhysical ? "Necesitamos tu dirección de envío para procesar el pedido." : "Recibirás el código o acceso por notificación en la plataforma."}
             </DialogDescription>
           </DialogHeader>
           {itemToBuy && (
             <div className="space-y-5">
-              <div className="flex gap-3 p-3 rounded-lg bg-zinc-800 border border-white/10">
-                {itemToBuy.image ? <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover flex-shrink-0" /> : <div className="w-16 h-16 rounded bg-zinc-700 flex items-center justify-center flex-shrink-0"><ShoppingBag className="w-8 h-8 text-gray-600" /></div>}
+              <div className="flex gap-3 p-3 rounded-lg bg-secondary border border-white/10">
+                {itemToBuy.image ? <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover flex-shrink-0" /> : <div className="w-16 h-16 rounded bg-muted flex items-center justify-center flex-shrink-0"><ShoppingBag className="w-8 h-8 text-muted-foreground" /></div>}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white truncate">{itemToBuy.name}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">{CATEGORY_ICONS[itemToBuy.category]}<span className="text-gray-400 text-xs font-mono">{CATEGORY_LABELS[itemToBuy.category]}</span></div>
+                  <div className="flex items-center gap-1.5 mt-0.5">{CATEGORY_ICONS[itemToBuy.category]}<span className="text-muted-foreground text-xs font-mono">{CATEGORY_LABELS[itemToBuy.category]}</span></div>
                   <div className="flex items-center gap-1 mt-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-mono font-bold">{itemToBuy.price} RLC / ud.</span></div>
                 </div>
               </div>
               {itemToBuy.stock !== 1 && (
                 <div>
-                  <label className="text-xs text-gray-400 font-mono mb-2 block uppercase">Cantidad</label>
+                  <label className="text-xs text-muted-foreground font-mono mb-2 block uppercase">Cantidad</label>
                   <div className="flex items-center gap-3">
                     <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded border border-white/20 text-white hover:border-red-500 transition-colors">-</button>
                     <span className="font-bold font-mono text-lg w-8 text-center">{quantity}</span>
@@ -682,13 +682,13 @@ export default function Shop() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-mono text-orange-400 uppercase"><MapPin className="w-3.5 h-3.5" />Dirección de envío (obligatoria)</div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><User className="w-3 h-3" />Nombre completo *</label><input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" />Dirección *</label><input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-gray-500 mb-1 block">Ciudad *</label><input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-gray-500 mb-1 block">Provincia / Estado</label><input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Globe className="w-3 h-3" />País *</label><input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Hash className="w-3 h-3" />Código postal *</label><input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Phone className="w-3 h-3" />Discord o teléfono de contacto *</label><input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><User className="w-3 h-3" />Nombre completo *</label><input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" />Dirección *</label><input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Ciudad *</label><input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Provincia / Estado</label><input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Globe className="w-3 h-3" />País *</label><input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Hash className="w-3 h-3" />Código postal *</label><input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Phone className="w-3 h-3" />Discord o teléfono de contacto *</label><input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
                   </div>
                   <div className="flex items-start gap-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />Tus datos de envío son confidenciales y solo se usarán para procesar este pedido.</div>
                 </div>
@@ -701,18 +701,18 @@ export default function Shop() {
                     <p className="text-xs text-blue-400">Una vez procesado, el código o acceso aparecerá en tu historial de pedidos y recibirás una notificación in-app.</p>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 flex items-center gap-1"><Mail className="w-3 h-3" />Email de confirmación (opcional)</label>
-                    <input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} placeholder="tu@email.com" className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none" />
+                    <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Mail className="w-3 h-3" />Email de confirmación (opcional)</label>
+                    <input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} placeholder="tu@email.com" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" />
                   </div>
                 </div>
               )}
               <div>
-                <label className="text-xs text-gray-400 font-mono mb-2 block uppercase">Nota adicional (opcional)</label>
-                <textarea value={userNote} onChange={(e) => setUserNote(e.target.value)} placeholder={isPhysical ? "Ej: Talla M, color azul..." : "Ej: Nombre de usuario, plataforma preferida..."} rows={2} className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-white/10 text-white text-sm placeholder:text-gray-600 focus:border-red-500 focus:outline-none resize-none" />
+                <label className="text-xs text-muted-foreground font-mono mb-2 block uppercase">Nota adicional (opcional)</label>
+                <textarea value={userNote} onChange={(e) => setUserNote(e.target.value)} placeholder={isPhysical ? "Ej: Talla M, color azul..." : "Ej: Nombre de usuario, plataforma preferida..."} rows={2} className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none resize-none" />
               </div>
-              <div className="p-3 rounded-lg bg-black border border-white/10 space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-gray-400">Subtotal ({quantity}x)</span><span className="font-mono">{totalCost} RLC</span></div>
-                <div className="flex justify-between text-sm"><span className="text-gray-400">Tu balance</span><span className={`font-mono ${userBalance < totalCost ? "text-red-400" : "text-green-400"}`}>{userBalance} RLC</span></div>
+              <div className="p-3 rounded-lg bg-background border border-white/10 space-y-2">
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({quantity}x)</span><span className="font-mono">{totalCost} RLC</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tu balance</span><span className={`font-mono ${userBalance < totalCost ? "text-red-400" : "text-green-400"}`}>{userBalance} RLC</span></div>
                 <div className="border-t border-white/10 pt-2 flex justify-between font-bold"><span>Balance restante</span><span className={`font-mono ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>{userBalance - totalCost} RLC</span></div>
               </div>
               {userBalance < totalCost && <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />Saldo insuficiente. Gana más RLC en la sección de Recompensas.</div>}

@@ -156,7 +156,7 @@
   flex-direction: column;
   width: 40%;
   padding: 16px 14px 14px 16px;
-  background: linear-gradient(135deg, #1a1a1a 0%, #1f1f1f 100%);
+  background: linear-gradient(135deg, #1a1a1a 0%, var(--bg-hover) 100%);
   justify-content: space-between;
   min-width: 0;
 }
@@ -245,7 +245,7 @@
 
 .roster-card__field-value {
   font-size: 12px;
-  color: #ffffff;
+  color: var(--text-primary);
   font-weight: 500;
   white-space: nowrap;
   overflow: hidden;

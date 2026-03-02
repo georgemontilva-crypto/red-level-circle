@@ -308,7 +308,7 @@ export default function CreateTournament() {
               />
 
               <div>
-                <label className="block text-xs font-orbitron tracking-widest text-zinc-500 mb-3">
+                <label className="block text-xs font-orbitron tracking-widest text-muted-foreground mb-3">
                   JUEGO <span className="text-red-500">*</span>
                 </label>
                 <Select value={form.game} onValueChange={(v) => set("game")(v)}>
@@ -371,12 +371,12 @@ export default function CreateTournament() {
                     </div>
                   )}
                   {form.banner && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-white text-xs font-display tracking-wider">CAMBIAR BANNER</span>
                     </div>
                   )}
                   {uploadingBanner && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}

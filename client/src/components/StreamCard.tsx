@@ -19,7 +19,7 @@ const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
   twitch:  { label: "TWITCH",  cls: "bg-purple-600/20 text-purple-300 border-purple-500/30" },
   youtube: { label: "YOUTUBE", cls: "bg-red-700/20 text-red-300 border-red-500/30" },
   discord: { label: "DISCORD", cls: "bg-indigo-600/20 text-indigo-300 border-indigo-500/30" },
-  other:   { label: "STREAM",  cls: "bg-zinc-700/20 text-zinc-300 border-zinc-500/30" },
+  other:   { label: "STREAM",  cls: "bg-muted/20 text-secondary-foreground border-zinc-500/30" },
 };
 
 function formatViewers(n: number): string {
@@ -36,10 +36,10 @@ export function StreamCard({ stream }: StreamCardProps) {
 
   return (
     <Link href={`/streams/${stream.id}`}>
-      <div className="group relative flex flex-col bg-zinc-900 border border-zinc-800/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_0_24px_rgba(220,38,38,0.18)] hover:-translate-y-0.5 select-none">
+      <div className="group relative flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_0_24px_rgba(220,38,38,0.18)] hover:-translate-y-0.5 select-none">
 
         {/* ── Thumbnail ── */}
-        <div className="relative w-full aspect-video overflow-hidden bg-zinc-950">
+        <div className="relative w-full aspect-video overflow-hidden bg-card">
           {stream.thumbnailUrl ? (
             <img
               src={stream.thumbnailUrl}
@@ -85,7 +85,7 @@ export function StreamCard({ stream }: StreamCardProps) {
 
           {/* Viewer count overlay */}
           {stream.viewerCount != null && stream.viewerCount > 0 && (
-            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[10px] font-mono px-2 py-0.5 rounded">
+            <div className="absolute bottom-2 right-2 flex items-center gap-1 bg-background/70 text-white text-[10px] font-mono px-2 py-0.5 rounded">
               <Eye className="w-3 h-3 text-red-400" />
               {formatViewers(stream.viewerCount)}
             </div>
@@ -95,8 +95,8 @@ export function StreamCard({ stream }: StreamCardProps) {
         {/* ── Info ── */}
         <div className="flex items-start gap-3 p-3">
           {/* Streamer avatar placeholder */}
-          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-            <span className="text-xs font-bold text-zinc-400 font-mono">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center overflow-hidden">
+            <span className="text-xs font-bold text-muted-foreground font-mono">
               {((stream.streamerName ?? stream.title) || "?").charAt(0).toUpperCase()}
             </span>
           </div>
@@ -106,12 +106,12 @@ export function StreamCard({ stream }: StreamCardProps) {
               {stream.title}
             </p>
             {stream.streamerName && (
-              <p className="text-zinc-400 text-xs font-mono mt-0.5 truncate">
+              <p className="text-muted-foreground text-xs font-mono mt-0.5 truncate">
                 {stream.streamerName}
               </p>
             )}
             {stream.game && (
-              <p className="text-zinc-500 text-[11px] font-mono mt-0.5 truncate">
+              <p className="text-muted-foreground text-[11px] font-mono mt-0.5 truncate">
                 {stream.game}
               </p>
             )}

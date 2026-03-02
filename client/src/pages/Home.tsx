@@ -148,10 +148,10 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
         </h2>
         <div className="flex items-center gap-2">
           <div className="hidden sm:flex gap-1">
-            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => scroll(-1)} className="w-7 h-7 rounded-full bg-muted hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <ChevronLeft size={14} />
             </button>
-            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+            <button onClick={() => scroll(1)} className="w-7 h-7 rounded-full bg-muted hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <ChevronRight size={14} />
             </button>
           </div>
@@ -195,14 +195,14 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll("left")}
-            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Anterior"
           >
             <ChevronLeft size={14} />
           </button>
           <button
             onClick={() => scroll("right")}
-            className="w-7 h-7 rounded-full bg-muted hover:bg-zinc-700 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            className="w-7 h-7 rounded-full bg-muted hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Siguiente"
           >
             <ChevronRight size={14} />
@@ -817,7 +817,7 @@ export default function Home() {
           <section className="relative rounded-2xl overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-red-950/60 via-black to-black" />
             <div className="absolute inset-0 opacity-10"
-              style={{ backgroundImage: "repeating-linear-gradient(45deg, #ff0000 0, #ff0000 1px, transparent 0, transparent 50%)", backgroundSize: "20px 20px" }} />
+              style={{ backgroundImage: "repeating-linear-gradient(45deg, var(--accent-red) 0, var(--accent-red) 1px, transparent 0, transparent 50%)", backgroundSize: "20px 20px" }} />
             <div className="relative p-8 sm:p-12 flex flex-col sm:flex-row items-center justify-between gap-6">
               <div>
                 <h2 className="font-orbitron font-black text-2xl sm:text-3xl text-foreground mb-2">¿Listo para competir?</h2>

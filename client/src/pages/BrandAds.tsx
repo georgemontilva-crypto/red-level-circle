@@ -40,7 +40,7 @@ function FeaturedCarousel({ ads }: { ads: any[] }) {
   const ad = ads[current];
 
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden bg-zinc-900 group" style={{ height: "420px" }}>
+    <div className="relative w-full rounded-2xl overflow-hidden bg-card group" style={{ height: "420px" }}>
       {/* Slides */}
       {ads.map((a, i) => (
         <div
@@ -70,7 +70,7 @@ function FeaturedCarousel({ ads }: { ads: any[] }) {
             <h2 className="text-3xl sm:text-4xl font-black text-white mb-2 leading-tight" style={{ fontFamily: "Orbitron, monospace" }}>
               {a.title}
             </h2>
-            {a.tagline && <p className="text-gray-300 text-sm mb-4">{a.tagline}</p>}
+            {a.tagline && <p className="text-secondary-foreground text-sm mb-4">{a.tagline}</p>}
             {a.destinationUrl && (
               <button
                 onClick={() => handleClick(a)}
@@ -83,7 +83,7 @@ function FeaturedCarousel({ ads }: { ads: any[] }) {
           </div>
 
           {/* Sponsored badge */}
-          <div className="absolute top-4 right-4 px-2 py-1 rounded bg-black/60 backdrop-blur-sm text-gray-300 text-xs font-mono border border-white/10">
+          <div className="absolute top-4 right-4 px-2 py-1 rounded bg-background/60 backdrop-blur-sm text-secondary-foreground text-xs font-mono border border-white/10">
             PATROCINADO
           </div>
         </div>
@@ -94,13 +94,13 @@ function FeaturedCarousel({ ads }: { ads: any[] }) {
         <>
           <button
             onClick={prev}
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-background/80 transition-all opacity-0 group-hover:opacity-100"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={next}
-            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100"
+            className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white hover:bg-background/80 transition-all opacity-0 group-hover:opacity-100"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -118,7 +118,7 @@ function FeaturedCarousel({ ads }: { ads: any[] }) {
               style={{
                 width: i === current ? "20px" : "6px",
                 height: "6px",
-                background: i === current ? "#fff" : "rgba(255,255,255,0.3)",
+                background: i === current ? "var(--text-primary)" : "rgba(255,255,255,0.3)",
               }}
             />
           ))}
@@ -139,7 +139,7 @@ function SmallAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number)
 
   return (
     <div
-      className="rounded-xl overflow-hidden bg-zinc-900 border border-white/5 hover:border-white/20 cursor-pointer group transition-all hover:-translate-y-0.5"
+      className="rounded-xl overflow-hidden bg-card border border-white/5 hover:border-white/20 cursor-pointer group transition-all hover:-translate-y-0.5"
       onClick={handleClick}
     >
       {/* Image */}
@@ -151,8 +151,8 @@ function SmallAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number)
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
-          <div className="w-full h-full bg-zinc-800 flex items-center justify-center">
-            <Megaphone className="w-8 h-8 text-zinc-600" />
+          <div className="w-full h-full bg-secondary flex items-center justify-center">
+            <Megaphone className="w-8 h-8 text-muted-foreground" />
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -160,7 +160,7 @@ function SmallAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number)
       {/* Info */}
       <div className="p-3">
         <p className="font-bold text-sm text-white truncate">{ad.title}</p>
-        {ad.brandName && <p className="text-gray-500 text-xs mt-0.5">{ad.brandName}</p>}
+        {ad.brandName && <p className="text-muted-foreground text-xs mt-0.5">{ad.brandName}</p>}
         {ad.ctaLabel && ad.destinationUrl && (
           <div className="flex items-center gap-1 text-red-400 text-xs mt-2 font-mono group-hover:text-red-300 transition-colors">
             {ad.ctaLabel} <ExternalLink className="w-3 h-3" />
@@ -193,7 +193,7 @@ function WideAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number) 
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       ) : (
-        <div className="absolute inset-0 bg-zinc-900" />
+        <div className="absolute inset-0 bg-card" />
       )}
       <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
       <div className="absolute inset-0 flex items-center p-6 gap-4">
@@ -203,7 +203,7 @@ function WideAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number) 
         <div className="flex-1 min-w-0">
           <p className="text-red-400 font-mono text-xs tracking-widest uppercase mb-1">{ad.brandName}</p>
           <h3 className="text-xl font-black text-white truncate">{ad.title}</h3>
-          {ad.tagline && <p className="text-gray-400 text-sm truncate mt-0.5">{ad.tagline}</p>}
+          {ad.tagline && <p className="text-muted-foreground text-sm truncate mt-0.5">{ad.tagline}</p>}
         </div>
         {ad.destinationUrl && (
           <div className="flex-shrink-0">
@@ -214,7 +214,7 @@ function WideAdCard({ ad, onTrackClick }: { ad: any; onTrackClick: (id: number) 
           </div>
         )}
       </div>
-      <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-black/50 text-gray-400 text-xs font-mono border border-white/10">
+      <div className="absolute top-3 right-3 px-2 py-0.5 rounded bg-background/50 text-muted-foreground text-xs font-mono border border-white/10">
         PATROCINADO
       </div>
     </div>
@@ -235,7 +235,7 @@ export default function BrandAds() {
   const hasAds = ads.length > 0;
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-12">
 
         {/* ── Featured Carousel ── */}
@@ -283,8 +283,8 @@ export default function BrandAds() {
         {!hasAds && (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <Megaphone className="w-16 h-16 text-red-500/20 mb-4" />
-            <p className="text-gray-500 font-mono text-lg mb-1">No hay anuncios activos</p>
-            <p className="text-gray-600 text-sm">Los anuncios aparecerán aquí cuando estén configurados desde el panel de administración.</p>
+            <p className="text-muted-foreground font-mono text-lg mb-1">No hay anuncios activos</p>
+            <p className="text-muted-foreground text-sm">Los anuncios aparecerán aquí cuando estén configurados desde el panel de administración.</p>
           </div>
         )}
 

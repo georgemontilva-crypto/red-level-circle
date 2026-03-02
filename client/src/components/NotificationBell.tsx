@@ -124,7 +124,7 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
       </div>
 
       {/* Lista */}
-      <div className="max-h-80 overflow-y-auto divide-y divide-zinc-800/60">
+      <div className="max-h-80 overflow-y-auto divide-y divide-border/60">
         {isLoading ? (
           <div className="py-8 text-center text-muted-foreground text-sm">Cargando...</div>
         ) : !notifications || notifications.length === 0 ? (
@@ -150,7 +150,7 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
-                    <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-zinc-300"}`}>
+                    <p className={`text-sm leading-snug ${!n.isRead ? "text-white font-medium" : "text-secondary-foreground"}`}>
                       {n.title}
                     </p>
                     <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">

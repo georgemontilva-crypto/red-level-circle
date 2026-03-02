@@ -9,9 +9,9 @@ interface PremiumLayoutProps {
 
 export default function PremiumLayout({ children, title }: PremiumLayoutProps) {
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {title && (
-        <div className="px-4 sm:px-6 pt-6 pb-2 border-b border-zinc-800/50">
+        <div className="px-4 sm:px-6 pt-6 pb-2 border-b border-border/50">
           <h1 className="font-orbitron font-black text-xl tracking-widest text-white">
             {title}
           </h1>

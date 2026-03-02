@@ -47,17 +47,17 @@
 
 /* ─────────────────────────────────────────────────────────────────────────────
    DESIGN TOKENS — Epic Games Store Premium Dark Theme
-   #0E0E10 background · #18181B cards · #FF2D2D accent
+   var(--bg-main) background · var(--bg-card) cards · var(--accent-red) accent
 ───────────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Semantic theme tokens (used by shadcn/ui & Tailwind) ── */
   --radius: 0.75rem;
 
-  /* #0E0E10 → oklch(0.09 0.002 264) */
+  /* var(--bg-main) → oklch(0.09 0.002 264) */
   --background:          oklch(0.09 0.002 264);
-  --foreground:          oklch(1.00 0 0);           /* #FFFFFF */
+  --foreground:          oklch(1.00 0 0);           /* var(--text-primary) */
 
-  /* #18181B → oklch(0.13 0.003 264) */
+  /* var(--bg-card) → oklch(0.13 0.003 264) */
   --card:                oklch(0.13 0.003 264);
   --card-foreground:     oklch(1.00 0 0);
 
@@ -65,17 +65,17 @@
   --popover:             oklch(0.16 0.003 264);
   --popover-foreground:  oklch(1.00 0 0);
 
-  /* #FF2D2D → oklch(0.58 0.24 25) */
+  /* var(--accent-red) → oklch(0.58 0.24 25) */
   --primary:             oklch(0.58 0.24 25);
   --primary-foreground:  oklch(1.00 0 0);
 
-  /* #232326 → oklch(0.18 0.003 264) */
+  /* var(--bg-hover) → oklch(0.18 0.003 264) */
   --secondary:           oklch(0.18 0.003 264);
   --secondary-foreground: oklch(0.85 0.003 264);
 
-  /* #232326 hover surface */
+  /* var(--bg-hover) hover surface */
   --muted:               oklch(0.18 0.003 264);
-  /* #71717A → oklch(0.52 0.005 264) */
+  /* var(--text-muted) → oklch(0.52 0.005 264) */
   --muted-foreground:    oklch(0.52 0.005 264);
 
   /* accent = red */
@@ -86,7 +86,7 @@
   --destructive:         oklch(0.58 0.24 25);
   --destructive-foreground: oklch(1.00 0 0);
 
-  /* #2A2A2E → oklch(0.21 0.003 264) */
+  /* var(--border-main) → oklch(0.21 0.003 264) */
   --border:              oklch(0.21 0.003 264);
   --input:               oklch(0.16 0.003 264);
   --ring:                oklch(0.58 0.24 25);
@@ -120,6 +120,7 @@
   --accent-red-hover:  #FF3B3B;
   --accent-blue:       #3B82F6;
   --accent-gold:       #FFD700;
+  --radius-main:       12px;
 }
 
 /* ── Horizontal scroll carrusel: ocultar scrollbar ── */
@@ -225,7 +226,7 @@
     box-shadow: 0 0 16px rgba(255,45,45,0.08);
   }
   .gradient-text {
-    background: linear-gradient(135deg, #FF3B3B, #FF2D2D);
+    background: linear-gradient(135deg, #FF3B3B, var(--accent-red));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -250,7 +251,7 @@
   .badge-cancelled {
     background: rgba(113,113,122,0.12);
     border: 1px solid rgba(113,113,122,0.4);
-    color: #71717A;
+    color: var(--text-muted);
   }
   .neon-circle {
     border-radius: 50%;

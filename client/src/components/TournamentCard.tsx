@@ -23,7 +23,7 @@ export function tournamentStatusInfo(s: string | null | undefined) {
     upcoming:          { text: "Próximamente",            color: "text-blue-400",   dot: "bg-blue-500" },
     completed:         { text: "Finalizado",              color: "text-muted-foreground",   dot: "bg-zinc-600" },
     cancelled:         { text: "Cancelado",               color: "text-red-600",    dot: "bg-red-700" },
-    draft:             { text: "Borrador",                color: "text-muted-foreground",   dot: "bg-zinc-700" },
+    draft:             { text: "Borrador",                color: "text-muted-foreground",   dot: "bg-muted" },
     pending_approval:  { text: "Pendiente de aprobación", color: "text-orange-400", dot: "bg-orange-500" },
     registration_closed: { text: "Inscripciones cerradas", color: "text-muted-foreground", dot: "bg-zinc-600" },
   };
@@ -101,11 +101,20 @@ export function TournamentCard({
       <div
         className={`flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all duration-200 ${className}`}
         style={{
-          background: "oklch(0.10 0.005 0)",
-          border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"}`,
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.3)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"; }}
+          background: "var(--bg-card)",
+        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
+        borderRadius: "12px",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
+      }}
         onClick={onClick}
       >
         {/* Thumbnail */}
@@ -143,11 +152,20 @@ export function TournamentCard({
       <div
         className={`flex gap-4 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${className}`}
         style={{
-          background: "oklch(0.10 0.005 0)",
-          border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"}`,
-        }}
-        onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.3)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"; }}
+        background: "var(--bg-card)",
+        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
+        borderRadius: "12px",
+      }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
+      }}
         onClick={onClick}
       >
         {/* Banner lateral */}
@@ -199,15 +217,24 @@ export function TournamentCard({
   // ── Variante default (tarjeta vertical) ──────────────────────────────────
   const inner = (
     <div
-      className={`shrink-0 w-64 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1 ${className}`}
+      className={`shrink-0 w-64 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
       style={{
         scrollSnapAlign: "start",
-        background: "oklch(0.12 0.005 0)",
-        border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.20 0.01 0)"}`,
+        background: "var(--bg-card)",
+        border: `1px solid ${selected ? "var(--accent-red)" : "var(--border-main)"}`,
+        borderRadius: "12px",
         boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
       }}
-      onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.5)"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.20 0.01 0)"; }}
+      onMouseEnter={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "var(--accent-red)";
+      }}
+      onMouseLeave={e => {
+        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-card)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "var(--accent-red)" : "var(--border-main)";
+      }}
       onClick={onClick}
     >
       {/* Banner */}

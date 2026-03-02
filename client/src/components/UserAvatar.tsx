@@ -48,7 +48,7 @@ export function UserAvatar({
     >
       {/* Base avatar — always circular */}
       <div
-        className="w-full h-full overflow-hidden bg-zinc-800 flex items-center justify-center"
+        className="w-full h-full overflow-hidden bg-secondary flex items-center justify-center"
         style={{ borderRadius: "50%", width: px, height: px }}
       >
         {avatar ? (
@@ -61,7 +61,7 @@ export function UserAvatar({
           />
         ) : (
           <span
-            className="font-bold text-zinc-400 select-none"
+            className="font-bold text-muted-foreground select-none"
             style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
           >
             {initials}

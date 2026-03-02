@@ -12,7 +12,7 @@ import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
 
 const RARITY_COLORS: Record<string, string> = {
-  common: "text-gray-400 border-gray-600",
+  common: "text-muted-foreground border-gray-600",
   rare: "text-blue-400 border-blue-500",
   epic: "text-purple-400 border-purple-500",
   legendary: "text-yellow-400 border-yellow-500",
@@ -70,14 +70,14 @@ function PurchaseModal({
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl overflow-hidden bg-[#111] border border-white/10"
+        className="relative w-full max-w-md rounded-2xl overflow-hidden bg-[var(--bg-card)] border border-white/10"
         style={{
           animation: "modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both",
           boxShadow: "0 32px 80px rgba(0,0,0,0.8)",
         }}
       >
         {/* Header image */}
-        <div className="relative h-44 bg-zinc-900 overflow-hidden">
+        <div className="relative h-44 bg-card overflow-hidden">
           {cosmetic.previewImage ? (
             <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
           ) : (
@@ -91,11 +91,11 @@ function PurchaseModal({
             </div>
           )}
           {/* Gradient overlay */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, #111 100%)" }} />
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, transparent 40%, var(--bg-card) 100%)" }} />
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 flex items-center justify-center transition-colors"
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-background/60 hover:bg-background/80 flex items-center justify-center transition-colors"
           >
             <X className="w-4 h-4 text-white" />
           </button>
@@ -117,22 +117,22 @@ function PurchaseModal({
             </div>
           )}
 
-          <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-widest mb-3">Detalles de la compra</p>
+          <p className="text-muted-foreground text-xs font-rajdhani uppercase tracking-widest mb-3">Detalles de la compra</p>
 
           {/* Item row */}
-          <div className={`flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl p-3 mb-4 ${rarityGlow}`}>
-            <div className="w-10 h-10 rounded-lg overflow-hidden bg-zinc-800 flex-shrink-0">
+          <div className={`flex items-center gap-3 bg-card border border-white/10 rounded-xl p-3 mb-4 ${rarityGlow}`}>
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
               {cosmetic.previewImage ? (
                 <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 text-gray-500" />
+                  <Sparkles className="w-5 h-5 text-muted-foreground" />
                 </div>
               )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm font-rajdhani truncate">{cosmetic.name}</p>
-              <p className={`text-xs font-mono ${RARITY_COLORS[cosmetic.rarity]?.split(" ")[0] ?? "text-gray-400"}`}>
+              <p className={`text-xs font-mono ${RARITY_COLORS[cosmetic.rarity]?.split(" ")[0] ?? "text-muted-foreground"}`}>
                 {RARITY_LABELS[cosmetic.rarity]} · {TYPE_LABELS[cosmetic.type]}
               </p>
             </div>
@@ -143,8 +143,8 @@ function PurchaseModal({
           </div>
 
           {/* Payment method — RLC Coins */}
-          <p className="text-gray-400 text-xs font-rajdhani uppercase tracking-widest mb-2">Paga con</p>
-          <div className="flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3 mb-4">
+          <p className="text-muted-foreground text-xs font-rajdhani uppercase tracking-widest mb-2">Paga con</p>
+          <div className="flex items-center gap-3 bg-card border border-white/10 rounded-xl px-4 py-3 mb-4">
             <div className="w-8 h-8 rounded-full bg-yellow-500/20 border border-yellow-500/40 flex items-center justify-center flex-shrink-0">
               <Coins className="w-4 h-4 text-yellow-400" />
             </div>
@@ -159,7 +159,7 @@ function PurchaseModal({
             )}
           </div>
 
-          <p className="text-gray-600 text-xs font-rajdhani mb-4 leading-relaxed">
+          <p className="text-muted-foreground text-xs font-rajdhani mb-4 leading-relaxed">
             Al hacer clic en "Comprar", el cosmético quedará disponible de inmediato en tu galería de perfil. Esta compra no es reembolsable.
           </p>
 
@@ -168,7 +168,7 @@ function PurchaseModal({
             <Button
               variant="outline"
               onClick={onClose}
-              className="flex-1 border-white/10 text-gray-400 hover:bg-white/5 font-orbitron text-xs"
+              className="flex-1 border-white/10 text-muted-foreground hover:bg-white/5 font-orbitron text-xs"
             >
               Cancelar
             </Button>
@@ -219,7 +219,7 @@ export default function CosmeticsShop() {
   const buyMutation = trpc.cosmetics.buy.useMutation({
     onSuccess: (data) => {
       toast.success(`¡Cosmético adquirido! Ve a tu perfil para equiparlo.`, {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       setConfirmCosmetic(null);
       setBuyError(null);
@@ -239,7 +239,7 @@ export default function CosmeticsShop() {
   const equipMutation = trpc.cosmetics.equip.useMutation({
     onSuccess: () => {
       toast.success("¡Cosmético equipado! Visible en tu perfil.", {
-        style: { background: "#0a0a0a", border: "1px solid #ff0000", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid var(--accent-red)", color: "var(--text-primary)" },
       });
       refetchOwned();
       refetchMe();
@@ -258,7 +258,7 @@ export default function CosmeticsShop() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       {/* Section Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="cosmetics" height="h-48 sm:h-64 lg:h-72" />
@@ -287,7 +287,7 @@ export default function CosmeticsShop() {
               className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm transition-all ${
                 activeType === type
                   ? "border-red-500 bg-red-500/10 text-red-400"
-                  : "border-white/10 bg-white/5 text-gray-400 hover:border-red-500/50 hover:text-white"
+                  : "border-white/10 bg-white/5 text-muted-foreground hover:border-red-500/50 hover:text-white"
               }`}
             >
               {type !== "all" && TYPE_ICONS[type]}
@@ -299,11 +299,11 @@ export default function CosmeticsShop() {
         {/* Collections */}
         {collections.length > 0 && (
           <div className="flex flex-wrap gap-2 mb-8">
-            <span className="text-gray-500 text-sm font-mono self-center">Colecciones:</span>
+            <span className="text-muted-foreground text-sm font-mono self-center">Colecciones:</span>
             <button
               onClick={() => setActiveCollection(undefined)}
               className={`px-3 py-1 rounded text-xs font-mono border transition-all ${
-                !activeCollection ? "border-red-500 text-red-400 bg-red-500/10" : "border-white/10 text-gray-500 hover:border-white/30"
+                !activeCollection ? "border-red-500 text-red-400 bg-red-500/10" : "border-white/10 text-muted-foreground hover:border-white/30"
               }`}
             >
               Todas
@@ -313,7 +313,7 @@ export default function CosmeticsShop() {
                 key={col}
                 onClick={() => setActiveCollection(col === activeCollection ? undefined : col!)}
                 className={`px-3 py-1 rounded text-xs font-mono border transition-all ${
-                  activeCollection === col ? "border-red-500 text-red-400 bg-red-500/10" : "border-white/10 text-gray-500 hover:border-white/30"
+                  activeCollection === col ? "border-red-500 text-red-400 bg-red-500/10" : "border-white/10 text-muted-foreground hover:border-white/30"
                 }`}
               >
                 {col}
@@ -326,8 +326,8 @@ export default function CosmeticsShop() {
         {cosmetics.length === 0 ? (
           <div className="text-center py-24">
             <Sparkles className="w-16 h-16 text-red-500/30 mx-auto mb-4" />
-            <p className="text-gray-500 font-mono text-lg">No hay cosméticos disponibles aún</p>
-            <p className="text-gray-600 text-sm mt-2">Los administradores agregarán nuevos items pronto</p>
+            <p className="text-muted-foreground font-mono text-lg">No hay cosméticos disponibles aún</p>
+            <p className="text-muted-foreground text-sm mt-2">Los administradores agregarán nuevos items pronto</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -343,10 +343,10 @@ export default function CosmeticsShop() {
               return (
                 <div
                   key={cosmetic.id}
-                  className={`relative rounded-xl border bg-zinc-900 overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}
+                  className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}
                 >
                   {/* Preview Image */}
-                  <div className="relative aspect-square bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
                     {cosmetic.previewImage ? (
                       <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
                     ) : (
@@ -384,7 +384,7 @@ export default function CosmeticsShop() {
                   <div className="p-3">
                     <div className="flex items-center gap-1 mb-1">
                       {TYPE_ICONS[cosmetic.type]}
-                      <span className="text-xs text-gray-500 font-mono">{TYPE_LABELS[cosmetic.type]}</span>
+                      <span className="text-xs text-muted-foreground font-mono">{TYPE_LABELS[cosmetic.type]}</span>
                     </div>
                     <p className="font-bold text-sm text-white leading-tight mb-1">{cosmetic.name}</p>
                     <Badge variant="outline" className={`text-xs ${rarityClass} mb-2`}>
@@ -400,7 +400,7 @@ export default function CosmeticsShop() {
                             <div key={i} className="w-4 h-4 rounded-full border border-white/20" style={{ background: color }} />
                           ))}
                           {cols.length > 4 && (
-                            <span className="text-gray-500 text-xs self-center">+{cols.length - 4}</span>
+                            <span className="text-muted-foreground text-xs self-center">+{cols.length - 4}</span>
                           )}
                         </div>
                       ) : null;
@@ -410,7 +410,7 @@ export default function CosmeticsShop() {
                     <div className="flex items-center justify-between mt-2">
                       <div>
                         {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && (
-                          <p className="text-gray-600 text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>
+                          <p className="text-muted-foreground text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>
                         )}
                         <div className="flex items-center gap-1">
                           <Coins className="w-3 h-3 text-yellow-400" />
@@ -437,7 +437,7 @@ export default function CosmeticsShop() {
                           Comprar
                         </button>
                       ) : (
-                        <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-zinc-700 text-gray-400 hover:bg-zinc-600 transition-all flex items-center gap-1">
+                        <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-muted text-muted-foreground hover:bg-zinc-600 transition-all flex items-center gap-1">
                           <Lock className="w-3 h-3" />
                           Login
                         </a>
@@ -456,23 +456,23 @@ export default function CosmeticsShop() {
             <h2 className="text-2xl font-black mb-2 font-mono tracking-wide">
               MI <span className="text-red-500">COLECCIÓN</span>
             </h2>
-            <p className="text-gray-500 text-sm font-rajdhani mb-6">Los cosméticos equipados se muestran sobre tu foto de perfil en toda la plataforma.</p>
+            <p className="text-muted-foreground text-sm font-rajdhani mb-6">Los cosméticos equipados se muestran sobre tu foto de perfil en toda la plataforma.</p>
             <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-3">
               {myCosmetics.map((uc) => (
                 <div
                   key={uc.id}
                   className={`relative rounded-lg border p-2 text-center transition-all ${
-                    uc.isEquipped ? "border-green-500 bg-green-500/10" : "border-white/10 bg-zinc-900"
+                    uc.isEquipped ? "border-green-500 bg-green-500/10" : "border-white/10 bg-card"
                   }`}
                 >
-                  <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 mx-auto mb-1 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
                     {(uc as any).previewImage ? (
                       <img src={(uc as any).previewImage} alt={(uc as any).name ?? ""} className="w-full h-full object-cover" />
                     ) : (
-                      <Sparkles className="w-6 h-6 text-gray-600" />
+                      <Sparkles className="w-6 h-6 text-muted-foreground" />
                     )}
                   </div>
-                  <p className="text-xs text-gray-400 truncate">{(uc as any).name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{(uc as any).name}</p>
                   {uc.isEquipped ? (
                     <span className="text-xs text-green-400 font-mono flex items-center gap-0.5"><Check size={11} /> Equipado</span>
                   ) : (

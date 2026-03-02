@@ -75,7 +75,7 @@ function HighlightCard({
         </div>
         <div className="min-w-0">
           <p className="font-orbitron font-bold text-sm text-white truncate">{team.name}</p>
-          {team.tag && <p className="text-zinc-600 text-xs font-mono">[{team.tag}]</p>}
+          {team.tag && <p className="text-muted-foreground text-xs font-mono">[{team.tag}]</p>}
         </div>
       </div>
       <p className="mt-2 text-xs font-mono" style={{ color: accent }}>{sublabel}</p>
@@ -98,7 +98,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40 bg-background/50 backdrop-blur-sm"
         onClick={onClose}
         style={{ animation: "fadeInOverlay 200ms ease" }}
       />
@@ -127,7 +127,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
           >
-            <X size={14} className="text-zinc-400" />
+            <X size={14} className="text-muted-foreground" />
           </button>
           <div className="flex items-center gap-4">
             <div
@@ -149,10 +149,10 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                 <h2 className="font-orbitron font-black text-xl text-white">{team.name}</h2>
                 {team.isVerified && <Star size={14} className="text-yellow-400" />}
               </div>
-              {team.tag && <p className="text-zinc-500 font-mono text-sm">[{team.tag}]</p>}
+              {team.tag && <p className="text-muted-foreground font-mono text-sm">[{team.tag}]</p>}
               <p className="font-orbitron font-black text-2xl mt-1" style={{ color: c.accent }}>
                 {(team.points ?? 0).toLocaleString()}
-                <span className="text-sm font-mono font-normal text-zinc-500 ml-1">pts</span>
+                <span className="text-sm font-mono font-normal text-muted-foreground ml-1">pts</span>
               </p>
             </div>
           </div>
@@ -162,14 +162,14 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
           {/* Stats grid */}
           <div>
-            <p className="text-zinc-600 text-xs font-mono uppercase tracking-widest mb-3">Resultados de partida</p>
+            <p className="text-muted-foreground text-xs font-mono uppercase tracking-widest mb-3">Resultados de partida</p>
             <div className="grid grid-cols-2 gap-2.5">
               {[
                 {
                   label: "Historial V/D",
                   value: `${team.wins ?? 0}-${team.losses ?? 0}`,
                   sub: wr !== null ? `(${(wr / 100).toFixed(3)})` : "—",
-                  color: wr !== null ? (wr >= 60 ? "#22c55e" : wr >= 40 ? "#eab308" : "#ef4444") : "#71717a",
+                  color: wr !== null ? (wr >= 60 ? "#22c55e" : wr >= 40 ? "#eab308" : "#ef4444") : "var(--text-muted)",
                 },
                 { label: "Torneos jugados", value: team.tournamentsPlayed ?? 0, sub: "competencias", color: "#94a3b8" },
                 { label: "Victorias", value: team.wins ?? 0, sub: "partidas ganadas", color: "#22c55e" },
@@ -181,8 +181,8 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                   style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
                 >
                   <p className="font-orbitron font-black text-xl" style={{ color: stat.color }}>{stat.value}</p>
-                  <p className="text-zinc-600 text-xs font-mono mt-0.5">{stat.sub}</p>
-                  <p className="text-zinc-500 text-xs font-mono uppercase tracking-wider mt-1">{stat.label}</p>
+                  <p className="text-muted-foreground text-xs font-mono mt-0.5">{stat.sub}</p>
+                  <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mt-1">{stat.label}</p>
                 </div>
               ))}
             </div>
@@ -192,7 +192,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
           {wr !== null && (
             <div>
               <div className="flex justify-between items-center mb-2">
-                <span className="text-zinc-500 text-xs font-mono uppercase tracking-wider">Tasa de Victoria</span>
+                <span className="text-muted-foreground text-xs font-mono uppercase tracking-wider">Tasa de Victoria</span>
                 <span
                   className="font-orbitron font-bold text-sm"
                   style={{ color: wr >= 60 ? "#22c55e" : wr >= 40 ? "#eab308" : "#ef4444" }}
@@ -200,7 +200,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                   {wr}%
                 </span>
               </div>
-              <div className="h-2 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-2 rounded-full bg-secondary overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{
@@ -219,7 +219,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
 
           {/* Historial de torneos */}
           <div>
-            <p className="text-zinc-600 text-xs font-mono uppercase tracking-widest mb-3">
+            <p className="text-muted-foreground text-xs font-mono uppercase tracking-widest mb-3">
               Eventos internacionales y regionales
             </p>
             {isLoading ? (
@@ -229,7 +229,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                 ))}
               </div>
             ) : !history || history.filter(Boolean).length === 0 ? (
-              <div className="flex items-center gap-2 py-6 text-zinc-600 text-sm font-mono justify-center">
+              <div className="flex items-center gap-2 py-6 text-muted-foreground text-sm font-mono justify-center">
                 <Gamepad2 size={16} /> Sin historial de torneos registrado
               </div>
             ) : (
@@ -263,10 +263,10 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-rajdhani font-bold text-sm text-white truncate">{h.tournamentName}</p>
-                          <p className="text-zinc-600 text-xs font-mono">
+                          <p className="text-muted-foreground text-xs font-mono">
                             {h.tournamentStartDate ? new Date(h.tournamentStartDate).getFullYear() : "—"}
                             {" · "}
-                            <span style={{ color: h.tournamentStatus === "completed" ? "#71717a" : "#22c55e" }}>
+                            <span style={{ color: h.tournamentStatus === "completed" ? "var(--text-muted)" : "#22c55e" }}>
                               {h.tournamentStatus === "completed"
                                 ? "Finalizado"
                                 : h.tournamentStatus === "in_progress"
@@ -283,7 +283,7 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
                             </div>
                           )}
                           <span className="text-green-400 font-mono text-xs font-bold">{h.wins}W</span>
-                          <span className="text-zinc-600 font-mono text-xs mx-0.5">-</span>
+                          <span className="text-muted-foreground font-mono text-xs mx-0.5">-</span>
                           <span className="text-red-400 font-mono text-xs font-bold">{h.losses}L</span>
                         </div>
                         <ExternalLink size={12} className="text-zinc-700 shrink-0" />
@@ -388,7 +388,7 @@ function RankingRow({
         {isTop3 ? (
           <span className="text-base font-bold" style={{ color: medalColors[rank - 1] }}>#{rank}</span>
         ) : (
-          <span className="font-mono text-sm text-zinc-500">{rank}</span>
+          <span className="font-mono text-sm text-muted-foreground">{rank}</span>
         )}
       </div>
 
@@ -404,7 +404,7 @@ function RankingRow({
           {team.logo ? (
             <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
           ) : (
-            <Users size={14} className="text-zinc-600" />
+            <Users size={14} className="text-muted-foreground" />
           )}
         </div>
         <div className="min-w-0">
@@ -414,7 +414,7 @@ function RankingRow({
             </p>
             {team.isVerified && <Star size={10} className="text-yellow-400 shrink-0" />}
           </div>
-          {team.tag && <p className="text-zinc-600 text-xs font-mono">[{team.tag}]</p>}
+          {team.tag && <p className="text-muted-foreground text-xs font-mono">[{team.tag}]</p>}
         </div>
       </div>
 
@@ -422,7 +422,7 @@ function RankingRow({
       <div className="flex items-center gap-1.5">
         {wr !== null ? (
           <>
-            <div className="flex-1 h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+            <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
               <div
                 className="h-full rounded-full"
                 style={{
@@ -439,7 +439,7 @@ function RankingRow({
             </span>
           </>
         ) : (
-          <span className="text-zinc-600 text-xs font-mono">—</span>
+          <span className="text-muted-foreground text-xs font-mono">—</span>
         )}
       </div>
 
@@ -461,7 +461,7 @@ function RankingRow({
         >
           {(team.points ?? 0).toLocaleString()}
         </span>
-        <span className="text-zinc-600 font-mono text-xs ml-1">pts</span>
+        <span className="text-muted-foreground font-mono text-xs ml-1">pts</span>
       </div>
     </div>
   );
@@ -477,7 +477,7 @@ function GameStrengthSidebar({ data }: { data: { gameSlug: string; avgPoints: nu
     >
       <div className="flex items-center gap-2 mb-4">
         <Target size={14} className="text-red-500" />
-        <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">Fuerza por juego</p>
+        <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">Fuerza por juego</p>
       </div>
       <div className="space-y-3">
         {data.map((d) => {
@@ -486,14 +486,14 @@ function GameStrengthSidebar({ data }: { data: { gameSlug: string; avgPoints: nu
           return (
             <div key={d.gameSlug}>
               <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-mono text-zinc-400 truncate" style={{ maxWidth: "120px" }}>
+                <span className="text-xs font-mono text-muted-foreground truncate" style={{ maxWidth: "120px" }}>
                   {d.gameSlug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </span>
                 <span className="text-xs font-mono font-bold" style={{ color: c.accent }}>
                   {d.avgPoints.toLocaleString()} avg
                 </span>
               </div>
-              <div className="h-1.5 rounded-full bg-zinc-800 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-700"
                   style={{ width: `${pct}%`, background: c.accent, opacity: 0.8 }}
@@ -568,8 +568,8 @@ export default function Ranking() {
               </h1>
             </div>
             <div className="text-right">
-              <p className="text-zinc-600 text-xs font-mono">Actualizado en tiempo real</p>
-              <p className="text-zinc-500 text-xs font-mono">{teams.length} equipos clasificados</p>
+              <p className="text-muted-foreground text-xs font-mono">Actualizado en tiempo real</p>
+              <p className="text-muted-foreground text-xs font-mono">{teams.length} equipos clasificados</p>
             </div>
           </div>
         </div>
@@ -627,7 +627,7 @@ export default function Ranking() {
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
                 >
-                  <ChevronDown size={14} className="text-zinc-400 rotate-90" />
+                  <ChevronDown size={14} className="text-muted-foreground rotate-90" />
                 </button>
                 <div
                   ref={chipsScrollRef}
@@ -665,7 +665,7 @@ export default function Ranking() {
                   onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                   onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
                 >
-                  <ChevronDown size={14} className="text-zinc-400 -rotate-90" />
+                  <ChevronDown size={14} className="text-muted-foreground -rotate-90" />
                 </button>
               </div>
             )}
@@ -688,12 +688,12 @@ export default function Ranking() {
                     borderBottom: "1px solid oklch(0.16 0.01 0)",
                   }}
                 >
-                  <div className="text-center text-xs font-mono text-zinc-600">#</div>
-                  <div className="text-xs font-mono text-zinc-600 uppercase tracking-wider">Equipo</div>
-                  <div className="text-xs font-mono text-zinc-600 uppercase tracking-wider">Tasa de Victoria</div>
+                  <div className="text-center text-xs font-mono text-muted-foreground">#</div>
+                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Equipo</div>
+                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tasa de Victoria</div>
                   <div className="text-center text-xs font-mono text-green-700 uppercase">V</div>
                   <div className="text-center text-xs font-mono text-red-800 uppercase">D</div>
-                  <div className="text-right text-xs font-mono text-zinc-600 uppercase tracking-wider">Puntos</div>
+                  <div className="text-right text-xs font-mono text-muted-foreground uppercase tracking-wider">Puntos</div>
                 </div>
                 {/* Rows */}
                 {teams.map((team, i) => (
@@ -709,8 +709,8 @@ export default function Ranking() {
             ) : (
               <div className="text-center py-20">
                 <Trophy className="w-16 h-16 mx-auto mb-4 text-zinc-700" />
-                <h3 className="font-orbitron font-bold text-xl text-zinc-600 mb-2">SIN EQUIPOS</h3>
-                <p className="text-zinc-600 font-rajdhani text-sm">
+                <h3 className="font-orbitron font-bold text-xl text-muted-foreground mb-2">SIN EQUIPOS</h3>
+                <p className="text-muted-foreground font-rajdhani text-sm">
                   No hay equipos en el ranking con los filtros seleccionados.
                 </p>
               </div>
@@ -726,13 +726,13 @@ export default function Ranking() {
                 style={{ background: "oklch(0.09 0.005 0)", border: "1px solid oklch(0.16 0.01 0)" }}
               >
                 <div className="flex items-center gap-2 mb-3">
-                  <Shield size={14} className="text-zinc-500" />
-                  <p className="text-xs font-mono uppercase tracking-widest text-zinc-500">¿Qué es el GPR?</p>
+                  <Shield size={14} className="text-muted-foreground" />
+                  <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground">¿Qué es el GPR?</p>
                 </div>
-                <p className="text-zinc-500 text-xs font-mono leading-relaxed">
+                <p className="text-muted-foreground text-xs font-mono leading-relaxed">
                   El Global Power Ranking clasifica a los equipos según sus resultados en torneos, victorias y rendimiento competitivo en la plataforma.
                 </p>
-                <p className="text-zinc-600 text-xs font-mono mt-2 leading-relaxed">
+                <p className="text-muted-foreground text-xs font-mono mt-2 leading-relaxed">
                   Haz clic en cualquier equipo para ver su historial completo y estadísticas detalladas.
                 </p>
               </div>

@@ -587,7 +587,7 @@ export default function TournamentManage() {
                 {/* Divider */}
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
-                  <span className="text-xs font-mono text-zinc-600">VS</span>
+                  <span className="text-xs font-mono text-muted-foreground">VS</span>
                   <div className="flex-1 h-px" style={{ background: "oklch(0.20 0.01 0)" }} />
                 </div>
 

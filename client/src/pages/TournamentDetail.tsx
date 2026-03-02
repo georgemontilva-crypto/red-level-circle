@@ -475,7 +475,7 @@ export default function TournamentDetail() {
         <div className="absolute top-4 left-4 z-10">
           <Link href="/tournaments">
             <button
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-zinc-300 hover:text-white transition-colors text-xs font-mono tracking-wider"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-secondary-foreground hover:text-white transition-colors text-xs font-mono tracking-wider"
               style={{
                 background: "rgba(0,0,0,0.5)",
                 border: "1px solid rgba(255,255,255,0.12)",
@@ -533,7 +533,7 @@ export default function TournamentDetail() {
               >
                 {tournament.creatorName.charAt(0).toUpperCase()}
               </div>
-              <span className="text-xs text-zinc-300 font-mono">
+              <span className="text-xs text-secondary-foreground font-mono">
                 Organizado por{" "}
                 {tournament.creatorId ? (
                   <Link
@@ -557,13 +557,13 @@ export default function TournamentDetail() {
           </h1>
           {/* Description */}
           {tournament.description && (
-            <p className="text-zinc-300 text-sm leading-relaxed mb-4 max-w-xl">
+            <p className="text-secondary-foreground text-sm leading-relaxed mb-4 max-w-xl">
               {tournament.description}
             </p>
           )}
           {/* Quick info row */}
           <div className="flex flex-wrap items-center gap-4 mb-5">
-            <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+            <span className="flex items-center gap-1.5 text-sm text-secondary-foreground">
               <Users size={14} style={{ color: statusColor }} />
               <span className="font-mono">
                 {registeredTeams?.length ?? 0}/{tournament.maxTeams} equipos
@@ -580,13 +580,13 @@ export default function TournamentDetail() {
                 </span>
               </span>
             ) : tournament.prizeDescription ? (
-              <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+              <span className="flex items-center gap-1.5 text-sm text-secondary-foreground">
                 <Trophy size={14} style={{ color: "oklch(0.65 0.18 80)" }} />
                 <span>{tournament.prizeDescription}</span>
               </span>
             ) : null}
             {tournament.startDate && (
-              <span className="flex items-center gap-1.5 text-sm text-zinc-300">
+              <span className="flex items-center gap-1.5 text-sm text-secondary-foreground">
                 <Calendar size={14} style={{ color: statusColor }} />
                 <span className="font-mono">
                   {new Date(tournament.startDate).toLocaleDateString("es-ES", {

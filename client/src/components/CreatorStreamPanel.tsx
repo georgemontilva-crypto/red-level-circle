@@ -32,7 +32,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   twitch: "text-purple-400",
   youtube: "text-red-400",
   discord: "text-indigo-400",
-  other: "text-zinc-400",
+  other: "text-muted-foreground",
 };
 
 interface CreatorStreamPanelProps {
@@ -126,7 +126,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
   if (loadingActive) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="animate-spin text-zinc-600" size={28} />
+        <Loader2 className="animate-spin text-muted-foreground" size={28} />
       </div>
     );
   }
@@ -136,7 +136,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
     return (
       <div className="space-y-6">
         {/* Live banner */}
-        <div className="relative rounded-2xl overflow-hidden border border-red-600/40 bg-zinc-900">
+        <div className="relative rounded-2xl overflow-hidden border border-red-600/40 bg-card">
           <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-transparent to-transparent pointer-events-none" />
           <div className="relative p-6">
             {/* Status row */}
@@ -155,7 +155,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
             <h3 className="font-orbitron font-bold text-white text-xl mb-1 leading-tight">
               {activeStream.title}
             </h3>
-            <div className="flex items-center gap-4 text-sm text-zinc-400 mb-6">
+            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
               {activeStream.game && (
                 <span className="flex items-center gap-1.5">
                   <Gamepad2 size={13} />
@@ -176,7 +176,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
                 href={activeStream.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-mono transition-colors border border-zinc-700"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary hover:bg-muted text-white text-sm font-mono transition-colors border border-border"
               >
                 <ExternalLink size={14} />
                 Abrir stream
@@ -200,7 +200,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
         {/* Profile link */}
         <div className="text-center">
           <Link href={`/profile/${user?.id}`}>
-            <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 transition-colors">
+            <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-secondary hover:bg-muted border border-border transition-colors">
               VER MI PERFIL PÚBLICO
             </button>
           </Link>
@@ -219,7 +219,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
         </div>
         <div>
           <h3 className="font-orbitron font-bold text-white text-lg">Transmitir ahora</h3>
-          <p className="text-zinc-500 text-sm mt-0.5">
+          <p className="text-muted-foreground text-sm mt-0.5">
             Inicia una transmisión en vivo que aparecerá en la sección pública{" "}
             <Link href="/streams" className="text-red-400 hover:text-red-300 transition-colors">
               EN VIVO
@@ -239,7 +239,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
       <form onSubmit={handleStart} className="space-y-4">
         {/* Title */}
         <div>
-          <label className="block text-xs font-mono text-zinc-500 mb-1.5 uppercase tracking-wider">
+          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
             Título del stream *
           </label>
           <input
@@ -248,19 +248,19 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="ej. Ranked Challenger — ¡Subiendo a Master!"
             maxLength={256}
-            className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-red-600/60 transition-colors"
+            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white placeholder-muted-foreground text-sm focus:outline-none focus:border-red-600/60 transition-colors"
           />
         </div>
 
         {/* Game */}
         <div>
-          <label className="block text-xs font-mono text-zinc-500 mb-1.5 uppercase tracking-wider">
+          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
             Juego *
           </label>
           <select
             value={form.gameSlug}
             onChange={handleGameChange}
-            className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white text-sm focus:outline-none focus:border-red-600/60 transition-colors appearance-none cursor-pointer"
+            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-sm focus:outline-none focus:border-red-600/60 transition-colors appearance-none cursor-pointer"
           >
             <option value="">Selecciona un juego…</option>
             {(games ?? []).map((g) => (
@@ -273,7 +273,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
 
         {/* Platform selector */}
         <div>
-          <label className="block text-xs font-mono text-zinc-500 mb-1.5 uppercase tracking-wider">
+          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
             Plataforma *
           </label>
           <div className="grid grid-cols-4 gap-2">
@@ -288,7 +288,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
                   className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-mono transition-all ${
                     isSelected
                       ? "bg-red-600/10 border-red-600/50 text-white"
-                      : "bg-zinc-900 border-zinc-800 text-zinc-500 hover:border-zinc-700"
+                      : "bg-card border-border text-muted-foreground hover:border-border"
                   }`}
                 >
                   <Icon size={16} className={isSelected ? PLATFORM_COLORS[p] : ""} />
@@ -301,7 +301,7 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
 
         {/* URL */}
         <div>
-          <label className="block text-xs font-mono text-zinc-500 mb-1.5 uppercase tracking-wider">
+          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
             URL del canal *
           </label>
           <input
@@ -309,15 +309,15 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
             value={form.url}
             onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
             placeholder="https://twitch.tv/tu_canal"
-            className="w-full px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 text-sm focus:outline-none focus:border-red-600/60 transition-colors font-mono"
+            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white placeholder-muted-foreground text-sm focus:outline-none focus:border-red-600/60 transition-colors font-mono"
           />
           {form.platform === "twitch" && creatorApp.twitch && (
-            <p className="mt-1.5 text-xs text-zinc-600 font-mono">
+            <p className="mt-1.5 text-xs text-muted-foreground font-mono">
               Canal registrado: twitch.tv/{creatorApp.twitch}
             </p>
           )}
           {form.platform === "youtube" && creatorApp.youtube && (
-            <p className="mt-1.5 text-xs text-zinc-600 font-mono">
+            <p className="mt-1.5 text-xs text-muted-foreground font-mono">
               Canal registrado: youtube.com/@{creatorApp.youtube}
             </p>
           )}
@@ -339,9 +339,9 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
       </form>
 
       {/* Profile link */}
-      <div className="pt-2 border-t border-zinc-800/60 text-center">
+      <div className="pt-2 border-t border-border/60 text-center">
         <Link href={`/profile/${user?.id}`}>
-          <button className="px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs text-zinc-400 hover:text-white bg-transparent hover:bg-zinc-800 border border-zinc-800 transition-colors">
+          <button className="px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs text-muted-foreground hover:text-white bg-transparent hover:bg-secondary border border-border transition-colors">
             VER MI PERFIL PÚBLICO
           </button>
         </Link>

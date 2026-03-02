@@ -58,14 +58,14 @@ function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
           />
         ) : (
           <div
-            className="w-24 h-24 bg-zinc-800 border-2 border-zinc-700 flex items-center justify-center"
+            className="w-24 h-24 bg-secondary border-2 border-border flex items-center justify-center"
             style={{ borderRadius: "50%" }}
           >
-            <User className="w-10 h-10 text-zinc-600" />
+            <User className="w-10 h-10 text-muted-foreground" />
           </div>
         )}
         <div
-          className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+          className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
           style={{ borderRadius: "50%" }}
         >
           {uploading ? (
@@ -75,7 +75,7 @@ function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
           )}
         </div>
       </div>
-      <p className="text-xs text-zinc-500 font-mono">Haz clic para cambiar · Se recorta a 288×288 px</p>
+      <p className="text-xs text-muted-foreground font-mono">Haz clic para cambiar · Se recorta a 288×288 px</p>
       <input
         ref={inputRef}
         type="file"
@@ -124,7 +124,7 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
 
   return (
     <div
-      className="relative w-full h-32 rounded-xl cursor-pointer group overflow-hidden border border-zinc-800 hover:border-red-500/50 transition-colors"
+      className="relative w-full h-32 rounded-xl cursor-pointer group overflow-hidden border border-border hover:border-red-500/50 transition-colors"
       onClick={() => inputRef.current?.click()}
     >
       {displayUrl ? (
@@ -132,12 +132,12 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
       ) : (
         <div className="w-full h-full bg-gradient-to-r from-zinc-900 via-red-950/20 to-zinc-900 flex items-center justify-center">
           <div className="text-center">
-            <Camera className="w-8 h-8 text-zinc-600 mx-auto mb-1" />
-            <p className="text-xs text-zinc-600 font-mono">Subir banner</p>
+            <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground font-mono">Subir banner</p>
           </div>
         </div>
       )}
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         {uploading ? (
           <Loader2 className="w-8 h-8 text-white animate-spin" />
         ) : (
@@ -200,21 +200,21 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
       <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
         <Shield className="w-4 h-4" /> FICHA COMPETITIVA (ROSTER CARD)
       </h2>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-        <p className="text-zinc-400 text-sm">
+      <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
+        <p className="text-muted-foreground text-sm">
           Sube tu foto y el sistema generará automáticamente tu ficha competitiva con el diseño oficial.
           No editas colores ni texto — el sistema los aplica por ti.
         </p>
         {checkingTeam ? (
-          <div className="flex items-center gap-2 text-zinc-500 text-sm font-mono">
+          <div className="flex items-center gap-2 text-muted-foreground text-sm font-mono">
             <Loader2 className="w-4 h-4 animate-spin" /> Verificando membresía...
           </div>
         ) : !canUpload ? (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-zinc-800/60 border border-zinc-700">
-            <Shield className="w-5 h-5 text-zinc-500 flex-shrink-0" />
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-secondary/60 border border-border">
+            <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0" />
             <div>
-              <p className="text-sm font-mono text-zinc-400">Función bloqueada</p>
-              <p className="text-xs text-zinc-600 mt-0.5">Debes pertenecer a un equipo para generar tu ficha competitiva. Pide a un capitán que te añada a su equipo.</p>
+              <p className="text-sm font-mono text-muted-foreground">Función bloqueada</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Debes pertenecer a un equipo para generar tu ficha competitiva. Pide a un capitán que te añada a su equipo.</p>
             </div>
           </div>
         ) : (
@@ -222,7 +222,7 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
             {/* Preview de la card generada */}
             <div className="flex-shrink-0">
               <div
-                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-zinc-700 hover:border-red-500 transition-colors shadow-xl"
+                className="relative cursor-pointer group rounded-xl overflow-hidden border-2 border-border hover:border-red-500 transition-colors shadow-xl"
                 style={{ width: 140, aspectRatio: "2/3" }}
                 onClick={() => inputRef.current?.click()}
               >
@@ -230,11 +230,11 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
                   <img src={displayUrl} alt="Ficha competitiva" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full bg-gradient-to-b from-zinc-800 to-zinc-900 flex flex-col items-center justify-center gap-2">
-                    <User className="w-10 h-10 text-zinc-600" />
-                    <span className="text-xs text-zinc-600 font-mono text-center px-2">Sin ficha</span>
+                    <User className="w-10 h-10 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground font-mono text-center px-2">Sin ficha</span>
                   </div>
                 )}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                   {uploading ? (
                     <Loader2 className="w-8 h-8 text-white animate-spin" />
                   ) : (
@@ -246,14 +246,14 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
                 </div>
               </div>
               {displayUrl && (
-                <p className="text-xs text-zinc-600 font-mono text-center mt-2">600 × 900 px</p>
+                <p className="text-xs text-muted-foreground font-mono text-center mt-2">600 × 900 px</p>
               )}
             </div>
             {/* Instrucciones */}
             <div className="flex-1 space-y-3">
               <div>
                 <p className="text-sm text-white font-bold mb-1">Cómo funciona</p>
-                <ul className="space-y-1.5 text-xs text-zinc-500 font-mono">
+                <ul className="space-y-1.5 text-xs text-muted-foreground font-mono">
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">1.</span><span>Sube una foto tuya (cualquier proporción)</span></li>
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">2.</span><span>El sistema recorta a 2:3 y aplica el diseño oficial oscuro</span></li>
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">3.</span><span>Tu nick, rol y logo del equipo se añaden automáticamente</span></li>
@@ -261,7 +261,7 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
                 </ul>
               </div>
               <div className="pt-1">
-                <p className="text-xs text-zinc-600 mb-2">Formatos: JPG, PNG, WEBP · Máx. 10MB</p>
+                <p className="text-xs text-muted-foreground mb-2">Formatos: JPG, PNG, WEBP · Máx. 10MB</p>
                 <button
                   onClick={() => inputRef.current?.click()}
                   disabled={uploading}
@@ -305,7 +305,7 @@ function CreatorChannelsSection() {
   const updateChannels = trpc.creators.updateChannels.useMutation({
     onSuccess: () => {
       toast.success("Canales actualizados. El sistema detectará tu stream automáticamente.", {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       utils.creators.getMyApplication.invalidate();
       setSavingChannels(false);
@@ -322,7 +322,7 @@ function CreatorChannelsSection() {
         <Radio className="w-4 h-4" /> CANALES DE STREAMING
       </h2>
       <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-5 space-y-4">
-        <p className="text-zinc-400 text-sm">
+        <p className="text-muted-foreground text-sm">
           Registra tu canal de Twitch o YouTube. El sistema detectará automáticamente cuando estés en vivo
           y mostrará tu stream en la sección{" "}
           <span className="text-red-400 font-bold">EN VIVO</span> sin que tengas que hacer nada.
@@ -330,18 +330,18 @@ function CreatorChannelsSection() {
         <div className="space-y-3">
           {/* Twitch */}
           <div>
-            <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest flex items-center gap-1">
+            <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
               <span className="text-purple-400">●</span> TWITCH (detección automática)
             </label>
             <div className="flex items-center">
-              <span className="bg-zinc-800 border border-r-0 border-purple-500/30 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">twitch.tv/</span>
+              <span className="bg-secondary border border-r-0 border-purple-500/30 rounded-l-lg px-3 py-2.5 text-muted-foreground text-sm">twitch.tv/</span>
               <input
                 type="text"
                 value={channelForm.twitch}
                 onChange={(e) => setChannelForm((f) => ({ ...f, twitch: e.target.value.replace(/^@/, "").trim() }))}
                 placeholder="tu_canal"
                 maxLength={128}
-                className="flex-1 bg-zinc-900 border border-purple-500/30 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-zinc-600"
+                className="flex-1 bg-card border border-purple-500/30 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-purple-500 transition-colors placeholder-muted-foreground"
               />
             </div>
             {channelForm.twitch && (
@@ -352,16 +352,16 @@ function CreatorChannelsSection() {
           </div>
           {/* YouTube */}
           <div>
-            <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">YOUTUBE</label>
+            <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">YOUTUBE</label>
             <div className="flex items-center">
-              <span className="bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">youtube.com/@</span>
+              <span className="bg-secondary border border-r-0 border-border rounded-l-lg px-3 py-2.5 text-muted-foreground text-sm">youtube.com/@</span>
               <input
                 type="text"
                 value={channelForm.youtube}
                 onChange={(e) => setChannelForm((f) => ({ ...f, youtube: e.target.value.replace(/^@/, "").trim() }))}
                 placeholder="tu_canal"
                 maxLength={256}
-                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                className="flex-1 bg-card border border-border rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
               />
             </div>
           </div>
@@ -399,28 +399,28 @@ function VerificationSection() {
       <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
         <BadgeCheck className="w-4 h-4" /> VERIFICACIÓN DE CUENTA
       </h2>
-      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5 space-y-4">
-        <p className="text-zinc-400 text-sm">
+      <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
+        <p className="text-muted-foreground text-sm">
           La verificación confirma que eres un creador, jugador profesional u organización reconocida en la comunidad.
           El badge <BadgeCheck size={14} className="inline text-blue-400" /> aparecerá en tu perfil y en toda la plataforma.
         </p>
         {myRequest ? (
           <div>
-            <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${statusInfo[myRequest.status as keyof typeof statusInfo]?.bg ?? "bg-zinc-800 border-zinc-700"}`}>
+            <div className={`flex items-center gap-2 px-4 py-3 rounded-lg border ${statusInfo[myRequest.status as keyof typeof statusInfo]?.bg ?? "bg-secondary border-border"}`}>
               {statusInfo[myRequest.status as keyof typeof statusInfo]?.icon}
-              <span className={`font-mono font-bold text-sm ${statusInfo[myRequest.status as keyof typeof statusInfo]?.color ?? "text-zinc-400"}`}>
+              <span className={`font-mono font-bold text-sm ${statusInfo[myRequest.status as keyof typeof statusInfo]?.color ?? "text-muted-foreground"}`}>
                 {statusInfo[myRequest.status as keyof typeof statusInfo]?.label ?? myRequest.status}
               </span>
             </div>
             {myRequest.adminNote && (
-              <p className="mt-3 text-sm text-zinc-400 bg-zinc-800/50 rounded-lg px-4 py-3 border border-zinc-700">
-                <span className="text-zinc-500 font-mono text-xs">NOTA DEL ADMIN: </span>{myRequest.adminNote}
+              <p className="mt-3 text-sm text-muted-foreground bg-secondary/50 rounded-lg px-4 py-3 border border-border">
+                <span className="text-muted-foreground font-mono text-xs">NOTA DEL ADMIN: </span>{myRequest.adminNote}
               </p>
             )}
             {myRequest.status === "rejected" && (
               <button
                 onClick={() => setShowForm(true)}
-                className="mt-3 w-full py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 font-mono text-sm transition-colors"
+                className="mt-3 w-full py-2 rounded-lg border border-border text-muted-foreground hover:text-white hover:border-zinc-500 font-mono text-sm transition-colors"
               >
                 Volver a solicitar
               </button>
@@ -435,21 +435,21 @@ function VerificationSection() {
           </button>
         )}
         {showForm && (
-          <div className="space-y-3 pt-2 border-t border-zinc-800">
-            <label className="block text-xs font-mono text-zinc-500 tracking-widest">¿POR QUÉ DEBERÍAS SER VERIFICADO?</label>
+          <div className="space-y-3 pt-2 border-t border-border">
+            <label className="block text-xs font-mono text-muted-foreground tracking-widest">¿POR QUÉ DEBERÍAS SER VERIFICADO?</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Explica brevemente quién eres, tu trayectoria, seguidores, logros..."
               rows={4}
               maxLength={500}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder-zinc-600 resize-none"
+              className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder-muted-foreground resize-none"
             />
-            <p className="text-xs text-zinc-600 text-right">{reason.length}/500</p>
+            <p className="text-xs text-muted-foreground text-right">{reason.length}/500</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowForm(false)}
-                className="flex-1 py-2 rounded-lg border border-zinc-700 text-zinc-400 hover:text-white font-mono text-sm transition-colors"
+                className="flex-1 py-2 rounded-lg border border-border text-muted-foreground hover:text-white font-mono text-sm transition-colors"
               >
                 Cancelar
               </button>
@@ -522,7 +522,7 @@ export default function Settings() {
   const updateMutation = trpc.profile.updateMine.useMutation({
     onSuccess: () => {
       toast.success("Perfil actualizado correctamente", {
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
       refetch();
       setSaving(false);
@@ -535,7 +535,7 @@ export default function Settings() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="min-h-screen bg-background text-white flex items-center justify-center">
         <div className="text-center">
           <Shield className="w-16 h-16 text-red-500/30 mx-auto mb-4" />
           <p className="font-orbitron text-xl mb-4">Acceso Restringido</p>
@@ -576,16 +576,16 @@ export default function Settings() {
   ];
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-zinc-800/50">
+      <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-border/50">
         <div className="flex items-center gap-4">
           <Link href={`/profile/${user?.id}`}>
-            <button className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-mono text-sm">
+            <button className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors font-mono text-sm">
               <ChevronLeft className="w-4 h-4" /> Mi Perfil
             </button>
           </Link>
-          <div className="w-px h-4 bg-zinc-800" />
+          <div className="w-px h-4 bg-secondary" />
           <h1 className="font-orbitron font-black text-xl tracking-widest text-white">CONFIGURACIÓN</h1>
         </div>
       </div>
@@ -607,7 +607,7 @@ export default function Settings() {
             />
             <div>
               <p className="font-bold text-white">{(me as { name?: string })?.name ?? "Usuario"}</p>
-              <p className="text-zinc-500 text-sm font-mono">{form.nickname || "Sin nickname"}</p>
+              <p className="text-muted-foreground text-sm font-mono">{form.nickname || "Sin nickname"}</p>
             </div>
           </div>
         </div>
@@ -619,48 +619,48 @@ export default function Settings() {
           </h2>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">NICKNAME</label>
+              <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">NICKNAME</label>
               <input
                 type="text"
                 value={form.nickname}
                 onChange={(e) => setForm((f) => ({ ...f, nickname: e.target.value }))}
                 placeholder="Tu alias en la plataforma"
                 maxLength={64}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
               />
             </div>
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">BIO</label>
+              <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">BIO</label>
               <textarea
                 value={form.bio}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
                 placeholder="Cuéntanos sobre ti..."
                 maxLength={500}
                 rows={3}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600 resize-none"
+                className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground resize-none"
               />
-              <p className="text-xs text-zinc-600 text-right mt-1">{form.bio.length}/500</p>
+              <p className="text-xs text-muted-foreground text-right mt-1">{form.bio.length}/500</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
+                <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
                 <select
                   value={form.mainGame}
                   onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "" }))}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                  className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                 >
                   <option value="">Seleccionar juego</option>
                   {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest flex items-center gap-1">
+                <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> PAÍS
                 </label>
                 <select
                   value={form.country}
                   onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                  className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                 >
                   <option value="">Seleccionar país</option>
                   {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -668,18 +668,18 @@ export default function Settings() {
               </div>
             </div>
             {/* Competitive profile fields */}
-            <div className="pt-2 border-t border-zinc-800/60">
-              <h3 className="font-orbitron text-xs tracking-widest text-zinc-500 mb-3 flex items-center gap-2">
+            <div className="pt-2 border-t border-border/60">
+              <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                 <Gamepad2 className="w-3.5 h-3.5" /> PERFIL COMPETITIVO
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ROL PRINCIPAL</label>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ROL PRINCIPAL</label>
                   <select
                     value={form.gameRole}
                     onChange={(e) => setForm((f) => ({ ...f, gameRole: e.target.value }))}
                     disabled={!form.mainGame}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors disabled:opacity-40"
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors disabled:opacity-40"
                   >
                     <option value="">{form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}</option>
                     {getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => (
@@ -688,22 +688,22 @@ export default function Settings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ELO / RANGO</label>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ELO / RANGO</label>
                   <input
                     type="text"
                     value={form.elo}
                     onChange={(e) => setForm((f) => ({ ...f, elo: e.target.value }))}
                     placeholder="Ej: Diamond II, Radiant..."
                     maxLength={64}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
                   <select
                     value={form.competitiveRegion}
                     onChange={(e) => setForm((f) => ({ ...f, competitiveRegion: e.target.value }))}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                   >
                     <option value="">Seleccionar región</option>
                     {COMPETITIVE_REGIONS.map((r) => (
@@ -712,19 +712,19 @@ export default function Settings() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">ID EN EL JUEGO</label>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ID EN EL JUEGO</label>
                   <input
                     type="text"
                     value={form.gameId}
                     onChange={(e) => setForm((f) => ({ ...f, gameId: e.target.value }))}
                     placeholder="Ej: SummonerName#EUW"
                     maxLength={128}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
                   />
-                  <p className="text-[10px] text-zinc-600 font-mono mt-1">Tu nombre de usuario en el juego</p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-1">Tu nombre de usuario en el juego</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">PUNTAJE COMPETITIVO</label>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">PUNTAJE COMPETITIVO</label>
                   <input
                     type="number"
                     value={form.competitiveScore || ""}
@@ -732,9 +732,9 @@ export default function Settings() {
                     placeholder="0"
                     min={0}
                     max={99999}
-                    className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
                   />
-                  <p className="text-[10px] text-zinc-600 font-mono mt-1">Puntos RLC acumulados en torneos</p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-1">Puntos RLC acumulados en torneos</p>
                 </div>
               </div>
             </div>
@@ -754,14 +754,14 @@ export default function Settings() {
                 className={`p-4 rounded-xl border text-left transition-all ${
                   form.profileType === opt.value
                     ? "border-red-500 bg-red-500/10"
-                    : "border-zinc-800 bg-zinc-900 hover:border-zinc-600"
+                    : "border-border bg-card hover:border-zinc-600"
                 }`}
               >
-                <div className={`flex items-center gap-2 mb-2 ${form.profileType === opt.value ? "text-red-400" : "text-zinc-400"}`}>
+                <div className={`flex items-center gap-2 mb-2 ${form.profileType === opt.value ? "text-red-400" : "text-muted-foreground"}`}>
                   {opt.icon}
                   <span className="font-mono font-bold text-sm">{opt.label}</span>
                 </div>
-                <p className="text-xs text-zinc-500">{opt.desc}</p>
+                <p className="text-xs text-muted-foreground">{opt.desc}</p>
               </button>
             ))}
           </div>
@@ -774,45 +774,45 @@ export default function Settings() {
           </h2>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest flex items-center gap-1">
+              <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
                 <Twitter className="w-3 h-3" /> TWITTER / X
               </label>
               <div className="flex items-center">
-                <span className="bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">@</span>
+                <span className="bg-secondary border border-r-0 border-border rounded-l-lg px-3 py-2.5 text-muted-foreground text-sm">@</span>
                 <input
                   type="text"
                   value={form.socialTwitter}
                   onChange={(e) => setForm((f) => ({ ...f, socialTwitter: e.target.value }))}
                   placeholder="usuario"
                   maxLength={128}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                  className="flex-1 bg-card border border-border rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
                 />
               </div>
             </div>
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest flex items-center gap-1">
+              <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
                 <MessageSquare className="w-3 h-3" /> DISCORD
               </label>
               <input
                 type="text"
                 value={form.socialDiscord}
                 onChange={(e) => setForm((f) => ({ ...f, socialDiscord: e.target.value }))}
-                placeholder="usuario#0000 o usuario"
+                placeholder="usuariovar(--bg-main)0 o usuario"
                 maxLength={128}
-                className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
               />
             </div>
             <div>
-              <label className="block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest">TWITCH</label>
+              <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">TWITCH</label>
               <div className="flex items-center">
-                <span className="bg-zinc-800 border border-r-0 border-zinc-700 rounded-l-lg px-3 py-2.5 text-zinc-500 text-sm">twitch.tv/</span>
+                <span className="bg-secondary border border-r-0 border-border rounded-l-lg px-3 py-2.5 text-muted-foreground text-sm">twitch.tv/</span>
                 <input
                   type="text"
                   value={form.socialTwitch}
                   onChange={(e) => setForm((f) => ({ ...f, socialTwitch: e.target.value }))}
                   placeholder="canal"
                   maxLength={128}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600"
+                  className="flex-1 bg-card border border-border rounded-r-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
                 />
               </div>
             </div>

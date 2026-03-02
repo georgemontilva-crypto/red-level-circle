@@ -50,7 +50,7 @@ function TeamImageUpload({
             <Shield size={24} />
           </div>
         )}
-        <div className="absolute inset-0 rounded-full bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="absolute inset-0 rounded-full bg-background/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           {uploading ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <Camera className="w-4 h-4 text-white" />}
         </div>
         <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
@@ -66,7 +66,7 @@ function TeamImageUpload({
           <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.40 0.005 0)" }}>SUBIR BANNER</span>
         </div>
       )}
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
         {uploading ? <Loader2 className="w-5 h-5 text-white animate-spin" /> : (
           <><Camera className="w-5 h-5 text-white" /><span className="text-xs text-white font-display">CAMBIAR BANNER</span></>
         )}

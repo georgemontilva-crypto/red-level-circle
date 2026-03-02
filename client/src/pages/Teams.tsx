@@ -137,7 +137,7 @@ function TeamCard({ team }: { team: any }) {
                   <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded" style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>[{team.tag}]</span>
                 )}
                 {team.country && (
-                  <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><MapPin size={10} />{team.country}</span>
+                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><MapPin size={10} />{team.country}</span>
                 )}
               </div>
             </div>
@@ -148,8 +148,8 @@ function TeamCard({ team }: { team: any }) {
           <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid oklch(0.16 0.01 0)" }}>
             <div className="flex items-center gap-1.5 text-xs">
               <Trophy size={11} className="text-yellow-500" />
-              <span className="font-mono text-zinc-300">{team.points ?? 0}</span>
-              <span className="text-zinc-600 font-mono">pts</span>
+              <span className="font-mono text-secondary-foreground">{team.points ?? 0}</span>
+              <span className="text-muted-foreground font-mono">pts</span>
             </div>
             <div className="flex items-center gap-1 text-xs font-mono">
               <span style={{ color: "#4ade80" }}>{team.wins ?? 0}V</span>
@@ -159,7 +159,7 @@ function TeamCard({ team }: { team: any }) {
             {winRate !== null ? (
               <div className="ml-auto text-xs font-mono font-semibold px-2 py-0.5 rounded-lg" style={{ background: winRate >= 60 ? "rgba(74,222,128,0.1)" : winRate >= 40 ? "rgba(250,204,21,0.1)" : "rgba(248,113,113,0.1)", color: winRate >= 60 ? "#4ade80" : winRate >= 40 ? "#facc15" : "#f87171", border: `1px solid ${winRate >= 60 ? "rgba(74,222,128,0.2)" : winRate >= 40 ? "rgba(250,204,21,0.2)" : "rgba(248,113,113,0.2)"}` }}>{winRate}% WR</div>
             ) : (
-              <div className="ml-auto flex items-center gap-1 text-xs font-mono text-zinc-600"><Users size={10} />{team.tournamentsPlayed ?? 0} torneos</div>
+              <div className="ml-auto flex items-center gap-1 text-xs font-mono text-muted-foreground"><Users size={10} />{team.tournamentsPlayed ?? 0} torneos</div>
             )}
           </div>
         </div>
@@ -182,7 +182,7 @@ function EmptyState({ selectedGame, games, onClear }: { selectedGame: string; ga
         )}
       </div>
       <h3 className="font-mono font-bold text-xl text-white mb-2">{game ? `Sin equipos de ${game.name}` : "Sin equipos registrados"}</h3>
-      <p className="text-zinc-500 text-sm mb-8 max-w-xs font-mono">{game ? `Aún no hay equipos oficiales de ${game.name}. Prueba con otro juego.` : "No hay equipos con los filtros seleccionados."}</p>
+      <p className="text-muted-foreground text-sm mb-8 max-w-xs font-mono">{game ? `Aún no hay equipos oficiales de ${game.name}. Prueba con otro juego.` : "No hay equipos con los filtros seleccionados."}</p>
       <div className="flex flex-wrap gap-3 justify-center">
         <button onClick={onClear} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "oklch(0.15 0.005 0)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.70 0.01 0)" }}><X size={14} /> Limpiar filtros</button>
         <Link href="/dashboard/create-team" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)", border: "1px solid rgba(220,38,38,0.5)", color: "#fca5a5" }}><Shield size={14} /> Crear equipo</Link>
@@ -236,7 +236,7 @@ export default function Teams() {
   const hasFilters = !!(selectedGame || search);
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-background text-white">
       <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
 
         <SectionBanner sectionKey="teams" height="h-48 sm:h-64 lg:h-72" />
@@ -244,18 +244,18 @@ export default function Teams() {
         {/* Búsqueda */}
         <div className="mt-8 mb-5">
           <div className="relative max-w-xl">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
               placeholder="Buscar equipo, tag, juego o país..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-zinc-600 font-mono text-sm outline-none transition-all duration-200"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl text-white placeholder:text-muted-foreground font-mono text-sm outline-none transition-all duration-200"
               style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.5)"; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "oklch(0.20 0.01 0)"; }}
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors">
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors">
                 <X size={14} />
               </button>
             )}
@@ -273,7 +273,7 @@ export default function Teams() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
               >
-                <ChevronDown size={14} className="text-zinc-400 rotate-90" />
+                <ChevronDown size={14} className="text-muted-foreground rotate-90" />
               </button>
               <div
                 ref={scrollRef}
@@ -297,7 +297,7 @@ export default function Teams() {
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.20 0.005 0)"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.14 0.005 0)"; }}
               >
-                <ChevronDown size={14} className="text-zinc-400 -rotate-90" />
+                <ChevronDown size={14} className="text-muted-foreground -rotate-90" />
               </button>
             </div>
           </div>
@@ -306,10 +306,10 @@ export default function Teams() {
         {/* Resumen de filtros */}
         {hasFilters && !isLoading && (
           <div className="flex items-center justify-between mb-4">
-            <p className="text-zinc-600 text-xs font-mono">
+            <p className="text-muted-foreground text-xs font-mono">
               {filtered.length === 0 ? "Sin resultados" : `${filtered.length} equipo${filtered.length !== 1 ? "s" : ""} encontrado${filtered.length !== 1 ? "s" : ""}`}
             </p>
-            <button onClick={clearAll} className="flex items-center gap-1.5 text-xs font-mono text-zinc-500 hover:text-red-400 transition-colors">
+            <button onClick={clearAll} className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-red-400 transition-colors">
               <X size={12} /> Limpiar filtros
             </button>
           </div>

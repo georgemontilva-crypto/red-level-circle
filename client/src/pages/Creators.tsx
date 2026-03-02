@@ -46,7 +46,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const cat = CATEGORIES.find(x => x.value === c.category);
   const [, navigate] = useLocation();
   return (
-    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-zinc-900 transition-all cursor-pointer group" style={{ border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 20px oklch(0.50 0.22 25 / 0.2)" : undefined }}>
+    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-card transition-all cursor-pointer group" style={{ border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 20px oklch(0.50 0.22 25 / 0.2)" : undefined }}>
         {/* Banner */}
         <div className="relative h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden">
           {c.banner && (
@@ -59,7 +59,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
               EN VIVO
             </div>
           ) : cat && (
-            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/60 text-xs text-zinc-300 font-mono border border-zinc-700/50">
+            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/60 text-xs text-secondary-foreground font-mono border border-border/50">
               <cat.icon size={10} /> {cat.label}
             </div>
           )}
@@ -84,7 +84,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
                 {(c as { isVerified?: boolean }).isVerified && <VerifiedBadge size={16} />}
               </div>
               {c.subscribers > 0 && (
-                <p className="text-zinc-500 text-xs font-mono mt-0.5">
+                <p className="text-muted-foreground text-xs font-mono mt-0.5">
                   {c.subscribers.toLocaleString()} seguidores
                 </p>
               )}
@@ -92,7 +92,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
           </div>
 
           {c.bio && (
-            <p className="text-zinc-400 text-sm mt-3 line-clamp-2 leading-relaxed">{c.bio}</p>
+            <p className="text-muted-foreground text-sm mt-3 line-clamp-2 leading-relaxed">{c.bio}</p>
           )}
 
           {/* Social links */}
@@ -100,28 +100,28 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
             {c.youtube && (
               <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-red-500 transition-colors font-mono">
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors font-mono">
                 <Youtube size={14} /> {c.youtube}
               </a>
             )}
             {c.twitch && (
               <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-purple-400 transition-colors font-mono">
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-purple-400 transition-colors font-mono">
                 <Twitch size={14} /> {c.twitch}
               </a>
             )}
             {c.twitter && (
               <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-sky-400 transition-colors font-mono">
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-400 transition-colors font-mono">
                 <Twitter size={14} /> {c.twitter}
               </a>
             )}
             {c.instagram && (
               <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-pink-400 transition-colors font-mono">
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-pink-400 transition-colors font-mono">
                 <Instagram size={14} /> {c.instagram}
               </a>
             )}
@@ -166,7 +166,7 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
       <div className="text-center py-12">
         <Crown size={40} className="text-red-500/40 mx-auto mb-4" />
         <h3 className="font-orbitron font-bold text-white text-lg mb-2">Inicia sesión para aplicar</h3>
-        <p className="text-zinc-500 text-sm mb-6">Necesitas una cuenta para solicitar ser creador oficial.</p>
+        <p className="text-muted-foreground text-sm mb-6">Necesitas una cuenta para solicitar ser creador oficial.</p>
         <a href={getLoginUrl()}>
           <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
             INICIAR SESIÓN
@@ -189,14 +189,14 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
       <div className="text-center py-12">
         <Clock size={40} className="text-yellow-500 mx-auto mb-4" />
         <h3 className="font-orbitron font-bold text-white text-lg mb-2">Solicitud en revisión</h3>
-        <p className="text-zinc-500 text-sm">Tu solicitud está siendo revisada por el equipo. Te notificaremos pronto.</p>
-        <div className="mt-6 p-4 rounded-xl bg-zinc-900 border border-zinc-800 text-left max-w-md mx-auto">
-          <p className="text-xs font-mono text-zinc-500 mb-2">DATOS ENVIADOS</p>
-          {form.bio && <p className="text-zinc-300 text-sm">{form.bio}</p>}
+        <p className="text-muted-foreground text-sm">Tu solicitud está siendo revisada por el equipo. Te notificaremos pronto.</p>
+        <div className="mt-6 p-4 rounded-xl bg-card border border-border text-left max-w-md mx-auto">
+          <p className="text-xs font-mono text-muted-foreground mb-2">DATOS ENVIADOS</p>
+          {form.bio && <p className="text-secondary-foreground text-sm">{form.bio}</p>}
           <div className="flex flex-wrap gap-2 mt-3">
-            {form.youtube && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Youtube size={10} /> {form.youtube}</span>}
-            {form.twitch && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Twitch size={10} /> {form.twitch}</span>}
-            {form.twitter && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Twitter size={10} /> {form.twitter}</span>}
+            {form.youtube && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Youtube size={10} /> {form.youtube}</span>}
+            {form.twitch && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Twitch size={10} /> {form.twitch}</span>}
+            {form.twitter && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Twitter size={10} /> {form.twitter}</span>}
           </div>
         </div>
       </div>
@@ -212,15 +212,15 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
       {myApp?.status === "rejected" && (
         <div className="mb-6 p-4 rounded-xl bg-red-950/30 border border-red-800/40">
           <p className="text-red-400 text-sm font-mono flex items-center gap-2"><XCircle size={14} /> Solicitud rechazada</p>
-          {myApp.adminNote && <p className="text-zinc-400 text-sm mt-1">{myApp.adminNote}</p>}
-          <p className="text-zinc-500 text-xs mt-2">Puedes actualizar tu información y volver a enviar.</p>
+          {myApp.adminNote && <p className="text-muted-foreground text-sm mt-1">{myApp.adminNote}</p>}
+          <p className="text-muted-foreground text-xs mt-2">Puedes actualizar tu información y volver a enviar.</p>
         </div>
       )}
 
       <div className="space-y-5">
         {/* Category */}
         <div>
-          <label className="block text-xs font-mono text-zinc-400 mb-2 uppercase tracking-wider">Categoría *</label>
+          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Categoría *</label>
           <div className="grid grid-cols-3 gap-2">
             {CATEGORIES.map(cat => (
               <button
@@ -230,7 +230,7 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
                 className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-mono transition-all ${
                   form.category === cat.value
                     ? "border-red-600 bg-red-600/20 text-white"
-                    : "border-zinc-800 bg-zinc-900/60 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                    : "border-border bg-card/60 text-muted-foreground hover:border-zinc-600 hover:text-secondary-foreground"
                 }`}
               >
                 <cat.icon size={14} /> {cat.label}
@@ -241,31 +241,31 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
 
         {/* Bio */}
         <div>
-          <label className="block text-xs font-mono text-zinc-400 mb-2 uppercase tracking-wider">Descripción / Bio *</label>
+          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Descripción / Bio *</label>
           <textarea
             value={form.bio}
             onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
             placeholder="Cuéntanos sobre ti y tu contenido..."
             rows={3}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-red-600/50 resize-none"
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm placeholder-muted-foreground focus:outline-none focus:border-red-600/50 resize-none"
           />
         </div>
 
         {/* Subscribers */}
         <div>
-          <label className="block text-xs font-mono text-zinc-400 mb-2 uppercase tracking-wider">Seguidores totales (aprox.)</label>
+          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Seguidores totales (aprox.)</label>
           <input
             type="number"
             value={form.subscribers || ""}
             onChange={e => setForm(f => ({ ...f, subscribers: parseInt(e.target.value) || 0 }))}
             placeholder="Ej: 10000"
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-red-600/50"
+            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm placeholder-muted-foreground focus:outline-none focus:border-red-600/50"
           />
         </div>
 
         {/* Social links */}
         <div>
-          <label className="block text-xs font-mono text-zinc-400 mb-3 uppercase tracking-wider">Redes sociales (al menos una)</label>
+          <label className="block text-xs font-mono text-muted-foreground mb-3 uppercase tracking-wider">Redes sociales (al menos una)</label>
           <div className="space-y-3">
             {[
               { key: "youtube", icon: Youtube, label: "YouTube", placeholder: "tu_canal", prefix: "youtube.com/@" },
@@ -274,17 +274,17 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
               { key: "instagram", icon: Instagram, label: "Instagram", placeholder: "tu_usuario", prefix: "instagram.com/" },
             ].map(({ key, icon: Icon, label, placeholder, prefix }) => (
               <div key={key} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-zinc-800 flex items-center justify-center shrink-0">
-                  <Icon size={14} className="text-zinc-500" />
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                  <Icon size={14} className="text-muted-foreground" />
                 </div>
                 <div className="flex-1 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-xs font-mono">{prefix}</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-mono">{prefix}</span>
                   <input
                     type="text"
                     value={(form as any)[key]}
                     onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-24 pr-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-red-600/50"
+                    className="w-full bg-card border border-border rounded-xl pl-24 pr-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-red-600/50"
                     style={{ paddingLeft: `${prefix.length * 7 + 12}px` }}
                   />
                 </div>
@@ -336,7 +336,7 @@ export default function Creators() {
     : (creators ?? []).filter((c: any) => c.category === activeFilter);
 
   return (
-    <div className="min-h-screen bg-black text-white overflow-x-hidden">
+    <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Section Banner */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
         <SectionBanner sectionKey="creators" height="h-48 sm:h-64 lg:h-72" />
@@ -349,7 +349,7 @@ export default function Creators() {
           <button
             onClick={() => setActiveFilter("all")}
             className={`shrink-0 px-4 py-2 rounded-xl text-sm font-mono transition-all ${
-              activeFilter === "all" ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-500 hover:text-white border border-zinc-800"
+              activeFilter === "all" ? "bg-red-600 text-white" : "bg-card text-muted-foreground hover:text-white border border-border"
             }`}
           >
             Todos ({creators?.length ?? 0})
@@ -374,7 +374,7 @@ export default function Creators() {
                 key={cat.value}
                 onClick={() => setActiveFilter(cat.value)}
                 className={`shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-mono transition-all ${
-                  activeFilter === cat.value ? "bg-red-600 text-white" : "bg-zinc-900 text-zinc-500 hover:text-white border border-zinc-800"
+                  activeFilter === cat.value ? "bg-red-600 text-white" : "bg-card text-muted-foreground hover:text-white border border-border"
                 }`}
               >
                 <cat.icon size={12} /> {cat.label} ({count})
@@ -386,16 +386,16 @@ export default function Creators() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-2xl bg-zinc-900/60 border border-zinc-800/50 h-64 animate-pulse" />
+              <div key={i} className="rounded-2xl bg-card/60 border border-border/50 h-64 animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
             <Users size={48} className="text-zinc-700 mx-auto mb-4" />
-            <h3 className="font-orbitron font-bold text-zinc-500 text-lg mb-2">
+            <h3 className="font-orbitron font-bold text-muted-foreground text-lg mb-2">
               {activeFilter === "live" ? "No hay creadores transmitiendo ahora" : activeFilter === "all" ? "Aún no hay creadores aprobados" : "No hay creadores en esta categoría"}
             </h3>
-            <p className="text-zinc-600 text-sm">¡Sé el primero en aplicar!</p>
+            <p className="text-muted-foreground text-sm">¡Sé el primero en aplicar!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -422,27 +422,27 @@ export default function Creators() {
             style={{ animation: "fadeIn 0.2s ease" }}
           >
             <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+              className="absolute inset-0 bg-background/70 backdrop-blur-sm"
               onClick={() => setShowForm(false)}
             />
             <div
-              className="relative w-full max-w-lg rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden"
+              className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl overflow-hidden"
               style={{ animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
             >
               {/* Modal header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-red-600/20 flex items-center justify-center">
                     <Crown size={18} className="text-red-400" />
                   </div>
                   <div>
                     <h2 className="font-orbitron font-bold text-white text-base">Solicitar Verificación</h2>
-                    <p className="text-zinc-500 text-xs">El equipo revisará tu solicitud</p>
+                    <p className="text-muted-foreground text-xs">El equipo revisará tu solicitud</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowForm(false)}
-                  className="w-8 h-8 rounded-lg bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-lg bg-secondary hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-white transition-colors"
                 >
                   <X size={14} />
                 </button>

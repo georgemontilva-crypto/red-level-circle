@@ -301,12 +301,12 @@ export default function EditTournament() {
                     </div>
                   )}
                   {form.banner && (
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <span className="text-white text-xs font-display tracking-wider">CAMBIAR BANNER</span>
                     </div>
                   )}
                   {uploadingBanner && (
-                    <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     </div>
                   )}

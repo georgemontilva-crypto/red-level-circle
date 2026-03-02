@@ -136,7 +136,7 @@ export default function UserProfile() {
     return (
       <div className="text-center py-20">
         <User className="w-16 h-16 text-zinc-700 mx-auto mb-4" />
-        <p className="text-zinc-500 font-mono">Perfil no encontrado</p>
+        <p className="text-muted-foreground font-mono">Perfil no encontrado</p>
       </div>
     );
   }
@@ -187,8 +187,8 @@ export default function UserProfile() {
                 disabled={followLoading}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono font-bold transition-all duration-200"
                 style={isFollowing
-                  ? { background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff" }
-                  : { background: "oklch(0.55 0.22 25)", color: "#fff" }
+                  ? { background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.2)", color: "var(--text-primary)" }
+                  : { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }
                 }
               >
                 {followLoading ? (
@@ -214,7 +214,7 @@ export default function UserProfile() {
               {equippedAura && (
                 <div
                   className="absolute inset-0 rounded-full blur-2xl opacity-60 scale-150 pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "#ff0000"} 0%, transparent 70%)` }}
+                  style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "var(--accent-red)"} 0%, transparent 70%)` }}
                 />
               )}
               {equippedFrame?.frameImage && (
@@ -252,7 +252,7 @@ export default function UserProfile() {
                   <div className="flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-mono"
                     style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
                     <ProfileTypeIcon type={profile.profileType} />
-                    <span className="text-zinc-300">{PROFILE_TYPE_LABEL[profile.profileType] ?? profile.profileType}</span>
+                    <span className="text-secondary-foreground">{PROFILE_TYPE_LABEL[profile.profileType] ?? profile.profileType}</span>
                   </div>
                 )}
                 {(profile as { isVerified?: boolean }).isVerified && (
@@ -280,18 +280,18 @@ export default function UserProfile() {
               </div>
               {/* Username / handle */}
               {profile.nickname && profile.name && (
-                <p className="text-zinc-500 text-sm font-mono mt-0.5">@{profile.name}</p>
+                <p className="text-muted-foreground text-sm font-mono mt-0.5">@{profile.name}</p>
               )}
             </div>
           </div>
 
           {/* Bio */}
           {profile.bio && (
-            <p className="mt-3 text-zinc-300 text-sm leading-relaxed">{profile.bio}</p>
+            <p className="mt-3 text-secondary-foreground text-sm leading-relaxed">{profile.bio}</p>
           )}
 
           {/* Meta info row */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-zinc-500">
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
             {profile.mainGame && (
               <span className="flex items-center gap-1">
                 <Gamepad2 className="w-3.5 h-3.5 text-white" />
@@ -443,7 +443,7 @@ export default function UserProfile() {
                       {stat.icon === "userplus" && <UserPlus size={22} />}
                     </div>
                     <div className="font-mono font-bold text-white text-lg">{stat.value.toLocaleString()}</div>
-                    <div className="text-xs text-zinc-500 font-mono mt-0.5">{stat.label}</div>
+                    <div className="text-xs text-muted-foreground font-mono mt-0.5">{stat.label}</div>
                   </div>
                 ))}
               </div>
@@ -601,7 +601,7 @@ export default function UserProfile() {
                 style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
                 <Trophy className="w-8 h-8 text-white/30 mx-auto mb-2" />
-                <p className="text-zinc-500 text-sm font-mono">Historial de torneos próximamente</p>
+                <p className="text-muted-foreground text-sm font-mono">Historial de torneos próximamente</p>
               </div>
             </div>
           )}
@@ -627,8 +627,8 @@ export default function UserProfile() {
                     className="rounded-xl p-8 text-center"
                     style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    <Palette size={36} className="mx-auto mb-3 text-zinc-600" />
-                    <p className="text-zinc-500 font-mono text-sm">No tienes cosméticos aún</p>
+                    <Palette size={36} className="mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground font-mono text-sm">No tienes cosméticos aún</p>
                     <a href="/shop/cosmetics" className="mt-3 inline-block text-xs text-red-400 hover:text-red-300 font-mono underline">Ir a la tienda</a>
                   </div>
                 ) : (
@@ -657,17 +657,17 @@ export default function UserProfile() {
                             outlineOffset: "0px",
                           }}
                         >
-                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-zinc-900">
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-card">
                             {(c as any).previewImage ? (
                               <img src={(c as any).previewImage} alt={(c as any).name ?? ""} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <Palette size={24} className="text-zinc-600" />
+                                <Palette size={24} className="text-muted-foreground" />
                               </div>
                             )}
                           </div>
                           <div className="p-2 text-center">
-                            <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{(c as any).name}</p>
+                            <p className="text-xs font-semibold text-secondary-foreground truncate font-rajdhani">{(c as any).name}</p>
                             <p className="text-[10px] font-mono capitalize mt-0.5" style={{ color: rarityColor[rarity] }}>{rarityLabel[rarity]}</p>
                             {c.isEquipped ? (
                               <span className="mt-1 inline-flex items-center gap-0.5 text-[10px] text-green-400 font-mono"><CheckCircle2 size={10} /> Equipado</span>
@@ -693,8 +693,8 @@ export default function UserProfile() {
                     className="rounded-xl p-8 text-center"
                     style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
                   >
-                    <Palette size={36} className="mx-auto mb-3 text-zinc-600" />
-                    <p className="text-zinc-500 font-mono text-sm">Sin cosméticos equipados</p>
+                    <Palette size={36} className="mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-muted-foreground font-mono text-sm">Sin cosméticos equipados</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pb-4">
@@ -722,17 +722,17 @@ export default function UserProfile() {
                             outlineOffset: "0px",
                           }}
                         >
-                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-zinc-900">
+                          <div className="w-full aspect-square overflow-hidden rounded-t-lg bg-card">
                             {c.previewImage ? (
                               <img src={c.previewImage} alt={c.name} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
-                                <Palette size={24} className="text-zinc-600" />
+                                <Palette size={24} className="text-muted-foreground" />
                               </div>
                             )}
                           </div>
                           <div className="p-2 text-center">
-                            <p className="text-xs font-semibold text-zinc-200 truncate font-rajdhani">{c.name}</p>
+                            <p className="text-xs font-semibold text-secondary-foreground truncate font-rajdhani">{c.name}</p>
                             <p className="text-[10px] font-mono capitalize mt-0.5" style={{ color: rarityColor[rarity] }}>{rarityLabel[rarity]}</p>
                           </div>
                         </div>
@@ -767,7 +767,7 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
         style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
       >
         <Users className="w-8 h-8 text-white/30 mx-auto mb-2" />
-        <p className="text-zinc-500 font-mono text-sm">{emptyText}</p>
+        <p className="text-muted-foreground font-mono text-sm">{emptyText}</p>
       </div>
     );
   }
@@ -792,7 +792,7 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
                 {u.nickname ?? u.name ?? "Usuario"}
               </p>
               {u.profileType && (
-                <p className="text-xs text-zinc-500 font-mono capitalize">
+                <p className="text-xs text-muted-foreground font-mono capitalize">
                   {PROFILE_TYPE_LABEL[u.profileType] ?? u.profileType}
                 </p>
               )}
@@ -918,8 +918,8 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
   const viewRanks = getRanksForGame(viewGameSlug);
   const viewRankData = viewRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
 
-  const inputClass = "w-full bg-zinc-950/80 border border-red-700/50 rounded-full px-4 py-2.5 text-white text-sm font-mono tracking-wide focus:outline-none focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)] transition-all duration-200 placeholder-white/30";
-  const labelClass = "block text-xs font-mono text-zinc-500 mb-1.5 tracking-widest";
+  const inputClass = "w-full bg-card/80 border border-red-700/50 rounded-full px-4 py-2.5 text-white text-sm font-mono tracking-wide focus:outline-none focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)] transition-all duration-200 placeholder-white/30";
+  const labelClass = "block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest";
 
   return (
     <div className="space-y-6 pb-8">
@@ -927,14 +927,14 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Swords className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-          <span className="font-orbitron text-sm tracking-widest text-zinc-300 uppercase">Perfil Competitivo</span>
+          <span className="font-orbitron text-sm tracking-widest text-secondary-foreground uppercase">Perfil Competitivo</span>
         </div>
         {isOwnProfile && (
           <button
             onClick={handleSave}
             disabled={saving}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
-            style={{ background: "oklch(0.55 0.22 25)", color: "#fff", opacity: saving ? 0.6 : 1 }}
+            style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", opacity: saving ? 0.6 : 1 }}
           >
             {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
             {saving ? "GUARDANDO..." : "GUARDAR"}
@@ -1004,7 +1004,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
               />
-              <p className="text-[10px] font-mono text-zinc-600 text-center">
+              <p className="text-[10px] font-mono text-muted-foreground text-center">
                 Tu foto se recorta a 2:3 automáticamente.<br />El sistema añade nick, rol y logo del equipo.
               </p>
             </>
@@ -1021,7 +1021,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 className="rounded-xl p-4 space-y-4"
                 style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
-                <h3 className="font-orbitron text-xs tracking-widest text-zinc-500 flex items-center gap-2">
+                <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
                   <Gamepad2 className="w-3.5 h-3.5" /> JUEGO Y ROL
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1054,7 +1054,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 className="rounded-xl p-4 space-y-4"
                 style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
-                <h3 className="font-orbitron text-xs tracking-widest text-zinc-500 flex items-center gap-2">
+                <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
                   <Star className="w-3.5 h-3.5 text-white" /> RANGO Y ESTADÍSTICAS
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1093,17 +1093,17 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                       maxLength={128}
                       className={inputClass}
                     />
-                    <p className="text-[10px] text-zinc-600 font-mono mt-1">Tu nombre de usuario en el juego</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-1">Tu nombre de usuario en el juego</p>
                   </div>
                   <div>
                     <label className={labelClass}>PUNTAJE COMPETITIVO</label>
                     <div
-                      className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-zinc-950/40 border border-white/8 text-sm font-mono tracking-wide text-white/40 cursor-not-allowed select-none"
+                      className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/40 border border-white/8 text-sm font-mono tracking-wide text-white/40 cursor-not-allowed select-none"
                     >
                       <Trophy className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
                       <span>{form.competitiveScore > 0 ? `${form.competitiveScore.toLocaleString()} pts` : "Auto-calculado"}</span>
                     </div>
-                    <p className="text-[10px] text-zinc-600 font-mono mt-1">Puntos RLC acumulados en torneos</p>
+                    <p className="text-[10px] text-muted-foreground font-mono mt-1">Puntos RLC acumulados en torneos</p>
                   </div>
                 </div>
               </div>
@@ -1136,7 +1136,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                     </span>
                   )}
                   {profile.mainGame && (
-                    <span className="text-sm text-zinc-400 font-mono">{profile.mainGame}</span>
+                    <span className="text-sm text-muted-foreground font-mono">{profile.mainGame}</span>
                   )}
                 </div>
               )}
@@ -1144,7 +1144,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
               <div className="grid grid-cols-2 gap-4">
                 {(profile as { elo?: string | null }).elo && (
                   <div>
-                    <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1.5">ELO / Rango</p>
+                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">ELO / Rango</p>
                     <span
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
                       style={viewRankData
@@ -1161,7 +1161,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 )}
                 {profile.competitiveRegion && (
                   <div>
-                    <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1.5">Región</p>
+                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">Región</p>
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
                       style={{ background: "oklch(0.45 0.15 220 / 0.15)", border: "1px solid oklch(0.45 0.15 220 / 0.3)", color: "oklch(0.70 0.15 220)" }}
@@ -1172,7 +1172,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 )}
                 {profile.gameId && (
                   <div>
-                    <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1.5">ID en el juego</p>
+                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">ID en el juego</p>
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono"
                       style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)" }}
@@ -1183,7 +1183,7 @@ function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
                 )}
                 {(profile.competitiveScore ?? 0) > 0 && (
                   <div>
-                    <p className="text-zinc-600 text-xs font-mono uppercase tracking-wider mb-1.5">Puntaje RLC</p>
+                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">Puntaje RLC</p>
                     <span
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
                       style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}

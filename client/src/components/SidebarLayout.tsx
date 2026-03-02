@@ -135,7 +135,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           <span className="font-orbitron font-black text-xl tracking-widest cursor-pointer select-none">
             <span className="text-red-500">RED</span>
             <span className="text-white">LEVEL</span>
-            <span className="text-zinc-500 text-xs ml-1 font-normal">CIRCLE</span>
+            <span className="text-muted-foreground text-xs ml-1 font-normal">CIRCLE</span>
           </span>
         </Link>
       </div>
@@ -169,7 +169,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
-                <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-zinc-500"}`}>
+                <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-muted-foreground"}`}>
                   {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
                 </span>
               </div>
@@ -204,11 +204,15 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 const active = isActive(item.href);
                 return (
                   <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
-                    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group relative ${
-                      active
-                        ? "text-white"
-                        : "hover:text-white"
-                    }`}>
+                    <div
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative"
+                      style={{
+                        background: active ? "var(--bg-hover)" : "transparent",
+                        color: active ? "var(--text-primary)" : "var(--text-secondary)",
+                      }}
+                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)"; }}
+                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
+                    >
                       {active && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
                       )}
@@ -268,20 +272,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   return (
     <div className="min-h-screen flex overflow-x-hidden" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "var(--sidebar)", borderColor: "var(--border-main)" }}>
+      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible border-r" style={{ background: "#0B0B0D", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/70 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-background/70 z-40 md:hidden backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
       {/* Mobile sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "var(--sidebar)", borderColor: "var(--border-main)" }}>
+      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "#0B0B0D", borderColor: "var(--border-main)" }}>
         <SidebarContent />
       </aside>
 
@@ -294,7 +298,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {isAuthenticated && <TopbarNotificationBell />}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-zinc-400 hover:text-white transition-colors"
+            className="p-2 text-muted-foreground hover:text-white transition-colors"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>

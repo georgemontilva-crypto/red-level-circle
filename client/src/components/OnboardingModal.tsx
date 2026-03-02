@@ -49,7 +49,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
       onComplete();
       toast.success("¡Bienvenido a Red Level Circle!", {
         description: "Tu perfil ha sido configurado. ¡Comienza a competir!",
-        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "#fff" },
+        style: { background: "#0a0a0a", border: "1px solid #22c55e", color: "var(--text-primary)" },
       });
     },
     onError: (err) => {
@@ -68,7 +68,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-4">
       <div
         className="w-full max-w-lg rounded-2xl overflow-hidden"
         style={{
@@ -88,7 +88,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
               BIENVENIDO A<br />
               <span className="text-red-500">RED LEVEL CIRCLE</span>
             </h1>
-            <p className="text-zinc-400 text-sm">Configura tu perfil para comenzar a competir</p>
+            <p className="text-muted-foreground text-sm">Configura tu perfil para comenzar a competir</p>
           </div>
 
           {/* Step indicator */}
@@ -97,7 +97,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
               <div
                 key={s}
                 className={`h-1 rounded-full transition-all duration-300 ${
-                  s === step ? "w-8 bg-red-500" : s < step ? "w-4 bg-red-500/60" : "w-4 bg-zinc-700"
+                  s === step ? "w-8 bg-red-500" : s < step ? "w-4 bg-red-500/60" : "w-4 bg-muted"
                 }`}
               />
             ))}
@@ -109,7 +109,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
           {step === 1 ? (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-zinc-500 mb-2 tracking-widest">
+                <label className="block text-xs font-mono text-muted-foreground mb-2 tracking-widest">
                   ELIGE TU NICKNAME
                 </label>
                 <input
@@ -120,9 +120,9 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                   maxLength={64}
                   autoFocus
                   onKeyDown={(e) => e.key === "Enter" && nickname.trim() && setStep(2)}
-                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-red-500 transition-colors placeholder-zinc-600 font-mono"
+                  className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-base focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground font-mono"
                 />
-                <p className="text-xs text-zinc-600 mt-1.5">Este será tu nombre visible en torneos y rankings</p>
+                <p className="text-xs text-muted-foreground mt-1.5">Este será tu nombre visible en torneos y rankings</p>
               </div>
 
               {/* Bonus info */}
@@ -131,7 +131,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                   <Coins className="w-5 h-5 text-yellow-400 flex-shrink-0" />
                   <div>
                     <p className="text-yellow-400 font-bold text-sm font-mono">¡500 RLC COINS DE BIENVENIDA!</p>
-                    <p className="text-zinc-500 text-xs">Ya están en tu cartera. Úsalos en apuestas o la tienda.</p>
+                    <p className="text-muted-foreground text-xs">Ya están en tu cartera. Úsalos en apuestas o la tienda.</p>
                   </div>
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
           ) : (
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-mono text-zinc-500 mb-3 tracking-widest">
+                <label className="block text-xs font-mono text-muted-foreground mb-3 tracking-widest">
                   ¿CÓMO PARTICIPARÁS?
                 </label>
                 <div className="space-y-2">
@@ -160,14 +160,14 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg bg-black/30 ${type.iconColor}`}>
+                        <div className={`p-2 rounded-lg bg-background/30 ${type.iconColor}`}>
                           <type.icon className="w-5 h-5" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`font-bold font-mono text-sm ${profileType === type.value ? "text-white" : "text-zinc-300"}`}>
+                          <p className={`font-bold font-mono text-sm ${profileType === type.value ? "text-white" : "text-secondary-foreground"}`}>
                             {type.label}
                           </p>
-                          <p className="text-zinc-500 text-xs mt-0.5">{type.desc}</p>
+                          <p className="text-muted-foreground text-xs mt-0.5">{type.desc}</p>
                         </div>
                         <div className={`w-4 h-4 rounded-full border-2 flex-shrink-0 ${
                           profileType === type.value ? "border-white bg-white/30" : "border-zinc-600"
@@ -181,7 +181,7 @@ export default function OnboardingModal({ onComplete }: OnboardingModalProps) {
               <div className="flex gap-3">
                 <button
                   onClick={() => setStep(1)}
-                  className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-400 hover:text-white hover:border-zinc-500 font-mono text-sm transition-all"
+                  className="flex-1 py-3 rounded-xl border border-border text-muted-foreground hover:text-white hover:border-zinc-500 font-mono text-sm transition-all"
                 >
                   ATRÁS
                 </button>

@@ -50,7 +50,7 @@ function RewardClaimedModal({
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ animation: "fadeIn 0.2s ease" }}
     >
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full max-w-md rounded-2xl overflow-hidden shadow-2xl"
         style={{
@@ -61,16 +61,16 @@ function RewardClaimedModal({
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/40 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-background/40 flex items-center justify-center text-muted-foreground hover:text-white transition-colors"
         >
           <X size={16} />
         </button>
 
         {/* Breadcrumb */}
-        <div className="px-5 pt-5 pb-0 flex items-center gap-2 text-xs text-zinc-500 font-mono">
+        <div className="px-5 pt-5 pb-0 flex items-center gap-2 text-xs text-muted-foreground font-mono">
           <span>Recompensa</span>
           <span>›</span>
-          <span className="text-zinc-300">RLC Coins</span>
+          <span className="text-secondary-foreground">RLC Coins</span>
         </div>
 
         {/* Content */}
@@ -106,13 +106,13 @@ function RewardClaimedModal({
                 <Coins size={18} className="text-yellow-400" />
                 <span className="text-white font-black text-3xl font-mono">+{task.reward}</span>
               </div>
-              <p className="text-zinc-400 text-xs mt-1">
+              <p className="text-muted-foreground text-xs mt-1">
                 Tu saldo ahora es <span className="text-white font-bold">{newBalance}</span>. ¡Buen trabajo!
               </p>
             </div>
             <button
               onClick={() => { onClose(); navigate("/shop"); }}
-              className="w-full py-2 rounded-xl text-sm font-bold text-zinc-300 border border-zinc-600 hover:border-zinc-400 hover:text-white transition-all"
+              className="w-full py-2 rounded-xl text-sm font-bold text-secondary-foreground border border-zinc-600 hover:border-zinc-400 hover:text-white transition-all"
               style={{ background: "#2b2d31" }}
             >
               <span className="flex items-center justify-center gap-1.5">
@@ -122,7 +122,7 @@ function RewardClaimedModal({
           </div>
 
           {/* Divider */}
-          <div className="w-px bg-zinc-700/60 self-stretch" />
+          <div className="w-px bg-muted/60 self-stretch" />
 
           {/* Right: task info */}
           <div className="flex flex-col justify-between flex-1 min-w-0">
@@ -136,16 +136,16 @@ function RewardClaimedModal({
               />
             ) : (
               <div
-                className="w-full rounded-xl mb-3 flex items-center justify-center bg-zinc-800"
+                className="w-full rounded-xl mb-3 flex items-center justify-center bg-secondary"
                 style={{ aspectRatio: "16/9" }}
               >
-                <Gift size={28} className="text-zinc-600" />
+                <Gift size={28} className="text-muted-foreground" />
               </div>
             )}
             <div>
               <p className="text-white font-bold text-sm leading-snug">{task.title}</p>
               {task.sponsorName && (
-                <p className="text-zinc-500 text-xs mt-0.5">{task.sponsorName}</p>
+                <p className="text-muted-foreground text-xs mt-0.5">{task.sponsorName}</p>
               )}
             </div>
             <button
@@ -304,21 +304,21 @@ function VideoPlayerModal({
       className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-8"
       style={{ animation: "fadeIn 0.2s ease" }}
     >
-      <div className="absolute inset-0 bg-black/85 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/85 backdrop-blur-sm" onClick={onClose} />
       <div
         className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: "#111214", maxWidth: "min(900px, 95vw)", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
+        style={{ background: "var(--bg-card)214", maxWidth: "min(900px, 95vw)", animation: "scaleIn 0.3s cubic-bezier(0.34,1.56,0.64,1)" }}
       >
         {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+          className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-background/60 flex items-center justify-center text-muted-foreground hover:text-white transition-colors"
         >
           <X size={16} />
         </button>
 
         {/* Video */}
-        <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
+        <div className="relative bg-background" style={{ aspectRatio: "16/9" }}>
           {isDirectVideo ? (
             <video
               ref={videoRef}
@@ -339,7 +339,7 @@ function VideoPlayerModal({
               allowFullScreen
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+            <div className="w-full h-full flex items-center justify-center bg-card">
               <Gift size={48} className="text-zinc-700" />
             </div>
           )}
@@ -373,7 +373,7 @@ function VideoPlayerModal({
           {/* Anti-skip badge */}
           {isDirectVideo && !videoCompleted && (
             <div className="absolute inset-0 pointer-events-none flex items-end justify-start p-3">
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-black/60 text-xs text-zinc-400 font-mono">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/60 text-xs text-muted-foreground font-mono">
                 <Shield size={10} /> No se puede adelantar
               </div>
             </div>
@@ -383,7 +383,7 @@ function VideoPlayerModal({
           {isDirectVideo && (
             <button
               onClick={() => { setMuted((m) => !m); if (videoRef.current) videoRef.current.muted = !muted; }}
-              className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-black/60 flex items-center justify-center text-white hover:bg-black/80 transition-colors"
+              className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-background/60 flex items-center justify-center text-white hover:bg-background/80 transition-colors"
             >
               {muted ? <VolumeX size={14} /> : <Volume2 size={14} />}
             </button>
@@ -425,10 +425,10 @@ function VideoPlayerModal({
           {/* Info row */}
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {task.sponsorLogoUrl ? (
-              <img src={task.sponsorLogoUrl} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-zinc-700 shrink-0" />
+              <img src={task.sponsorLogoUrl} alt="" className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-border shrink-0" />
             ) : (
-              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-zinc-800 flex items-center justify-center shrink-0">
-                <Video size={14} className="text-zinc-500" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                <Video size={14} className="text-muted-foreground" />
               </div>
             )}
             <div className="min-w-0">
@@ -436,7 +436,7 @@ function VideoPlayerModal({
               {task.sponsorName && (
                 <div className="flex items-center gap-1">
                   <BadgeCheck size={10} className="text-green-400 shrink-0" />
-                  <p className="text-zinc-400 text-xs truncate">{task.sponsorName}</p>
+                  <p className="text-muted-foreground text-xs truncate">{task.sponsorName}</p>
                 </div>
               )}
             </div>
@@ -509,7 +509,7 @@ function QuestCard({
 
   return (
     <div
-      className="rounded-xl overflow-hidden border border-zinc-800/60 hover:border-zinc-600 transition-all duration-200 group flex flex-col"
+      className="rounded-xl overflow-hidden border border-border/60 hover:border-zinc-600 transition-all duration-200 group flex flex-col"
       style={{ background: "#1e1f22" }}
     >
       {/* ── Thumbnail ── */}
@@ -524,14 +524,14 @@ function QuestCard({
           <div className="w-full h-full flex items-center justify-center"
             style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" }}>
             {isVideo
-              ? <Play size={36} className="text-zinc-600" />
-              : <Gift size={36} className="text-zinc-600" />}
+              ? <Play size={36} className="text-muted-foreground" />
+              : <Gift size={36} className="text-muted-foreground" />}
           </div>
         )}
 
         {/* Play overlay on hover */}
         {isVideo && task.thumbnailUrl && (
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/30">
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-background/30">
             <div className="w-14 h-14 rounded-full flex items-center justify-center"
               style={{ background: "rgba(255,255,255,0.15)", backdropFilter: "blur(4px)" }}>
               <Play size={24} className="text-white ml-1" />
@@ -541,7 +541,7 @@ function QuestCard({
 
         {/* Play button always visible (top-right) */}
         {isVideo && (
-          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 flex items-center justify-center">
+          <div className="absolute top-2 right-2 w-8 h-8 rounded-full bg-background/50 flex items-center justify-center">
             <Play size={14} className="text-white ml-0.5" />
           </div>
         )}
@@ -564,7 +564,7 @@ function QuestCard({
               {task.sponsorLogoUrl ? (
                 <img src={task.sponsorLogoUrl} alt="" className="w-4 h-4 rounded-full object-cover" />
               ) : null}
-              <span className="text-zinc-400 text-xs">
+              <span className="text-muted-foreground text-xs">
                 Patrocinado por{" "}
               </span>
               <BadgeCheck size={13} className="text-green-400 shrink-0" />
@@ -574,7 +574,7 @@ function QuestCard({
             <span />
           )}
           {expiresLabel && (
-            <span className="text-zinc-500 text-xs font-mono shrink-0">{expiresLabel}</span>
+            <span className="text-muted-foreground text-xs font-mono shrink-0">{expiresLabel}</span>
           )}
         </div>
 
@@ -607,7 +607,7 @@ function QuestCard({
             </p>
             {/* Description */}
             {task.description && (
-              <p className="text-zinc-500 text-xs mt-0.5 line-clamp-1">{task.description}</p>
+              <p className="text-muted-foreground text-xs mt-0.5 line-clamp-1">{task.description}</p>
             )}
           </div>
         </div>
@@ -687,7 +687,7 @@ export default function Rewards() {
   return (
     <div className="min-h-screen" style={{ background: "#0b0b0d" }}>
       {/* ── Header bar ── */}
-      <div className="sticky top-0 z-30 border-b border-zinc-800/60" style={{ background: "#111214" }}>
+      <div className="sticky top-0 z-30 border-b border-border/60" style={{ background: "var(--bg-card)214" }}>
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
           <nav className="flex items-center gap-1">
             {(["all", "claimed"] as const).map((tab) => (
@@ -695,7 +695,7 @@ export default function Rewards() {
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-4 py-1.5 rounded-lg text-sm font-mono transition-all ${
-                  activeTab === tab ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"
+                  activeTab === tab ? "bg-muted text-white" : "text-muted-foreground hover:text-secondary-foreground"
                 }`}
               >
                 {tab === "all" ? "Todas las misiones" : "Misiones reclamadas"}
@@ -722,13 +722,13 @@ export default function Rewards() {
           <h2 className="text-white font-bold text-lg">
             {activeTab === "all" ? "Misiones disponibles" : "Misiones reclamadas"}
           </h2>
-          <span className="text-zinc-500 text-sm font-mono">{displayTasks.length} misiones</span>
+          <span className="text-muted-foreground text-sm font-mono">{displayTasks.length} misiones</span>
         </div>
 
         {displayTasks.length === 0 ? (
           <div className="text-center py-24">
             <Gift size={48} className="text-zinc-700 mx-auto mb-4" />
-            <p className="text-zinc-500 font-mono">
+            <p className="text-muted-foreground font-mono">
               {activeTab === "claimed" ? "Aún no has reclamado ninguna misión" : "No hay misiones disponibles aún"}
             </p>
           </div>
