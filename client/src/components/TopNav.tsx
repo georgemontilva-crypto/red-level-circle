@@ -41,13 +41,9 @@ export function TopNav() {
 
   return (
     <div
-      className="hidden md:flex items-center h-14 px-5 gap-4 border-b fixed top-0 z-40 backdrop-blur-md"
-      style={{
-        background: "rgba(11,11,13,0.97)",
-        borderColor: "var(--border-main)",
-        left: "240px",   /* sidebar width */
-        right: 0,
-      }}
+      className="hidden md:flex items-center px-5 gap-4 border-b fixed top-0 z-40 backdrop-blur-md"
+      style={{ height: "75px", background: "rgba(11,11,13,0.97)", borderColor: "var(--border-main)", left: "240px", right: 0 }}
+
     >
       {/* Back button */}
       <button
@@ -112,10 +108,8 @@ export function TopNav() {
             <button
               key={link.href}
               onClick={() => navigate(link.href)}
-              className="relative px-4 h-14 text-sm font-semibold transition-all duration-150 flex items-center"
-              style={{
-                color: active ? "var(--text-primary)" : "var(--text-secondary)",
-              }}
+              className="relative px-4 text-sm font-semibold transition-all duration-150 flex items-center"
+              style={{ height: "75px", color: active ? "var(--text-primary)" : "var(--text-secondary)" }}
               onMouseEnter={e => {
                 if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
               }}
