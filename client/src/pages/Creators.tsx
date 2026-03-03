@@ -65,46 +65,37 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const [, navigate] = useLocation();
 
   const socials = [
-    c.youtube   && { href: `https://youtube.com/@${c.youtube}`,    icon: <Youtube className="w-5 h-5" />,    label: "YouTube" },
-    c.twitch    && { href: `https://twitch.tv/${c.twitch}`,         icon: <Twitch className="w-5 h-5" />,     label: "Twitch" },
-    c.twitter   && { href: `https://twitter.com/${c.twitter}`,      icon: <Twitter className="w-5 h-5" />,    label: "Twitter" },
-    c.instagram && { href: `https://instagram.com/${c.instagram}`,  icon: <Instagram className="w-5 h-5" />,  label: "Instagram" },
-    c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,       icon: <TikTokIcon className="w-5 h-5" />, label: "TikTok" },
-    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <Facebook className="w-5 h-5" />,  label: "Facebook" },
-    c.kick      && { href: `https://kick.com/${c.kick}`,            icon: <KickIcon className="w-5 h-5" />,   label: "Kick" },
+    c.youtube   && { href: `https://youtube.com/@${c.youtube}`,   icon: <Youtube className="w-5 h-5" />,    label: "YouTube" },
+    c.twitch    && { href: `https://twitch.tv/${c.twitch}`,        icon: <Twitch className="w-5 h-5" />,     label: "Twitch" },
+    c.twitter   && { href: `https://twitter.com/${c.twitter}`,     icon: <Twitter className="w-5 h-5" />,    label: "Twitter" },
+    c.instagram && { href: `https://instagram.com/${c.instagram}`, icon: <Instagram className="w-5 h-5" />,  label: "Instagram" },
+    c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,      icon: <TikTokIcon className="w-5 h-5" />, label: "TikTok" },
+    c.facebook  && { href: `https://facebook.com/${c.facebook}`,   icon: <Facebook className="w-5 h-5" />,  label: "Facebook" },
+    c.kick      && { href: `https://kick.com/${c.kick}`,           icon: <KickIcon className="w-5 h-5" />,   label: "Kick" },
   ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string }[];
 
-  // Subtitle: category label + games/platforms
   const subtitle = cat ? `Creador de contenido de: ${cat.label}` : "Creador de contenido";
 
   return (
-    <div
-      onClick={() => navigate(`/profile/${c.userId}`)}
-      className="w-full bg-black rounded-3xl shadow-2xl cursor-pointer"
-    >
+    <div className="w-full bg-black rounded-3xl shadow-2xl cursor-pointer" onClick={() => navigate(`/profile/${c.userId}`)}>
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {c.banner ? (
-          <img
-            src={c.banner}
-            alt={name}
-            className="w-full h-full object-cover"
-          />
+          <img src={c.banner} alt={name} className="w-full h-full object-cover" />
         ) : (
           <DefaultBannerBg />
         )}
         {/* LIVE badge */}
         {isLive && (
-          <div className="absolute top-3 left-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10"
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10"
             style={{ background: "oklch(0.50 0.22 25)", color: "white", boxShadow: "0 0 10px rgba(239,68,68,0.6)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             EN VIVO
           </div>
         )}
       </div>
-      {/* Avatar Section - Overlapping */}
+      {/* Avatar / Logo - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Avatar Circle */}
         <div className="flex justify-center -mt-16 mb-4">
           <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
             {c.avatar ? (
