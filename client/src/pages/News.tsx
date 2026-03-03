@@ -23,7 +23,14 @@ export function NewsList() {
   return (
     <div className="min-h-screen bg-background text-white">
       <div className="pt-6 pb-16">
-        <SectionBanner sectionKey="news" height="h-48 sm:h-64 lg:h-72" />
+        <SectionBanner sectionKey="news" height="h-48 sm:h-64 lg:h-72">
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
+            <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
+              NOTICIAS
+            </h1>
+          </div>
+        </SectionBanner>
 
 
         {isLoading ? (

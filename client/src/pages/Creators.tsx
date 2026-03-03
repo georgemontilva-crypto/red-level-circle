@@ -339,7 +339,14 @@ export default function Creators() {
     <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Section Banner */}
       <div className="pt-4">
-        <SectionBanner sectionKey="creators" height="h-48 sm:h-64 lg:h-72" />
+        <SectionBanner sectionKey="creators" height="h-48 sm:h-64 lg:h-72">
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
+            <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
+              CREADORES
+            </h1>
+          </div>
+        </SectionBanner>
       </div>
 
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pb-16 space-y-10">

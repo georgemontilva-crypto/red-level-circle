@@ -105,7 +105,19 @@ export function SectionBanner({
             className="absolute inset-0 w-full h-full object-cover"
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-zinc-900 via-red-950/20 to-black" />
+          <>
+            {/* Fondo base oscuro con degradado rojo en esquina izquierda */}
+            <div className="absolute inset-0 bg-gradient-to-r from-red-950/70 via-zinc-950 to-black" />
+            {/* Patrón diagonal rojo sutil */}
+            <div
+              className="absolute inset-0 opacity-[0.08]"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(45deg, #dc2626 0, #dc2626 1px, transparent 0, transparent 50%)",
+                backgroundSize: "20px 20px",
+              }}
+            />
+          </>
         )}
 
         {/* Gradient overlay for text readability */}

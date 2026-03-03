@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { SectionBanner } from "@/components/SectionBanner";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -211,14 +212,15 @@ export default function Community() {
 
   return (
     <div className="py-6 overflow-x-hidden">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-1">
-          <Users className="w-6 h-6 text-red-500" />
-          <h1 className="font-orbitron font-black text-2xl text-white tracking-wider">COMUNIDAD</h1>
+      {/* Banner */}
+      <SectionBanner sectionKey="community" height="h-48 sm:h-64 lg:h-72" className="mb-6">
+        <div className="flex flex-col gap-1">
+          <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
+          <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
+            COMUNIDAD
+          </h1>
         </div>
-        <p className="text-muted-foreground text-sm">Descubre jugadores, capitanes y creadores de la plataforma</p>
-      </div>
+      </SectionBanner>
 
       {/* Search + filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
