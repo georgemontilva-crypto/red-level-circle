@@ -2565,6 +2565,12 @@ export const appRouter = router({
         website: z.string().url().optional().nullable(),
         country: z.string().optional(),
         city: z.string().optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        instagram: z.string().optional(),
+        twitter: z.string().optional(),
+        facebook: z.string().optional(),
+        email: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const db = await getDb();
