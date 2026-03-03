@@ -275,8 +275,8 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
   const { user, isAuthenticated, logout } = useAuth();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const isPremium = user?.role === "premium" || user?.role === "admin";
-  const isAdmin = user?.role === "admin";
+  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
   const { data: wallet } = trpc.auth.wallet.useQuery(undefined, { enabled: isAuthenticated });

@@ -110,8 +110,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     setPanelOpen(true);
   }, []);
 
-  const isPremium = user?.role === "premium" || user?.role === "admin";
-  const isAdmin = user?.role === "admin";
+  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const { data: pendingCount } = trpc.registrations.pendingCount.useQuery(undefined, {
     enabled: isPremium,

@@ -122,7 +122,7 @@ function UserCard({ user, myId }: UserCardProps) {
               {user.nickname ?? user.name ?? "Usuario"}
             </span>
             {user.isVerified && <VerifiedBadge size={14} />}
-            {user.role === "admin" && (
+            {(user.role === "admin" || user.role === "super_admin") && (
               <span className="text-[10px] px-1 py-0.5 rounded font-mono bg-yellow-500/15 text-yellow-400">ADMIN</span>
             )}
           </div>

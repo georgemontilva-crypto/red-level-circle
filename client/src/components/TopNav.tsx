@@ -18,8 +18,8 @@ export function TopNav() {
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<RightPanelTab>("notifications");
 
-  const isAdmin = user?.role === "admin";
-  const isPremium = user?.role === "premium" || user?.role === "admin";
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
 
   // Cart count
   const { data: cartData } = trpc.shop.getCart.useQuery(undefined, {
