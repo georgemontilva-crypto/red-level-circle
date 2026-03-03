@@ -1,18 +1,16 @@
 /**
  * PageContainer — Contenedor global unificado para todas las páginas
  *
- * Proporciona:
- * - max-width: 1400px (ancho máximo consistente)
- * - Márgenes automáticos (centrado horizontal)
- * - Padding responsivo:
- *   - Desktop: 32px (px-8)
- *   - Tablet: 24px (px-6)
- *   - Mobile: 16px (px-4)
+ * Proporciona padding lateral consistente en toda la plataforma.
+ * El sidebar ocupa 240px (w-60), por lo que con 20px de padding
+ * el margen total desde el borde izquierdo de la pantalla es de 260px.
  *
- * Uso:
- * <PageContainer>
- *   Contenido de la página
- * </PageContainer>
+ * Padding responsivo:
+ *   - Desktop (lg+): 20px  → margen total izquierdo = sidebar(240) + padding(20) = 260px
+ *   - Tablet  (sm):  16px
+ *   - Mobile:        12px
+ *
+ * No aplica max-width para que el contenido ocupe todo el ancho disponible.
  */
 
 interface PageContainerProps {
@@ -23,10 +21,7 @@ interface PageContainerProps {
 export default function PageContainer({ children, className = "" }: PageContainerProps) {
   return (
     <div
-      className={`mx-auto w-full px-4 sm:px-6 lg:px-8 ${className}`}
-      style={{
-        maxWidth: "1400px",
-      }}
+      className={`w-full px-3 sm:px-4 lg:px-5 ${className}`}
     >
       {children}
     </div>
