@@ -9,6 +9,7 @@ import {
   ExternalLink, Search, Store, Plus, X,
   CheckCircle, Star, Youtube
 } from "lucide-react";
+import { DefaultBannerBg } from "@/const";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {
@@ -60,7 +61,7 @@ function AllyCard({ ally }: { ally: any }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="w-full h-full" style={{ background: "#3a3a3a" }} />
+          <DefaultBannerBg />
         )}
         {/* Dark gradient at bottom so avatar blends */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
@@ -74,7 +75,7 @@ function AllyCard({ ally }: { ally: any }) {
         )}
 
         {/* Avatar/Logo — centered, overlapping the banner bottom edge */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
           <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[#111111] bg-[#3a3a3a] shadow-xl flex items-center justify-center">
             {ally.logo ? (
               <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />

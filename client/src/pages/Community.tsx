@@ -10,6 +10,7 @@ import {
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { SectionBanner } from "@/components/SectionBanner";
+import { DefaultBannerBg } from "@/const";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -97,7 +98,7 @@ function UserCard({ user, myId }: UserCardProps) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
-            <div className="w-full h-full rounded-2xl" style={{ background: "#3a3a3a" }} />
+            <DefaultBannerBg />
           )}
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
@@ -110,7 +111,7 @@ function UserCard({ user, myId }: UserCardProps) {
           )}
 
           {/* Avatar — centered, overlapping banner bottom edge */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
           <div
             className="rounded-full overflow-hidden flex-shrink-0"
             style={{ border: "3px solid #111111", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
