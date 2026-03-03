@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { SectionBanner } from "@/components/SectionBanner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -256,10 +257,12 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
 
 // ─── Main Allies Page ─────────────────────────────────────────────────────────
 export function AlliesPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const { data: locations } = trpc.allies.locations.useQuery();
   const { data: allies = [], isLoading } = trpc.allies.list.useQuery({
@@ -350,7 +353,7 @@ export function AlliesPage() {
 
           {/* CTA */}
           <Button
-            onClick={() => setShowForm(true)}
+            onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
             className="bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-2 flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -430,6 +433,39 @@ export function AlliesPage() {
         >
           <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl">
             <SubmitAllyForm onClose={() => setShowForm(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Login required prompt */}
+      {showLoginPrompt && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowLoginPrompt(false); }}
+        >
+          <div className="w-full max-w-sm bg-zinc-900 border border-red-900/50 rounded-2xl p-8 shadow-2xl text-center">
+            <div className="w-14 h-14 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center mx-auto mb-4">
+              <Store className="w-7 h-7 text-red-400" />
+            </div>
+            <h3 className="font-orbitron font-bold text-white text-lg mb-2">Inicia sesión primero</h3>
+            <p className="text-zinc-400 text-sm mb-6">
+              Para enviar una solicitud como Aliado necesitas tener una cuenta en Red Level Circle.
+            </p>
+            <div className="flex flex-col gap-2">
+              <a
+                href="/login"
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors text-center block"
+              >
+                Iniciar sesión
+              </a>
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="w-full text-zinc-400 hover:text-white text-sm py-2 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
         </div>
       )}
