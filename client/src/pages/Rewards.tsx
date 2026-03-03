@@ -686,31 +686,6 @@ export default function Rewards() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
-      {/* ── Header bar ── */}
-      <div className="sticky top-0 z-30 border-b border-border/60" style={{ background: "var(--bg-card)214" }}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
-          <nav className="flex items-center gap-1">
-            {(["all", "claimed"] as const).map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-mono transition-all ${
-                  activeTab === tab ? "bg-muted text-white" : "text-muted-foreground hover:text-secondary-foreground"
-                }`}
-              >
-                {tab === "all" ? "Todas las misiones" : "Misiones reclamadas"}
-              </button>
-            ))}
-          </nav>
-          {isAuthenticated && (
-            <div className="flex items-center gap-1.5 text-sm font-mono">
-              <Coins size={14} className="text-yellow-400" />
-              <span className="text-white font-bold">{userBalance}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* ── Section Banner ── */}
       <div className="pt-4">
         <SectionBanner sectionKey="rewards" height="h-48 sm:h-64 lg:h-72">
@@ -721,6 +696,29 @@ export default function Rewards() {
             </h1>
           </div>
         </SectionBanner>
+      </div>
+
+      {/* ── Tab bar (below banner) ── */}
+      <div className="flex items-center justify-between mt-4 mb-2">
+        <nav className="flex items-center gap-1">
+          {(["all", "claimed"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-1.5 rounded-lg text-sm font-mono transition-all ${
+                activeTab === tab ? "bg-muted text-white" : "text-muted-foreground hover:text-secondary-foreground"
+              }`}
+            >
+              {tab === "all" ? "Todas las misiones" : "Misiones reclamadas"}
+            </button>
+          ))}
+        </nav>
+        {isAuthenticated && (
+          <div className="flex items-center gap-1.5 text-sm font-mono">
+            <Coins size={14} className="text-yellow-400" />
+            <span className="text-white font-bold">{userBalance}</span>
+          </div>
+        )}
       </div>
 
       {/* ── Quest grid ── */}
