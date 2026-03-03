@@ -143,50 +143,17 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
       {/* Logo */}
-      <div className="px-5 pt-6 pb-5">
+      <div className="px-5 pt-5 pb-4">
         <Link href="/" onClick={() => setMobileOpen(false)}>
-          <span className="font-orbitron font-black text-xl tracking-widest cursor-pointer select-none">
-            <span className="text-red-500">RED</span>
-            <span className="text-white">LEVEL</span>
-            <span className="text-muted-foreground text-xs ml-1 font-normal">CIRCLE</span>
-          </span>
+          <img
+            src="/logocompleto.webp"
+            alt="Red Level Circle"
+            className="h-9 w-auto object-contain cursor-pointer select-none"
+          />
         </Link>
       </div>
 
-      {/* Profile row — no card box, just avatar + name + role badge */}
-      {isAuthenticated && user && (
-        <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
-          <div className="mx-3 mb-3 px-3 py-2.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-150"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)"}
-            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
-          >
-            <div className="relative w-9 h-9 flex-shrink-0">
-              <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-                ) : (
-                  isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
-                )}
-              </div>
-              {(activeFrame as any)?.frameImage && (
-                <img
-                  src={(activeFrame as any).frameImage}
-                  alt="frame"
-                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                  style={{ zIndex: 2 }}
-                />
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
-              {isAdmin && (
-                <span className="text-xs font-mono text-yellow-400">ADMIN</span>
-              )}
-            </div>
-          </div>
-        </Link>
-      )}
+
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 space-y-5 pb-4">
