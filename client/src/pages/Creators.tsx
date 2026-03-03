@@ -43,7 +43,7 @@ const CATEGORIES = [
 ];
 
 // ─── Social button ────────────────────────────────────────────────────────────
-function SocialBtn({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
+function SocialBtn({ href, icon, label }: { href: string; icon: React.ReactNode; label: string; color?: string }) {
   return (
     <a
       href={href}
@@ -51,10 +51,9 @@ function SocialBtn({ href, icon, label, color }: { href: string; icon: React.Rea
       rel="noopener noreferrer"
       onClick={e => e.stopPropagation()}
       title={label}
-      className={`flex items-center justify-center gap-1.5 flex-1 min-w-0 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border ${color}`}
+      className="flex items-center justify-center flex-1 py-2 rounded-xl text-sm font-semibold bg-gray-300 hover:bg-gray-200 text-black transition-colors"
     >
       {icon}
-      <span className="truncate hidden sm:inline">{label}</span>
     </a>
   );
 }
@@ -66,14 +65,14 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const [, navigate] = useLocation();
 
   const socials = [
-    c.youtube   && { href: `https://youtube.com/@${c.youtube}`,    icon: <Youtube className="w-3.5 h-3.5 flex-shrink-0" />,   label: "YouTube",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-red-900/50 hover:text-red-300 hover:border-red-800" },
-    c.twitch    && { href: `https://twitch.tv/${c.twitch}`,         icon: <Twitch className="w-3.5 h-3.5 flex-shrink-0" />,    label: "Twitch",    color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-purple-900/50 hover:text-purple-300 hover:border-purple-800" },
-    c.twitter   && { href: `https://twitter.com/${c.twitter}`,      icon: <Twitter className="w-3.5 h-3.5 flex-shrink-0" />,   label: "Twitter",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-sky-900/50 hover:text-sky-300 hover:border-sky-800" },
-    c.instagram && { href: `https://instagram.com/${c.instagram}`,  icon: <Instagram className="w-3.5 h-3.5 flex-shrink-0" />, label: "Instagram", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-pink-900/50 hover:text-pink-300 hover:border-pink-800" },
-    c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,       icon: <TikTokIcon className="w-3.5 h-3.5 flex-shrink-0" />, label: "TikTok",  color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-600/50 hover:text-white hover:border-zinc-500" },
-    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />, label: "Facebook", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-blue-900/50 hover:text-blue-300 hover:border-blue-800" },
-    c.kick      && { href: `https://kick.com/${c.kick}`,            icon: <KickIcon className="w-3.5 h-3.5 flex-shrink-0" />,  label: "Kick",      color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-green-900/50 hover:text-green-300 hover:border-green-800" },
-  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
+    c.youtube   && { href: `https://youtube.com/@${c.youtube}`,    icon: <Youtube className="w-5 h-5" />,    label: "YouTube" },
+    c.twitch    && { href: `https://twitch.tv/${c.twitch}`,         icon: <Twitch className="w-5 h-5" />,     label: "Twitch" },
+    c.twitter   && { href: `https://twitter.com/${c.twitter}`,      icon: <Twitter className="w-5 h-5" />,    label: "Twitter" },
+    c.instagram && { href: `https://instagram.com/${c.instagram}`,  icon: <Instagram className="w-5 h-5" />,  label: "Instagram" },
+    c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,       icon: <TikTokIcon className="w-5 h-5" />, label: "TikTok" },
+    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <ExternalLink className="w-5 h-5" />, label: "Facebook" },
+    c.kick      && { href: `https://kick.com/${c.kick}`,            icon: <KickIcon className="w-5 h-5" />,   label: "Kick" },
+  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string }[];
 
   // Subtitle: category label + games/platforms
   const subtitle = cat ? `Creador de contenido de: ${cat.label}` : "Creador de contenido";
@@ -130,12 +129,19 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
           <p className="text-sm text-gray-400">{subtitle}</p>
         </div>
         {/* Social Buttons */}
-        {socials.length > 0 && (
+        {socials.length > 0 ? (
           <div className="flex items-center gap-1.5">
             {socials.slice(0, 4).map((s, i) => (
-              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
+              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} />
             ))}
           </div>
+        ) : (
+          <Button
+            onClick={e => { e.stopPropagation(); navigate(`/profile/${c.userId}`); }}
+            className="w-full bg-gray-300 hover:bg-gray-200 text-black font-semibold py-2 rounded-full transition-colors"
+          >
+            Ver perfil
+          </Button>
         )}
       </div>
     </div>
