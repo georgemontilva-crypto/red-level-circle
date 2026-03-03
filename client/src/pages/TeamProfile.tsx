@@ -352,51 +352,66 @@ export default function TeamProfile() {
   const wonTournaments = (tournamentHistory ?? []).filter((r: any) => r.isWinner);
   const activeTournaments = (tournamentHistory ?? []).filter((r: any) => r.tournamentStatus === "in_progress" || r.tournamentStatus === "registration_open");
   return (
-    <div className="min-h-screen text-white" style={{ background: "oklch(0.06 0.005 0)" }}>
-      <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
-        <div className="relative overflow-hidden rounded-xl mb-6" style={{ height: "280px" }}>
-          {team.banner ? (
-            <img src={team.banner || undefined} alt="Banner" className="w-full h-full object-cover"
-              style={{ filter: "brightness(0.4) saturate(1.2)" }} />
-          ) : (
-            <div className="w-full h-full"
-              style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 50%, ${c.to} 100%)` }} />
-          )}
-          <div className="absolute inset-0"
-            style={{ background: `radial-gradient(ellipse at 30% 50%, ${c.glow} 0%, transparent 60%)` }} />
-          <div className="absolute inset-0"
-            style={{ background: "linear-gradient(to bottom, transparent 40%, oklch(0.06 0.005 0) 100%)" }} />
-          <div className="absolute inset-0 opacity-5"
-            style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
-          <div className="absolute inset-0 z-20 pointer-events-none">
-            <div className="h-full relative">
+    <div className="min-h-screen text-white" style={{ background: "var(--bg-background)" }}>
+      {/* ── Banner + header (mismo estilo que UserProfile) ── */}
+      <div
+        className="w-full"
+        style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)', background: 'var(--bg-main)' }}
+      >
+        <div className="relative w-full rounded-xl overflow-visible" style={{ background: "#16191f" }}>
+
+          {/* Banner */}
+          <div className="w-full h-40 sm:h-56 relative rounded-xl overflow-hidden">
+            {/* Default background */}
+            <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.mid} 50%, ${c.to} 100%)` }} />
+            <div className="absolute inset-0 opacity-5"
+              style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
+            {team.banner && (
+              <img src={team.banner} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+            )}
+            {/* Acciones en el banner */}
+            <div className="absolute top-3 left-3 z-20">
               <button
                 onClick={() => window.history.back()}
-                className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-                style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                style={{ background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
                 onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "white"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; }}
               >
                 <ChevronLeft size={14} /> Volver
               </button>
-              {isCaptain && (
-                <div className="absolute top-4 right-4 pointer-events-auto">
-                  <Link href="/dashboard/teams">
-                    <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
-                      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", border: `1px solid ${c.accent}40`, color: c.accent }}>
-                      <Shield size={14} /> Gestionar
-                    </button>
-                  </Link>
-                </div>
-              )}
             </div>
+            {isCaptain && (
+              <div className="absolute top-3 right-3 z-20">
+                <Link href="/dashboard/teams">
+                  <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"
+                    style={{ background: "rgba(0,0,0,0.6)", border: `1px solid ${c.accent}40`, color: c.accent }}>
+                    <Shield size={14} /> Gestionar
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
-        </div>
 
-        <div className="-mt-20 relative z-10 px-6">
+        </div>
+      </div>
+
+      {/* ── Contenido principal ── */}
+      <div className="pb-16 max-w-7xl mx-auto" style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}>
+        <div className="relative z-10" style={{ paddingTop: "16px" }}>
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
-              style={{ border: `3px solid ${c.accent}55`, background: "var(--bg-card)", boxShadow: `0 0 40px ${c.glow}` }}>
+            {/* Logo superpuesto al banner */}
+            <div
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
+              style={{
+                border: `3px solid oklch(0.10 0.005 0)`,
+                boxShadow: `0 0 0 2px ${c.accent}55, 0 0 40px ${c.glow}, 0 4px 24px rgba(0,0,0,0.5)`,
+                background: "var(--bg-card)",
+                marginTop: "-52px",
+                position: "relative",
+                zIndex: 10,
+              }}
+            >
               {team.logo ? (
                 <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
               ) : (
