@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Search, Users, Crown, Swords, Shield,
-  UserPlus, UserMinus, Loader2, MapPin, Check,
+  UserPlus, UserMinus, Loader2, MapPin,
 } from "lucide-react";
-import { UserAvatar } from "@/components/UserAvatar";
 import { SectionBanner } from "@/components/SectionBanner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { Button } from "@/components/ui/button";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -112,7 +112,7 @@ function UserCard({ user, myId }: UserCardProps) {
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <h1 className="text-2xl font-bold text-white">{displayName}</h1>
-            {user.isVerified && <Check className="w-5 h-5 text-blue-500 fill-blue-500" />}
+            {user.isVerified && <VerifiedBadge size={18} />}
           </div>
           <p className="text-sm text-gray-400">
             {subtitle}{user.country ? ` · ${user.country}` : ""}

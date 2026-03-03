@@ -7,13 +7,13 @@ import { SectionBanner } from "@/components/SectionBanner";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
-  CheckCircle, Clock, XCircle, Send, Users, Check,
+  CheckCircle, Clock, XCircle, Send, Users,
   Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { UserAvatar } from "@/components/UserAvatar";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { Button } from "@/components/ui/button";
+import { VerifiedBadge } from "@/components/VerifiedBadge";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {
@@ -125,7 +125,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <h1 className="text-2xl font-bold text-white">{name}</h1>
-            {c.isVerified && <Check className="w-5 h-5 text-blue-500 fill-blue-500" />}
+            {c.isVerified && <VerifiedBadge size={18} />}
           </div>
           <p className="text-sm text-gray-400">{subtitle}</p>
         </div>

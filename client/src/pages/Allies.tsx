@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Globe, MapPin, Instagram, Twitter, Facebook,
   ExternalLink, Search, Store, Plus, X,
-  CheckCircle, Star, Youtube, Check,
+  CheckCircle, Star, Youtube,
 } from "lucide-react";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
