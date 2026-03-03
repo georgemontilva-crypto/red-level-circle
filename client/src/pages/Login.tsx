@@ -266,12 +266,15 @@ export default function Login() {
       ══════════════════════════════════════════════════ */}
       <div className="flex-1 relative flex flex-col overflow-y-auto">
 
-        {/* Mobile gradient overlay: transparent top → fully dark from 55% down */}
+        {/* Mobile overlay: fixed so it covers the full viewport regardless of scroll */}
         <div
-          className="lg:hidden absolute inset-0 pointer-events-none"
+          className="lg:hidden pointer-events-none"
           style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 0,
             background:
-              "linear-gradient(to bottom, rgba(13,13,13,0) 0%, rgba(13,13,13,0.60) 28%, rgba(13,13,13,1) 52%, rgba(13,13,13,1) 100%)",
+              "linear-gradient(to bottom, rgba(13,13,13,0) 0%, rgba(13,13,13,0.65) 25%, rgba(13,13,13,1) 48%, rgba(13,13,13,1) 100%)",
           }}
         />
 
