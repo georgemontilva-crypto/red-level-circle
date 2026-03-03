@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
-  Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
+  Star, Crown, Youtube, Twitch, Twitter, Instagram, Facebook, Play,
   CheckCircle, Clock, XCircle, Send, Users,
   Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
 } from "lucide-react";
@@ -70,7 +70,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
     c.twitter   && { href: `https://twitter.com/${c.twitter}`,      icon: <Twitter className="w-5 h-5" />,    label: "Twitter" },
     c.instagram && { href: `https://instagram.com/${c.instagram}`,  icon: <Instagram className="w-5 h-5" />,  label: "Instagram" },
     c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,       icon: <TikTokIcon className="w-5 h-5" />, label: "TikTok" },
-    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <ExternalLink className="w-5 h-5" />, label: "Facebook" },
+    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <Facebook className="w-5 h-5" />,  label: "Facebook" },
     c.kick      && { href: `https://kick.com/${c.kick}`,            icon: <KickIcon className="w-5 h-5" />,   label: "Kick" },
   ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string }[];
 
@@ -95,23 +95,17 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
         )}
         {/* LIVE badge */}
         {isLive && (
-          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white font-black text-[10px] tracking-wider z-10"
-            style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 10px rgba(239,68,68,0.6)" }}>
+          <div className="absolute top-3 left-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10"
+            style={{ background: "oklch(0.50 0.22 25)", color: "white", boxShadow: "0 0 10px rgba(239,68,68,0.6)" }}>
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             EN VIVO
-          </div>
-        )}
-        {/* Category badge */}
-        {!isLive && cat && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 text-[10px] text-zinc-300 font-mono border border-white/10 z-10">
-            <cat.icon size={9} /> {cat.label}
           </div>
         )}
       </div>
       {/* Avatar Section - Overlapping */}
       <div className="relative px-6 pb-6">
         {/* Avatar Circle */}
-        <div className="flex justify-center -mt-20 mb-4">
+        <div className="flex justify-center -mt-16 mb-4">
           <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
             {c.avatar ? (
               <img src={c.avatar} alt={name} className="w-full h-full object-cover" />
