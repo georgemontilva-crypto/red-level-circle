@@ -176,6 +176,8 @@ export default function CreateTournament() {
   const [form, setForm] = useState<FormData>(defaultForm);
   const [step, setStep] = useState(1);
   const [uploadingBanner, setUploadingBanner] = useState(false);
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
+  const [showForm, setShowForm] = useState(false);
   const totalSteps = 3;
 
   const uploadImage = trpc.profile.uploadImage.useMutation();
@@ -241,6 +243,70 @@ export default function CreateTournament() {
   return (
     <PremiumLayout title="CREAR TORNEO">
       <div className="max-w-2xl mx-auto overflow-x-hidden">
+
+        {/* Disclaimer screen */}
+        {!showForm && (
+          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-8 shadow-2xl">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-full bg-red-600/20 border border-red-500/40 flex items-center justify-center flex-shrink-0">
+                <Trophy size={18} className="text-red-400" />
+              </div>
+              <div>
+                <h2 className="font-orbitron font-bold text-lg text-white tracking-wider">Antes de continuar</h2>
+                <p className="text-zinc-400 text-xs mt-0.5">Lee y acepta los términos para organizar torneos en RLC</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-5 mb-6 space-y-3 text-sm text-zinc-300 leading-relaxed">
+              <p className="font-semibold text-red-400 uppercase tracking-wider text-xs">Acuerdo de responsabilidad del organizador</p>
+              <p>
+                Al crear un torneo en <span className="font-semibold text-white">Red Level Circle</span>, asumes la responsabilidad total como organizador. Esto incluye:
+              </p>
+              <ul className="space-y-2 pl-4 list-disc text-zinc-400">
+                <li>Garantizar que el torneo se lleve a cabo en las fechas y condiciones publicadas.</li>
+                <li><span className="text-white font-medium">Entregar los premios prometidos</span> a los ganadores en tiempo y forma. El incumplimiento de esta obligación constituye una falta grave.</li>
+                <li>Cumplir con las <span className="text-white font-medium">normas comunitarias de RLC</span> en todo momento, incluyendo trato respetuoso a los participantes.</li>
+                <li>No publicar torneos con información falsa, engañosa o con intención de estafar a los participantes.</li>
+              </ul>
+              <div className="border-t border-red-500/20 pt-3 mt-3">
+                <p className="text-red-300 font-semibold">
+                  El incumplimiento de cualquiera de estas condiciones resultará en la <span className="text-red-400 underline">suspensión temporal o eliminación permanente</span> de tu cuenta, sin posibilidad de apelación.
+                </p>
+              </div>
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer group mb-6">
+              <div
+                onClick={() => setDisclaimerAccepted(!disclaimerAccepted)}
+                className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
+                  disclaimerAccepted
+                    ? 'bg-red-600 border-red-600'
+                    : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-400'
+                }`}
+              >
+                {disclaimerAccepted && (
+                  <svg viewBox="0 0 12 10" className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="1,5 4,8 11,1" />
+                  </svg>
+                )}
+              </div>
+              <span className="text-sm text-zinc-300 leading-relaxed">
+                He leído y acepto los términos anteriores. Entiendo que el incumplimiento puede resultar en la suspensión o eliminación permanente de mi cuenta.
+              </span>
+            </label>
+
+            <button
+              onClick={() => { if (disclaimerAccepted) setShowForm(true); }}
+              disabled={!disclaimerAccepted}
+              className="w-full py-3 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Continuar con la creación del torneo
+            </button>
+          </div>
+        )}
+
+        {/* Form */}
+        {showForm && (<>
         {/* Progress */}
         <div className="flex items-center gap-3 mb-8">
           {[1, 2, 3].map((s) => (
@@ -567,16 +633,9 @@ export default function CreateTournament() {
                     label="DESCRIPCIÓN DEL PREMIO"
                     value={form.prizeDescription}
                     onChange={set("prizeDescription")}
-                    placeholder="Ej: Periféricos gaming, tarjetas de regalo, etc."
+                    placeholder="Ej: Periféricos gaming, tarjetas de regalo, efectivo, etc."
                   />
-                  <NeonInput
-                    label="PUNTOS DE PLATAFORMA"
-                    type="number"
-                    value={form.prizeAmount}
-                    onChange={(v) => set("prizeAmount")(parseInt(v) || 0)}
-                    min={0}
-                    placeholder="0"
-                  />
+                  <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
                 </div>
               </div>
 
@@ -670,6 +729,7 @@ export default function CreateTournament() {
             )}
           </div>
         </div>
+        </>)}
       </div>
     </PremiumLayout>
   );
