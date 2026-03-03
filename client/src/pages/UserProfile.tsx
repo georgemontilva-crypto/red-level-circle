@@ -403,7 +403,13 @@ export default function UserProfile() {
       <div className="mt-4 w-full" style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}>
         {/* Tab bar */}
         <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)" }}>
-          {(["overview", "cosmetics", "followers", "following", "roster"] as const).map((tab) => (
+          {(["overview", "cosmetics", "followers", "following", "roster"] as const)
+            .filter((tab) => {
+              // Only show roster tab if the user belongs to at least one team
+              if (tab === "roster") return teamMemberships && teamMemberships.length > 0;
+              return true;
+            })
+            .map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -427,7 +433,7 @@ export default function UserProfile() {
                 <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: "oklch(0.55 0.22 25)" }} />
               )}
             </button>
-          ))}
+           ))}
         </div>
 
         {/* Tab content */}
@@ -455,8 +461,8 @@ export default function UserProfile() {
                     <div className="font-mono font-bold text-white text-lg">{stat.value.toLocaleString()}</div>
                     <div className="text-xs text-muted-foreground font-mono mt-0.5">{stat.label}</div>
                   </div>
-                ))}
-              </div>
+          ))}
+          </div>
 
               {/* Team memberships */}
               {teamMemberships && teamMemberships.length > 0 && (
