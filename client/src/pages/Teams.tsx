@@ -189,7 +189,7 @@ function EmptyState({ selectedGame, games, onClear }: { selectedGame: string; ga
       <div className="flex flex-wrap gap-3 justify-center">
         <button onClick={onClear} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.70 0.01 0)" }}><X size={14} /> Limpiar filtros</button>
         {isAuthenticated ? (
-          <Link href="/dashboard/create-team" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)", border: "1px solid rgba(220,38,38,0.5)", color: "#fca5a5" }}><Shield size={14} /> Crear equipo</Link>
+          <Link href="/dashboard/teams" className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)", border: "1px solid rgba(220,38,38,0.5)", color: "#fca5a5" }}><Shield size={14} /> Crear equipo</Link>
         ) : (
           <a href={getLoginUrl()} className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-mono text-sm font-semibold" style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.55 0.01 0)" }}><Lock size={14} /> Inicia sesión para crear equipo</a>
         )}
