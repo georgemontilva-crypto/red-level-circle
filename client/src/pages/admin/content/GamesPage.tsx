@@ -43,7 +43,7 @@ export function GamesPage() {
   const [form, setForm] = useState({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" });
   const [editing, setEditing] = useState<string | null>(null);
   const [uploading, setUploading] = useState<"banner" | "logo" | null>(null);
-  const uploadImage = trpc.profile.uploadImage.useMutation();
+  const uploadImage = trpc.admin.uploadImage.useMutation();
   const upsert = trpc.games.upsert.useMutation({
     onSuccess: () => { toast.success("Juego guardado"); refetch(); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); setEditing(null); },
     onError: e => toast.error(e.message),
@@ -81,7 +81,7 @@ export function GamesPage() {
       const reader = new FileReader();
       reader.onload = async () => {
         const base64 = (reader.result as string).split(",")[1];
-        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, type: "banner" });
+        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "games" });
         setForm(f => ({ ...f, [field]: result.url }));
         setUploading(null);
       };

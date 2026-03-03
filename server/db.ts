@@ -2170,7 +2170,13 @@ export async function adminUpdateNews(id: number, data: Partial<{
 }>) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.update(news).set(data).where(eq(news.id, id));
+  const { published, ...rest } = data;
+  const updateData: any = { ...rest };
+  if (published !== undefined) {
+    updateData.publishedAt = published ? new Date() : null;
+    updateData.isPublished = published;
+  }
+  await db.update(news).set(updateData).where(eq(news.id, id));
 }
 
 export async function adminDeleteNews(id: number) {
@@ -2484,6 +2490,10 @@ export async function getAdminStats() {
   const [totalOrders] = await db.select({ count: sql<number>`count(*)` }).from(shopOrders);
   const [pendingOrders] = await db.select({ count: sql<number>`count(*)` }).from(shopOrders)
     .where(eq(shopOrders.status, "pending"));
+  const [pendingCreators] = await db.select({ count: sql<number>`count(*)` }).from(contentCreators)
+    .where(eq(contentCreators.status, "pending"));
+  const [pendingVerifications] = await db.select({ count: sql<number>`count(*)` }).from(verificationRequests)
+    .where(eq(verificationRequests.status, "pending"));
 
   // Recent users (last 10)
   const recentUsers = await db
@@ -2501,6 +2511,8 @@ export async function getAdminStats() {
     totalBets: Number(totalBets.count),
     totalOrders: Number(totalOrders.count),
     pendingOrders: Number(pendingOrders.count),
+    pendingCreators: Number(pendingCreators.count),
+    pendingVerifications: Number(pendingVerifications.count),
     recentUsers,
   };
 }
