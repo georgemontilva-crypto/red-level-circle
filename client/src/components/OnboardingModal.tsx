@@ -64,12 +64,12 @@ export default function OnboardingModal({ onComplete, loginMethod }: OnboardingM
           />
           <div className="relative text-center">
             {/* Brand icon */}
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 border border-red-500/30 mb-4 overflow-hidden">
+            <div className="inline-flex items-center justify-center mb-4">
               <img
-                src="/favicon.webp"
+                src="/icono.webp"
                 alt="Red Level Circle"
-                className="w-10 h-10 object-contain"
-                style={{ filter: "drop-shadow(0 0 6px rgba(220,38,38,0.6))" }}
+                className="w-16 h-16 object-contain"
+                style={{ filter: "drop-shadow(0 0 8px rgba(220,38,38,0.5))" }}
               />
             </div>
             <h1 className="font-orbitron font-black text-2xl text-white mb-2">

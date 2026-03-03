@@ -8,7 +8,7 @@ import {
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
+
 import { TopNav } from "./TopNav";
 import PageContainer from "./PageContainer";
 
@@ -103,9 +103,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [location] = useLocation();
   const { user, isAuthenticated, loading, logout } = useAuth();
 
-  // Ref to the profile card — used by SidebarNotificationBell as anchor
-  const profileCardRef = useRef<HTMLDivElement>(null);
-
   const isPremium = user?.role === "premium" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
 
@@ -143,54 +140,39 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </Link>
       </div>
 
-      {/* ── Profile card ── position:relative + overflow:visible so the
-           notification dropdown can escape and align to the card's full width */}
+      {/* Profile row — no card box, just avatar + name + role badge */}
       {isAuthenticated && user && (
-        <div
-          ref={profileCardRef}
-          className="mx-3 mb-4 px-3 py-3 rounded-xl"
-          style={{ background: "var(--bg-card)", border: "none", boxShadow: "0 4px 20px rgba(0,0,0,0.4)", position: "relative", overflow: "visible" }}
-        >
-          <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
-            <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-              <div className="relative w-9 h-9 flex-shrink-0">
-                <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
-                  {user.avatar ? (
-                    <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-                  ) : (
-                    isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
-                  )}
-                </div>
-                {(activeFrame as any)?.frameImage && (
-                  <img
-                    src={(activeFrame as any).frameImage}
-                    alt="frame"
-                    className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                    style={{ zIndex: 2 }}
-                  />
+        <Link href={`/profile/${user.id}`} onClick={() => setMobileOpen(false)}>
+          <div className="mx-3 mb-3 px-3 py-2.5 rounded-xl flex items-center gap-3 cursor-pointer transition-all duration-150"
+            style={{ color: "var(--text-secondary)" }}
+            onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)"}
+            onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+          >
+            <div className="relative w-9 h-9 flex-shrink-0">
+              <div className="w-9 h-9 rounded-full overflow-hidden bg-red-500/20 border border-red-500/30 flex items-center justify-center">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
+                ) : (
+                  isAdmin ? <Crown className="w-4 h-4 text-yellow-400" /> : <Shield className="w-4 h-4 text-red-400" />
                 )}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
-                <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-muted-foreground"}`}>
-                  {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
-                </span>
-              </div>
+              {(activeFrame as any)?.frameImage && (
+                <img
+                  src={(activeFrame as any).frameImage}
+                  alt="frame"
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  style={{ zIndex: 2 }}
+                />
+              )}
             </div>
-          </Link>
-
-          {wallet && (
-              <div className="mt-2 flex items-center justify-between pt-2" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-              <div className="flex items-center gap-1.5">
-                <Coins className="w-3.5 h-3.5 text-yellow-400" />
-                <span className="font-orbitron font-bold text-sm text-yellow-400">{wallet.balance.toLocaleString()}</span>
-                <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>RLC</span>
-              </div>
-              {/* Bell button + dropdown anchored to this card */}
-              <SidebarNotificationBell cardRef={profileCardRef} />
+            <div className="flex-1 min-w-0">
+              <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
+              <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-muted-foreground"}`}>
+                {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
+              </span>
             </div>
-          )}
-        </div>
+          </div>
+        </Link>
       )}
 
       {/* Navigation */}

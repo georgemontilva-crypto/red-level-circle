@@ -106,8 +106,8 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
   return (
     <div
       ref={dropdownRef}
-      className="bg-card border border-border/50 rounded-xl shadow-2xl overflow-hidden"
-      style={{ ...style, animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both" }}
+      className="rounded-xl shadow-2xl overflow-hidden"
+      style={{ ...style, background: "#111111", border: "1px solid rgba(255,255,255,0.1)", boxShadow: "0 8px 40px rgba(0,0,0,0.9)", animation: "notifSlideIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both" }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-border/50">

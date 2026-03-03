@@ -4,6 +4,7 @@ import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X } from "lucide-rea
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { TopbarNotificationBell } from "./NotificationBell";
 
 export function TopNav() {
   const [, navigate] = useLocation();
@@ -175,6 +176,9 @@ export function TopNav() {
         >
           <Gift className="w-6 h-6" />
         </button>
+
+        {/* Notifications */}
+        {isAuthenticated && <TopbarNotificationBell />}
 
         {/* Cart */}
         <button
