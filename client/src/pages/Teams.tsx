@@ -87,7 +87,7 @@ function TeamCard({ team }: { team: any }) {
 
   return (
     <Link href={`/teams/${team.id}`}>
-      <div className="w-full bg-black rounded-3xl shadow-2xl cursor-pointer">
+      <div className="w-full bg-black rounded-3xl cursor-pointer">
         {/* Banner */}
         <div className="relative h-48 w-full overflow-hidden rounded-3xl">
           {team.banner ? (
