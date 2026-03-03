@@ -36,6 +36,12 @@ import Community from "./pages/Community";
 import Creators from "./pages/Creators";
 import { AlliesPage } from "./pages/Allies";
 import OnboardingModal from "./components/OnboardingModal";
+import Terminos from "./pages/legal/terminos";
+import Privacidad from "./pages/legal/privacidad";
+import Cookies from "./pages/legal/cookies";
+import Tienda from "./pages/legal/tienda";
+import Aliados from "./pages/legal/aliados";
+import Devoluciones from "./pages/legal/devoluciones";
 
 function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
@@ -68,6 +74,12 @@ function Router() {
     <Switch>
       {/* Blank page routes (no sidebar/topnav) */}
       <Route path="/login" component={Login} />
+      <Route path="/legal/terminos" component={Terminos} />
+      <Route path="/legal/privacidad" component={Privacidad} />
+      <Route path="/legal/cookies" component={Cookies} />
+      <Route path="/legal/tienda" component={Tienda} />
+      <Route path="/legal/aliados" component={Aliados} />
+      <Route path="/legal/devoluciones" component={Devoluciones} />
 
       {/* App routes with sidebar layout */}
       <Route>

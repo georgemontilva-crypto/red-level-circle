@@ -65,7 +65,8 @@ export function clearSessionCookie(req: Request, res: Response) {
 export async function registerWithEmail(
   email: string,
   password: string,
-  name: string
+  name: string,
+  extra?: { nickname?: string; country?: string }
 ): Promise<{ success: true; openId: string } | { success: false; error: string }> {
   // Validate inputs
   if (!email || !password || !name) {
@@ -97,6 +98,8 @@ export async function registerWithEmail(
     passwordHash,
     emailVerified: false,
     lastSignedIn: new Date(),
+    ...(extra?.nickname ? { nickname: extra.nickname } : {}),
+    ...(extra?.country ? { country: extra.country } : {}),
   });
 
   return { success: true, openId };

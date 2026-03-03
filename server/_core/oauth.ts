@@ -17,8 +17,9 @@ export function registerOAuthRoutes(app: Express) {
 
   // ─── Email / Password: Register ─────────────────────────────────────────────
   app.post("/api/auth/register", async (req: Request, res: Response) => {
-    const { email, password, name } = req.body ?? {};
-    const result = await registerWithEmail(email, password, name);
+    const { email, password, firstName, lastName, nickname, country } = req.body ?? {};
+    const name = [firstName, lastName].filter(Boolean).join(" ") || nickname || "Usuario";
+    const result = await registerWithEmail(email, password, name, { nickname, country });
     if (!result.success) {
       res.status(400).json({ error: result.error });
       return;
