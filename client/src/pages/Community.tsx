@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Search, Users, Crown, Swords, Shield,
-  UserPlus, UserMinus, Loader2, Gamepad2, MapPin,
+  UserPlus, UserMinus, Loader2, MapPin,
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -75,76 +75,85 @@ function UserCard({ user, myId }: UserCardProps) {
 
   const isFollowing = followData ?? false;
   const mutating = followMutation.isPending || unfollowMutation.isPending;
+  const displayName = user.nickname ?? user.name ?? "Usuario";
+  const isAdmin = user.role === "admin" || user.role === "super_admin";
+  const subtitle = user.profileType
+    ? (PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType)
+    : "Jugador";
 
   return (
-    <div
-      className="rounded-xl overflow-hidden transition-all duration-200 group cursor-pointer"
-      style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.06)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
+    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
+      style={{ border: "1px solid rgba(255,255,255,0.06)" }}
+      onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)")}
+      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
     >
-      <Link href={`/profile/${user.id}`}>
-        {/* Banner — 16:9 ratio */}
-        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
-          <div className="absolute inset-0">
-            {user.bannerUrl ? (
-              <img src={user.bannerUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div
-                className="w-full h-full"
-                style={{ background: "linear-gradient(135deg, oklch(0.16 0.03 25) 0%, oklch(0.09 0.005 0) 100%)" }}
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
-          </div>
-        </div>
+      <Link href={`/profile/${user.id}`} className="flex flex-col flex-1">
+        {/* ── Banner ── */}
+        <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
+          {user.bannerUrl ? (
+            <img
+              src={user.bannerUrl}
+              alt=""
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
+          )}
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
 
-        {/* Card body */}
-        <div className="px-3 pb-3">
-          {/* Avatar overlapping banner */}
-          <div className="relative -mt-6 mb-2">
+          {/* Admin badge */}
+          {isAdmin && (
+            <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 z-10">
+              ADMIN
+            </div>
+          )}
+
+          {/* Avatar — centered, overlapping banner bottom edge */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
             <div
-              className="rounded-full inline-block"
-              style={{ border: "2px solid oklch(0.10 0.005 0)", boxShadow: "0 0 0 1px oklch(0.55 0.22 25 / 0.4)" }}
+              className="rounded-full overflow-hidden flex-shrink-0"
+              style={{ border: "3px solid #1a1a1a", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
             >
               <UserAvatar
                 avatar={user.avatar}
                 name={user.name ?? user.nickname}
                 activeFrameImage={user.activeFrameImage}
-                size={44}
+                size={72}
               />
             </div>
           </div>
+        </div>
 
-          {/* Name */}
-          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-            <span className="font-orbitron font-bold text-sm text-white truncate leading-tight">
-              {user.nickname ?? user.name ?? "Usuario"}
+        {/* ── Info ── */}
+        <div className="flex flex-col flex-1 px-4 pt-10 pb-3 text-center">
+          {/* Name with blue dot + verified */}
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            <span className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors truncate">
+              {displayName}
             </span>
-            {user.isVerified && <VerifiedBadge size={14} />}
-            {(user.role === "admin" || user.role === "super_admin") && (
-              <span className="text-[10px] px-1 py-0.5 rounded font-mono bg-yellow-500/15 text-yellow-400">ADMIN</span>
-            )}
+            {user.isVerified && <VerifiedBadge size={15} />}
+            <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
           </div>
 
-          {/* Profile type */}
-          <div className="flex items-center gap-1">
+          {/* Subtitle: role + country */}
+          <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs">
             <ProfileTypeIcon type={user.profileType} />
-            <span className="text-xs text-muted-foreground font-mono">
-              {user.profileType ? (PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType) : "Jugador"}
-            </span>
+            <span className="font-mono">{subtitle}</span>
             {user.country && (
-              <span className="text-xs text-muted-foreground font-mono ml-auto flex items-center gap-0.5">
-                <MapPin className="w-3 h-3" />{user.country}
-              </span>
+              <>
+                <span className="text-zinc-700">·</span>
+                <MapPin className="w-3 h-3 text-zinc-600 flex-shrink-0" />
+                <span className="font-mono truncate">{user.country}</span>
+              </>
             )}
           </div>
         </div>
       </Link>
 
-      {/* Follow button — bottom, outside Link */}
-      {me && (
-        <div className="px-3 pb-3 -mt-1">
+      {/* ── Follow button ── */}
+      <div className="px-4 pb-4">
+        {me && myId !== user.id ? (
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -153,22 +162,25 @@ function UserCard({ user, myId }: UserCardProps) {
                 : followMutation.mutate({ userId: user.id });
             }}
             disabled={mutating || followLoading}
-            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border"
             style={isFollowing
-              ? { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa" }
-              : { background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", color: "oklch(0.65 0.22 25)" }
+              ? { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.10)", color: "#888" }
+              : { background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", color: "#ccc" }
             }
           >
             {mutating || followLoading ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : isFollowing ? (
-              <><UserMinus className="w-3 h-3" /> Siguiendo</>
+              <><UserMinus className="w-4 h-4" /> Siguiendo</>
             ) : (
-              <><UserPlus className="w-3 h-3" /> Seguir</>
+              <><UserPlus className="w-4 h-4" /> Seguir</>
             )}
           </button>
-        </div>
-      )}
+        ) : (
+          /* Placeholder to keep card height consistent when not logged in */
+          <div className="h-9" />
+        )}
+      </div>
     </div>
   );
 }
@@ -212,22 +224,17 @@ export default function Community() {
 
       {/* Search + filters */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Search input */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Buscar por nombre o nickname..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-muted-foreground focus:outline-none transition-colors"
-            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
-            onFocus={(e) => (e.target.style.borderColor = "oklch(0.55 0.22 25 / 0.6)")}
-            onBlur={(e) => (e.target.style.borderColor = "oklch(0.20 0.01 0)")}
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-zinc-500 focus:outline-none transition-colors bg-zinc-900/80 border border-white/10 focus:border-red-500/60"
           />
         </div>
 
-        {/* Type filter */}
         <div className="flex gap-2 flex-wrap">
           {PROFILE_TYPE_FILTER.map((f) => (
             <button
@@ -246,23 +253,29 @@ export default function Community() {
       </div>
 
       {/* Stats bar */}
-      <div className="flex items-center gap-2 mb-4 text-xs text-muted-foreground font-mono">
+      <div className="flex items-center gap-2 mb-4 text-xs text-zinc-500 font-mono">
         <Users className="w-3.5 h-3.5" />
         <span>{filtered?.length ?? 0} usuarios encontrados</span>
       </div>
 
       {/* Grid */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-red-500 animate-spin" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] overflow-hidden animate-pulse">
+              <div className="bg-zinc-800/60" style={{ height: "160px" }} />
+              <div className="p-4 pt-10 space-y-3">
+                <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
+                <div className="h-3 bg-zinc-800/60 rounded w-1/2 mx-auto" />
+                <div className="h-9 bg-zinc-800/60 rounded-xl mt-3" />
+              </div>
+            </div>
+          ))}
         </div>
       ) : !filtered || filtered.length === 0 ? (
-        <div
-          className="rounded-2xl p-12 text-center"
-          style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-        >
+        <div className="rounded-2xl p-12 text-center bg-[#1a1a1a] border border-white/[0.06]">
           <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
-          <p className="text-muted-foreground font-mono text-sm">No se encontraron usuarios</p>
+          <p className="text-zinc-500 font-mono text-sm">No se encontraron usuarios</p>
           {search && (
             <button
               onClick={() => { setSearch(""); setDebouncedSearch(""); }}
@@ -273,7 +286,7 @@ export default function Community() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {filtered.map((user) => (
             <UserCard key={user.id} user={user} myId={me?.id} />
           ))}
