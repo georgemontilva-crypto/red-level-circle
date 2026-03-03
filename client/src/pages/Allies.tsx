@@ -233,6 +233,12 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
+      {/* Disclaimer */}
+      <div className="rounded-lg border border-red-900/40 bg-red-950/20 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
+        <p className="font-semibold text-red-400 mb-1 uppercase tracking-wider font-mono text-[10px]">Acuerdo de colaboración</p>
+        Al unirte como Aliado de Red Level Circle aceptas un acuerdo de <strong className="text-zinc-200">trueque</strong>: nosotros te brindamos visibilidad en nuestro directorio público y canales de comunidad, y tú nos aportas mensualmente un producto relacionado con tu tienda. El objetivo es construir colaboraciones genuinas que beneficien a ambas partes y a nuestra comunidad gamer.
+      </div>
+
       {submitMutation.error && (
         <p className="text-red-400 text-xs">{submitMutation.error.message}</p>
       )}
