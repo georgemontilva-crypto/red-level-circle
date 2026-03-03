@@ -266,12 +266,12 @@ export default function Login() {
       ══════════════════════════════════════════════════ */}
       <div className="flex-1 relative flex flex-col overflow-y-auto">
 
-        {/* Mobile gradient overlay: transparent top → dark bottom */}
+        {/* Mobile gradient overlay: transparent top → fully dark from 55% down */}
         <div
           className="lg:hidden absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(13,13,13,0) 0%, rgba(13,13,13,0.55) 30%, rgba(13,13,13,0.92) 55%, rgba(13,13,13,1) 75%)",
+              "linear-gradient(to bottom, rgba(13,13,13,0) 0%, rgba(13,13,13,0.60) 28%, rgba(13,13,13,1) 52%, rgba(13,13,13,1) 100%)",
           }}
         />
 
