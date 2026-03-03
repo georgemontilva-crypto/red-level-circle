@@ -107,7 +107,7 @@ export function TopNav() {
             <button
               key={link.href}
               onClick={() => navigate(link.href)}
-              className="relative px-5 text-base font-semibold transition-all duration-150 flex items-center"
+              className="relative px-5 text-base font-semibold transition-all duration-150 flex flex-col items-center justify-center gap-1.5"
               style={{ height: "100px", color: active ? "var(--text-primary)" : "var(--text-secondary)" }}
               onMouseEnter={e => {
                 if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
@@ -116,13 +116,11 @@ export function TopNav() {
                 if (!active) (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
               }}
             >
-              {link.label}
-              {active && (
-                <span
-                  className="absolute bottom-0 left-0 right-0 h-0.5"
-                  style={{ background: "var(--accent-red)" }}
-                />
-              )}
+              <span>{link.label}</span>
+              <span
+                className="h-0.5 w-full rounded-full transition-all duration-150"
+                style={{ background: active ? "var(--accent-red)" : "transparent" }}
+              />
             </button>
           );
         })}
