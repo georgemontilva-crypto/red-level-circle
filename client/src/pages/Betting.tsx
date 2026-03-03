@@ -91,7 +91,7 @@ export default function Betting() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
-        <div className="container pt-24 pb-16 text-center">
+        <div className="pt-24 pb-16 text-center">
           <div className="rounded-2xl p-12" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}>
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6" style={{ background: "oklch(0.55 0.22 25 / 0.1)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}>
               <Lock className="w-10 h-10" style={{ color: "oklch(0.65 0.22 25)" }} />
@@ -120,7 +120,7 @@ export default function Betting() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
-      <div className="container pt-6 sm:pt-24 pb-16 overflow-x-hidden">
+      <div className="pt-6 sm:pt-24 pb-16 overflow-x-hidden">
         {/* Header */}
         <div className="flex items-start justify-between mb-8 flex-wrap gap-4">
           <div>

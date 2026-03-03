@@ -712,7 +712,7 @@ export default function Ranking() {
         </div>
       </div>
 
-      <div className="container py-6">
+      <div className="py-6">
         {/* Highlights — condicionales según rankingStatus */}
         {highlights && (() => {
           const status = highlights.rankingStatus ?? "no_results";

@@ -228,7 +228,7 @@ export default function ComponentsShowcase() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="container max-w-6xl mx-auto">
+      <main className="mx-auto">
         <div className="space-y-2 justify-between flex">
           <h2 className="text-3xl font-bold tracking-tight mb-6">
             Shadcn/ui Component Library
@@ -1428,7 +1428,7 @@ export default function ComponentsShowcase() {
       </main>
 
       <footer className="border-t py-6 mt-12">
-        <div className="container text-center text-sm text-muted-foreground">
+        <div className="text-center text-sm text-muted-foreground">
           <p>Shadcn/ui Component Showcase</p>
         </div>
       </footer>

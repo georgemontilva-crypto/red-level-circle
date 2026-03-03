@@ -2062,7 +2062,7 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="container space-y-6 py-6 overflow-x-hidden">
+    <div className="space-y-6 py-6 overflow-x-hidden">
       {/* Header */}
       <div className="flex items-center gap-4">
         <div className="w-12 h-12 rounded-xl bg-red-600/20 border border-red-600/40 flex items-center justify-center">

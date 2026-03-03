@@ -18,6 +18,8 @@ export const users = mysqlTable("users", {
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
+  passwordHash: varchar("passwordHash", { length: 255 }),
+  emailVerified: boolean("emailVerified").default(false).notNull(),
   role: mysqlEnum("role", ["user", "premium", "admin"]).default("user").notNull(),
   // Profile type chosen during onboarding
   profileType: mysqlEnum("profileType", ["player", "team_captain", "event_creator"]).default("player"),

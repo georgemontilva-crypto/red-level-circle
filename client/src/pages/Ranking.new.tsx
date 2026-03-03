@@ -575,7 +575,7 @@ export default function Ranking() {
         </div>
       </div>
 
-      <div className="container py-6">
+      <div className="py-6">
         {/* Highlights */}
         {highlights && (highlights.champion || highlights.bestWinRate || highlights.biggestRise) && (
           <div className="flex gap-3 mb-6 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>

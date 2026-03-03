@@ -338,7 +338,7 @@ export default function Creators() {
   return (
     <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Section Banner */}
-      <div className="container pt-4">
+      <div className="pt-4">
         <SectionBanner sectionKey="creators" height="h-48 sm:h-64 lg:h-72" />
       </div>
 

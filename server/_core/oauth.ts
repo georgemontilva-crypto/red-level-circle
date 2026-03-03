@@ -1,8 +1,12 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import type { Express, Request, Response } from "express";
-import * as db from "../db";
-import { getSessionCookieOptions } from "./cookies";
-import { sdk } from "./sdk";
+import {
+  registerWithEmail,
+  loginWithEmail,
+  loginWithGoogle,
+  signSessionToken,
+  setSessionCookie,
+  clearSessionCookie,
+} from "./authService";
 
 function getQueryParam(req: Request, key: string): string | undefined {
   const value = req.query[key];
@@ -10,44 +14,58 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 export function registerOAuthRoutes(app: Express) {
-  app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
 
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
+  // ─── Email / Password: Register ─────────────────────────────────────────────
+  app.post("/api/auth/register", async (req: Request, res: Response) => {
+    const { email, password, name } = req.body ?? {};
+    const result = await registerWithEmail(email, password, name);
+    if (!result.success) {
+      res.status(400).json({ error: result.error });
       return;
     }
+    const token = await signSessionToken(result.openId, name);
+    setSessionCookie(req, res, token);
+    res.json({ success: true });
+  });
 
-    try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
-        return;
-      }
-
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-        lastSignedIn: new Date(),
-      });
-
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
-
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.redirect(302, "/");
-    } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
+  // ─── Email / Password: Login ─────────────────────────────────────────────────
+  app.post("/api/auth/login", async (req: Request, res: Response) => {
+    const { email, password } = req.body ?? {};
+    const result = await loginWithEmail(email, password);
+    if (!result.success) {
+      res.status(401).json({ error: result.error });
+      return;
     }
+    const token = await signSessionToken(result.openId, result.name);
+    setSessionCookie(req, res, token);
+    res.json({ success: true });
+  });
+
+  // ─── Google OAuth: Verify ID Token ──────────────────────────────────────────
+  app.post("/api/auth/google", async (req: Request, res: Response) => {
+    const { idToken } = req.body ?? {};
+    if (!idToken) {
+      res.status(400).json({ error: "idToken es requerido" });
+      return;
+    }
+    const result = await loginWithGoogle(idToken);
+    if (!result.success) {
+      res.status(401).json({ error: result.error });
+      return;
+    }
+    const token = await signSessionToken(result.openId, result.name);
+    setSessionCookie(req, res, token);
+    res.json({ success: true });
+  });
+
+  // ─── Logout ──────────────────────────────────────────────────────────────────
+  app.post("/api/auth/logout", (req: Request, res: Response) => {
+    clearSessionCookie(req, res);
+    res.json({ success: true });
+  });
+
+  // ─── Legacy Manus OAuth callback (kept for backward compatibility) ───────────
+  app.get("/api/oauth/callback", (req: Request, res: Response) => {
+    res.redirect("/login?error=manus_oauth_disabled");
   });
 }

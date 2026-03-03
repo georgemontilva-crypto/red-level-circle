@@ -60,7 +60,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
-  const textFields = ["name", "email", "loginMethod"] as const;
+  const textFields = ["name", "email", "loginMethod", "passwordHash", "avatar"] as const;
 
   textFields.forEach((field) => {
     const value = user[field];
@@ -70,6 +70,10 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     updateSet[field] = normalized;
   });
 
+  if (user.emailVerified !== undefined) {
+    values.emailVerified = user.emailVerified;
+    updateSet.emailVerified = user.emailVerified;
+  }
   if (user.lastSignedIn !== undefined) {
     values.lastSignedIn = user.lastSignedIn;
     updateSet.lastSignedIn = user.lastSignedIn;
@@ -92,6 +96,13 @@ export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  return result[0];
+}
+
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email.toLowerCase())).limit(1);
   return result[0];
 }
 

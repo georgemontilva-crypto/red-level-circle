@@ -301,7 +301,7 @@ export default function Shop() {
   return (
     <div className="min-h-screen bg-background text-white">
       {/* Banner */}
-      <div className="container pt-4">
+      <div className="pt-4">
         <SectionBanner sectionKey="shop" height="h-48 sm:h-64 lg:h-72" />
       </div>
 
@@ -317,7 +317,7 @@ export default function Shop() {
         />
       )}
 
-      <div className="container py-8">
+      <div className="py-8">
         {/* Main Tabs */}
         <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
           {MAIN_TABS.map((tab) => (

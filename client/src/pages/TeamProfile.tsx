@@ -369,7 +369,7 @@ export default function TeamProfile() {
           <div className="absolute inset-0 opacity-5"
             style={{ backgroundImage: `repeating-linear-gradient(0deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px), repeating-linear-gradient(90deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 40px)` }} />
           <div className="absolute inset-0 z-20 pointer-events-none">
-            <div className="container h-full relative">
+            <div className="h-full relative">
               <button
                 onClick={() => window.history.back()}
                 className="absolute top-4 left-4 pointer-events-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-mono text-xs transition-colors"

@@ -10,6 +10,7 @@ import {
 import { trpc } from "@/lib/trpc";
 import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
 import { TopNav } from "./TopNav";
+import PageContainer from "./PageContainer";
 
 interface NavItem {
   label: string;
@@ -310,7 +311,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* TopNav is fixed, so we need pt-14 on desktop to push content below it */}
       <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0" style={{ paddingTop: "100px" }}>
         <TopNav />
-        {children}
+        <PageContainer>
+          {children}
+        </PageContainer>
       </main>
     </div>
   );
