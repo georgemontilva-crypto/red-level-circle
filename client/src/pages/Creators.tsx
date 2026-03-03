@@ -143,7 +143,7 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
   });
 
   const [form, setForm] = useState({
-    bio: "", category: "", youtube: "", twitch: "", twitter: "", instagram: "", tiktok: "", subscribers: 0,
+    bio: "", category: "", youtube: "", twitch: "", twitter: "", instagram: "", tiktok: "", facebook: "", kick: "",
   });
 
   useEffect(() => {
@@ -156,7 +156,8 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
         twitter: myApp.twitter ?? "",
         instagram: myApp.instagram ?? "",
         tiktok: myApp.tiktok ?? "",
-        subscribers: myApp.subscribers ?? 0,
+        facebook: (myApp as any).facebook ?? "",
+        kick: (myApp as any).kick ?? "",
       });
     }
   }, [myApp]);
@@ -262,18 +263,6 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
         />
       </div>
 
-      {/* Subscribers */}
-      <div>
-        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Seguidores totales (aprox.)</label>
-        <input
-          type="number"
-          value={form.subscribers || ""}
-          onChange={e => setForm(f => ({ ...f, subscribers: parseInt(e.target.value) || 0 }))}
-          placeholder="Ej: 10000"
-          className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
-        />
-      </div>
-
       {/* Social links */}
       <div>
         <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Redes sociales (al menos una)</label>
@@ -283,10 +272,17 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
             { key: "twitch", icon: Twitch, placeholder: "tu_usuario", prefix: "twitch.tv/" },
             { key: "twitter", icon: Twitter, placeholder: "tu_usuario", prefix: "twitter.com/" },
             { key: "instagram", icon: Instagram, placeholder: "tu_usuario", prefix: "instagram.com/" },
-          ].map(({ key, icon: Icon, placeholder, prefix }) => (
+            { key: "tiktok", icon: null, placeholder: "tu_usuario", prefix: "tiktok.com/@", label: "TT" },
+            { key: "facebook", icon: null, placeholder: "tu_pagina", prefix: "facebook.com/", label: "FB" },
+            { key: "kick", icon: null, placeholder: "tu_usuario", prefix: "kick.com/", label: "KC" },
+          ].map(({ key, icon: Icon, placeholder, prefix, label }: any) => (
             <div key={key} className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-zinc-700/60 border border-white/10 flex items-center justify-center shrink-0">
-                <Icon size={14} className="text-zinc-400" />
+                {Icon ? (
+                  <Icon size={14} className="text-zinc-400" />
+                ) : (
+                  <span className="text-[9px] font-bold text-zinc-400 font-mono">{label}</span>
+                )}
               </div>
               <div className="flex-1 relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono pointer-events-none">{prefix}</span>
@@ -302,6 +298,12 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Minimum followers disclaimer */}
+      <div className="rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
+        <p className="font-semibold text-zinc-300 mb-1 uppercase tracking-wider font-mono text-[10px]">Requisito mínimo</p>
+        Para ser considerado creador oficial de Red Level Circle debes contar con al menos <strong className="text-white">1,000 seguidores</strong> en alguna de tus plataformas. Las solicitudes que no cumplan este requisito serán rechazadas automáticamente.
       </div>
 
       {submit.error && (

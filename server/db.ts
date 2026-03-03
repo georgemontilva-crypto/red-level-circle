@@ -2565,6 +2565,7 @@ export async function adminListTournaments(status?: string) {
 export async function applyAsCreator(userId: number, data: {
   bio?: string; category?: string;
   youtube?: string; twitch?: string; twitter?: string; instagram?: string; tiktok?: string;
+  facebook?: string; kick?: string;
   subscribers?: number;
 }) {
   const db = await getDb();

@@ -190,6 +190,13 @@
       "when": 1772600000000,
       "tag": "0026_banner_permissions",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "5",
+      "when": 1772700000000,
+      "tag": "0027_creator_social_networks",
+      "breakpoints": true
     }
   ]
 }

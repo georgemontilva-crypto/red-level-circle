@@ -2245,6 +2245,8 @@ export const appRouter = router({
         twitter: z.string().optional(),
         instagram: z.string().optional(),
         tiktok: z.string().optional(),
+        facebook: z.string().optional(),
+        kick: z.string().optional(),
         subscribers: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {

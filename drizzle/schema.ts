@@ -491,6 +491,8 @@ export const contentCreators = mysqlTable("content_creators", {
   twitter: varchar("twitter", { length: 256 }),
   instagram: varchar("instagram", { length: 256 }),
   tiktok: varchar("tiktok", { length: 256 }),
+  facebook: varchar("facebook", { length: 256 }),
+  kick: varchar("kick", { length: 256 }),
   subscribers: int("subscribers").default(0),
   adminNote: text("adminNote"), // reason for rejection
   appliedAt: timestamp("appliedAt").defaultNow().notNull(),
