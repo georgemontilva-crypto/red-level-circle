@@ -150,12 +150,13 @@ export default function UserProfile() {
     <div className="w-full overflow-x-hidden">
       {/* ── Banner + Avatar (Discord-style) ── */}
       {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
-      <div className="relative max-w-5xl mx-auto">
+      <div className="relative w-full">
         {/* Banner */}
         <div
           className="w-full h-40 sm:h-56 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)", position: "relative" }}
+          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)", position: "relative", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}
         >
+          <div className="relative w-full h-full rounded-xl overflow-hidden">
           {profile.bannerUrl ? (
             <img
               src={profile.bannerUrl}
@@ -201,12 +202,13 @@ export default function UserProfile() {
               </button>
             )}
           </div>
+          </div>
         </div>
 
         {/* Card body — avatar sits at the top-left, overlapping the banner above */}
         <div
-          className="pb-4 px-4 sm:px-6"
-          style={{ background: "var(--bg-card)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px" }}
+          className="pb-4"
+          style={{ background: "var(--bg-card)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}
         >
           {/* Avatar row — pulled up to overlap the banner */}
           <div className="flex items-end justify-between mb-3" style={{ marginTop: "-72px" }}>
@@ -390,7 +392,7 @@ export default function UserProfile() {
       </div>
 
       {/* ── Tabs ── */}
-      <div className="mt-4 max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="mt-4 w-full" style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}>
         {/* Tab bar */}
         <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)" }}>
           {(["overview", "cosmetics", "followers", "following", "roster"] as const).map((tab) => (
