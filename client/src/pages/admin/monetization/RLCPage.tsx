@@ -17,7 +17,7 @@ export function RLCPage() {
   const topHolders = [...(users ?? [])].sort((a, b) => (b.rlcBalance ?? 0) - (a.rlcBalance ?? 0)).slice(0, 10);
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 w-full">
       <PageHeader icon={Coins} title="RLC COINS" subtitle="Gestiona el balance de RLC Coins de los usuarios" />
 
       {/* Summary */}

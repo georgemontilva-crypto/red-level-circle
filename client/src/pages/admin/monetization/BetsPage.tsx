@@ -40,7 +40,7 @@ export function BetsPage() {
   }));
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Swords} title="APUESTAS" subtitle="Gestión de apuestas activas, historial y anulaciones" />
 
       {/* Summary cards */}

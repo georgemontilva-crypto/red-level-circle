@@ -78,7 +78,7 @@ export function CreatorsPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 w-full">
       <PageHeader icon={Crown} title="CREADORES" subtitle="Gestiona las solicitudes de creadores oficiales" />
 
       <div className="grid grid-cols-3 gap-3">

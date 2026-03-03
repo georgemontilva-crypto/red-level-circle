@@ -24,7 +24,7 @@ const PERMISSIONS = [
 
 export function RolesPage() {
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 w-full">
       <PageHeader icon={Shield} title="ROLES Y PERMISOS" subtitle="Referencia de los roles disponibles y sus permisos en la plataforma" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

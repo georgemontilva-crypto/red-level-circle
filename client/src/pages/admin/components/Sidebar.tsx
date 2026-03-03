@@ -133,7 +133,7 @@ function NavGroup({ item }: { item: NavItem }) {
 
 export function Sidebar() {
   return (
-    <aside className="w-60 flex-shrink-0 bg-zinc-950 border-r border-white/5 flex flex-col min-h-screen">
+    <aside className="w-60 flex-shrink-0 bg-zinc-950 border-r border-white/5 flex flex-col h-full min-h-screen">
       {/* Logo */}
       <div className="p-5 border-b border-white/5">
         <div className="flex items-center gap-3">

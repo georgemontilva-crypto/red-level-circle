@@ -101,7 +101,7 @@ export function BannersPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Layout} title="BANNERS" subtitle="Personaliza las imágenes de cabecera de cada sección" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {SECTION_DEFS.map(({ key, label, description }) => {

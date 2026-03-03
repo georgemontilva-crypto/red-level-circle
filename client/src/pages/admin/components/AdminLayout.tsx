@@ -19,10 +19,16 @@ export function AdminLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-900 text-white">
-      <Sidebar />
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto min-h-screen">
-        {children}
+    <div className="flex h-screen overflow-hidden bg-zinc-900 text-white">
+      {/* Sidebar: fixed height, no scroll */}
+      <div className="flex-shrink-0 h-screen overflow-y-auto">
+        <Sidebar />
+      </div>
+      {/* Main content: scrollable, takes all remaining width */}
+      <main className="flex-1 overflow-y-auto h-screen">
+        <div className="p-6 md:p-8 w-full">
+          {children}
+        </div>
       </main>
     </div>
   );

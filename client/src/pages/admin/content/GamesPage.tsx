@@ -94,7 +94,7 @@ export function GamesPage() {
   const cancelEdit = () => { setEditing(null); setForm({ name: "", slug: "", banner: "", logo: "", genre: "", description: "" }); };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Gamepad2} title="JUEGOS" subtitle="Gestiona los juegos disponibles en la plataforma" />
 
       {/* Form */}

@@ -13,7 +13,7 @@ export function TeamsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Shield} title="EQUIPOS" subtitle="Verifica y administra los equipos registrados" />
       {(!teams || teams.length === 0) ? (
         <EmptyState icon={Shield} title="Sin equipos registrados" />

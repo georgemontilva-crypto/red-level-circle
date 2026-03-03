@@ -21,7 +21,7 @@ export function VerificationsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={BadgeCheck} title="VERIFICACIONES" subtitle="Aprueba o rechaza solicitudes de verificación de usuarios" />
 
       <div className="flex gap-2 flex-wrap">

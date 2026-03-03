@@ -9,7 +9,7 @@ export function StreamsPage() {
   const offline = (streams ?? []).filter((s: any) => !s.isLive);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Megaphone} title="STREAMS" subtitle="Monitorea los streams activos en la plataforma" />
 
       {live.length > 0 && (

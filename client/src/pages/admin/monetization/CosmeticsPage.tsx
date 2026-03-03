@@ -56,7 +56,7 @@ export function CosmeticsPage() {
   const inputCls = "w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none";
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Star} title="COSMÉTICOS" subtitle="Crea y administra marcos, auras y badges de perfil" />
 
       {/* Form */}

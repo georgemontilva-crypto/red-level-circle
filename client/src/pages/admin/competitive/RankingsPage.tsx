@@ -13,7 +13,7 @@ export function RankingsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={BarChart2} title="RANKINGS" subtitle="Clasificación de equipos por rendimiento en torneos" />
       <div className="space-y-2">
         {sorted.map((team: any, i: number) => (

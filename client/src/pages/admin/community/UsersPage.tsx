@@ -37,7 +37,7 @@ export function UsersPage() {
   };
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="space-y-4 w-full">
       <PageHeader icon={Users} title="USUARIOS" subtitle="Administra roles y balances de RLC" />
       <input
         value={search}

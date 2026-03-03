@@ -90,7 +90,7 @@ export function AlliesPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl">
+    <div className="space-y-8 w-full">
       <PageHeader icon={MapPin} title="ALIADOS" subtitle="Gestiona el directorio de tiendas y sponsors" />
 
       {byStatus.pending.length > 0 && (

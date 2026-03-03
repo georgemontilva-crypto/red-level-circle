@@ -60,7 +60,7 @@ export function DashboardPage() {
   const totalPending = pendingCreatorsCount + pendingTournamentsCount + pendingAlliesCount;
 
   return (
-    <div className="space-y-8 max-w-6xl">
+    <div className="space-y-8 w-full">
       <PageHeader
         title="DASHBOARD"
         subtitle="Centro de control de Red Level Circle"

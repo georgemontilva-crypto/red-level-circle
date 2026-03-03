@@ -17,7 +17,7 @@ export function TournamentsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Trophy} title="TORNEOS" subtitle="Aprueba o rechaza torneos enviados por creadores" />
       {(pending?.length ?? 0) === 0 ? (
         <EmptyState icon={CheckCircle} title="Sin torneos pendientes" subtitle="Todos los torneos han sido revisados" />

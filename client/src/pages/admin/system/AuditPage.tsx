@@ -13,7 +13,7 @@ export function AuditPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 w-full">
       <PageHeader icon={Database} title="AUDITORÍA" subtitle="Verifica que gameSlug esté correctamente poblado en torneos y equipos" />
 
       <div className="flex items-center gap-4">
