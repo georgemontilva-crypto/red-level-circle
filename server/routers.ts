@@ -2419,6 +2419,136 @@ export const appRouter = router({
         return { url };
       }),
   }),
+
+  // ─── Allies (Sponsor Store Directory) ─────────────────────────────────────
+  allies: router({
+    // Public: list approved allies with optional filters
+    list: publicProcedure
+      .input(z.object({
+        country: z.string().optional(),
+        city: z.string().optional(),
+        search: z.string().optional(),
+        featuredOnly: z.boolean().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        const { allies: alliesTable } = await import("../drizzle/schema");
+        const { like, or: orOp, desc } = await import("drizzle-orm");
+        const conditions: any[] = [eq(alliesTable.status, "approved")];
+        if (input?.country) conditions.push(eq(alliesTable.country, input.country));
+        if (input?.city) conditions.push(eq(alliesTable.city, input.city));
+        if (input?.featuredOnly) conditions.push(eq(alliesTable.isFeatured, true));
+        if (input?.search) {
+          conditions.push(
+            orOp(
+              like(alliesTable.name, `%${input.search}%`),
+              like(alliesTable.description, `%${input.search}%`),
+              like(alliesTable.city, `%${input.search}%`)
+            )!
+          );
+        }
+        return db.select().from(alliesTable).where(and(...conditions)).orderBy(desc(alliesTable.isFeatured), alliesTable.name);
+      }),
+
+    // Public: get distinct countries and cities for filter dropdowns
+    locations: publicProcedure.query(async () => {
+      const db = await getDb();
+      const { allies: alliesTable } = await import("../drizzle/schema");
+      const rows = await db
+        .selectDistinct({ country: alliesTable.country, city: alliesTable.city })
+        .from(alliesTable)
+        .where(eq(alliesTable.status, "approved"));
+      const countries = [...new Set(rows.map((r: any) => r.country).filter(Boolean))].sort() as string[];
+      const cities = [...new Set(rows.map((r: any) => r.city).filter(Boolean))].sort() as string[];
+      return { countries, cities };
+    }),
+
+    // Public: submit a new ally application
+    submit: publicProcedure
+      .input(z.object({
+        name: z.string().min(2).max(256),
+        description: z.string().optional(),
+        logo: z.string().url().optional().nullable(),
+        coverImage: z.string().url().optional().nullable(),
+        website: z.string().url().optional().nullable(),
+        country: z.string().max(128).optional(),
+        city: z.string().max(128).optional(),
+        address: z.string().optional(),
+        email: z.string().email().optional(),
+        phone: z.string().max(64).optional(),
+        instagram: z.string().max(128).optional(),
+        twitter: z.string().max(128).optional(),
+        facebook: z.string().max(128).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const db = await getDb();
+        const { allies: alliesTable } = await import("../drizzle/schema");
+        const userId = (ctx as any).user?.id ?? null;
+        await db.insert(alliesTable).values({
+          ...input,
+          status: "pending",
+          submittedBy: userId,
+        });
+        return { success: true };
+      }),
+
+    // Admin: list all allies (any status)
+    adminList: adminProcedure.query(async () => {
+      const db = await getDb();
+      const { allies: alliesTable } = await import("../drizzle/schema");
+      const { desc } = await import("drizzle-orm");
+      return db.select().from(alliesTable).orderBy(desc(alliesTable.createdAt));
+    }),
+
+    // Admin: approve / reject / feature / edit
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "approved", "rejected"]).optional(),
+        isFeatured: z.boolean().optional(),
+        adminNote: z.string().optional(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        logo: z.string().url().optional().nullable(),
+        coverImage: z.string().url().optional().nullable(),
+        website: z.string().url().optional().nullable(),
+        country: z.string().optional(),
+        city: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        const { allies: alliesTable } = await import("../drizzle/schema");
+        const { id, ...rest } = input;
+        await db.update(alliesTable).set(rest).where(eq(alliesTable.id, id));
+        return { success: true };
+      }),
+
+    // Admin: delete
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        const { allies: alliesTable } = await import("../drizzle/schema");
+        await db.delete(alliesTable).where(eq(alliesTable.id, input.id));
+        return { success: true };
+      }),
+
+    // Admin: upload image for an ally
+    uploadImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]),
+        allyId: z.number().optional(),
+        type: z.enum(["logo", "cover"]),
+      }))
+      .mutation(async ({ input }) => {
+        const ext = input.mimeType.split("/")[1];
+        const key = `allies/${input.allyId ?? "new"}/${input.type}-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;
 

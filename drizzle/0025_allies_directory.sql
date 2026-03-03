@@ -1,0 +1,23 @@
+CREATE TABLE `allies` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(256) NOT NULL,
+	`description` text,
+	`logo` text,
+	`coverImage` text,
+	`website` text,
+	`country` varchar(128),
+	`city` varchar(128),
+	`address` text,
+	`email` varchar(256),
+	`phone` varchar(64),
+	`instagram` varchar(128),
+	`twitter` varchar(128),
+	`facebook` varchar(128),
+	`status` enum('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+	`adminNote` text,
+	`isFeatured` boolean NOT NULL DEFAULT false,
+	`submittedBy` int,
+	`createdAt` timestamp NOT NULL DEFAULT (now()),
+	`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `allies_id` PRIMARY KEY(`id`)
+);

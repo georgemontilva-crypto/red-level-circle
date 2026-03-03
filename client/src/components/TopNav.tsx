@@ -34,6 +34,7 @@ export function TopNav() {
     { label: "Descubrir", href: "/creators" },
     { label: "Explorar", href: "/tournaments" },
     { label: "Noticias", href: "/news" },
+    { label: "Aliados", href: "/allies" },
   ];
 
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";

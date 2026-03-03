@@ -2101,6 +2101,7 @@ export default function AdminPanel() {
             { value: "banners", label: "BANNERS", icon: Layout },
             { value: "bets", label: "APUESTAS", icon: Coins },
             { value: "audit", label: "AUDITORÍA", icon: Database },
+            { value: "allies", label: "ALIADOS", icon: MapPin },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -2125,6 +2126,7 @@ export default function AdminPanel() {
           <TabsContent value="banners"><BannersTab /></TabsContent>
           <TabsContent value="bets"><BetsTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
+          <TabsContent value="allies"><AlliesTab /></TabsContent>
         </div>
       </Tabs>
     </div>
@@ -2807,6 +2809,128 @@ function BannersTab() {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+// ─── Allies Tab ───────────────────────────────────────────────────────────────
+function AlliesTab() {
+  const { data: allies, refetch } = trpc.allies.adminList.useQuery();
+  const updateAlly = trpc.allies.update.useMutation({
+    onSuccess: () => { toast.success("Aliado actualizado"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteAlly = trpc.allies.delete.useMutation({
+    onSuccess: () => { toast.success("Aliado eliminado"); refetch(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [note, setNote] = useState<Record<number, string>>({});
+
+  const byStatus = {
+    pending: (allies ?? []).filter((a: any) => a.status === "pending"),
+    approved: (allies ?? []).filter((a: any) => a.status === "approved"),
+    rejected: (allies ?? []).filter((a: any) => a.status === "rejected"),
+  };
+
+  const AllyRow = ({ a }: { a: any }) => (
+    <div className="p-4 rounded-xl bg-card/60 border border-border/50">
+      <div className="flex items-start gap-4">
+        {a.logo ? (
+          <img src={a.logo} alt={a.name} className="w-12 h-12 rounded-lg object-contain bg-zinc-800 border border-white/10 p-1 flex-shrink-0" />
+        ) : (
+          <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+            <MapPin className="w-5 h-5 text-red-500" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-bold text-foreground">{a.name}</span>
+            {a.isFeatured && <span className="text-xs bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-2 py-0.5 rounded-full font-mono">DESTACADO</span>}
+            <span className={`text-xs px-2 py-0.5 rounded-full font-mono border ${a.status === "approved" ? "bg-green-500/20 text-green-400 border-green-500/30" : a.status === "rejected" ? "bg-red-500/20 text-red-400 border-red-500/30" : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30"}`}>
+              {a.status === "approved" ? "APROBADO" : a.status === "rejected" ? "RECHAZADO" : "PENDIENTE"}
+            </span>
+          </div>
+          {(a.city || a.country) && (
+            <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
+              <MapPin className="w-3 h-3" /> {[a.city, a.country].filter(Boolean).join(", ")}
+            </p>
+          )}
+          {a.email && <p className="text-muted-foreground text-xs mt-0.5">{a.email}</p>}
+          {a.description && <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{a.description}</p>}
+          {a.website && <a href={a.website} target="_blank" rel="noopener noreferrer" className="text-red-400 text-xs mt-0.5 hover:underline block truncate">{a.website}</a>}
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2 items-center">
+        {a.status !== "approved" && (
+          <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white h-7 text-xs"
+            onClick={() => updateAlly.mutate({ id: a.id, status: "approved" })}>
+            <CheckCircle className="w-3 h-3 mr-1" /> Aprobar
+          </Button>
+        )}
+        {a.status !== "rejected" && (
+          <Button size="sm" variant="destructive" className="h-7 text-xs"
+            onClick={() => updateAlly.mutate({ id: a.id, status: "rejected", adminNote: note[a.id] })}>
+            <XCircle className="w-3 h-3 mr-1" /> Rechazar
+          </Button>
+        )}
+        <Button size="sm" variant="outline" className="h-7 text-xs border-yellow-500/40 text-yellow-400 hover:bg-yellow-500/10"
+          onClick={() => updateAlly.mutate({ id: a.id, isFeatured: !a.isFeatured })}>
+          <Star className="w-3 h-3 mr-1" /> {a.isFeatured ? "Quitar destacado" : "Destacar"}
+        </Button>
+        <Button size="sm" variant="ghost" className="h-7 text-xs text-red-400 hover:text-red-300"
+          onClick={() => { if (window.confirm("Eliminar este aliado?")) deleteAlly.mutate({ id: a.id }); }}>
+          <Trash2 className="w-3 h-3 mr-1" /> Eliminar
+        </Button>
+        <input
+          className="flex-1 min-w-[120px] text-xs bg-zinc-800 border border-white/10 rounded px-2 py-1 text-foreground placeholder:text-muted-foreground"
+          placeholder="Nota admin..."
+          value={note[a.id] ?? a.adminNote ?? ""}
+          onChange={e => setNote(n => ({ ...n, [a.id]: e.target.value }))}
+          onBlur={() => { if (note[a.id] !== undefined) updateAlly.mutate({ id: a.id, adminNote: note[a.id] }); }}
+        />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-8">
+      <SectionHeader icon={MapPin} title="DIRECTORIO DE ALIADOS" subtitle="Gestiona las tiendas y sponsors del directorio" />
+      {byStatus.pending.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-yellow-400 mb-3 flex items-center gap-2">
+            <Clock className="w-4 h-4" /> Pendientes ({byStatus.pending.length})
+          </h3>
+          <div className="space-y-3">
+            {byStatus.pending.map((a: any) => <AllyRow key={a.id} a={a} />)}
+          </div>
+        </div>
+      )}
+      {byStatus.approved.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-green-400 mb-3 flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" /> Aprobados ({byStatus.approved.length})
+          </h3>
+          <div className="space-y-3">
+            {byStatus.approved.map((a: any) => <AllyRow key={a.id} a={a} />)}
+          </div>
+        </div>
+      )}
+      {byStatus.rejected.length > 0 && (
+        <div>
+          <h3 className="font-orbitron text-sm text-red-400 mb-3 flex items-center gap-2">
+            <XCircle className="w-4 h-4" /> Rechazados ({byStatus.rejected.length})
+          </h3>
+          <div className="space-y-3">
+            {byStatus.rejected.map((a: any) => <AllyRow key={a.id} a={a} />)}
+          </div>
+        </div>
+      )}
+      {(allies?.length ?? 0) === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <MapPin className="w-12 h-12 mx-auto mb-3 opacity-30" />
+          <p className="font-orbitron text-sm">No hay solicitudes de aliados aun</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { getLoginUrl } from "@/const";
 import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
   Users, Plus, ClipboardList, Settings, LogOut, Menu, X,
-  Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone
+  Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
@@ -51,6 +51,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
         { label: "Equipos", href: "/teams", icon: Swords },
         { label: "Creadores", href: "/creators", icon: Crown },
         { label: "Noticias", href: "/news", icon: Newspaper },
+        { label: "Aliados", href: "/allies", icon: Handshake },
         { label: "Apuestas", href: "/betting", icon: Coins, requiresAuth: true },
       ],
     },
@@ -59,7 +60,6 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       items: [
         { label: "Tienda", href: "/shop", icon: ShoppingBag },
         { label: "Recompensas", href: "/rewards", icon: Gift },
-        { label: "Publicidad", href: "/ads", icon: Megaphone },
       ],
     },
   ];

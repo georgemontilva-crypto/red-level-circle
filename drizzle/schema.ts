@@ -582,3 +582,29 @@ export const wishlistItems = mysqlTable("wishlist_items", {
 });
 export type WishlistItem = typeof wishlistItems.$inferSelect;
 export type InsertWishlistItem = typeof wishlistItems.$inferInsert;
+
+// ─── Allies (Sponsor Store Directory) ────────────────────────────────────────
+export const allies = mysqlTable("allies", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 256 }).notNull(),
+  description: text("description"),
+  logo: text("logo"),
+  coverImage: text("coverImage"),
+  website: text("website"),
+  country: varchar("country", { length: 128 }),
+  city: varchar("city", { length: 128 }),
+  address: text("address"),
+  email: varchar("email", { length: 256 }),
+  phone: varchar("phone", { length: 64 }),
+  instagram: varchar("instagram", { length: 128 }),
+  twitter: varchar("twitter", { length: 128 }),
+  facebook: varchar("facebook", { length: 128 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  adminNote: text("adminNote"),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  submittedBy: int("submittedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Ally = typeof allies.$inferSelect;
+export type InsertAlly = typeof allies.$inferInsert;

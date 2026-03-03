@@ -798,6 +798,7 @@ export default function Home() {
   const { data: creators } = trpc.creators.listApproved.useQuery();
   const { data: missions } = trpc.home.availableMissions.useQuery();
   const { data: sideAds } = trpc.ads.list.useQuery();
+  const { data: featuredAllies } = trpc.allies.list.useQuery({ featuredOnly: true });
   const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
   const liveSet = new Set(liveUserIds ?? []);
   const liveCreatorsList = (creators ?? []).filter((c: any) => liveSet.has(c.userId));
@@ -928,7 +929,37 @@ export default function Home() {
           </section>
         )}
 
-        {/* 10. CTA Creadores */}
+        {/* 10. Aliados Destacados */}
+        {(featuredAllies?.length ?? 0) > 0 && (
+          <HScrollSection
+            title="Aliados Destacados"
+            href="/allies"
+            icon={<span style={{ fontSize: 18 }}>🤝</span>}
+            viewAllLabel="Ver directorio"
+          >
+            {featuredAllies!.map((ally: any) => (
+              <Link key={ally.id} href="/allies">
+                <div className="shrink-0 w-56 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1" style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                  <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+                    {ally.coverImage ? (
+                      <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-red-950/60 via-zinc-900 to-black flex items-center justify-center">
+                        {ally.logo ? <img src={ally.logo} alt={ally.name} className="max-h-10 max-w-[60%] object-contain opacity-80" /> : <span style={{ fontSize: 28 }}>🏪</span>}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-orbitron font-bold text-foreground text-sm truncate group-hover:text-red-400 transition-colors">{ally.name}</p>
+                    {(ally.city || ally.country) && <p className="text-muted-foreground text-xs truncate mt-0.5">{[ally.city, ally.country].filter(Boolean).join(", ")}</p>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </HScrollSection>
+        )}
+
+        {/* 11. CTA Creadores */}
         <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link href="/creators">
             <div className="relative rounded-2xl overflow-hidden cursor-pointer group h-40">

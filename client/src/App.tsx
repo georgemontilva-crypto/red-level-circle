@@ -34,6 +34,7 @@ import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import Community from "./pages/Community";
 import Creators from "./pages/Creators";
+import { AlliesPage } from "./pages/Allies";
 import OnboardingModal from "./components/OnboardingModal";
 
 function OnboardingWrapper({ children }: { children: React.ReactNode }) {
@@ -100,6 +101,7 @@ function Router() {
         {/* Community */}
         <Route path="/community" component={Community} />
         <Route path="/creators" component={Creators} />
+        <Route path="/allies" component={AlliesPage} />
 
         {/* User profiles */}
         <Route path="/profile/:id" component={UserProfile} />
