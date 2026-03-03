@@ -43,8 +43,38 @@ async function runMigrations() {
   }
 }
 
+// Apply manual schema changes that were added outside of drizzle-kit generate
+async function runCustomMigrations() {
+  if (!process.env.DATABASE_URL) return;
+  const mysql2 = await import("mysql2/promise");
+  const conn = await mysql2.createConnection(process.env.DATABASE_URL);
+  const customMigrations = [
+    // 0027: creator social networks
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `facebook` varchar(256)",
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `kick` varchar(256)",
+    // 0028: news reference and gallery
+    "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `referenceUrl` text",
+    "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `gallery` text",
+    // 0029: allies tiktok
+    "ALTER TABLE `allies` ADD COLUMN IF NOT EXISTS `tiktok` varchar(128)",
+  ];
+  for (const sql of customMigrations) {
+    try {
+      await conn.execute(sql);
+    } catch (err: any) {
+      // Ignore duplicate column errors (ER_DUP_FIELDNAME)
+      if (err.code !== "ER_DUP_FIELDNAME") {
+        console.warn("[DB] Custom migration warning:", err.message);
+      }
+    }
+  }
+  await conn.end();
+  console.log("[DB] Custom migrations applied");
+}
+
 async function startServer() {
   await runMigrations();
+  await runCustomMigrations();
   const app = express();
   const server = createServer(app);
   // Configure body parser with larger size limit for file uploads

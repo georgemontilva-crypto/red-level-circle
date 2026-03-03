@@ -1,1 +1,1 @@
-ALTER TABLE `allies` ADD COLUMN `tiktok` varchar(128);
+ALTER TABLE `allies` ADD COLUMN IF NOT EXISTS `tiktok` varchar(128);
