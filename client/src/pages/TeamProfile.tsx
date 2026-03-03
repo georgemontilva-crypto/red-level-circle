@@ -16,18 +16,9 @@ import {
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
-const GAME_COLORS: Record<string, { from: string; to: string; glow: string; accent: string; mid: string }> = {
-  "league-of-legends": { from: "#0a1628", to: "#0d2444", glow: "rgba(0,120,255,0.4)",  accent: "#4a9eff", mid: "#1a3a6a" },
-  "valorant":          { from: "#1a0a0a", to: "#2d0f0f", glow: "rgba(255,70,85,0.4)",   accent: "#ff4655", mid: "#4a1a1a" },
-  "counter-strike":    { from: "#0a1a0a", to: "#0d2a0d", glow: "rgba(255,165,0,0.4)",   accent: "#f5a623", mid: "#2a1a0a" },
-  "dota-2":            { from: "#0a0a1a", to: "#0f0f2a", glow: "rgba(180,0,255,0.4)",   accent: "#b400ff", mid: "#1a0a2a" },
-  "fortnite":          { from: "#0a1a1a", to: "#0d2a2a", glow: "rgba(0,220,255,0.4)",   accent: "#00dcff", mid: "#0a2a2a" },
-  "apex-legends":      { from: "#1a0a0a", to: "#2a0d0d", glow: "rgba(255,60,0,0.4)",    accent: "#ff3c00", mid: "#3a1a0a" },
-  "overwatch":         { from: "#0a0f1a", to: "#0d1a2a", glow: "rgba(250,180,0,0.4)",   accent: "#fab400", mid: "#1a1a0a" },
-  "rocket-league":     { from: "#0a0a1a", to: "#0d0d2a", glow: "rgba(0,160,255,0.4)",   accent: "#00a0ff", mid: "#0a1a2a" },
-};
-const DEFAULT_COLOR = { from: "#0d0d0d", to: "#1a0505", glow: "rgba(220,38,38,0.3)", accent: "#dc2626", mid: "#2a0a0a" };
-function getGameColor(slug?: string | null): { from: string; to: string; glow: string; accent: string; mid: string } { return (slug ? GAME_COLORS[slug] : undefined) ?? DEFAULT_COLOR; }
+// Todos los colores de acento son rojo RLC — la identidad del sitio siempre prevalece
+const RLC_RED = { from: "#0d0d0d", to: "#1a0505", glow: "rgba(220,38,38,0.25)", accent: "#dc2626", mid: "#2a0a0a" };
+function getGameColor(_slug?: string | null) { return RLC_RED; }
 
 const ROLE_LABELS: Record<string, { label: string; color: string }> = {
   captain:    { label: "Capitán",  color: "#fbbf24" },
@@ -402,10 +393,9 @@ export default function TeamProfile() {
           <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 mb-8">
             {/* Logo superpuesto al banner */}
             <div
-              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0 shadow-2xl"
+              className="w-24 h-24 sm:w-32 sm:h-32 rounded-full overflow-hidden shrink-0"
               style={{
-                border: `3px solid oklch(0.10 0.005 0)`,
-                boxShadow: `0 0 0 2px ${c.accent}55, 0 0 40px ${c.glow}, 0 4px 24px rgba(0,0,0,0.5)`,
+                border: "3px solid #dc2626",
                 background: "var(--bg-card)",
                 marginTop: "-52px",
                 position: "relative",
@@ -510,10 +500,10 @@ export default function TeamProfile() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <StatCard icon={<TrendingUp size={20} />} value={rankPos ? `#${rankPos.globalPosition}` : "—"} label="Ranking Global" accent={c.accent} />
-            <StatCard icon={<Trophy size={20} />} value={team.stats?.tournamentsPlayed ?? 0} label="Torneos" accent={c.accent} />
-            <StatCard icon={<Crown size={20} />} value={wonTournaments.length} label="Títulos" accent="#fbbf24" />
-            <StatCard icon={<Star size={20} />} value={team.points ?? 0} label="Puntos RLC" accent={c.accent} />
+            <StatCard icon={<TrendingUp size={20} />} value={rankPos ? `#${rankPos.globalPosition}` : "—"} label="Ranking Global" accent="#dc2626" />
+            <StatCard icon={<Trophy size={20} />} value={team.stats?.tournamentsPlayed ?? 0} label="Torneos" accent="#dc2626" />
+            <StatCard icon={<Crown size={20} />} value={wonTournaments.length} label="Títulos" accent="#dc2626" />
+            <StatCard icon={<Star size={20} />} value={team.points ?? 0} label="Puntos RLC" accent="#dc2626" />
           </div>
           <div className="mb-8">
             <WinRateBar wins={team.wins ?? 0} losses={team.losses ?? 0} accent={c.accent} />
