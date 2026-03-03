@@ -76,7 +76,7 @@ function CustomSelect({
             ? "bg-card border-red-500/70 text-white"
             : "bg-card border-border text-white hover:border-zinc-600"
         }`}
-        style={{ background: "var(--bg-card)" }}
+        style={{ background: "#1a1d24" }}
       >
         <span className={selected ? "text-white" : "text-muted-foreground"}>
           {selected ? selected.label : placeholder}
@@ -85,15 +85,18 @@ function CustomSelect({
       </button>
       {open && (
         <div
-          className="absolute z-50 mt-1 w-full rounded-lg border border-red-900/40 overflow-hidden"
-          style={{ background: "var(--bg-card)", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}
+          className="absolute z-50 mt-1 w-full rounded-lg border border-red-900/60 overflow-hidden"
+          style={{ background: "#1a1d24", boxShadow: "0 8px 32px rgba(0,0,0,0.8)" }}
         >
           <div className="max-h-56 overflow-y-auto">
             {placeholder && (
               <button
                 type="button"
                 onClick={() => { onChange(""); setOpen(false); }}
-                className="w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-red-950/30 transition-colors"
+                className="w-full text-left px-4 py-2.5 text-sm text-muted-foreground transition-colors"
+                style={{ background: "transparent" }}
+                onMouseEnter={e => (e.currentTarget.style.background = "#2a1a1a")}
+                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 {placeholder}
               </button>
@@ -103,11 +106,10 @@ function CustomSelect({
                 key={opt.value}
                 type="button"
                 onClick={() => { onChange(opt.value); setOpen(false); }}
-                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                  opt.value === value
-                    ? "bg-red-900/40 text-red-300"
-                    : "text-white hover:bg-red-950/30"
-                }`}
+                className="w-full text-left px-4 py-2.5 text-sm transition-colors"
+                style={{ background: opt.value === value ? "rgba(127,29,29,0.5)" : "transparent", color: opt.value === value ? "#fca5a5" : "#fff" }}
+                onMouseEnter={e => { if (opt.value !== value) e.currentTarget.style.background = "#2a1a1a"; }}
+                onMouseLeave={e => { if (opt.value !== value) e.currentTarget.style.background = "transparent"; }}
               >
                 {opt.label}
               </button>
