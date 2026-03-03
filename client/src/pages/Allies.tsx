@@ -50,7 +50,7 @@ function AllyCard({ ally }: { ally: any }) {
   const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
 
   return (
-    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl">
+    <div className="w-full bg-black rounded-3xl shadow-2xl">
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {ally.coverImage ? (

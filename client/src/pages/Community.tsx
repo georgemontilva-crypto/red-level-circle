@@ -83,7 +83,7 @@ function UserCard({ user, myId }: UserCardProps) {
     : "Jugador";
 
   return (
-    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl">
+    <div className="w-full bg-black rounded-3xl shadow-2xl">
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {user.bannerUrl ? (
@@ -100,13 +100,12 @@ function UserCard({ user, myId }: UserCardProps) {
       <div className="relative px-6 pb-6">
         {/* Avatar Circle */}
         <div className="flex justify-center -mt-20 mb-4">
-          <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden">
-            <UserAvatar
-              avatar={user.avatar}
-              name={user.name ?? user.nickname}
-              activeFrameImage={user.activeFrameImage}
-              size={128}
-            />
+          <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
+            {user.avatar ? (
+              <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-4xl font-bold text-gray-600 select-none">{displayName.charAt(0).toUpperCase()}</span>
+            )}
           </div>
         </div>
         {/* Name and Description */}
