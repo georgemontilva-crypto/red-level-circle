@@ -311,7 +311,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* TopNav is fixed, so we need pt-14 on desktop to push content below it */}
       <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0" style={{ paddingTop: "100px" }}>
         <TopNav />
-        <PageContainer>
+        <PageContainer className="py-2">
           {children}
         </PageContainer>
       </main>
