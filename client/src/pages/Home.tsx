@@ -999,6 +999,29 @@ export default function Home() {
           </Link>
         </section>
 
+      {/* Footer legal — required for Google OAuth verification */}
+      <footer className="mt-8 pb-8 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 pt-6 mb-3">
+          {[
+            { label: "Política de Privacidad", href: "/legal/privacidad" },
+            { label: "Términos y Condiciones", href: "/legal/terminos" },
+            { label: "Cookies", href: "/legal/cookies" },
+            { label: "Tienda y Recompensas", href: "/legal/tienda" },
+            { label: "Alianzas", href: "/legal/aliados" },
+            { label: "Devoluciones", href: "/legal/devoluciones" },
+          ].map((l) => (
+            <Link key={l.href} href={l.href}>
+              <span className="text-xs font-mono transition-colors hover:text-white" style={{ color: "var(--text-muted)" }}>
+                {l.label}
+              </span>
+            </Link>
+          ))}
+        </div>
+        <p className="text-center text-xs font-mono" style={{ color: "var(--text-muted)", opacity: 0.45 }}>
+          © 2026 Red Level Circle. Todos los derechos reservados.
+        </p>
+      </footer>
+
       </div>
     </div>
   );
