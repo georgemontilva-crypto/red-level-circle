@@ -75,29 +75,76 @@ function UserCard({ user, myId }: UserCardProps) {
 
   const isFollowing = followData ?? false;
   const mutating = followMutation.isPending || unfollowMutation.isPending;
-  const isOwnCard = myId === user.id;
 
   return (
     <div
-      className="rounded-2xl overflow-hidden transition-all duration-200 group"
-      style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.35)")}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "oklch(0.18 0.01 0)")}
+      className="rounded-xl overflow-hidden transition-all duration-200 group cursor-pointer"
+      style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.06)" }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "oklch(0.55 0.22 25 / 0.4)")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
     >
-      {/* Mini banner */}
-      <div className="relative h-16 overflow-hidden">
-        {user.bannerUrl ? (
-          <img src={user.bannerUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div
-            className="w-full h-full"
-            style={{ background: "linear-gradient(135deg, oklch(0.15 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+      <Link href={`/profile/${user.id}`}>
+        {/* Banner — 16:9 ratio */}
+        <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+          <div className="absolute inset-0">
+            {user.bannerUrl ? (
+              <img src={user.bannerUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div
+                className="w-full h-full"
+                style={{ background: "linear-gradient(135deg, oklch(0.16 0.03 25) 0%, oklch(0.09 0.005 0) 100%)" }}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+          </div>
+        </div>
 
-        {/* Follow button — top right */}
-        {!isOwnCard && me && (
+        {/* Card body */}
+        <div className="px-3 pb-3">
+          {/* Avatar overlapping banner */}
+          <div className="relative -mt-6 mb-2">
+            <div
+              className="rounded-full inline-block"
+              style={{ border: "2px solid oklch(0.10 0.005 0)", boxShadow: "0 0 0 1px oklch(0.55 0.22 25 / 0.4)" }}
+            >
+              <UserAvatar
+                avatar={user.avatar}
+                name={user.name ?? user.nickname}
+                activeFrameImage={user.activeFrameImage}
+                size={44}
+              />
+            </div>
+          </div>
+
+          {/* Name */}
+          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+            <span className="font-orbitron font-bold text-sm text-white truncate leading-tight">
+              {user.nickname ?? user.name ?? "Usuario"}
+            </span>
+            {user.isVerified && <VerifiedBadge size={14} />}
+            {user.role === "admin" && (
+              <span className="text-[10px] px-1 py-0.5 rounded font-mono bg-yellow-500/15 text-yellow-400">ADMIN</span>
+            )}
+          </div>
+
+          {/* Profile type */}
+          <div className="flex items-center gap-1">
+            <ProfileTypeIcon type={user.profileType} />
+            <span className="text-xs text-muted-foreground font-mono">
+              {user.profileType ? (PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType) : "Jugador"}
+            </span>
+            {user.country && (
+              <span className="text-xs text-muted-foreground font-mono ml-auto flex items-center gap-0.5">
+                <MapPin className="w-3 h-3" />{user.country}
+              </span>
+            )}
+          </div>
+        </div>
+      </Link>
+
+      {/* Follow button — bottom, outside Link */}
+      {me && (
+        <div className="px-3 pb-3 -mt-1">
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -106,10 +153,10 @@ function UserCard({ user, myId }: UserCardProps) {
                 : followMutation.mutate({ userId: user.id });
             }}
             disabled={mutating || followLoading}
-            className="absolute top-2 right-2 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-mono font-bold transition-all duration-200"
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-mono font-bold transition-all duration-200"
             style={isFollowing
-              ? { background: "rgba(0,0,0,0.7)", border: "1px solid rgba(255,255,255,0.2)", color: "#ccc" }
-              : { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)" }
+              ? { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#aaa" }
+              : { background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", color: "oklch(0.65 0.22 25)" }
             }
           >
             {mutating || followLoading ? (
@@ -120,68 +167,8 @@ function UserCard({ user, myId }: UserCardProps) {
               <><UserPlus className="w-3 h-3" /> Seguir</>
             )}
           </button>
-        )}
-      </div>
-
-      {/* Card body */}
-      <Link href={`/profile/${user.id}`}>
-        <div className="px-4 pb-4 cursor-pointer">
-          {/* Avatar overlapping banner */}
-          <div className="relative -mt-7 mb-3">
-            <div
-              className="rounded-full"
-              style={{ border: "3px solid oklch(0.10 0.005 0)", boxShadow: "0 0 0 1.5px oklch(0.55 0.22 25 / 0.5)", display: "inline-block" }}
-            >
-              <UserAvatar
-                avatar={user.avatar}
-                name={user.name ?? user.nickname}
-                activeFrameImage={user.activeFrameImage}
-                size={56}
-              />
-            </div>
-          </div>
-
-          {/* Name + type */}
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <span className="font-orbitron font-bold text-sm text-white truncate">
-              {user.nickname ?? user.name ?? "Usuario"}
-            </span>
-            {user.isVerified && <VerifiedBadge size={16} />}
-            {user.role === "admin" && (
-              <span className="text-xs px-1.5 py-0.5 rounded font-mono bg-yellow-500/15 text-yellow-400">ADMIN</span>
-            )}
-            {user.role === "premium" && (
-              <span className="text-xs px-1.5 py-0.5 rounded font-mono bg-red-500/15 text-red-400">PRO</span>
-            )}
-          </div>
-
-          {/* Profile type badge */}
-          {user.profileType && (
-            <div className="flex items-center gap-1 mb-2">
-              <ProfileTypeIcon type={user.profileType} />
-              <span className="text-xs text-muted-foreground font-mono">
-                {PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType}
-              </span>
-            </div>
-          )}
-
-          {/* Bio */}
-          {user.bio && (
-            <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-2">{user.bio}</p>
-          )}
-
-          {/* Meta */}
-          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-            {user.mainGame && (
-              <span className="flex items-center gap-1">
-                <Gamepad2 className="w-3 h-3 text-red-600" />
-                {user.mainGame}
-              </span>
-            )}
-            {user.country && <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{user.country}</span>}
-          </div>
         </div>
-      </Link>
+      )}
     </div>
   );
 }
@@ -206,9 +193,10 @@ export default function Community() {
     offset: 0,
   });
 
-  const filtered = typeFilter
+  const filtered = (typeFilter
     ? users?.filter((u) => u.profileType === typeFilter)
-    : users;
+    : users
+  )?.filter((u) => u.id !== me?.id);
 
   return (
     <div className="py-6 overflow-x-hidden">
@@ -285,7 +273,7 @@ export default function Community() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {filtered.map((user) => (
             <UserCard key={user.id} user={user} myId={me?.id} />
           ))}
