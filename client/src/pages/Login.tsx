@@ -315,7 +315,7 @@ export default function Login() {
         </div>
 
         {/* ── Form container ── */}
-        <div className="relative z-10 flex-1 flex items-start lg:items-center justify-center px-6 pb-10">
+        <div className="relative z-10 flex-1 flex items-start lg:items-center justify-center px-6 pb-10" style={{ paddingTop: mode === "register" ? "5px" : undefined }}>
           <div className="w-full max-w-md">
 
             {/* Mode Toggle */}
@@ -334,7 +334,7 @@ export default function Login() {
                   style={{
                     background: mode === m ? neonRed : "transparent",
                     color: mode === m ? "#fff" : "rgba(255,255,255,0.4)",
-                    boxShadow: mode === m ? `0 0 16px oklch(0.55 0.22 25 / 0.4)` : "none",
+                    boxShadow: "none",
                   }}
                 >
                   {m === "login" ? "Iniciar Sesión" : "Registrarse"}
