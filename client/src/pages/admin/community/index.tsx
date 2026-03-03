@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { useLocation } from "wouter";
 import { UsersPage } from "./UsersPage";
 import { CreatorsPage } from "./CreatorsPage";
 import { StreamsPage } from "./StreamsPage";
@@ -11,13 +11,10 @@ function CommunityOverview() {
 }
 
 export function CommunityModule() {
-  return (
-    <Switch>
-      <Route path="/admin/community/users" component={UsersPage} />
-      <Route path="/admin/community/creators" component={CreatorsPage} />
-      <Route path="/admin/community/streams" component={StreamsPage} />
-      <Route path="/admin/community/reports" component={ReportsPage} />
-      <Route component={CommunityOverview} />
-    </Switch>
-  );
+  const [location] = useLocation();
+  if (location.startsWith("/admin/community/users")) return <UsersPage />;
+  if (location.startsWith("/admin/community/creators")) return <CreatorsPage />;
+  if (location.startsWith("/admin/community/streams")) return <StreamsPage />;
+  if (location.startsWith("/admin/community/reports")) return <ReportsPage />;
+  return <CommunityOverview />;
 }

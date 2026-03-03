@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { useLocation } from "wouter";
 import { TournamentsPage } from "./TournamentsPage";
 import { TeamsPage } from "./TeamsPage";
 import { RankingsPage } from "./RankingsPage";
@@ -10,12 +10,9 @@ function CompetitiveOverview() {
 }
 
 export function CompetitiveModule() {
-  return (
-    <Switch>
-      <Route path="/admin/competitive/tournaments" component={TournamentsPage} />
-      <Route path="/admin/competitive/teams" component={TeamsPage} />
-      <Route path="/admin/competitive/rankings" component={RankingsPage} />
-      <Route component={CompetitiveOverview} />
-    </Switch>
-  );
+  const [location] = useLocation();
+  if (location.startsWith("/admin/competitive/tournaments")) return <TournamentsPage />;
+  if (location.startsWith("/admin/competitive/teams")) return <TeamsPage />;
+  if (location.startsWith("/admin/competitive/rankings")) return <RankingsPage />;
+  return <CompetitiveOverview />;
 }

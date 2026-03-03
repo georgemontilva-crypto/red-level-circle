@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { useLocation } from "wouter";
 import { VerificationsPage } from "./VerificationsPage";
 import { AuditPage } from "./AuditPage";
 import { RolesPage } from "./RolesPage";
@@ -11,13 +11,10 @@ function SystemOverview() {
 }
 
 export function SystemModule() {
-  return (
-    <Switch>
-      <Route path="/admin/system/verifications" component={VerificationsPage} />
-      <Route path="/admin/system/audit" component={AuditPage} />
-      <Route path="/admin/system/roles" component={RolesPage} />
-      <Route path="/admin/system/config" component={ConfigPage} />
-      <Route component={SystemOverview} />
-    </Switch>
-  );
+  const [location] = useLocation();
+  if (location.startsWith("/admin/system/verifications")) return <VerificationsPage />;
+  if (location.startsWith("/admin/system/audit")) return <AuditPage />;
+  if (location.startsWith("/admin/system/roles")) return <RolesPage />;
+  if (location.startsWith("/admin/system/config")) return <ConfigPage />;
+  return <SystemOverview />;
 }

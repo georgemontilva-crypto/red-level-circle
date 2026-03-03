@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { BannersPage } from "./BannersPage";
 import { NewsPage } from "./NewsPage";
 import { AlliesPage } from "./AlliesPage";
@@ -14,13 +14,9 @@ function ContentOverview() {
 
 export function ContentModule() {
   const [location] = useLocation();
-  return (
-    <Switch>
-      <Route path="/admin/content/banners" component={BannersPage} />
-      <Route path="/admin/content/news" component={NewsPage} />
-      <Route path="/admin/content/allies" component={AlliesPage} />
-      <Route path="/admin/content/games" component={GamesPage} />
-      <Route component={ContentOverview} />
-    </Switch>
-  );
+  if (location.startsWith("/admin/content/banners")) return <BannersPage />;
+  if (location.startsWith("/admin/content/news")) return <NewsPage />;
+  if (location.startsWith("/admin/content/allies")) return <AlliesPage />;
+  if (location.startsWith("/admin/content/games")) return <GamesPage />;
+  return <ContentOverview />;
 }

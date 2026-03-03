@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { useLocation } from "wouter";
 import { BetsPage } from "./BetsPage";
 import { ShopPage } from "./ShopPage";
 import { CosmeticsPage } from "./CosmeticsPage";
@@ -12,14 +12,11 @@ function MonetizationOverview() {
 }
 
 export function MonetizationModule() {
-  return (
-    <Switch>
-      <Route path="/admin/monetization/bets" component={BetsPage} />
-      <Route path="/admin/monetization/shop" component={ShopPage} />
-      <Route path="/admin/monetization/cosmetics" component={CosmeticsPage} />
-      <Route path="/admin/monetization/rlc" component={RLCPage} />
-      <Route path="/admin/monetization/rewards" component={RewardsPage} />
-      <Route component={MonetizationOverview} />
-    </Switch>
-  );
+  const [location] = useLocation();
+  if (location.startsWith("/admin/monetization/bets")) return <BetsPage />;
+  if (location.startsWith("/admin/monetization/shop")) return <ShopPage />;
+  if (location.startsWith("/admin/monetization/cosmetics")) return <CosmeticsPage />;
+  if (location.startsWith("/admin/monetization/rlc")) return <RLCPage />;
+  if (location.startsWith("/admin/monetization/rewards")) return <RewardsPage />;
+  return <MonetizationOverview />;
 }
