@@ -12,103 +12,121 @@ import {
 
 // ─── Ally Card ────────────────────────────────────────────────────────────────
 function AllyCard({ ally }: { ally: any }) {
+  const hasSocials = ally.website || ally.instagram || ally.twitter || ally.facebook;
   return (
-    <div className="group relative overflow-hidden rounded-xl border border-white/10 bg-zinc-900/80 hover:border-red-500/40 transition-all duration-300 hover:shadow-lg hover:shadow-red-950/30 cursor-pointer">
-      {/* Cover image */}
-      <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
+    <div className="group relative overflow-hidden rounded-2xl border border-white/8 bg-zinc-900 hover:border-red-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-red-950/40 cursor-pointer flex flex-col">
+      {/* Cover image — taller for more visual impact */}
+      <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: "16/7" }}>
         {ally.coverImage ? (
           <img
             src={ally.coverImage}
             alt={ally.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-red-950/60 via-zinc-900 to-black flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-red-950/80 via-zinc-900 to-zinc-950 flex items-center justify-center">
             {ally.logo ? (
-              <img src={ally.logo} alt={ally.name} className="max-h-16 max-w-[60%] object-contain opacity-80" />
+              <img src={ally.logo} alt={ally.name} className="max-h-20 max-w-[55%] object-contain opacity-70" />
             ) : (
-              <Store className="w-12 h-12 text-red-500/40" />
+              <Store className="w-14 h-14 text-red-500/30" />
             )}
           </div>
         )}
+        {/* Gradient overlay bottom */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-80" />
+
         {/* Featured badge */}
         {ally.isFeatured && (
-          <div className="absolute top-2 right-2 flex items-center gap-1 bg-yellow-500/90 text-black text-xs font-bold px-2 py-0.5 rounded-full">
-            <Star className="w-3 h-3" />
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-xs font-black px-2.5 py-1 rounded-full shadow-lg">
+            <Star className="w-3 h-3 fill-black" />
             Destacado
           </div>
         )}
-        {/* Logo overlay */}
-        {ally.coverImage && ally.logo && (
-          <div className="absolute bottom-2 left-2 w-10 h-10 rounded-lg overflow-hidden border border-white/20 bg-black/60 backdrop-blur-sm">
-            <img src={ally.logo} alt={ally.name} className="w-full h-full object-contain p-1" />
+
+        {/* Logo — bottom left, overlapping cover */}
+        {ally.logo && (
+          <div className="absolute bottom-0 left-4 translate-y-1/2 w-14 h-14 rounded-xl overflow-hidden border-2 border-zinc-900 bg-zinc-800 shadow-lg z-10">
+            <img src={ally.logo} alt={ally.name} className="w-full h-full object-contain p-1.5" />
           </div>
         )}
       </div>
 
-      {/* Info */}
-      <div className="p-4">
-        <h3 className="font-orbitron font-bold text-white text-base leading-tight mb-1 group-hover:text-red-400 transition-colors">
-          {ally.name}
-        </h3>
-        {(ally.city || ally.country) && (
-          <div className="flex items-center gap-1 text-zinc-400 text-xs mb-2">
-            <MapPin className="w-3 h-3 text-red-500/70 flex-shrink-0" />
-            <span>{[ally.city, ally.country].filter(Boolean).join(", ")}</span>
-          </div>
-        )}
-        {ally.description && (
-          <p className="text-zinc-400 text-xs line-clamp-2 mb-3">{ally.description}</p>
-        )}
-
-        {/* Social / links */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {ally.website && (
-            <a
-              href={ally.website}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
-            >
-              <ExternalLink className="w-3 h-3" />
-              Sitio web
-            </a>
-          )}
-          {ally.instagram && (
-            <a
-              href={`https://instagram.com/${ally.instagram.replace("@", "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="text-zinc-400 hover:text-pink-400 transition-colors"
-            >
-              <Instagram className="w-3.5 h-3.5" />
-            </a>
-          )}
-          {ally.twitter && (
-            <a
-              href={`https://twitter.com/${ally.twitter.replace("@", "")}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="text-zinc-400 hover:text-sky-400 transition-colors"
-            >
-              <Twitter className="w-3.5 h-3.5" />
-            </a>
-          )}
-          {ally.facebook && (
-            <a
-              href={`https://facebook.com/${ally.facebook}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={e => e.stopPropagation()}
-              className="text-zinc-400 hover:text-blue-400 transition-colors"
-            >
-              <Facebook className="w-3.5 h-3.5" />
-            </a>
+      {/* Info — padded to account for logo overlap */}
+      <div className={`flex-1 flex flex-col px-4 pb-4 ${ally.logo ? "pt-9" : "pt-4"}`}>
+        {/* Name + location */}
+        <div className="mb-2">
+          <h3 className="font-orbitron font-bold text-white text-lg leading-tight group-hover:text-red-400 transition-colors">
+            {ally.name}
+          </h3>
+          {(ally.city || ally.country) && (
+            <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1">
+              <MapPin className="w-3 h-3 text-red-500/60 flex-shrink-0" />
+              <span>{[ally.city, ally.country].filter(Boolean).join(", ")}</span>
+            </div>
           )}
         </div>
+
+        {/* Description */}
+        {ally.description && (
+          <p className="text-zinc-400 text-sm leading-relaxed line-clamp-3 mb-3 flex-1">{ally.description}</p>
+        )}
+
+        {/* Divider */}
+        {hasSocials && <div className="border-t border-white/5 mb-3" />}
+
+        {/* Social / links */}
+        {hasSocials && (
+          <div className="flex items-center gap-3 flex-wrap">
+            {ally.website && (
+              <a
+                href={ally.website}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-950/30 hover:bg-red-950/50 px-3 py-1.5 rounded-full border border-red-900/40"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Sitio web
+              </a>
+            )}
+            {ally.instagram && (
+              <a
+                href={`https://instagram.com/${ally.instagram.replace("@", "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-pink-400 transition-colors bg-white/5 hover:bg-pink-950/30 px-3 py-1.5 rounded-full border border-white/8"
+              >
+                <Instagram className="w-3.5 h-3.5" />
+                Instagram
+              </a>
+            )}
+            {ally.twitter && (
+              <a
+                href={`https://twitter.com/${ally.twitter.replace("@", "")}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-sky-400 transition-colors bg-white/5 hover:bg-sky-950/30 px-3 py-1.5 rounded-full border border-white/8"
+              >
+                <Twitter className="w-3.5 h-3.5" />
+                Twitter
+              </a>
+            )}
+            {ally.facebook && (
+              <a
+                href={`https://facebook.com/${ally.facebook}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-blue-400 transition-colors bg-white/5 hover:bg-blue-950/30 px-3 py-1.5 rounded-full border border-white/8"
+              >
+                <Facebook className="w-3.5 h-3.5" />
+                Facebook
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
