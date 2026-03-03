@@ -130,7 +130,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
       </div>
   );
 }
-function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
+function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
   const { isAuthenticated, user } = useAuth();
   const { data: myApp, refetch } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
   const submit = trpc.creators.submitApplication.useMutation({
@@ -208,106 +208,119 @@ function ApplicationForm({ onSuccess }: { onSuccess?: () => void }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <form onSubmit={e => { e.preventDefault(); submit.mutate(form); }} className="space-y-5 p-6">
+      {/* Header — same style as allies form */}
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <h3 className="font-orbitron font-bold text-lg text-white">Solicitar Verificación</h3>
+          <p className="text-zinc-400 text-xs mt-0.5">Completa el formulario y el equipo revisará tu solicitud</p>
+        </div>
+        {onClose && (
+          <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
+            <X size={20} />
+          </button>
+        )}
+      </div>
+
       {myApp?.status === "rejected" && (
-        <div className="mb-6 p-4 rounded-xl bg-red-950/30 border border-red-800/40">
-          <p className="text-red-400 text-sm font-mono flex items-center gap-2"><XCircle size={14} /> Solicitud rechazada</p>
-          {myApp.adminNote && <p className="text-muted-foreground text-sm mt-1">{myApp.adminNote}</p>}
-          <p className="text-muted-foreground text-xs mt-2">Puedes actualizar tu información y volver a enviar.</p>
+        <div className="p-3 rounded-lg bg-red-950/30 border border-red-800/40">
+          <p className="text-red-400 text-xs font-mono flex items-center gap-2"><XCircle size={12} /> Solicitud rechazada — puedes actualizar y reenviar</p>
+          {myApp.adminNote && <p className="text-zinc-400 text-xs mt-1">{myApp.adminNote}</p>}
         </div>
       )}
 
-      <div className="space-y-5">
-        {/* Category */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Categoría *</label>
-          <div className="grid grid-cols-3 gap-2">
-            {CATEGORIES.map(cat => (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setForm(f => ({ ...f, category: cat.value }))}
-                className={`flex items-center gap-2 p-3 rounded-xl border text-sm font-mono transition-all ${
-                  form.category === cat.value
-                    ? "border-red-600 bg-red-600/20 text-white"
-                    : "border-border bg-card/60 text-muted-foreground hover:border-zinc-600 hover:text-secondary-foreground"
-                }`}
-              >
-                <cat.icon size={14} /> {cat.label}
-              </button>
-            ))}
-          </div>
+      {/* Category */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Categoría *</label>
+        <div className="grid grid-cols-3 gap-2">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => setForm(f => ({ ...f, category: cat.value }))}
+              className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-mono transition-all ${
+                form.category === cat.value
+                  ? "border-red-600/70 bg-red-600/20 text-white"
+                  : "border-white/10 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
+              }`}
+            >
+              <cat.icon size={14} /> {cat.label}
+            </button>
+          ))}
         </div>
-
-        {/* Bio */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Descripción / Bio *</label>
-          <textarea
-            value={form.bio}
-            onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-            placeholder="Cuéntanos sobre ti y tu contenido..."
-            rows={3}
-            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm placeholder-muted-foreground focus:outline-none focus:border-red-600/50 resize-none"
-          />
-        </div>
-
-        {/* Subscribers */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-2 uppercase tracking-wider">Seguidores totales (aprox.)</label>
-          <input
-            type="number"
-            value={form.subscribers || ""}
-            onChange={e => setForm(f => ({ ...f, subscribers: parseInt(e.target.value) || 0 }))}
-            placeholder="Ej: 10000"
-            className="w-full bg-card border border-border rounded-xl px-4 py-3 text-white text-sm placeholder-muted-foreground focus:outline-none focus:border-red-600/50"
-          />
-        </div>
-
-        {/* Social links */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-3 uppercase tracking-wider">Redes sociales (al menos una)</label>
-          <div className="space-y-3">
-            {[
-              { key: "youtube", icon: Youtube, label: "YouTube", placeholder: "tu_canal", prefix: "youtube.com/@" },
-              { key: "twitch", icon: Twitch, label: "Twitch", placeholder: "tu_usuario", prefix: "twitch.tv/" },
-              { key: "twitter", icon: Twitter, label: "Twitter / X", placeholder: "tu_usuario", prefix: "twitter.com/" },
-              { key: "instagram", icon: Instagram, label: "Instagram", placeholder: "tu_usuario", prefix: "instagram.com/" },
-            ].map(({ key, icon: Icon, label, placeholder, prefix }) => (
-              <div key={key} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                  <Icon size={14} className="text-muted-foreground" />
-                </div>
-                <div className="flex-1 relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-mono">{prefix}</span>
-                  <input
-                    type="text"
-                    value={(form as any)[key]}
-                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                    className="w-full bg-card border border-border rounded-xl pl-24 pr-4 py-2.5 text-white text-sm placeholder-zinc-700 focus:outline-none focus:border-red-600/50"
-                    style={{ paddingLeft: `${prefix.length * 7 + 12}px` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <button
-          onClick={() => submit.mutate(form)}
-          disabled={submit.isPending || !form.bio || !form.category}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01]"
-          style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 20px oklch(0.55 0.22 25 / 0.3)" }}
-        >
-          {submit.isPending ? (
-            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          ) : (
-            <Send size={16} />
-          )}
-          {myApp?.status === "rejected" ? "REENVIAR SOLICITUD" : "ENVIAR SOLICITUD"}
-        </button>
       </div>
-    </div>
+
+      {/* Bio */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Descripción / Bio *</label>
+        <textarea
+          value={form.bio}
+          onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+          placeholder="Cuéntanos sobre ti y tu contenido..."
+          rows={3}
+          className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors resize-none"
+        />
+      </div>
+
+      {/* Subscribers */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Seguidores totales (aprox.)</label>
+        <input
+          type="number"
+          value={form.subscribers || ""}
+          onChange={e => setForm(f => ({ ...f, subscribers: parseInt(e.target.value) || 0 }))}
+          placeholder="Ej: 10000"
+          className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
+        />
+      </div>
+
+      {/* Social links */}
+      <div>
+        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Redes sociales (al menos una)</label>
+        <div className="space-y-2">
+          {[
+            { key: "youtube", icon: Youtube, placeholder: "tu_canal", prefix: "youtube.com/@" },
+            { key: "twitch", icon: Twitch, placeholder: "tu_usuario", prefix: "twitch.tv/" },
+            { key: "twitter", icon: Twitter, placeholder: "tu_usuario", prefix: "twitter.com/" },
+            { key: "instagram", icon: Instagram, placeholder: "tu_usuario", prefix: "instagram.com/" },
+          ].map(({ key, icon: Icon, placeholder, prefix }) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-zinc-700/60 border border-white/10 flex items-center justify-center shrink-0">
+                <Icon size={14} className="text-zinc-400" />
+              </div>
+              <div className="flex-1 relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono pointer-events-none">{prefix}</span>
+                <input
+                  type="text"
+                  value={(form as any)[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  placeholder={placeholder}
+                  className="w-full bg-zinc-800/60 border border-white/10 rounded-lg py-2 pr-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-red-500/60 transition-colors"
+                  style={{ paddingLeft: `${prefix.length * 7 + 12}px` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {submit.error && (
+        <p className="text-red-400 text-xs">{submit.error.message}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={submit.isPending || !form.bio || !form.category}
+        className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+      >
+        {submit.isPending ? (
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : (
+          <Send size={15} />
+        )}
+        {myApp?.status === "rejected" ? "Reenviar solicitud" : "Enviar solicitud"}
+      </button>
+    </form>
   );
 }
 
@@ -433,30 +446,12 @@ export default function Creators() {
               onClick={() => setShowForm(false)}
             />
             <div
-              className="relative w-full max-w-lg rounded-2xl bg-card border border-border shadow-2xl overflow-hidden"
-              style={{ animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
+              className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
+              style={{ background: "#1c1f26", border: "1px solid rgba(255,255,255,0.08)", animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
             >
-              {/* Modal header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-red-600/20 flex items-center justify-center">
-                    <Crown size={18} className="text-red-400" />
-                  </div>
-                  <div>
-                    <h2 className="font-orbitron font-bold text-white text-base">Solicitar Verificación</h2>
-                    <p className="text-muted-foreground text-xs">El equipo revisará tu solicitud</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="w-8 h-8 rounded-lg bg-secondary hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-white transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-              {/* Modal body */}
-              <div className="p-6 max-h-[70vh] overflow-y-auto">
-                <ApplicationForm onSuccess={() => setShowForm(false)} />
+              {/* Modal body — header is inside ApplicationForm like the allies form */}
+              <div className="max-h-[80vh] overflow-y-auto">
+                <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
               </div>
             </div>
           </div>
