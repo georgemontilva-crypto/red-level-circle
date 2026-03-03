@@ -7,13 +7,13 @@ import { SectionBanner } from "@/components/SectionBanner";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
-  CheckCircle, Clock, XCircle, Send, Users,
+  CheckCircle, Clock, XCircle, Send, Users, Check,
   Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
-import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
+import { Button } from "@/components/ui/button";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {
@@ -81,8 +81,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   return (
     <div
       onClick={() => navigate(`/profile/${c.userId}`)}
-      className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden cursor-pointer"
-      style={isLive ? { boxShadow: "0 0 20px rgba(239,68,68,0.3), 0 25px 50px -12px rgba(0,0,0,0.8)" } : undefined}
+      className="w-full max-w-sm bg-black rounded-3xl shadow-2xl cursor-pointer"
     >
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
@@ -95,7 +94,6 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
         ) : (
           <DefaultBannerBg />
         )}
-
         {/* LIVE badge */}
         {isLive && (
           <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white font-black text-[10px] tracking-wider z-10"
@@ -104,7 +102,6 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
             EN VIVO
           </div>
         )}
-
         {/* Category badge */}
         {!isLive && cat && (
           <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 text-[10px] text-zinc-300 font-mono border border-white/10 z-10">
@@ -112,11 +109,10 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
           </div>
         )}
       </div>
-
-      {/* Avatar + Info + Socials */}
+      {/* Avatar Section - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Avatar — overlapping banner */}
-        <div className="flex justify-center -mt-16 mb-4">
+        {/* Avatar Circle */}
+        <div className="flex justify-center -mt-20 mb-4">
           <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden">
             <UserAvatar
               avatar={c.avatar}
@@ -126,20 +122,15 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
             />
           </div>
         </div>
-
-        {/* Name + verified */}
+        {/* Name and Description */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold text-white font-orbitron">{name}</h1>
-            {c.isVerified && <VerifiedBadge size={18} />}
+            <h1 className="text-2xl font-bold text-white">{name}</h1>
+            {c.isVerified && <Check className="w-5 h-5 text-blue-500 fill-blue-500" />}
           </div>
           <p className="text-sm text-gray-400">{subtitle}</p>
-          {c.subscribers > 0 && (
-            <p className="text-xs text-zinc-600 font-mono mt-1">{c.subscribers.toLocaleString()} seguidores</p>
-          )}
         </div>
-
-        {/* Social buttons */}
+        {/* Social Buttons */}
         {socials.length > 0 && (
           <div className="flex items-center gap-1.5">
             {socials.slice(0, 4).map((s, i) => (

@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Globe, MapPin, Instagram, Twitter, Facebook,
   ExternalLink, Search, Store, Plus, X,
-  CheckCircle, Star, Youtube
+  CheckCircle, Star, Youtube, Check,
 } from "lucide-react";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
@@ -50,7 +50,7 @@ function AllyCard({ ally }: { ally: any }) {
   const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
 
   return (
-    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden">
+    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl">
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {ally.coverImage ? (
@@ -62,7 +62,6 @@ function AllyCard({ ally }: { ally: any }) {
         ) : (
           <DefaultBannerBg />
         )}
-
         {/* Featured badge */}
         {ally.isFeatured && (
           <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
@@ -71,39 +70,38 @@ function AllyCard({ ally }: { ally: any }) {
           </div>
         )}
       </div>
-
-      {/* Avatar + Info + Socials */}
+      {/* Avatar Section - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Logo/Avatar — overlapping banner */}
-        <div className="flex justify-center -mt-16 mb-4">
-          <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden bg-zinc-800 flex items-center justify-center">
+        {/* Avatar Circle */}
+        <div className="flex justify-center -mt-20 mb-4">
+          <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
             {ally.logo ? (
               <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
             ) : (
-              <Store className="w-12 h-12 text-zinc-500" />
+              <Store className="w-12 h-12 text-gray-600" />
             )}
           </div>
         </div>
-
-        {/* Name + subtitle */}
+        {/* Name and Description */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold text-white font-orbitron">{ally.name}</h1>
+            <h1 className="text-2xl font-bold text-white">{ally.name}</h1>
           </div>
-          {(subtitle || ally.description) && (
-            <p className="text-sm text-gray-400 line-clamp-2">
-              {subtitle || ally.description}
-            </p>
-          )}
+          <p className="text-sm text-gray-400">
+            {subtitle || ally.description || ""}
+          </p>
         </div>
-
-        {/* Social buttons */}
-        {socials.length > 0 && (
+        {/* Social Buttons */}
+        {socials.length > 0 ? (
           <div className="flex items-center gap-1.5">
             {socials.map((s, i) => (
               <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
             ))}
           </div>
+        ) : (
+          <Button className="w-full bg-gray-300 hover:bg-gray-200 text-black font-semibold py-2 rounded-full transition-colors">
+            Ver aliado
+          </Button>
         )}
       </div>
     </div>

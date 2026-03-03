@@ -5,12 +5,12 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Search, Users, Crown, Swords, Shield,
-  UserPlus, UserMinus, Loader2, MapPin,
+  UserPlus, UserMinus, Loader2, MapPin, Check,
 } from "lucide-react";
 import { UserAvatar } from "@/components/UserAvatar";
-import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { SectionBanner } from "@/components/SectionBanner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
+import { Button } from "@/components/ui/button";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -83,7 +83,7 @@ function UserCard({ user, myId }: UserCardProps) {
     : "Jugador";
 
   return (
-    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden">
+    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl">
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {user.bannerUrl ? (
@@ -96,11 +96,10 @@ function UserCard({ user, myId }: UserCardProps) {
           <DefaultBannerBg />
         )}
       </div>
-
-      {/* Avatar + Info + Button */}
+      {/* Avatar Section - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Avatar — overlapping banner */}
-        <div className="flex justify-center -mt-16 mb-4">
+        {/* Avatar Circle */}
+        <div className="flex justify-center -mt-20 mb-4">
           <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden">
             <UserAvatar
               avatar={user.avatar}
@@ -110,58 +109,37 @@ function UserCard({ user, myId }: UserCardProps) {
             />
           </div>
         </div>
-
-        {/* Name + verified */}
+        {/* Name and Description */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <h1 className="text-2xl font-bold text-white font-orbitron">{displayName}</h1>
-            {user.isVerified && <VerifiedBadge size={18} />}
-            {isAdmin && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
-                ADMIN
-              </span>
-            )}
+            <h1 className="text-2xl font-bold text-white">{displayName}</h1>
+            {user.isVerified && <Check className="w-5 h-5 text-blue-500 fill-blue-500" />}
           </div>
-          <div className="flex items-center justify-center gap-1.5 text-sm text-gray-400">
-            <ProfileTypeIcon type={user.profileType} />
-            <span>{subtitle}</span>
-            {user.country && (
-              <>
-                <span className="text-zinc-700">·</span>
-                <MapPin className="w-3 h-3 text-zinc-600 flex-shrink-0" />
-                <span className="truncate">{user.country}</span>
-              </>
-            )}
-          </div>
+          <p className="text-sm text-gray-400">
+            {subtitle}{user.country ? ` · ${user.country}` : ""}
+          </p>
         </div>
-
-        {/* Follow button */}
-        <Link href={`/profile/${user.id}`}>
-          {me && myId !== user.id ? (
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                isFollowing
-                  ? unfollowMutation.mutate({ userId: user.id })
-                  : followMutation.mutate({ userId: user.id });
-              }}
-              disabled={mutating || followLoading}
-              className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-2 rounded-full transition-colors flex items-center justify-center gap-2"
-            >
-              {mutating || followLoading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : isFollowing ? (
-                <><UserMinus className="w-4 h-4" /> Siguiendo</>
-              ) : (
-                <><UserPlus className="w-4 h-4" /> Seguir</>
-              )}
-            </button>
-          ) : (
-            <button className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-2 rounded-full transition-colors">
+        {/* Follow Button */}
+        {me && myId !== user.id ? (
+          <Button
+            onClick={() => isFollowing
+              ? unfollowMutation.mutate({ userId: user.id })
+              : followMutation.mutate({ userId: user.id })
+            }
+            disabled={mutating || followLoading}
+            className="w-full bg-gray-300 hover:bg-gray-200 text-black font-semibold py-2 rounded-full transition-colors"
+          >
+            {mutating || followLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : isFollowing ? "Siguiendo" : "Seguir"}
+          </Button>
+        ) : (
+          <Link href={`/profile/${user.id}`}>
+            <Button className="w-full bg-gray-300 hover:bg-gray-200 text-black font-semibold py-2 rounded-full transition-colors">
               Ver perfil
-            </button>
-          )}
-        </Link>
+            </Button>
+          </Link>
+        )}
       </div>
     </div>
   );
