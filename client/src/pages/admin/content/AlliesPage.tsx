@@ -21,6 +21,7 @@ type AllyEditForm = {
   instagram: string;
   twitter: string;
   facebook: string;
+  tiktok: string;
   adminNote: string;
   logo: string;
   coverImage: string;
@@ -43,6 +44,7 @@ function AllyRow({ a, onUpdate, onDelete }: { a: any; onUpdate: (data: any) => v
     instagram: a.instagram ?? "",
     twitter: a.twitter ?? "",
     facebook: a.facebook ?? "",
+    tiktok: (a as any).tiktok ?? "",
     adminNote: a.adminNote ?? "",
     logo: a.logo ?? "",
     coverImage: a.coverImage ?? "",
@@ -87,6 +89,7 @@ function AllyRow({ a, onUpdate, onDelete }: { a: any; onUpdate: (data: any) => v
       instagram: form.instagram || undefined,
       twitter: form.twitter || undefined,
       facebook: form.facebook || undefined,
+      tiktok: form.tiktok || undefined,
       adminNote: form.adminNote || undefined,
       logo: form.logo || undefined,
       coverImage: form.coverImage || undefined,
@@ -259,7 +262,7 @@ function AllyRow({ a, onUpdate, onDelete }: { a: any; onUpdate: (data: any) => v
           </div>
 
           {/* Social networks */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase flex items-center gap-1"><Instagram className="w-3 h-3" /> Instagram</label>
               <input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} className={inputCls} placeholder="@usuario" />
@@ -271,6 +274,13 @@ function AllyRow({ a, onUpdate, onDelete }: { a: any; onUpdate: (data: any) => v
             <div>
               <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase flex items-center gap-1"><Facebook className="w-3 h-3" /> Facebook</label>
               <input value={form.facebook} onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))} className={inputCls} placeholder="facebook.com/pagina" />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase flex items-center gap-1">
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
+                TikTok
+              </label>
+              <input value={form.tiktok} onChange={e => setForm(f => ({ ...f, tiktok: e.target.value }))} className={inputCls} placeholder="@usuario" />
             </div>
           </div>
 

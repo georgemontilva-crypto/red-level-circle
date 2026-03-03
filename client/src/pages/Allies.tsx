@@ -12,7 +12,7 @@ import {
 
 // ─── Ally Card ────────────────────────────────────────────────────────────────
 function AllyCard({ ally }: { ally: any }) {
-  const hasSocials = ally.website || ally.instagram || ally.twitter || ally.facebook;
+  const hasSocials = ally.website || ally.instagram || ally.twitter || ally.facebook || (ally as any).tiktok;
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-white/8 bg-zinc-900 hover:border-red-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-red-950/40 cursor-pointer flex flex-col">
       {/* Cover image — taller for more visual impact */}
@@ -33,7 +33,7 @@ function AllyCard({ ally }: { ally: any }) {
           </div>
         )}
         {/* Gradient overlay bottom */}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-80" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-80 z-[1]" />
 
         {/* Featured badge */}
         {ally.isFeatured && (
@@ -43,9 +43,9 @@ function AllyCard({ ally }: { ally: any }) {
           </div>
         )}
 
-        {/* Logo — bottom left, overlapping cover */}
+        {/* Logo — bottom left, overlapping cover, must be above gradient (z-[2]) */}
         {ally.logo && (
-          <div className="absolute bottom-0 left-4 translate-y-1/2 w-14 h-14 rounded-xl overflow-hidden border-2 border-zinc-900 bg-zinc-800 shadow-lg z-10">
+          <div className="absolute bottom-0 left-4 translate-y-1/2 w-14 h-14 rounded-xl overflow-hidden border-2 border-zinc-900 bg-zinc-800 shadow-lg z-[2]">
             <img src={ally.logo} alt={ally.name} className="w-full h-full object-contain p-1.5" />
           </div>
         )}
@@ -76,7 +76,7 @@ function AllyCard({ ally }: { ally: any }) {
 
         {/* Social / links */}
         {hasSocials && (
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             {ally.website && (
               <a
                 href={ally.website}
@@ -125,6 +125,18 @@ function AllyCard({ ally }: { ally: any }) {
                 Facebook
               </a>
             )}
+            {(ally as any).tiktok && (
+              <a
+                href={`https://tiktok.com/@${(ally as any).tiktok.replace('@','')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-zinc-700/50 px-3 py-1.5 rounded-full border border-white/8"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
+                TikTok
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -136,7 +148,7 @@ function AllyCard({ ally }: { ally: any }) {
 function SubmitAllyForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState({
     name: "", description: "", website: "", country: "", city: "",
-    address: "", email: "", phone: "", instagram: "", twitter: "", facebook: "",
+    address: "", email: "", phone: "", instagram: "", twitter: "", facebook: "", tiktok: "",
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -157,6 +169,7 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
     if (form.instagram) payload.instagram = form.instagram;
     if (form.twitter) payload.twitter = form.twitter;
     if (form.facebook) payload.facebook = form.facebook;
+    if (form.tiktok) payload.tiktok = form.tiktok;
     submitMutation.mutate(payload);
   };
 
@@ -237,7 +250,7 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelCls}>Instagram</label>
           <input value={form.instagram} onChange={set("instagram")} placeholder="@usuario" className={inputCls} />
@@ -249,6 +262,10 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
         <div>
           <label className={labelCls}>Facebook</label>
           <input value={form.facebook} onChange={set("facebook")} placeholder="pagina" className={inputCls} />
+        </div>
+        <div>
+          <label className={labelCls}>TikTok</label>
+          <input value={form.tiktok} onChange={set("tiktok")} placeholder="@usuario" className={inputCls} />
         </div>
       </div>
 

@@ -2530,6 +2530,7 @@ export const appRouter = router({
         instagram: z.string().max(128).optional(),
         twitter: z.string().max(128).optional(),
         facebook: z.string().max(128).optional(),
+        tiktok: z.string().max(128).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const db = await getDb();
@@ -2570,6 +2571,7 @@ export const appRouter = router({
         instagram: z.string().optional(),
         twitter: z.string().optional(),
         facebook: z.string().optional(),
+        tiktok: z.string().optional(),
         email: z.string().optional(),
       }))
       .mutation(async ({ input }) => {

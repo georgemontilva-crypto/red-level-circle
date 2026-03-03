@@ -605,6 +605,7 @@ export const allies = mysqlTable("allies", {
   instagram: varchar("instagram", { length: 128 }),
   twitter: varchar("twitter", { length: 128 }),
   facebook: varchar("facebook", { length: 128 }),
+  tiktok: varchar("tiktok", { length: 128 }),
   status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
   adminNote: text("adminNote"),
   isFeatured: boolean("isFeatured").default(false).notNull(),
