@@ -523,6 +523,8 @@ export default function MyTeams() {
 
   const { data: me } = trpc.auth.me.useQuery();
   const { data: teams, isLoading, refetch } = trpc.teams.myTeams.useQuery();
+  const { data: games } = trpc.games.list.useQuery();
+  const [showGameDropdown, setShowGameDropdown] = useState(false);
   // Bloquear creación si el usuario ya es capitán de algún equipo
   const captainTeam = teams?.find((t) => t.captainId === me?.id);
   const isAlreadyCaptain = !!captainTeam;
@@ -692,7 +694,6 @@ export default function MyTeams() {
               {[
                 { label: "NOMBRE DEL EQUIPO *", value: teamName, setter: setTeamName, placeholder: "Ej: Red Dragons" },
                 { label: "TAG DEL EQUIPO", value: teamTag, setter: setTeamTag, placeholder: "Ej: RDG (máx. 8 chars)" },
-                { label: "JUEGO PRINCIPAL", value: teamGame, setter: setTeamGame, placeholder: "Ej: Valorant" },
               ].map(({ label, value, setter, placeholder }) => (
                 <div key={label}>
                   <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">{label}</label>
@@ -701,10 +702,49 @@ export default function MyTeams() {
                     value={value}
                     onChange={(e) => setter(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
                   />
                 </div>
               ))}
+
+              {/* JUEGO PRINCIPAL - Dropdown */}
+              <div className="relative">
+                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">JUEGO PRINCIPAL</label>
+                <button
+                  type="button"
+                  onClick={() => setShowGameDropdown((v) => !v)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-left flex items-center justify-between hover:border-red-500/60 focus:outline-none focus:border-red-500/60 transition-colors"
+                >
+                  <span className={teamGame ? "text-white" : "text-zinc-500"}>
+                    {teamGame || "Selecciona un juego"}
+                  </span>
+                  <svg className={`w-4 h-4 text-zinc-400 transition-transform ${showGameDropdown ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </button>
+                {showGameDropdown && (
+                  <div className="absolute z-50 w-full mt-1 bg-zinc-900 border border-white/10 rounded-lg shadow-2xl overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => { setTeamGame(""); setShowGameDropdown(false); }}
+                      className="w-full px-3 py-2.5 text-sm text-left text-zinc-500 hover:bg-zinc-800 transition-colors border-b border-white/5"
+                    >
+                      Sin especificar
+                    </button>
+                    {games?.map((g: any) => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => { setTeamGame(g.name); setShowGameDropdown(false); }}
+                        className={`w-full px-3 py-2.5 text-sm text-left flex items-center gap-2.5 hover:bg-zinc-800 transition-colors ${
+                          teamGame === g.name ? "text-red-400 bg-zinc-800" : "text-white"
+                        }`}
+                      >
+                        {g.logo && <img src={g.logo} alt={g.name} className="w-5 h-5 object-contain rounded" />}
+                        {g.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div>
                 <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">DESCRIPCIÓN</label>
