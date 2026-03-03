@@ -1,18 +1,36 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
-import { Link, useLocation } from "wouter";
+import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Play,
-  CheckCircle, Clock, XCircle, Send, ChevronDown, Users,
+  CheckCircle, Clock, XCircle, Send, Users,
   Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+
+// ─── TikTok icon ──────────────────────────────────────────────────────────────
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" />
+    </svg>
+  );
+}
+
+// ─── Kick icon ────────────────────────────────────────────────────────────────
+function KickIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4 2h4v8l4-8h4l-5 9 5 11h-4l-4-8v8H4V2z" />
+    </svg>
+  );
+}
 
 const CATEGORIES = [
   { value: "gaming", label: "Videojuegos", icon: Gamepad2 },
@@ -23,113 +41,142 @@ const CATEGORIES = [
   { value: "entertainment", label: "Entretenimiento", icon: Music },
 ];
 
-function StatusBadge({ status }: { status: string }) {
-  if (status === "approved") return (
-    <span className="flex items-center gap-1 text-xs text-green-400 font-mono">
-      <CheckCircle size={12} /> Aprobado
-    </span>
-  );
-  if (status === "rejected") return (
-    <span className="flex items-center gap-1 text-xs text-red-400 font-mono">
-      <XCircle size={12} /> Rechazado
-    </span>
-  );
+// ─── Social button ────────────────────────────────────────────────────────────
+function SocialBtn({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
   return (
-    <span className="flex items-center gap-1 text-xs text-yellow-400 font-mono">
-      <Clock size={12} /> En revisión
-    </span>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      title={label}
+      className={`flex items-center justify-center gap-1.5 flex-1 min-w-0 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border ${color}`}
+    >
+      {icon}
+      <span className="truncate hidden sm:inline">{label}</span>
+    </a>
   );
 }
 
+// ─── Creator Card ─────────────────────────────────────────────────────────────
 function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   const name = c.nickname ?? c.userName ?? "Creador";
   const cat = CATEGORIES.find(x => x.value === c.category);
   const [, navigate] = useLocation();
+
+  const socials = [
+    c.youtube   && { href: `https://youtube.com/@${c.youtube}`,    icon: <Youtube className="w-3.5 h-3.5 flex-shrink-0" />,   label: "YouTube",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-red-900/50 hover:text-red-300 hover:border-red-800" },
+    c.twitch    && { href: `https://twitch.tv/${c.twitch}`,         icon: <Twitch className="w-3.5 h-3.5 flex-shrink-0" />,    label: "Twitch",    color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-purple-900/50 hover:text-purple-300 hover:border-purple-800" },
+    c.twitter   && { href: `https://twitter.com/${c.twitter}`,      icon: <Twitter className="w-3.5 h-3.5 flex-shrink-0" />,   label: "Twitter",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-sky-900/50 hover:text-sky-300 hover:border-sky-800" },
+    c.instagram && { href: `https://instagram.com/${c.instagram}`,  icon: <Instagram className="w-3.5 h-3.5 flex-shrink-0" />, label: "Instagram", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-pink-900/50 hover:text-pink-300 hover:border-pink-800" },
+    c.tiktok    && { href: `https://tiktok.com/@${c.tiktok}`,       icon: <TikTokIcon className="w-3.5 h-3.5 flex-shrink-0" />, label: "TikTok",  color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-600/50 hover:text-white hover:border-zinc-500" },
+    c.facebook  && { href: `https://facebook.com/${c.facebook}`,    icon: <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />, label: "Facebook", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-blue-900/50 hover:text-blue-300 hover:border-blue-800" },
+    c.kick      && { href: `https://kick.com/${c.kick}`,            icon: <KickIcon className="w-3.5 h-3.5 flex-shrink-0" />,  label: "Kick",      color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-green-900/50 hover:text-green-300 hover:border-green-800" },
+  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
+
+  // Subtitle: category label + games/platforms
+  const subtitle = cat ? `Creador de contenido de: ${cat.label}` : "Creador de contenido";
+
   return (
-    <div onClick={() => navigate(`/profile/${c.userId}`)} className="rounded-2xl overflow-hidden bg-card transition-all cursor-pointer group" style={{ border: isLive ? "1px solid oklch(0.50 0.22 25 / 0.6)" : "1px solid oklch(0.20 0.01 0)", boxShadow: isLive ? "0 0 20px oklch(0.50 0.22 25 / 0.2)" : undefined }}>
-        {/* Banner */}
-        <div className="relative h-28 bg-gradient-to-br from-zinc-800 to-red-950/20 overflow-hidden">
-          {c.banner && (
-            <img src={c.banner} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 to-transparent" />
-          {isLive ? (
-            <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-white font-bold text-xs tracking-wider" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.7)" }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              EN VIVO
-            </div>
-          ) : cat && (
-            <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-background/60 text-xs text-secondary-foreground font-mono border border-border/50">
-              <cat.icon size={10} /> {cat.label}
-            </div>
-          )}
-        </div>
-        {/* Avatar — outside the overflow-hidden banner so it renders on top */}
-        <div className="relative" style={{ height: 0 }}>
-          <div className="absolute -top-7 left-5" style={{ border: "3px solid oklch(0.10 0.005 0)", borderRadius: "9999px", display: "inline-block", zIndex: 10 }}>
+    <div
+      onClick={() => navigate(`/profile/${c.userId}`)}
+      className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
+      style={{
+        border: isLive ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.06)",
+        boxShadow: isLive ? "0 0 20px rgba(239,68,68,0.15)" : undefined,
+      }}
+    >
+      {/* ── Banner ── */}
+      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
+        {c.banner ? (
+          <img
+            src={c.banner}
+            alt={name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
+        )}
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
+
+        {/* LIVE badge */}
+        {isLive && (
+          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-white font-black text-[10px] tracking-wider z-10"
+            style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 10px rgba(239,68,68,0.6)" }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            EN VIVO
+          </div>
+        )}
+
+        {/* Category badge */}
+        {!isLive && cat && (
+          <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/50 text-[10px] text-zinc-300 font-mono border border-white/10 z-10">
+            <cat.icon size={9} /> {cat.label}
+          </div>
+        )}
+
+        {/* Avatar — centered, overlapping the banner bottom edge */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+          <div
+            className="rounded-full overflow-hidden flex-shrink-0"
+            style={{ border: "3px solid #1a1a1a", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
+          >
             <UserAvatar
               avatar={c.avatar}
               name={name}
               activeFrameImage={c.activeFrameImage}
-              size={56}
+              size={72}
             />
           </div>
         </div>
-
-        <div className="pt-10 px-5 pb-5">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-orbitron font-bold text-white">{name}</h3>
-                {(c as { isVerified?: boolean }).isVerified && <VerifiedBadge size={16} />}
-              </div>
-              {c.subscribers > 0 && (
-                <p className="text-muted-foreground text-xs font-mono mt-0.5">
-                  {c.subscribers.toLocaleString()} seguidores
-                </p>
-              )}
-            </div>
-          </div>
-
-          {c.bio && (
-            <p className="text-muted-foreground text-sm mt-3 line-clamp-2 leading-relaxed">{c.bio}</p>
-          )}
-
-          {/* Social links */}
-          <div className="flex items-center gap-3 mt-4">
-            {c.youtube && (
-              <a href={`https://youtube.com/@${c.youtube}`} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-500 transition-colors font-mono">
-                <Youtube size={14} /> {c.youtube}
-              </a>
-            )}
-            {c.twitch && (
-              <a href={`https://twitch.tv/${c.twitch}`} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-purple-400 transition-colors font-mono">
-                <Twitch size={14} /> {c.twitch}
-              </a>
-            )}
-            {c.twitter && (
-              <a href={`https://twitter.com/${c.twitter}`} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-sky-400 transition-colors font-mono">
-                <Twitter size={14} /> {c.twitter}
-              </a>
-            )}
-            {c.instagram && (
-              <a href={`https://instagram.com/${c.instagram}`} target="_blank" rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-pink-400 transition-colors font-mono">
-                <Instagram size={14} /> {c.instagram}
-              </a>
-            )}
-          </div>
-        </div>
       </div>
+
+      {/* ── Info ── */}
+      <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
+        {/* Name with blue dot + verified badge */}
+        <div className="flex items-center justify-center gap-1.5 mb-0.5">
+          <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
+            {name}
+          </h3>
+          {c.isVerified && <VerifiedBadge size={15} />}
+          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
+        </div>
+
+        {/* Subtitle */}
+        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-1 mb-1">
+          {subtitle}
+        </p>
+
+        {/* Subscribers count */}
+        {c.subscribers > 0 && (
+          <p className="text-zinc-600 text-[11px] font-mono mb-2">
+            {c.subscribers.toLocaleString()} seguidores
+          </p>
+        )}
+
+        {/* Bio */}
+        {c.bio && (
+          <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 mb-2">{c.bio}</p>
+        )}
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Social buttons */}
+        {socials.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-3">
+            {socials.slice(0, 4).map((s, i) => (
+              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
+
+// ─── Application Form ─────────────────────────────────────────────────────────
 function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
   const { isAuthenticated, user } = useAuth();
   const { data: myApp, refetch } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
@@ -210,7 +257,7 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
 
   return (
     <form onSubmit={e => { e.preventDefault(); submit.mutate(form); }} className="space-y-5 p-6">
-      {/* Header — same style as allies form */}
+      {/* Header */}
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="font-orbitron font-bold text-lg text-white">Solicitar Verificación</h3>
@@ -268,13 +315,13 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
         <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Redes sociales (al menos una)</label>
         <div className="space-y-2">
           {[
-            { key: "youtube", icon: Youtube, placeholder: "tu_canal", prefix: "youtube.com/@" },
-            { key: "twitch", icon: Twitch, placeholder: "tu_usuario", prefix: "twitch.tv/" },
-            { key: "twitter", icon: Twitter, placeholder: "tu_usuario", prefix: "twitter.com/" },
+            { key: "youtube",   icon: Youtube,   placeholder: "tu_canal",   prefix: "youtube.com/@" },
+            { key: "twitch",    icon: Twitch,    placeholder: "tu_usuario", prefix: "twitch.tv/" },
+            { key: "twitter",   icon: Twitter,   placeholder: "tu_usuario", prefix: "twitter.com/" },
             { key: "instagram", icon: Instagram, placeholder: "tu_usuario", prefix: "instagram.com/" },
-            { key: "tiktok", icon: null, placeholder: "tu_usuario", prefix: "tiktok.com/@", label: "TT" },
-            { key: "facebook", icon: null, placeholder: "tu_pagina", prefix: "facebook.com/", label: "FB" },
-            { key: "kick", icon: null, placeholder: "tu_usuario", prefix: "kick.com/", label: "KC" },
+            { key: "tiktok",    icon: null,      placeholder: "tu_usuario", prefix: "tiktok.com/@",   label: "TT" },
+            { key: "facebook",  icon: null,      placeholder: "tu_pagina",  prefix: "facebook.com/",  label: "FB" },
+            { key: "kick",      icon: null,      placeholder: "tu_usuario", prefix: "kick.com/",      label: "KC" },
           ].map(({ key, icon: Icon, placeholder, prefix, label }: any) => (
             <div key={key} className="flex items-center gap-2">
               <div className="w-8 h-8 rounded-lg bg-zinc-700/60 border border-white/10 flex items-center justify-center shrink-0">
@@ -300,10 +347,10 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
         </div>
       </div>
 
-      {/* Minimum followers disclaimer */}
+      {/* Disclaimer */}
       <div className="rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
         <p className="font-semibold text-zinc-300 mb-1 uppercase tracking-wider font-mono text-[10px]">Requisito mínimo</p>
-        Para ser considerado creador oficial de Red Level Circle debes contar con al menos <strong className="text-white">1,000 seguidores</strong> en alguna de tus plataformas. Las solicitudes que no cumplan este requisito serán rechazadas automáticamente.
+        Para ser considerado creador oficial de Red Level Circle debes contar con al menos <strong className="text-white">1,000 seguidores</strong> en alguna de tus plataformas.
       </div>
 
       {submit.error && (
@@ -326,6 +373,7 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
   );
 }
 
+// ─── Main Creators Page ───────────────────────────────────────────────────────
 export default function Creators() {
   const { data: creators, isLoading } = trpc.creators.listApproved.useQuery();
   const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
@@ -333,7 +381,6 @@ export default function Creators() {
   const [activeFilter, setActiveFilter] = useState("all");
   const [showForm, setShowForm] = useState(false);
 
-  // Check if URL has #apply hash
   useEffect(() => {
     if (window.location.hash === "#apply") {
       setShowForm(true);
@@ -401,14 +448,24 @@ export default function Creators() {
               >
                 <cat.icon size={12} /> {cat.label} ({count})
               </button>
-              )}
-        )}
+            );
+          })}
         </div>
+
         {/* Grid */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-2xl bg-card/60 border border-border/50 h-64 animate-pulse" />
+              <div key={i} className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] overflow-hidden animate-pulse">
+                <div className="bg-zinc-800/60" style={{ height: "160px" }} />
+                <div className="p-4 pt-10 space-y-3">
+                  <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
+                  <div className="h-3 bg-zinc-800/60 rounded w-1/2 mx-auto" />
+                  <div className="flex gap-1.5 mt-3">
+                    {[...Array(3)].map((_, j) => <div key={j} className="h-8 bg-zinc-800/60 rounded-xl flex-1" />)}
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -425,7 +482,7 @@ export default function Creators() {
           </div>
         )}
 
-        {/* Floating button */}
+        {/* Floating apply button */}
         <div className="fixed bottom-8 right-8 z-50">
           <button
             onClick={() => setShowForm(true)}
@@ -437,6 +494,7 @@ export default function Creators() {
             <span className="hidden sm:inline">Ser Creador</span>
           </button>
         </div>
+
         {/* Modal */}
         {showForm && (
           <div
@@ -444,9 +502,7 @@ export default function Creators() {
             style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
             onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
           >
-            <div
-              className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl"
-            >
+            <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl">
               <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
             </div>
           </div>

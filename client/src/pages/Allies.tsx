@@ -5,18 +5,54 @@ import { SectionBanner } from "@/components/SectionBanner";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  Globe, MapPin, Phone, Mail, Instagram, Twitter, Facebook,
-  ExternalLink, Search, Filter, ChevronDown, Store, Plus, X,
-  CheckCircle, Clock, Star
+  Globe, MapPin, Instagram, Twitter, Facebook,
+  ExternalLink, Search, Store, Plus, X,
+  CheckCircle, Star, Youtube
 } from "lucide-react";
+
+// ─── TikTok icon ──────────────────────────────────────────────────────────────
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" />
+    </svg>
+  );
+}
+
+// ─── Social button ────────────────────────────────────────────────────────────
+function SocialBtn({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={e => e.stopPropagation()}
+      title={label}
+      className={`flex items-center justify-center gap-1.5 flex-1 min-w-0 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border ${color}`}
+    >
+      {icon}
+      <span className="truncate hidden sm:inline">{label}</span>
+    </a>
+  );
+}
 
 // ─── Ally Card ────────────────────────────────────────────────────────────────
 function AllyCard({ ally }: { ally: any }) {
-  const hasSocials = ally.website || ally.instagram || ally.twitter || ally.facebook || (ally as any).tiktok;
+  const socials = [
+    ally.website    && { href: ally.website, icon: <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />, label: "Web",       color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white" },
+    ally.instagram  && { href: `https://instagram.com/${ally.instagram.replace("@","")}`, icon: <Instagram className="w-3.5 h-3.5 flex-shrink-0" />, label: "Instagram", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-pink-900/50 hover:text-pink-300 hover:border-pink-800" },
+    ally.twitter    && { href: `https://twitter.com/${ally.twitter.replace("@","")}`,     icon: <Twitter className="w-3.5 h-3.5 flex-shrink-0" />,   label: "Twitter",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-sky-900/50 hover:text-sky-300 hover:border-sky-800" },
+    ally.facebook   && { href: `https://facebook.com/${ally.facebook}`,                   icon: <Facebook className="w-3.5 h-3.5 flex-shrink-0" />,  label: "Facebook",  color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-blue-900/50 hover:text-blue-300 hover:border-blue-800" },
+    ally.tiktok     && { href: `https://tiktok.com/@${ally.tiktok.replace("@","")}`,      icon: <TikTokIcon className="w-3.5 h-3.5 flex-shrink-0" />, label: "TikTok",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-600/50 hover:text-white hover:border-zinc-500" },
+  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
+
+  const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
+
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-white/8 bg-zinc-900 hover:border-red-500/50 transition-all duration-300 hover:shadow-xl hover:shadow-red-950/40 cursor-pointer flex flex-col">
-      {/* Cover image — taller for more visual impact */}
-      <div className="relative overflow-hidden flex-shrink-0" style={{ aspectRatio: "16/7" }}>
+    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60 cursor-pointer">
+
+      {/* ── Banner ── */}
+      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
         {ally.coverImage ? (
           <img
             src={ally.coverImage}
@@ -24,119 +60,57 @@ function AllyCard({ ally }: { ally: any }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-red-950/80 via-zinc-900 to-zinc-950 flex items-center justify-center">
-            {ally.logo ? (
-              <img src={ally.logo} alt={ally.name} className="max-h-20 max-w-[55%] object-contain opacity-70" />
-            ) : (
-              <Store className="w-14 h-14 text-red-500/30" />
-            )}
-          </div>
+          <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
         )}
-        {/* Gradient overlay bottom */}
-        <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-transparent to-transparent opacity-80 z-[1]" />
+        {/* Dark gradient at bottom so avatar blends */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
 
         {/* Featured badge */}
         {ally.isFeatured && (
-          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-xs font-black px-2.5 py-1 rounded-full shadow-lg">
-            <Star className="w-3 h-3 fill-black" />
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+            <Star className="w-2.5 h-2.5 fill-black" />
             Destacado
           </div>
         )}
 
-        {/* Logo — bottom left, overlapping cover, must be above gradient (z-[2]) */}
-        {ally.logo && (
-          <div className="absolute bottom-0 left-4 translate-y-1/2 w-14 h-14 rounded-xl overflow-hidden border-2 border-zinc-900 bg-zinc-800 shadow-lg z-[2]">
-            <img src={ally.logo} alt={ally.name} className="w-full h-full object-contain p-1.5" />
+        {/* Avatar/Logo — centered, overlapping the banner bottom edge */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
+          <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[#1a1a1a] bg-[#2a2a2a] shadow-xl flex items-center justify-center">
+            {ally.logo ? (
+              <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
+            ) : (
+              <Store className="w-8 h-8 text-zinc-600" />
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* Info — padded to account for logo overlap */}
-      <div className={`flex-1 flex flex-col px-4 pb-4 ${ally.logo ? "pt-9" : "pt-4"}`}>
-        {/* Name + location */}
-        <div className="mb-2">
-          <h3 className="font-orbitron font-bold text-white text-lg leading-tight group-hover:text-red-400 transition-colors">
+      {/* ── Info ── */}
+      <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
+        {/* Name with blue dot */}
+        <div className="flex items-center justify-center gap-1.5 mb-0.5">
+          <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
             {ally.name}
           </h3>
-          {(ally.city || ally.country) && (
-            <div className="flex items-center gap-1 text-zinc-500 text-xs mt-1">
-              <MapPin className="w-3 h-3 text-red-500/60 flex-shrink-0" />
-              <span>{[ally.city, ally.country].filter(Boolean).join(", ")}</span>
-            </div>
-          )}
+          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
         </div>
 
-        {/* Description */}
-        {ally.description && (
-          <p className="text-zinc-400 text-sm leading-relaxed line-clamp-3 mb-3 flex-1">{ally.description}</p>
+        {/* Subtitle — location or description */}
+        {(subtitle || ally.description) && (
+          <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 mb-3">
+            {subtitle || ally.description}
+          </p>
         )}
 
-        {/* Divider */}
-        {hasSocials && <div className="border-t border-white/5 mb-3" />}
+        {/* Spacer */}
+        <div className="flex-1" />
 
-        {/* Social / links */}
-        {hasSocials && (
-          <div className="flex items-center justify-center gap-2 flex-wrap">
-            {ally.website && (
-              <a
-                href={ally.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs font-semibold text-red-400 hover:text-red-300 transition-colors bg-red-950/30 hover:bg-red-950/50 px-3 py-1.5 rounded-full border border-red-900/40"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Sitio web
-              </a>
-            )}
-            {ally.instagram && (
-              <a
-                href={`https://instagram.com/${ally.instagram.replace("@", "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-pink-400 transition-colors bg-white/5 hover:bg-pink-950/30 px-3 py-1.5 rounded-full border border-white/8"
-              >
-                <Instagram className="w-3.5 h-3.5" />
-                Instagram
-              </a>
-            )}
-            {ally.twitter && (
-              <a
-                href={`https://twitter.com/${ally.twitter.replace("@", "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-sky-400 transition-colors bg-white/5 hover:bg-sky-950/30 px-3 py-1.5 rounded-full border border-white/8"
-              >
-                <Twitter className="w-3.5 h-3.5" />
-                Twitter
-              </a>
-            )}
-            {ally.facebook && (
-              <a
-                href={`https://facebook.com/${ally.facebook}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-blue-400 transition-colors bg-white/5 hover:bg-blue-950/30 px-3 py-1.5 rounded-full border border-white/8"
-              >
-                <Facebook className="w-3.5 h-3.5" />
-                Facebook
-              </a>
-            )}
-            {(ally as any).tiktok && (
-              <a
-                href={`https://tiktok.com/@${(ally as any).tiktok.replace('@','')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={e => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors bg-white/5 hover:bg-zinc-700/50 px-3 py-1.5 rounded-full border border-white/8"
-              >
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z" /></svg>
-                TikTok
-              </a>
-            )}
+        {/* Social buttons */}
+        {socials.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-3">
+            {socials.map((s, i) => (
+              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
+            ))}
           </div>
         )}
       </div>
@@ -206,7 +180,6 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Required */}
       <div>
         <label className={labelCls}>Nombre de la tienda *</label>
         <input required value={form.name} onChange={set("name")} placeholder="Ej: GameZone Store" className={inputCls} />
@@ -269,10 +242,9 @@ function SubmitAllyForm({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Disclaimer */}
       <div className="rounded-lg border border-red-900/40 bg-red-950/20 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
         <p className="font-semibold text-red-400 mb-1 uppercase tracking-wider font-mono text-[10px]">Acuerdo de colaboración</p>
-        Al unirte como Aliado de Red Level Circle aceptas un acuerdo de <strong className="text-zinc-200">trueque</strong>: nosotros te brindamos visibilidad en nuestro directorio público y canales de comunidad, y tú nos aportas mensualmente un producto relacionado con tu tienda. El objetivo es construir colaboraciones genuinas que beneficien a ambas partes y a nuestra comunidad gamer.
+        Al unirte como Aliado de Red Level Circle aceptas un acuerdo de <strong className="text-zinc-200">trueque</strong>: nosotros te brindamos visibilidad en nuestro directorio público y canales de comunidad, y tú nos aportas mensualmente un producto relacionado con tu tienda.
       </div>
 
       {submitMutation.error && (
@@ -309,7 +281,6 @@ export function AlliesPage() {
   const featured = allies.filter((a: any) => a.isFeatured);
   const regular = allies.filter((a: any) => !a.isFeatured);
 
-  // Filter cities based on selected country
   const availableCities = country
     ? (locations?.cities ?? []).filter((c: string) =>
         allies.some((a: any) => a.country === country && a.city === c)
@@ -396,15 +367,18 @@ export function AlliesPage() {
           </Button>
         </div>
 
-        {/* Loading */}
+        {/* Loading skeleton */}
         {isLoading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="rounded-xl bg-zinc-900/60 border border-white/5 overflow-hidden animate-pulse">
-                <div className="bg-zinc-800/60" style={{ aspectRatio: "16/9" }} />
-                <div className="p-4 space-y-2">
-                  <div className="h-4 bg-zinc-800/60 rounded w-3/4" />
-                  <div className="h-3 bg-zinc-800/60 rounded w-1/2" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] overflow-hidden animate-pulse">
+                <div className="bg-zinc-800/60" style={{ height: "160px" }} />
+                <div className="p-4 pt-10 space-y-3">
+                  <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
+                  <div className="h-3 bg-zinc-800/60 rounded w-1/2 mx-auto" />
+                  <div className="flex gap-1.5 mt-3">
+                    {[...Array(3)].map((_, j) => <div key={j} className="h-8 bg-zinc-800/60 rounded-xl flex-1" />)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -418,7 +392,7 @@ export function AlliesPage() {
               <Star className="w-4 h-4 text-yellow-500" />
               <h2 className="font-orbitron font-bold text-sm text-zinc-300 uppercase tracking-wider">Aliados Destacados</h2>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {featured.map((ally: any) => <AllyCard key={ally.id} ally={ally} />)}
             </div>
           </section>
@@ -433,7 +407,7 @@ export function AlliesPage() {
                 <h2 className="font-orbitron font-bold text-sm text-zinc-300 uppercase tracking-wider">Directorio</h2>
               </div>
             )}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {regular.map((ally: any) => <AllyCard key={ally.id} ally={ally} />)}
             </div>
           </section>
