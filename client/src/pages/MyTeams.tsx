@@ -669,113 +669,110 @@ export default function MyTeams() {
       {showCreate && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "oklch(0 0 0 / 0.85)" }}
+          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
           onClick={() => setShowCreate(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl p-6 overflow-y-auto max-h-[90vh]"
-            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.15)" }}
+            className="w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-display text-lg font-bold tracking-wider text-foreground">CREAR EQUIPO</h3>
-              <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors">
-                <X size={16} style={{ color: "var(--text-muted)" }} />
-              </button>
-            </div>
+            <div className="p-6 space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-orbitron font-bold text-lg text-white tracking-wider">Crear Equipo</h3>
+                  <p className="text-zinc-400 text-xs mt-0.5">Completa los datos de tu nuevo equipo</p>
+                </div>
+                <button onClick={() => setShowCreate(false)} className="p-1.5 rounded-lg hover:bg-white/10 transition-colors text-zinc-400 hover:text-white">
+                  <X size={16} />
+                </button>
+              </div>
 
-            <div className="space-y-4">
+              {/* Fields */}
               {[
                 { label: "NOMBRE DEL EQUIPO *", value: teamName, setter: setTeamName, placeholder: "Ej: Red Dragons" },
                 { label: "TAG DEL EQUIPO", value: teamTag, setter: setTeamTag, placeholder: "Ej: RDG (máx. 8 chars)" },
                 { label: "JUEGO PRINCIPAL", value: teamGame, setter: setTeamGame, placeholder: "Ej: Valorant" },
               ].map(({ label, value, setter, placeholder }) => (
                 <div key={label}>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
+                  <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">{label}</label>
                   <input
                     type="text"
                     value={value}
                     onChange={(e) => setter(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                    onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
-                    onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
+                    className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
                   />
                 </div>
               ))}
+
               <div>
-                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">DESCRIPCIÓN</label>
+                <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">DESCRIPCIÓN</label>
                 <textarea
                   value={teamDesc}
                   onChange={(e) => setTeamDesc(e.target.value)}
                   placeholder="Descripción del equipo..."
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl text-sm resize-none transition-all duration-200"
-                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                  onFocus={(e) => { e.target.style.borderColor = "oklch(0.55 0.22 25)"; e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)"; }}
-                  onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; e.target.style.boxShadow = "none"; }}
+                  className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors resize-none"
                 />
               </div>
-            </div>
 
-            {/* Logo y Banner */}
-            <div className="grid grid-cols-2 gap-3">
-              {[{ label: "LOGO DEL EQUIPO", field: "logo" as const, val: teamLogo, set: setTeamLogo }, { label: "BANNER DEL EQUIPO", field: "banner" as const, val: teamBannerCreate, set: setTeamBannerCreate }].map(({ label, field, val, set }) => (
-                <div key={field}>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
-                  {val && <img src={val} alt="" className={`w-full ${field === "banner" ? "h-16" : "h-12"} object-cover rounded-lg mb-2 border border-white/10`} />}
-                  <label className="cursor-pointer block">
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-display tracking-wider transition-colors" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.60 0.005 0)" }}>
-                      {uploadingCreate === field ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus size={12} />}
-                      {uploadingCreate === field ? "SUBIENDO..." : "SUBIR IMAGEN"}
-                    </div>
-                    <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                      const file = e.target.files?.[0]; if (!file) return;
-                      if (file.size > 5 * 1024 * 1024) { toast.error("Máximo 5MB"); return; }
-                      setUploadingCreate(field);
-                      try {
-                        const reader = new FileReader();
-                        reader.onload = async (ev) => {
-                          const base64 = (ev.target?.result as string).split(",")[1];
-                          const result = await uploadImageCreate.mutateAsync({ base64, mimeType: file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp", type: "banner" });
-                          set(result.url);
-                          setUploadingCreate(null);
-                        };
-                        reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingCreate(null); };
-                        reader.readAsDataURL(file);
-                      } catch { toast.error("Error al subir imagen"); setUploadingCreate(null); }
-                    }} />
-                  </label>
-                </div>
-              ))}
-            </div>
+              {/* Logo y Banner */}
+              <div className="grid grid-cols-2 gap-3">
+                {[{ label: "LOGO DEL EQUIPO", field: "logo" as const, val: teamLogo, set: setTeamLogo }, { label: "BANNER DEL EQUIPO", field: "banner" as const, val: teamBannerCreate, set: setTeamBannerCreate }].map(({ label, field, val, set }) => (
+                  <div key={field}>
+                    <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">{label}</label>
+                    {val && <img src={val} alt="" className={`w-full ${field === "banner" ? "h-16" : "h-12"} object-cover rounded-lg mb-2 border border-white/10`} />}
+                    <label className="cursor-pointer block">
+                      <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-zinc-400 bg-zinc-800/60 border border-white/10 hover:border-red-500/40 transition-colors">
+                        {uploadingCreate === field ? <div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Plus size={12} />}
+                        {uploadingCreate === field ? "Subiendo..." : "Subir imagen"}
+                      </div>
+                      <input type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) { toast.error("Máximo 5MB"); return; }
+                        setUploadingCreate(field);
+                        try {
+                          const reader = new FileReader();
+                          reader.onload = async (ev) => {
+                            const base64 = (ev.target?.result as string).split(",")[1];
+                            const result = await uploadImageCreate.mutateAsync({ base64, mimeType: file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp", type: "banner" });
+                            set(result.url);
+                            setUploadingCreate(null);
+                          };
+                          reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingCreate(null); };
+                          reader.readAsDataURL(file);
+                        } catch { toast.error("Error al subir imagen"); setUploadingCreate(null); }
+                      }} />
+                    </label>
+                  </div>
+                ))}
+              </div>
 
-            <div className="mt-2 p-3 rounded-xl" style={{ background: "oklch(0.55 0.22 25 / 0.05)", border: "1px solid oklch(0.55 0.22 25 / 0.15)" }}>
-              <p className="text-xs text-muted-foreground">
-                <span style={{ color: "oklch(0.65 0.22 25)" }}>Tip:</span> Después de crear el equipo, podrás añadir jugadores buscando por su @nickname.
-              </p>
-            </div>
+              {/* Tip */}
+              <div className="rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-4 py-3 text-xs text-zinc-400">
+                <span className="font-semibold text-red-400">Tip:</span> Después de crear el equipo, podrás añadir jugadores buscando por su @nickname.
+              </div>
 
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowCreate(false)}
-                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
-                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
-              >
-                CANCELAR
-              </button>
-              <button
-                onClick={() => {
-                  if (!teamName.trim()) { toast.error("El nombre del equipo es requerido"); return; }
-                  createMutation.mutate({ name: teamName, tag: teamTag || undefined, game: teamGame || undefined, description: teamDesc || undefined, logo: teamLogo || undefined, banner: teamBannerCreate || undefined });
-                }}
-                disabled={createMutation.isPending}
-                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
-              >
-                {createMutation.isPending ? "CREANDO..." : "CREAR EQUIPO"}
-              </button>
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setShowCreate(false)}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-zinc-400 bg-zinc-800/60 border border-white/10 hover:border-white/20 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    if (!teamName.trim()) { toast.error("El nombre del equipo es requerido"); return; }
+                    createMutation.mutate({ name: teamName, tag: teamTag || undefined, game: teamGame || undefined, description: teamDesc || undefined, logo: teamLogo || undefined, banner: teamBannerCreate || undefined });
+                  }}
+                  disabled={createMutation.isPending}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {createMutation.isPending ? "Creando..." : "Crear equipo"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
