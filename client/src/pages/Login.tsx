@@ -112,37 +112,149 @@ export default function Login() {
   const neonRed = "oklch(0.55 0.22 25)";
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "var(--bg-base, #0d0d0d)" }}>
-      <div className="fixed inset-0 pointer-events-none" style={{ background: `radial-gradient(ellipse 60% 50% at 50% 0%, oklch(0.55 0.22 25 / 0.08) 0%, transparent 70%)` }} />
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-black tracking-[0.3em] uppercase font-display" style={{ color: "var(--text-primary, #fff)" }}>
-            <span style={{ color: neonRed }}>RED</span>LEVEL
-          </h1>
-          <p className="text-xs tracking-[0.4em] uppercase mt-1" style={{ color: "var(--text-muted, rgba(255,255,255,0.5))" }}>CIRCLE</p>
+    /* ── Blank page: full viewport, no sidebar/topnav ── */
+    <div
+      className="fixed inset-0 flex overflow-hidden"
+      style={{ background: "#0a0a0a" }}
+    >
+      {/* ══════════════════════════════════════════════════════
+          LEFT PANEL — background image + glassmorphism logo
+      ══════════════════════════════════════════════════════ */}
+      <div className="hidden lg:flex lg:w-1/2 relative flex-col items-center justify-center overflow-hidden">
+        {/* Background image */}
+        <img
+          src="/backgroundredfluid.webp"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: 0.85 }}
+        />
+        {/* Dark overlay for depth */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(135deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.65) 100%)",
+          }}
+        />
+
+        {/* Glassmorphism logo card */}
+        <div
+          className="relative z-10 flex flex-col items-center px-12 py-10 rounded-3xl"
+          style={{
+            background: "rgba(10, 10, 10, 0.45)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow:
+              "0 8px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)",
+          }}
+        >
+          {/* Logo image */}
+          <img
+            src="/logocompleto.webp"
+            alt="Red Level Circle"
+            className="w-56 object-contain mb-6"
+            style={{ filter: "drop-shadow(0 0 24px oklch(0.55 0.22 25 / 0.5))" }}
+          />
+
+          {/* Divider */}
+          <div
+            className="w-16 h-px mb-5"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent, oklch(0.55 0.22 25 / 0.8), transparent)",
+            }}
+          />
+
+          {/* Slogan */}
+          <p
+            className="text-center text-sm font-mono tracking-[0.25em] uppercase leading-relaxed"
+            style={{ color: "rgba(255,255,255,0.55)", maxWidth: "220px" }}
+          >
+            La plataforma de esports
+            <br />
+            <span style={{ color: "oklch(0.65 0.22 25)" }}>para la comunidad</span>
+          </p>
+
+          {/* Feature pills */}
+          <div className="flex gap-3 mt-7 flex-wrap justify-center">
+            {[
+              { icon: <Trophy size={13} style={{ color: "oklch(0.65 0.18 80)" }} />, label: "Torneos" },
+              { icon: <Swords size={13} style={{ color: neonRed }} />, label: "Equipos" },
+              { icon: <BarChart3 size={13} style={{ color: "oklch(0.55 0.18 220)" }} />, label: "Rankings" },
+            ].map(({ icon, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono"
+                style={{
+                  background: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  color: "rgba(255,255,255,0.5)",
+                }}
+              >
+                {icon}
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ══════════════════════════════════════════════════════
+          RIGHT PANEL — form
+      ══════════════════════════════════════════════════════ */}
+      <div
+        className="flex-1 flex flex-col items-center justify-center overflow-y-auto px-6 py-10 relative"
+        style={{ background: "#0d0d0d" }}
+      >
+        {/* Subtle red glow top */}
+        <div
+          className="absolute top-0 left-0 right-0 h-64 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse 70% 40% at 50% 0%, oklch(0.55 0.22 25 / 0.07) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Mobile logo (shown only on small screens) */}
+        <div className="lg:hidden mb-8 text-center">
+          <img src="/logocompleto.webp" alt="Red Level Circle" className="w-36 mx-auto mb-2 object-contain" />
         </div>
 
-        {/* Card */}
-        <div className="rounded-2xl p-8" style={{ background: "var(--bg-card, rgba(255,255,255,0.04))", border: "1px solid oklch(0.22 0.01 0)", boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.05)" }}>
+        <div className="w-full max-w-md relative z-10">
           {/* Mode Toggle */}
-          <div className="flex rounded-xl p-1 mb-6" style={{ background: "var(--bg-hover, rgba(255,255,255,0.06))" }}>
+          <div
+            className="flex rounded-xl p-1 mb-7"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
+          >
             {(["login", "register"] as AuthMode[]).map((m) => (
-              <button key={m} onClick={() => { setMode(m); setError(null); setSuccess(null); }}
-                className="flex-1 py-2 rounded-lg text-sm font-semibold font-display tracking-wider uppercase transition-all duration-200"
-                style={{ background: mode === m ? neonRed : "transparent", color: mode === m ? "#fff" : "var(--text-muted, rgba(255,255,255,0.5))", boxShadow: mode === m ? `0 0 12px ${neonRed}60` : "none" }}>
+              <button
+                key={m}
+                onClick={() => { setMode(m); setError(null); setSuccess(null); }}
+                className="flex-1 py-2.5 rounded-lg text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200"
+                style={{
+                  background: mode === m ? neonRed : "transparent",
+                  color: mode === m ? "#fff" : "rgba(255,255,255,0.4)",
+                  boxShadow: mode === m ? `0 0 16px oklch(0.55 0.22 25 / 0.4)` : "none",
+                }}
+              >
                 {m === "login" ? "Iniciar Sesión" : "Registrarse"}
               </button>
             ))}
           </div>
 
           {/* Title */}
-          <div className="mb-6">
-            <h2 className="text-xl font-bold font-display tracking-wide uppercase" style={{ color: "var(--text-primary, #fff)" }}>
+          <div className="mb-7">
+            <h2
+              className="text-2xl font-black font-mono tracking-widest uppercase"
+              style={{ color: "#fff" }}
+            >
               {mode === "login" ? "Bienvenido de vuelta" : "Crea tu cuenta"}
             </h2>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted, rgba(255,255,255,0.5))" }}>
-              {mode === "login" ? "Ingresa tus credenciales para acceder" : "Únete a la comunidad de esports"}
+            <p className="text-sm mt-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+              {mode === "login"
+                ? "Ingresa tus credenciales para acceder"
+                : "Únete a la comunidad de esports"}
             </p>
           </div>
 
@@ -150,84 +262,184 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div>
-                <label className="block text-xs font-semibold tracking-wider uppercase mb-1.5" style={{ color: "var(--text-muted, rgba(255,255,255,0.5))" }}>Nombre de usuario</label>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre o alias" required minLength={2} maxLength={64}
+                <label
+                  className="block text-xs font-semibold tracking-widest uppercase mb-1.5"
+                  style={{ color: "rgba(255,255,255,0.45)" }}
+                >
+                  Nombre de usuario
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Tu nombre o alias"
+                  required
+                  minLength={2}
+                  maxLength={64}
                   className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                  style={{ background: "var(--bg-hover, rgba(255,255,255,0.06))", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary, #fff)" }}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    color: "#fff",
+                  }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = neonRed)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.22 0.01 0)")} />
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+                />
               </div>
             )}
+
             <div>
-              <label className="block text-xs font-semibold tracking-wider uppercase mb-1.5" style={{ color: "var(--text-muted, rgba(255,255,255,0.5))" }}>Correo electrónico</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="tu@correo.com" required
+              <label
+                className="block text-xs font-semibold tracking-widest uppercase mb-1.5"
+                style={{ color: "rgba(255,255,255,0.45)" }}
+              >
+                Correo electrónico
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
+                required
                 className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                style={{ background: "var(--bg-hover, rgba(255,255,255,0.06))", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary, #fff)" }}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.10)",
+                  color: "#fff",
+                }}
                 onFocus={(e) => (e.currentTarget.style.borderColor = neonRed)}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.22 0.01 0)")} />
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+              />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold tracking-wider uppercase mb-1.5" style={{ color: "var(--text-muted, rgba(255,255,255,0.5))" }}>Contraseña</label>
+              <label
+                className="block text-xs font-semibold tracking-widest uppercase mb-1.5"
+                style={{ color: "rgba(255,255,255,0.45)" }}
+              >
+                Contraseña
+              </label>
               <div className="relative">
-                <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)}
-                  placeholder={mode === "register" ? "Mínimo 8 caracteres" : "Tu contraseña"} required minLength={mode === "register" ? 8 : 1}
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder={mode === "register" ? "Mínimo 8 caracteres" : "Tu contraseña"}
+                  required
+                  minLength={mode === "register" ? 8 : 1}
                   className="w-full px-4 py-3 pr-12 rounded-xl text-sm outline-none transition-all duration-200"
-                  style={{ background: "var(--bg-hover, rgba(255,255,255,0.06))", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary, #fff)" }}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    color: "#fff",
+                  }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = neonRed)}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "oklch(0.22 0.01 0)")} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1" style={{ color: "var(--text-muted, rgba(255,255,255,0.4))" }}>
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.10)")}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1"
+                  style={{ color: "rgba(255,255,255,0.35)" }}
+                >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
             {error && (
-              <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "oklch(0.55 0.22 25 / 0.1)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.80 0.18 25)" }}>{error}</div>
+              <div
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{
+                  background: "oklch(0.55 0.22 25 / 0.1)",
+                  border: "1px solid oklch(0.55 0.22 25 / 0.3)",
+                  color: "oklch(0.80 0.18 25)",
+                }}
+              >
+                {error}
+              </div>
             )}
             {success && (
-              <div className="rounded-xl px-4 py-3 text-sm" style={{ background: "oklch(0.55 0.18 145 / 0.1)", border: "1px solid oklch(0.55 0.18 145 / 0.3)", color: "oklch(0.75 0.18 145)" }}>{success}</div>
+              <div
+                className="rounded-xl px-4 py-3 text-sm"
+                style={{
+                  background: "oklch(0.55 0.18 145 / 0.1)",
+                  border: "1px solid oklch(0.55 0.18 145 / 0.3)",
+                  color: "oklch(0.75 0.18 145)",
+                }}
+              >
+                {success}
+              </div>
             )}
 
-            <button type="submit" disabled={loading}
-              className="w-full py-3.5 rounded-xl font-display text-sm tracking-[0.2em] uppercase font-semibold transition-all duration-300 flex items-center justify-center gap-2 mt-2"
-              style={{ background: loading ? "oklch(0.40 0.15 25)" : neonRed, color: "#fff", boxShadow: loading ? "none" : `0 0 20px ${neonRed}60`, cursor: loading ? "not-allowed" : "pointer" }}>
-              {loading ? (<><Loader2 size={16} className="animate-spin" /> Procesando...</>) : mode === "login" ? "Entrar" : "Crear Cuenta"}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-xl font-mono text-sm tracking-[0.25em] uppercase font-bold transition-all duration-300 flex items-center justify-center gap-2 mt-2"
+              style={{
+                background: loading ? "oklch(0.40 0.15 25)" : neonRed,
+                color: "#fff",
+                boxShadow: loading ? "none" : `0 0 24px oklch(0.55 0.22 25 / 0.5)`,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+            >
+              {loading ? (
+                <><Loader2 size={16} className="animate-spin" /> Procesando...</>
+              ) : mode === "login" ? (
+                "Entrar"
+              ) : (
+                "Crear Cuenta"
+              )}
             </button>
           </form>
 
           {/* Divider */}
-          <div className="relative flex items-center gap-4 my-5">
-            <div className="flex-1 h-px" style={{ background: "oklch(0.22 0.01 0)" }} />
-            <span className="text-xs tracking-widest uppercase" style={{ color: "var(--text-muted, rgba(255,255,255,0.4))" }}>o continúa con</span>
-            <div className="flex-1 h-px" style={{ background: "oklch(0.22 0.01 0)" }} />
+          <div className="relative flex items-center gap-4 my-6">
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
+            <span
+              className="text-xs tracking-widest uppercase font-mono"
+              style={{ color: "rgba(255,255,255,0.3)" }}
+            >
+              o continúa con
+            </span>
+            <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,0.08)" }} />
           </div>
 
           {/* Google Sign-In */}
           {import.meta.env.VITE_GOOGLE_CLIENT_ID ? (
             <div id="google-signin-btn" className="w-full flex justify-center" />
           ) : (
-            <div className="rounded-xl px-4 py-3 text-center text-xs" style={{ background: "var(--bg-hover, rgba(255,255,255,0.04))", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted, rgba(255,255,255,0.3))" }}>
-              Google Sign-In no configurado<br />
-              <span style={{ color: "oklch(0.55 0.22 25 / 0.7)" }}>Agrega VITE_GOOGLE_CLIENT_ID en Railway</span>
+            <div
+              className="rounded-xl px-4 py-3 text-center text-xs"
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                color: "rgba(255,255,255,0.25)",
+              }}
+            >
+              Google Sign-In no configurado
+              <br />
+              <span style={{ color: "oklch(0.55 0.22 25 / 0.6)" }}>
+                Agrega VITE_GOOGLE_CLIENT_ID en Railway
+              </span>
             </div>
           )}
 
-          {/* Footer */}
-          <div className="pt-6 border-t mt-6" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
-            <p className="text-xs text-center mb-4 tracking-widest uppercase font-display" style={{ color: "var(--text-muted, rgba(255,255,255,0.3))" }}>Plataforma de Esports</p>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { icon: <Trophy size={18} style={{ color: "oklch(0.65 0.18 80)" }} />, label: "Torneos" },
-                { icon: <Swords size={18} style={{ color: neonRed }} />, label: "Equipos" },
-                { icon: <BarChart3 size={18} style={{ color: "oklch(0.55 0.18 220)" }} />, label: "Rankings" },
-              ].map(({ icon, label }) => (
-                <div key={label} className="rounded-lg p-3 text-center" style={{ background: "var(--bg-card, rgba(255,255,255,0.03))", border: "1px solid oklch(0.18 0.01 0)" }}>
-                  <div className="flex justify-center mb-1">{icon}</div>
-                  <div className="text-xs font-display tracking-wider" style={{ color: "var(--text-muted, rgba(255,255,255,0.4))" }}>{label}</div>
-                </div>
-              ))}
-            </div>
-          </div>
+          {/* Switch mode link */}
+          <p
+            className="text-center text-xs mt-6 font-mono"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+          >
+            {mode === "login" ? "¿No tienes cuenta?" : "¿Ya tienes cuenta?"}{" "}
+            <button
+              type="button"
+              onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(null); setSuccess(null); }}
+              className="font-bold transition-colors hover:opacity-80"
+              style={{ color: neonRed }}
+            >
+              {mode === "login" ? "Regístrate" : "Inicia sesión"}
+            </button>
+          </p>
         </div>
       </div>
     </div>

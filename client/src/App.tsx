@@ -65,11 +65,16 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
 
 function Router() {
   return (
-    <SidebarLayout>
-      <Switch>
-        {/* Public routes */}
-        <Route path="/" component={Home} />
-        <Route path="/login" component={Login} />
+    <Switch>
+      {/* Blank page routes (no sidebar/topnav) */}
+      <Route path="/login" component={Login} />
+
+      {/* App routes with sidebar layout */}
+      <Route>
+        <SidebarLayout>
+          <Switch>
+            {/* Public routes */}
+            <Route path="/" component={Home} />
         <Route path="/tournaments" component={Tournaments} />
         <Route path="/tournaments/:id" component={TournamentDetail} />
         <Route path="/ranking" component={Ranking} />
@@ -107,11 +112,13 @@ function Router() {
         <Route path="/profile/:id" component={UserProfile} />
         <Route path="/settings" component={Settings} />
 
-        {/* 404 */}
-        <Route path="/404" component={NotFound} />
-        <Route component={NotFound} />
-      </Switch>
-    </SidebarLayout>
+            {/* 404 */}
+            <Route path="/404" component={NotFound} />
+            <Route component={NotFound} />
+          </Switch>
+        </SidebarLayout>
+      </Route>
+    </Switch>
   );
 }
 
