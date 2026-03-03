@@ -2,6 +2,13 @@ import { useState, useEffect } from "react";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // ─── Google Sign-In helper ────────────────────────────────────────────────────
 declare global {
@@ -392,27 +399,42 @@ export default function Login() {
                     </div>
                   </div>
 
-                  {/* Nickname */}
-                  <div>
-                    <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                      Nickname <span style={{ color: neonRed }}>*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={nickname}
-                      onChange={(e) => setNickname(e.target.value.replace(/\s/g, ""))}
-                      placeholder="Tu alias público (ej: ProGamer99)"
-                      required
-                      minLength={3}
-                      maxLength={32}
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                      style={inputBase}
-                      onFocus={onFocusRed}
-                      onBlur={onBlurGray}
-                    />
-                    <p className="text-xs mt-1" style={{ color: "rgba(255,255,255,0.28)" }}>
-                      Nombre visible en la plataforma. Sin espacios.
-                    </p>
+                  {/* Nickname + Email in the same row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        Nickname <span style={{ color: neonRed }}>*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={nickname}
+                        onChange={(e) => setNickname(e.target.value.replace(/\s/g, ""))}
+                        placeholder="ProGamer99"
+                        required
+                        minLength={3}
+                        maxLength={32}
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                        style={inputBase}
+                        onFocus={onFocusRed}
+                        onBlur={onBlurGray}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                        Correo electrónico
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="tu@correo.com"
+                        required
+                        className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                        style={inputBase}
+                        onFocus={onFocusRed}
+                        onBlur={onBlurGray}
+                      />
+                    </div>
                   </div>
 
                   {/* Country */}
@@ -420,42 +442,40 @@ export default function Login() {
                     <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
                       País <span style={{ color: neonRed }}>*</span>
                     </label>
-                    <select
-                      value={country}
-                      onChange={(e) => setCountry(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200 appearance-none"
-                      style={{ ...inputBase, cursor: "pointer" }}
-                      onFocus={onFocusRed}
-                      onBlur={onBlurGray}
-                    >
-                      <option value="" style={{ background: "#1a1a1a" }}>Selecciona tu país</option>
-                      {COUNTRIES.map((c) => (
-                        <option key={c.code} value={c.code} style={{ background: "#1a1a1a" }}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Select value={country} onValueChange={setCountry}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecciona tu país" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((c) => (
+                          <SelectItem key={c.code} value={c.code}>
+                            {c.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </>
               )}
 
-              <div>
-                <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
-                  Correo electrónico
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="tu@correo.com"
-                  required
-                  className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
-                  style={inputBase}
-                  onFocus={onFocusRed}
-                  onBlur={onBlurGray}
-                />
-              </div>
+              {mode === "login" && (
+                <div>
+                  <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    Correo electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@correo.com"
+                    required
+                    className="w-full px-4 py-3 rounded-xl text-sm outline-none transition-all duration-200"
+                    style={inputBase}
+                    onFocus={onFocusRed}
+                    onBlur={onBlurGray}
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold tracking-widest uppercase mb-1.5" style={{ color: "rgba(255,255,255,0.45)" }}>
