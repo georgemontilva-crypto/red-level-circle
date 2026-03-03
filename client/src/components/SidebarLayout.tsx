@@ -8,7 +8,7 @@ import {
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-
+import { TopbarNotificationBell } from "./NotificationBell";
 import { TopNav } from "./TopNav";
 import PageContainer from "./PageContainer";
 
