@@ -6,7 +6,7 @@ import { Link } from "wouter";
 import {
   Camera, User, Globe, MessageSquare, Save, ChevronLeft,
   Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2,
-  BadgeCheck, Clock, XCircle, Radio
+  BadgeCheck, Clock, XCircle, Radio, ShoppingBag
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
@@ -93,10 +93,6 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
   const uploadMutation = trpc.profile.uploadImage.useMutation();
 
   const handleFile = async (file: File) => {
-    if (!canUpload) {
-      toast.error("No tienes permiso para subir un banner personalizado");
-      return;
-    }
     if (!file.type.startsWith("image/")) {
       toast.error("Solo se permiten imágenes");
       return;
@@ -132,7 +128,7 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
         className={`relative w-full h-32 rounded-xl overflow-hidden border transition-colors ${
           canUpload
             ? "cursor-pointer group border-border hover:border-red-500/50"
-            : "cursor-not-allowed border-border/30 opacity-70"
+            : "border-border/40"
         }`}
         onClick={() => canUpload && inputRef.current?.click()}
       >
@@ -149,7 +145,7 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
           <img src={displayUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
         )}
         {canUpload ? (
-          <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+          <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
             {uploading ? (
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             ) : (
@@ -160,12 +156,16 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
             )}
           </div>
         ) : (
-          <div className="absolute inset-0 flex items-end justify-center pb-3">
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(239,68,68,0.3)", color: "rgba(239,68,68,0.8)" }}>
-              <span>🔒</span>
-              <span>BANNER BLOQUEADO</span>
+          /* No permission: show shop CTA at bottom-right */
+          <Link href="/shop">
+            <div className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono cursor-pointer transition-all hover:scale-105"
+              style={{ background: "rgba(0,0,0,0.75)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", color: "oklch(0.75 0.22 25)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              <span>Fondos en la tienda</span>
             </div>
-          </div>
+          </Link>
         )}
         <input
           ref={inputRef}
@@ -175,12 +175,6 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
           onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
         />
       </div>
-      {!canUpload && (
-        <p className="text-xs font-mono text-muted-foreground/70 text-center">
-          El banner personalizado está disponible para creadores de contenido, capitanes oficiales y negocios verificados.
-          Contacta al equipo de RLC para solicitar acceso.
-        </p>
-      )}
     </div>
   );
 }
@@ -498,6 +492,8 @@ function VerificationSection() {
 export default function Settings() {
   const { isAuthenticated, user } = useAuth();
   const { data: me, refetch } = trpc.auth.me.useQuery();
+  const { data: creatorApp } = trpc.creators.getMyApplication.useQuery();
+  const isApprovedCreator = creatorApp?.status === "approved";
 
   const [form, setForm] = useState({
     nickname: "",
@@ -769,33 +765,28 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Profile Type */}
+        {/* Profile Type — read-only, assigned by admin */}
         <div className="space-y-4">
           <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
             <Shield className="w-4 h-4" /> TIPO DE PERFIL
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {profileTypeOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => setForm((f) => ({ ...f, profileType: opt.value as "player" | "team_captain" | "event_creator" }))}
-                className={`p-4 rounded-xl border text-left transition-all ${
-                  form.profileType === opt.value
-                    ? "border-red-500 bg-red-500/10"
-                    : "border-border bg-card hover:border-zinc-600"
-                }`}
-              >
-                <div className={`flex items-center gap-2 mb-2 ${form.profileType === opt.value ? "text-red-400" : "text-muted-foreground"}`}>
-                  {opt.icon}
-                  <span className="font-mono font-bold text-sm">{opt.label}</span>
+          {(() => {
+            const current = profileTypeOptions.find((o) => o.value === form.profileType) ?? profileTypeOptions[0];
+            return (
+              <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card/60">
+                <div className="flex items-center gap-2 text-red-400">
+                  {current.icon}
+                  <span className="font-mono font-bold text-sm text-white">{current.label}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">{opt.desc}</p>
-              </button>
-            ))}
-          </div>
+                <p className="text-xs text-muted-foreground">{current.desc}</p>
+                <span className="ml-auto text-xs font-mono text-muted-foreground/50 select-none">Asignado por administrador</span>
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Social Links */}
+        {/* Social Links — only visible to approved content creators */}
+        {isApprovedCreator && (
         <div className="space-y-4">
           <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
             <Globe className="w-4 h-4" /> REDES SOCIALES
@@ -825,7 +816,7 @@ export default function Settings() {
                 type="text"
                 value={form.socialDiscord}
                 onChange={(e) => setForm((f) => ({ ...f, socialDiscord: e.target.value }))}
-                placeholder="usuariovar(--bg-main)0 o usuario"
+                placeholder="usuario o servidor"
                 maxLength={128}
                 className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
               />
@@ -846,6 +837,7 @@ export default function Settings() {
             </div>
           </div>
         </div>
+        )}
 
         {/* Roster Photo */}
         <RosterPhotoUpload currentUrl={(me as { rosterPhoto?: string })?.rosterPhoto ?? null} />

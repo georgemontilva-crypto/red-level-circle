@@ -214,8 +214,9 @@ export default function UserProfile() {
           className="pb-4"
           style={{ background: "var(--bg-card)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}
         >
+          <div className="max-w-2xl">
           {/* Avatar row — pulled up to overlap the banner */}
-          <div className="flex items-end justify-between mb-3" style={{ marginTop: "-72px" }}>
+          <div className="flex items-end justify-between mb-3" style={{ marginTop: "-52px" }}>
             <div className="relative inline-block" style={{ zIndex: 10 }}>
               {equippedAura && (
                 <div
@@ -228,21 +229,21 @@ export default function UserProfile() {
                   src={equippedFrame.frameImage}
                   alt="Frame"
                   className="absolute z-10 pointer-events-none"
-                  style={{ width: "160px", height: "160px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+                  style={{ width: "120px", height: "120px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
                 />
               )}
               <div
                 className="relative z-0"
                 style={{
-                  width: "128px",
-                  height: "128px",
+                  width: "96px",
+                  height: "96px",
                   borderRadius: "50%",
                   border: "4px solid oklch(0.10 0.005 0)",
                   boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
                   overflow: "hidden",
                 }}
               >
-                <UserAvatar avatar={profile.avatar} name={profile.name} size={128} />
+                <UserAvatar avatar={profile.avatar} name={profile.name} size={96} />
               </div>
             </div>
           </div>
@@ -392,6 +393,7 @@ export default function UserProfile() {
               </a>
             )}
           </div>
+          </div>{/* end max-w-2xl */}
         </div>
       </div>
 
