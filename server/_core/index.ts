@@ -52,6 +52,12 @@ async function runCustomMigrations() {
     // 0027: creator social networks
     "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `facebook` varchar(256)",
     "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `kick` varchar(256)",
+    // content_creators extra columns that may be missing in Railway
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `subscribers` int DEFAULT 0",
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `adminNote` text",
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `appliedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `reviewedAt` timestamp NULL",
+    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     // 0028: news reference and gallery
     "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `referenceUrl` text",
     "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `gallery` text",
