@@ -672,47 +672,45 @@ export default function Ranking() {
 
   return (
     <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
-      {/* Header hero */}
-      <div
-        className="relative overflow-hidden rounded-xl mb-6 h-48 sm:h-64 lg:h-72"
-        style={{
-          background: `linear-gradient(135deg, ${activeColor.from} 0%, oklch(0.06 0.005 0) 60%)`,
-          border: `1px solid ${activeColor.accent}18`,
-          transition: "background 600ms ease, border-color 600ms ease",
-        }}
-      >
-        {/* Diagonal stripe pattern */}
+      {/* Header hero — mismo estilo que SectionBanner */}
+      <div className="relative overflow-hidden rounded-xl mb-6 h-48 sm:h-64 lg:h-72">
+        {/* Fondo base rojo-oscuro igual que SectionBanner */}
+        <div className="absolute inset-0 bg-gradient-to-r from-red-950/70 via-zinc-950 to-black" />
+        {/* Patrón diagonal rojo */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.06]"
+          className="absolute inset-0 opacity-[0.08]"
           style={{
             backgroundImage: "repeating-linear-gradient(45deg, #dc2626 0, #dc2626 1px, transparent 0, transparent 50%)",
             backgroundSize: "20px 20px",
           }}
         />
+        {/* Glow del juego activo encima */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: `radial-gradient(ellipse 60% 80% at 20% 50%, ${activeColor.glow} 0%, transparent 70%)`,
+            background: `radial-gradient(ellipse 50% 100% at 15% 50%, ${activeColor.glow} 0%, transparent 65%)`,
             transition: "background 600ms ease",
           }}
         />
-        <div className="relative h-full flex items-center px-6 sm:px-10">
-          <div className="flex items-end justify-between gap-4 flex-wrap w-full">
-            <div>
-              <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: activeColor.accent }}>
-                Red Level Circle
-              </p>
-              <h1 className="font-orbitron font-black text-4xl sm:text-5xl text-white tracking-tight">
+        {/* Overlay de legibilidad igual que SectionBanner */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        {/* Contenido centrado */}
+        <div className="absolute inset-0 flex items-center px-6 sm:px-10">
+          <div className="flex items-center justify-between gap-4 w-full">
+            <div className="flex flex-col gap-1">
+              <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
+              <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
                 GLOBAL POWER
               </h1>
               <h1
-                className="font-orbitron font-black text-4xl sm:text-5xl tracking-tight"
+                className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight drop-shadow-lg"
                 style={{ color: activeColor.accent, transition: "color 600ms ease" }}
               >
                 RANKINGS
               </h1>
             </div>
-            <div className="text-right">
+            <div className="text-right shrink-0">
               <p className="text-muted-foreground text-xs font-mono">Actualizado en tiempo real</p>
               <p className="text-muted-foreground text-xs font-mono">{teams.length} equipos clasificados</p>
             </div>
