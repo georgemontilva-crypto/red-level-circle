@@ -439,20 +439,13 @@ export default function Creators() {
         {showForm && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            style={{ animation: "fadeIn 0.2s ease" }}
+            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
           >
             <div
-              className="absolute inset-0 bg-background/70 backdrop-blur-sm"
-              onClick={() => setShowForm(false)}
-            />
-            <div
-              className="relative w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden"
-              style={{ background: "#1c1f26", border: "1px solid rgba(255,255,255,0.08)", animation: "scaleIn 0.25s cubic-bezier(0.34,1.56,0.64,1)" }}
+              className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl"
             >
-              {/* Modal body — header is inside ApplicationForm like the allies form */}
-              <div className="max-h-[80vh] overflow-y-auto">
-                <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
-              </div>
+              <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
             </div>
           </div>
         )}
