@@ -1,15 +1,15 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
-  Users, Plus, ClipboardList, Settings, LogOut, Menu, X,
+  Users, Plus, ClipboardList, Settings, LogOut, Menu, X, Bell,
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { TopbarNotificationBell } from "./NotificationBell";
 import { TopNav } from "./TopNav";
+import RightPanel, { type RightPanelTab } from "./RightPanel";
 import PageContainer from "./PageContainer";
 
 interface NavItem {
@@ -100,8 +100,15 @@ interface SidebarLayoutProps {
 
 export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<RightPanelTab>("notifications");
   const [location] = useLocation();
   const { user, isAuthenticated, loading, logout } = useAuth();
+
+  const openPanel = useCallback((tab: RightPanelTab) => {
+    setActiveTab(tab);
+    setPanelOpen(true);
+  }, []);
 
   const isPremium = user?.role === "premium" || user?.role === "admin";
   const isAdmin = user?.role === "admin";
@@ -113,6 +120,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     refetchInterval: 60_000,
     staleTime: 30_000,
   });
+
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: 5_000,
+  });
+  const unreadCount = unreadData?.count ?? 0;
 
   const { data: wallet } = trpc.auth.wallet.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -280,7 +293,19 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           <span className="text-red-500">RED</span><span className="text-white">LEVEL</span>
         </span>
         <div className="flex items-center gap-1">
-          {isAuthenticated && <TopbarNotificationBell />}
+          {isAuthenticated && (
+            <button
+              onClick={() => openPanel("notifications")}
+              className="relative p-2 text-muted-foreground hover:text-white transition-colors"
+            >
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 text-muted-foreground hover:text-white transition-colors"
@@ -298,6 +323,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {children}
         </PageContainer>
       </main>
+
+      {/* Right panel — shared across mobile and desktop */}
+      {isAuthenticated && (
+        <RightPanel
+          open={panelOpen}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onClose={() => setPanelOpen(false)}
+        />
+      )}
     </div>
   );
 }
