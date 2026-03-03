@@ -82,7 +82,7 @@ function UserCard({ user, myId }: UserCardProps) {
     : "Jugador";
 
   return (
-    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
+    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
       style={{ border: "1px solid rgba(255,255,255,0.06)" }}
       onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)")}
       onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
@@ -97,10 +97,10 @@ function UserCard({ user, myId }: UserCardProps) {
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
+            <div className="w-full h-full rounded-2xl" style={{ background: "#3a3a3a" }} />
           )}
           {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
 
           {/* Admin badge */}
           {isAdmin && (
@@ -111,10 +111,10 @@ function UserCard({ user, myId }: UserCardProps) {
 
           {/* Avatar — centered, overlapping banner bottom edge */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
-            <div
-              className="rounded-full overflow-hidden flex-shrink-0"
-              style={{ border: "3px solid #1a1a1a", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
-            >
+          <div
+            className="rounded-full overflow-hidden flex-shrink-0"
+            style={{ border: "3px solid #111111", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
+          >
               <UserAvatar
                 avatar={user.avatar}
                 name={user.name ?? user.nickname}
@@ -127,13 +127,12 @@ function UserCard({ user, myId }: UserCardProps) {
 
         {/* ── Info ── */}
         <div className="flex flex-col flex-1 px-4 pt-10 pb-3 text-center">
-          {/* Name with blue dot + verified */}
+          {/* Name + verified badge */}
           <div className="flex items-center justify-center gap-1.5 mb-0.5">
             <span className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors truncate">
               {displayName}
             </span>
             {user.isVerified && <VerifiedBadge size={15} />}
-            <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
           </div>
 
           {/* Subtitle: role + country */}
@@ -164,8 +163,8 @@ function UserCard({ user, myId }: UserCardProps) {
             disabled={mutating || followLoading}
             className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border"
             style={isFollowing
-              ? { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.10)", color: "#888" }
-              : { background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", color: "#ccc" }
+              ? { background: "#2a2a2a", borderColor: "rgba(255,255,255,0.10)", color: "#888" }
+              : { background: "#2a2a2a", borderColor: "rgba(255,255,255,0.12)", color: "#ccc" }
             }
           >
             {mutating || followLoading ? (
@@ -262,7 +261,7 @@ export default function Community() {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
           {[...Array(10)].map((_, i) => (
-            <div key={i} className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] overflow-hidden animate-pulse">
+            <div key={i} className="rounded-2xl bg-[#111111] border border-white/[0.06] overflow-hidden animate-pulse">
               <div className="bg-zinc-800/60" style={{ height: "160px" }} />
               <div className="p-4 pt-10 space-y-3">
                 <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
@@ -273,7 +272,7 @@ export default function Community() {
           ))}
         </div>
       ) : !filtered || filtered.length === 0 ? (
-        <div className="rounded-2xl p-12 text-center bg-[#1a1a1a] border border-white/[0.06]">
+        <div className="rounded-2xl p-12 text-center bg-[#111111] border border-white/[0.06]">
           <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
           <p className="text-zinc-500 font-mono text-sm">No se encontraron usuarios</p>
           {search && (

@@ -80,7 +80,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   return (
     <div
       onClick={() => navigate(`/profile/${c.userId}`)}
-      className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
+      className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
       style={{
         border: isLive ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.06)",
         boxShadow: isLive ? "0 0 20px rgba(239,68,68,0.15)" : undefined,
@@ -95,10 +95,10 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
+          <div className="w-full h-full" style={{ background: "#3a3a3a" }} />
         )}
         {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
 
         {/* LIVE badge */}
         {isLive && (
@@ -120,7 +120,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
           <div
             className="rounded-full overflow-hidden flex-shrink-0"
-            style={{ border: "3px solid #1a1a1a", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
+            style={{ border: "3px solid #111111", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
           >
             <UserAvatar
               avatar={c.avatar}
@@ -134,14 +134,13 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
 
       {/* ── Info ── */}
       <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
-        {/* Name with blue dot + verified badge */}
-        <div className="flex items-center justify-center gap-1.5 mb-0.5">
-          <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
-            {name}
-          </h3>
-          {c.isVerified && <VerifiedBadge size={15} />}
-          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
-        </div>
+          {/* Name + verified badge */}
+          <div className="flex items-center justify-center gap-1.5 mb-0.5">
+            <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
+              {name}
+            </h3>
+            {c.isVerified && <VerifiedBadge size={15} />}
+          </div>
 
         {/* Subtitle */}
         <p className="text-zinc-500 text-xs leading-relaxed line-clamp-1 mb-1">
@@ -456,7 +455,7 @@ export default function Creators() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="rounded-2xl bg-[#1a1a1a] border border-white/[0.06] overflow-hidden animate-pulse">
+              <div key={i} className="rounded-2xl bg-[#111111] border border-white/[0.06] overflow-hidden animate-pulse">
                 <div className="bg-zinc-800/60" style={{ height: "160px" }} />
                 <div className="p-4 pt-10 space-y-3">
                   <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />

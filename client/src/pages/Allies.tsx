@@ -49,7 +49,7 @@ function AllyCard({ ally }: { ally: any }) {
   const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
 
   return (
-    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#1a1a1a] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60 cursor-pointer">
+    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60 cursor-pointer">
 
       {/* ── Banner ── */}
       <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
@@ -60,10 +60,10 @@ function AllyCard({ ally }: { ally: any }) {
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-[#2a2a2a] to-[#1a1a1a]" />
+          <div className="w-full h-full" style={{ background: "#3a3a3a" }} />
         )}
         {/* Dark gradient at bottom so avatar blends */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-[#1a1a1a]/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
 
         {/* Featured badge */}
         {ally.isFeatured && (
@@ -75,7 +75,7 @@ function AllyCard({ ally }: { ally: any }) {
 
         {/* Avatar/Logo — centered, overlapping the banner bottom edge */}
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-10">
-          <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[#1a1a1a] bg-[#2a2a2a] shadow-xl flex items-center justify-center">
+          <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[#111111] bg-[#3a3a3a] shadow-xl flex items-center justify-center">
             {ally.logo ? (
               <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
             ) : (
@@ -87,12 +87,11 @@ function AllyCard({ ally }: { ally: any }) {
 
       {/* ── Info ── */}
       <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
-        {/* Name with blue dot */}
+        {/* Name */}
         <div className="flex items-center justify-center gap-1.5 mb-0.5">
           <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
             {ally.name}
           </h3>
-          <span className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-0.5" />
         </div>
 
         {/* Subtitle — location or description */}
