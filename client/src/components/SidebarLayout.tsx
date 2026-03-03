@@ -6,7 +6,6 @@ import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
   Users, Plus, ClipboardList, Settings, LogOut, Menu, X,
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
-  FileText, ChevronDown, ChevronUp
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { SidebarNotificationBell, TopbarNotificationBell } from "./NotificationBell";
@@ -94,63 +93,6 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
   return sections;
 }
 
-const LEGAL_LINKS = [
-  { label: "Términos y Condiciones", href: "/legal/terminos" },
-  { label: "Privacidad", href: "/legal/privacidad" },
-  { label: "Cookies", href: "/legal/cookies" },
-  { label: "Tienda y Recompensas", href: "/legal/tienda" },
-  { label: "Alianzas", href: "/legal/aliados" },
-  { label: "Devoluciones", href: "/legal/devoluciones" },
-];
-
-function LegalesDropdown({ onNavigate }: { onNavigate: () => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group"
-        style={{ color: "var(--text-muted)" }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)"; }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
-      >
-        <FileText className="w-4 h-4 flex-shrink-0" />
-        <span className="font-semibold text-sm flex-1 text-left">Legales</span>
-        {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-      </button>
-
-      {open && (
-        <div
-          className="mt-1 mx-1 rounded-xl overflow-hidden"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid rgba(255,255,255,0.07)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-          }}
-        >
-          {LEGAL_LINKS.map((link) => (
-            <Link key={link.href} href={link.href} onClick={() => { onNavigate(); setOpen(false); }}>
-              <div
-                className="px-4 py-2.5 text-xs font-mono tracking-wide cursor-pointer transition-all duration-150"
-                style={{ color: "var(--text-muted)" }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.background = "rgba(220,38,38,0.08)";
-                  (e.currentTarget as HTMLDivElement).style.color = "var(--text-primary)";
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLDivElement).style.background = "transparent";
-                  (e.currentTarget as HTMLDivElement).style.color = "var(--text-muted)";
-                }}
-              >
-                {link.label}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 interface SidebarLayoutProps {
   children: React.ReactNode;
@@ -325,11 +267,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             </button>
           </>
         )}
-        {/* Legales dropdown */}
-        <LegalesDropdown onNavigate={() => setMobileOpen(false)} />
-
         <p className="text-center text-xs font-mono mt-3" style={{ color: "var(--text-muted)" }}>Red Level Circle v2.0</p>
-        <p className="text-center text-xs font-mono mt-1" style={{ color: "var(--text-muted)", opacity: 0.5 }}>© 2026 Red Level Circle.<br />Todos los derechos reservados.</p>
       </div>
     </div>
   );
