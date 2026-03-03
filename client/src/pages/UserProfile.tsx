@@ -148,16 +148,18 @@ export default function UserProfile() {
 
   return (
     <div className="w-full overflow-x-hidden">
-      {/* ── Banner + Avatar (Discord-style) ── */}
-      {/* Outer wrapper: relative so avatar can be absolutely positioned at the bottom edge */}
-      <div className="relative w-full">
+      {/* ── Banner + Info Card (Discord-style) ── */}
+      {/* Single padded container so banner and card body share the same width */}
+      <div
+        className="w-full"
+        style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)', background: 'var(--bg-main)' }}
+      >
+        {/* Inner card that contains both banner and info body */}
+        <div className="relative w-full rounded-xl overflow-visible" style={{ background: "#16191f" }}>
+
         {/* Banner */}
-        <div
-          className="w-full h-40 sm:h-56"
-          style={{ position: "relative", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)', paddingTop: '0', background: 'var(--bg-main)' }}
-        >
-          <div className="relative w-full h-full rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)' }}>
-          {/* Default background matching SectionBanner */}
+        <div className="w-full h-40 sm:h-56 relative rounded-xl overflow-hidden">
+          {/* Default background */}
           <div className="absolute inset-0 bg-gradient-to-r from-red-950/70 via-zinc-950 to-black" />
           <div
             className="absolute inset-0 opacity-[0.08]"
@@ -206,13 +208,12 @@ export default function UserProfile() {
               </button>
             )}
           </div>
-          </div>
         </div>
 
-        {/* Card body — avatar sits at the top-left, overlapping the banner above */}
+        {/* Card body — info section below the banner, same width */}
         <div
           className="pb-4"
-          style={{ background: "var(--bg-card)", borderBottom: "1px solid oklch(0.18 0.01 0)", paddingTop: "16px", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}
+          style={{ paddingTop: "16px", paddingLeft: 'clamp(16px, 2.5vw, 32px)', paddingRight: 'clamp(16px, 2.5vw, 32px)' }}
         >
           <div className="max-w-2xl">
           {/* Avatar row — pulled up to overlap the banner */}
@@ -394,8 +395,9 @@ export default function UserProfile() {
             )}
           </div>
           </div>{/* end max-w-2xl */}
-        </div>
-      </div>
+        </div>{/* end card body */}
+        </div>{/* end inner card */}
+      </div>{/* end padded container */}
 
       {/* ── Tabs ── */}
       <div className="mt-4 w-full" style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}>
