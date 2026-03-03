@@ -180,9 +180,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-rajdhani font-bold text-sm text-white truncate leading-tight">{user.name ?? "Usuario"}</p>
-              <span className={`text-xs font-mono ${isAdmin ? "text-yellow-400" : isPremium ? "text-red-400" : "text-muted-foreground"}`}>
-                {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
-              </span>
+              {isAdmin && (
+                <span className="text-xs font-mono text-yellow-400">ADMIN</span>
+              )}
             </div>
           </div>
         </Link>

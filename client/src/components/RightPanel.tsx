@@ -328,14 +328,19 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
       {/* Panel */}
       <div
         ref={panelRef}
-        className="fixed top-0 right-0 h-full z-50 flex flex-col"
+        className="fixed z-50 flex flex-col"
         style={{
-          width: "clamp(300px, 360px, 100vw)",
-          background: "#1a1a1f",
-          borderLeft: "1px solid rgba(255,255,255,0.08)",
-          boxShadow: "-8px 0 40px rgba(0,0,0,0.7)",
-          transform: open ? "translateX(0)" : "translateX(100%)",
+          top: "12px",
+          right: "12px",
+          bottom: "12px",
+          width: "clamp(300px, 360px, calc(100vw - 24px))",
+          background: "#1e1e24",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: "16px",
+          boxShadow: "0 24px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)",
+          transform: open ? "translateX(0)" : "translateX(calc(100% + 24px))",
           transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
+          overflow: "hidden",
         }}
       >
         {/* Tab bar */}
@@ -410,18 +415,16 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
             <p className="font-orbitron font-bold text-base text-white truncate">{(user as any).nickname ?? user.name ?? "Usuario"}</p>
             <p className="text-xs mt-0.5 font-mono" style={{ color: "#22c55e" }}>En línea</p>
 
-            {/* Role badge */}
+            {/* Coins + admin badge */}
             <div className="flex items-center justify-center gap-2 mt-2">
-              <span
-                className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold"
-                style={{
-                  background: isAdmin ? "rgba(234,179,8,0.15)" : isPremium ? "rgba(220,38,38,0.15)" : "rgba(255,255,255,0.06)",
-                  color: isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--text-muted)",
-                  border: `1px solid ${isAdmin ? "rgba(234,179,8,0.3)" : isPremium ? "rgba(220,38,38,0.3)" : "rgba(255,255,255,0.1)"}`,
-                }}
-              >
-                {isAdmin ? "ADMIN" : isPremium ? "PREMIUM" : "FREE"}
-              </span>
+              {isAdmin && (
+                <span
+                  className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold"
+                  style={{ background: "rgba(234,179,8,0.15)", color: "#FFD700", border: "1px solid rgba(234,179,8,0.3)" }}
+                >
+                  ADMIN
+                </span>
+              )}
               {wallet && (
                 <span className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold" style={{ background: "rgba(234,179,8,0.1)", color: "#FACC15", border: "1px solid rgba(234,179,8,0.2)" }}>
                   <Coins className="w-3 h-3" />
