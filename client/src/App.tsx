@@ -90,6 +90,10 @@ function Router() {
       <Route path="/legal/aliados" component={Aliados} />
       <Route path="/legal/devoluciones" component={Devoluciones} />
 
+      {/* Admin routes (no sidebar layout - has its own) */}
+      <Route path="/admin" component={AdminRouter} />
+      <Route path="/admin/:rest*" component={AdminRouter} />
+
       {/* App routes with sidebar layout */}
       <Route>
         <SidebarLayout>
@@ -119,9 +123,6 @@ function Router() {
         <Route path="/dashboard/tournament/:id" component={TournamentManage} />
         <Route path="/dashboard/registrations" component={ManageRegistrations} />
         <Route path="/dashboard/teams" component={MyTeams} />
-
-        {/* Admin */}
-        <Route path="/admin/:rest*" component={AdminRouter} />
 
         {/* Community */}
         <Route path="/community" component={Community} />
