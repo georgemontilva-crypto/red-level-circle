@@ -29,7 +29,7 @@ import Teams from "./pages/Teams";
 import Shop from "./pages/Shop";
 import Rewards from "./pages/Rewards";
 import BrandAds from "./pages/BrandAds";
-import AdminPanel from "./pages/AdminPanel";
+import AdminRouter from "./pages/admin";
 import UserProfile from "./pages/UserProfile";
 import Settings from "./pages/Settings";
 import Community from "./pages/Community";
@@ -121,8 +121,7 @@ function Router() {
         <Route path="/dashboard/teams" component={MyTeams} />
 
         {/* Admin */}
-        <Route path="/admin" component={AdminPanel} />
-        <Route path="/admin/:tab" component={AdminPanel} />
+        <Route path="/admin/:rest*" component={AdminRouter} />
 
         {/* Community */}
         <Route path="/community" component={Community} />
