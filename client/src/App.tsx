@@ -49,12 +49,16 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   const utils = trpc.useUtils();
   const [dismissed, setDismissed] = useState(false);
 
+  const meUser = me as { nickname?: string; loginMethod?: string } | undefined;
+  // Show onboarding only if:
+  // - Google user without a nickname (needs to pick one)
+  // - OR any new user who has never seen the welcome screen (no nickname set)
   const showOnboarding =
     !loading &&
     isAuthenticated &&
     !dismissed &&
-    me &&
-    !(me as { nickname?: string }).nickname;
+    meUser &&
+    !meUser.nickname;
 
   const handleComplete = () => {
     setDismissed(true);
@@ -64,7 +68,12 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      {showOnboarding && <OnboardingModal onComplete={handleComplete} />}
+      {showOnboarding && (
+        <OnboardingModal
+          onComplete={handleComplete}
+          loginMethod={(meUser as any)?.loginMethod}
+        />
+      )}
     </>
   );
 }
