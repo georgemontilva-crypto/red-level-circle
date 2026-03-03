@@ -75,7 +75,7 @@ export default function Streams() {
   const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
   return (
-    <div className="min-h-screen bg-card text-white">
+    <div className="min-h-screen text-white" style={{ background: "var(--bg-main)" }}>
       <div className="pt-6 pb-20">
 
         {/* ── Page header ── */}
