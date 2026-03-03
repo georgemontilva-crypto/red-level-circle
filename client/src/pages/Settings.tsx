@@ -4,7 +4,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { Link } from "wouter";
 import {
-  Camera, User, Globe, MessageSquare, Save, ChevronLeft,
+  Camera, User, Globe, MessageSquare, Save, ChevronLeft, ChevronDown,
   Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2,
   BadgeCheck, Clock, XCircle, Radio, ShoppingBag
 } from "lucide-react";
@@ -37,6 +37,87 @@ const COUNTRIES = [
   "México", "Nicaragua", "Panamá", "Paraguay", "Perú", "Puerto Rico",
   "República Dominicana", "Uruguay", "Venezuela", "Otro"
 ];
+
+// ── Custom Select ────────────────────────────────────────────────────────────
+function CustomSelect({
+  value, onChange, options, placeholder = "Seleccionar", disabled = false, className = ""
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const selected = options.find((o) => o.value === value);
+
+  return (
+    <div ref={ref} className={`relative ${className}`}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setOpen((o) => !o)}
+        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-sm transition-colors ${
+          disabled
+            ? "opacity-40 cursor-not-allowed bg-card border-border text-muted-foreground"
+            : open
+            ? "bg-card border-red-500/70 text-white"
+            : "bg-card border-border text-white hover:border-zinc-600"
+        }`}
+        style={{ background: "var(--bg-card)" }}
+      >
+        <span className={selected ? "text-white" : "text-muted-foreground"}>
+          {selected ? selected.label : placeholder}
+        </span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform flex-shrink-0 ${ open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div
+          className="absolute z-50 mt-1 w-full rounded-lg border border-red-900/40 overflow-hidden"
+          style={{ background: "var(--bg-card)", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}
+        >
+          <div className="max-h-56 overflow-y-auto">
+            {placeholder && (
+              <button
+                type="button"
+                onClick={() => { onChange(""); setOpen(false); }}
+                className="w-full text-left px-4 py-2.5 text-sm text-muted-foreground hover:bg-red-950/30 transition-colors"
+              >
+                {placeholder}
+              </button>
+            )}
+            {options.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { onChange(opt.value); setOpen(false); }}
+                className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                  opt.value === value
+                    ? "bg-red-900/40 text-red-300"
+                    : "text-white hover:bg-red-950/30"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; onUpload: (url: string) => void }) {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -668,27 +749,23 @@ export default function Settings() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
-                <select
+                <CustomSelect
                   value={form.mainGame}
-                  onChange={(e) => setForm((f) => ({ ...f, mainGame: e.target.value, gameRole: "" }))}
-                  className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
-                >
-                  <option value="">Seleccionar juego</option>
-                  {GAMES.map((g) => <option key={g} value={g}>{g}</option>)}
-                </select>
+                  onChange={(val) => setForm((f) => ({ ...f, mainGame: val, gameRole: "" }))}
+                  options={GAMES.map((g) => ({ value: g, label: g }))}
+                  placeholder="Seleccionar juego"
+                />
               </div>
               <div>
                 <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> PAÍS
                 </label>
-                <select
+                <CustomSelect
                   value={form.country}
-                  onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-                  className="w-full bg-card border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
-                >
-                  <option value="">Seleccionar país</option>
-                  {COUNTRIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                  onChange={(val) => setForm((f) => ({ ...f, country: val }))}
+                  options={COUNTRIES.map((c) => ({ value: c, label: c }))}
+                  placeholder="Seleccionar país"
+                />
               </div>
             </div>
             {/* Competitive profile fields */}
@@ -699,17 +776,13 @@ export default function Settings() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ROL PRINCIPAL</label>
-                  <select
+                  <CustomSelect
                     value={form.gameRole}
-                    onChange={(e) => setForm((f) => ({ ...f, gameRole: e.target.value }))}
+                    onChange={(val) => setForm((f) => ({ ...f, gameRole: val }))}
+                    options={getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => ({ value: r.value, label: r.label }))}
+                    placeholder={form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}
                     disabled={!form.mainGame}
-                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors disabled:opacity-40"
-                  >
-                    <option value="">{form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}</option>
-                    {getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ELO / RANGO</label>
@@ -724,16 +797,12 @@ export default function Settings() {
                 </div>
                 <div>
                   <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
-                  <select
+                  <CustomSelect
                     value={form.competitiveRegion}
-                    onChange={(e) => setForm((f) => ({ ...f, competitiveRegion: e.target.value }))}
-                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
-                  >
-                    <option value="">Seleccionar región</option>
-                    {COMPETITIVE_REGIONS.map((r) => (
-                      <option key={r.value} value={r.value}>{r.label}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => setForm((f) => ({ ...f, competitiveRegion: val }))}
+                    options={COMPETITIVE_REGIONS.map((r) => ({ value: r.value, label: r.label }))}
+                    placeholder="Seleccionar región"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ID EN EL JUEGO</label>
