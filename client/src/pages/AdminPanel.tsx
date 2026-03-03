@@ -125,6 +125,7 @@ function UsersTab() {
                   <SelectItem value="user">Usuario</SelectItem>
                   <SelectItem value="premium">Premium</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -2059,6 +2060,7 @@ function OverviewTab() {
                 <p className="text-muted-foreground text-xs">{new Date(u.createdAt).toLocaleDateString("es", { day: "numeric", month: "short", year: "numeric" })}</p>
               </div>
               <Badge className={`font-orbitron text-xs border ${
+                u.role === "super_admin" ? "bg-purple-500/20 text-purple-300 border-purple-600/40" :
                 u.role === "admin" ? "bg-yellow-500/20 text-yellow-400 border-yellow-600/40" :
                 u.role === "premium" ? "bg-red-500/20 text-red-400 border-red-600/40" :
                 "bg-gray-500/20 text-muted-foreground border-gray-600/40"
@@ -2079,7 +2081,7 @@ export default function AdminPanel() {
   const { data: stats } = trpc.admin.stats.useQuery();
   const { data: pending } = trpc.admin.pendingTournaments.useQuery();
 
-  if (!isAuthenticated || user?.role !== "admin") {
+  if (!isAuthenticated || (user?.role !== "admin" && user?.role !== "super_admin")) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">

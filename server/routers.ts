@@ -176,8 +176,11 @@ import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "
 import { eventBus } from "./eventBus";
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
+// Helper: checks if a role has admin-level privileges (admin or super_admin)
+const isAdmin = (role: string) => role === "admin" || role === "super_admin";
+
 const premiumProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "premium" && ctx.user.role !== "admin") {
+  if (ctx.user.role !== "premium" && !isAdmin(ctx.user.role)) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Esta funcionalidad requiere una cuenta Premium.",
@@ -198,7 +201,7 @@ const creatorProcedure = protectedProcedure.use(async ({ ctx, next }) => {
   return next({ ctx });
 });
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "admin") {
+  if (!isAdmin(ctx.user.role)) {
     throw new TRPCError({ code: "FORBIDDEN", message: "Solo administradores." });
   }
   return next({ ctx });
@@ -354,7 +357,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const { id, registrationStart, registrationEnd, startDate, endDate, ...rest } = input;
@@ -376,7 +379,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournamentStatus(input.id, input.status);
@@ -396,7 +399,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const registrations = await getRegistrationsByTournament(input.id, "Aprobado");
@@ -419,7 +422,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournament(input.tournamentId, { winnerId: input.winnerId, status: "completed" });
@@ -516,7 +519,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamById(input.id);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const { id, ...data } = input;
@@ -534,7 +537,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         // Enforce 10-member limit
@@ -566,7 +569,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede eliminar miembros." });
         }
         await removeTeamMember(input.teamId, input.memberId);
@@ -599,7 +602,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede disolver el equipo." });
         }
         await dissolveTeam(input.teamId);
@@ -646,7 +649,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const ext = input.mimeType.split("/")[1];
@@ -665,7 +668,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         return getRegistrationsByTournament(input.tournamentId, input.status);
@@ -676,7 +679,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND" });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         return getRegistrationsByTeam(input.teamId);
@@ -696,7 +699,7 @@ export const appRouter = router({
         }
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Equipo no encontrado." });
-        if (team.captainId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede inscribir el equipo." });
         }
         const members = await getTeamMembers(input.teamId);
@@ -759,7 +762,7 @@ export const appRouter = router({
         if (!reg) throw new TRPCError({ code: "NOT_FOUND" });
         const t = await getTournamentById(reg.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateRegistrationStatus(input.id, input.status, ctx.user.id, input.creatorMessage);
@@ -798,7 +801,7 @@ export const appRouter = router({
         if (!reg) throw new TRPCError({ code: "NOT_FOUND" });
         const t = await getTournamentById(reg.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         return getRegistrationAuditLog(input.registrationId);
@@ -828,7 +831,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         // Fetch match to get team IDs for auto-calculating winner
@@ -915,7 +918,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const registrations = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
@@ -937,7 +940,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && ctx.user.role !== "admin") {
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const scheduledDate = new Date(input.scheduledAt);
@@ -1198,7 +1201,7 @@ export const appRouter = router({
     stopCreatorStream: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        await stopCreatorStream(input.id, ctx.user.id, ctx.user.role === "admin");
+        await stopCreatorStream(input.id, ctx.user.id, isAdmin(ctx.user.role));
         return { success: true };
       }),
     /** Returns the active (isLive=true) stream for any user by userId (public) */
@@ -1421,7 +1424,7 @@ export const appRouter = router({
   // ─── Admin ─────────────────────────────────────────────────────────────────
   admin: router({
     setRole: adminProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin", "super_admin"]) }))
       .mutation(async ({ input }) => {
         await updateUserRole(input.userId, input.role);
         return { success: true };
@@ -1517,7 +1520,7 @@ export const appRouter = router({
       .input(z.object({ search: z.string().optional() }))
       .query(async ({ input }) => adminListUsers(input.search)),
     updateUserRole: adminProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin", "super_admin"]) }))
       .mutation(async ({ input }) => {
         await adminUpdateUserRole(input.userId, input.role);
         return { success: true };
@@ -2039,7 +2042,7 @@ export const appRouter = router({
         // Banner upload requires explicit permission (granted by admin)
         if (input.type === "banner") {
           const userProfile = await getUserPublicProfile(ctx.user.id);
-          const hasPermission = userProfile?.canUploadBanner || ctx.user.role === "admin";
+          const hasPermission = userProfile?.canUploadBanner || isAdmin(ctx.user.role);
           if (!hasPermission) {
             throw new TRPCError({
               code: "FORBIDDEN",
@@ -2230,7 +2233,7 @@ export const appRouter = router({
   creators: router({
     listApproved: publicProcedure.query(() => listApprovedCreators()),
     listPending: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+      if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
       return listPendingCreators();
     }),
     getMyApplication: protectedProcedure.query(async ({ ctx }) => {
@@ -2274,7 +2277,7 @@ export const appRouter = router({
         adminNote: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
         // Get creator to find userId before reviewing
         const db = await getDb();
         let creatorUserId: number | null = null;
@@ -2308,7 +2311,7 @@ export const appRouter = router({
     list: protectedProcedure
       .input(z.object({ status: z.enum(["pending", "approved", "rejected", "all"]).optional() }))
       .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
         return listVerificationRequests(input.status === "all" ? undefined : input.status);
       }),
     review: protectedProcedure
@@ -2318,7 +2321,7 @@ export const appRouter = router({
         adminNote: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
+        if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
         return reviewVerificationRequest(input.requestId, ctx.user.id, input.status, input.adminNote);
       }),
   }),
