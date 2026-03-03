@@ -21,7 +21,7 @@ function TikTokIcon({ className }: { className?: string }) {
 }
 
 // ─── Social button ────────────────────────────────────────────────────────────
-function SocialBtn({ href, icon, label, color }: { href: string; icon: React.ReactNode; label: string; color: string }) {
+function SocialBtn({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   return (
     <a
       href={href}
@@ -29,10 +29,9 @@ function SocialBtn({ href, icon, label, color }: { href: string; icon: React.Rea
       rel="noopener noreferrer"
       onClick={e => e.stopPropagation()}
       title={label}
-      className={`flex items-center justify-center gap-1.5 flex-1 min-w-0 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border ${color}`}
+      className="flex items-center justify-center flex-1 py-2 rounded-xl text-sm font-semibold bg-gray-300 hover:bg-gray-200 text-black transition-colors"
     >
       {icon}
-      <span className="truncate hidden sm:inline">{label}</span>
     </a>
   );
 }
@@ -40,12 +39,12 @@ function SocialBtn({ href, icon, label, color }: { href: string; icon: React.Rea
 // ─── Ally Card ────────────────────────────────────────────────────────────────
 function AllyCard({ ally }: { ally: any }) {
   const socials = [
-    ally.website    && { href: ally.website, icon: <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />, label: "Web",       color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700 hover:text-white" },
-    ally.instagram  && { href: `https://instagram.com/${ally.instagram.replace("@","")}`, icon: <Instagram className="w-3.5 h-3.5 flex-shrink-0" />, label: "Instagram", color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-pink-900/50 hover:text-pink-300 hover:border-pink-800" },
-    ally.twitter    && { href: `https://twitter.com/${ally.twitter.replace("@","")}`,     icon: <Twitter className="w-3.5 h-3.5 flex-shrink-0" />,   label: "Twitter",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-sky-900/50 hover:text-sky-300 hover:border-sky-800" },
-    ally.facebook   && { href: `https://facebook.com/${ally.facebook}`,                   icon: <Facebook className="w-3.5 h-3.5 flex-shrink-0" />,  label: "Facebook",  color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-blue-900/50 hover:text-blue-300 hover:border-blue-800" },
-    ally.tiktok     && { href: `https://tiktok.com/@${ally.tiktok.replace("@","")}`,      icon: <TikTokIcon className="w-3.5 h-3.5 flex-shrink-0" />, label: "TikTok",   color: "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-600/50 hover:text-white hover:border-zinc-500" },
-  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string; color: string }[];
+    ally.website   && { href: ally.website.startsWith("http") ? ally.website : `https://${ally.website}`, icon: <Globe className="w-5 h-5" />,     label: "Web" },
+    ally.instagram && { href: `https://instagram.com/${ally.instagram.replace("@","")}`,                  icon: <Instagram className="w-5 h-5" />, label: "Instagram" },
+    ally.twitter   && { href: `https://twitter.com/${ally.twitter.replace("@","")}`,                      icon: <Twitter className="w-5 h-5" />,   label: "Twitter" },
+    ally.facebook  && { href: `https://facebook.com/${ally.facebook}`,                                    icon: <Facebook className="w-5 h-5" />,  label: "Facebook" },
+    ally.tiktok    && { href: `https://tiktok.com/@${ally.tiktok.replace("@","")}`,                       icon: <TikTokIcon className="w-5 h-5" />, label: "TikTok" },
+  ].filter(Boolean) as { href: string; icon: React.ReactNode; label: string }[];
 
   const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
 
@@ -54,11 +53,7 @@ function AllyCard({ ally }: { ally: any }) {
       {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {ally.coverImage ? (
-          <img
-            src={ally.coverImage}
-            alt={ally.name}
-            className="w-full h-full object-cover"
-          />
+          <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
         ) : (
           <DefaultBannerBg />
         )}
@@ -70,10 +65,9 @@ function AllyCard({ ally }: { ally: any }) {
           </div>
         )}
       </div>
-      {/* Avatar Section - Overlapping */}
+      {/* Avatar / Logo - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Avatar Circle */}
-        <div className="flex justify-center -mt-20 mb-4">
+        <div className="flex justify-center -mt-16 mb-4">
           <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
             {ally.logo ? (
               <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
@@ -87,15 +81,13 @@ function AllyCard({ ally }: { ally: any }) {
           <div className="flex items-center justify-center gap-2 mb-2">
             <h1 className="text-2xl font-bold text-white">{ally.name}</h1>
           </div>
-          <p className="text-sm text-gray-400">
-            {subtitle || ally.description || ""}
-          </p>
+          <p className="text-sm text-gray-400">{subtitle || ally.description || ""}</p>
         </div>
         {/* Social Buttons */}
         {socials.length > 0 ? (
           <div className="flex items-center gap-1.5">
-            {socials.map((s, i) => (
-              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
+            {socials.slice(0, 4).map((s, i) => (
+              <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} />
             ))}
           </div>
         ) : (
