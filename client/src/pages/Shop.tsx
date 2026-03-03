@@ -302,7 +302,14 @@ export default function Shop() {
     <div className="min-h-screen bg-background text-white">
       {/* Banner */}
       <div className="pt-4">
-        <SectionBanner sectionKey="shop" height="h-48 sm:h-64 lg:h-72" />
+        <SectionBanner sectionKey="shop" height="h-48 sm:h-64 lg:h-72">
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
+            <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
+              TIENDA
+            </h1>
+          </div>
+        </SectionBanner>
       </div>
 
       {/* Cosmetic purchase modal */}
