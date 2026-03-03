@@ -674,7 +674,7 @@ export default function Ranking() {
     <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
       {/* Header hero */}
       <div
-        className="relative overflow-hidden rounded-xl mb-6"
+        className="relative overflow-hidden rounded-xl mb-6 h-48 sm:h-64 lg:h-72"
         style={{
           background: `linear-gradient(135deg, ${activeColor.from} 0%, oklch(0.06 0.005 0) 60%)`,
           border: `1px solid ${activeColor.accent}18`,
@@ -696,8 +696,8 @@ export default function Ranking() {
             transition: "background 600ms ease",
           }}
         />
-        <div className="relative container py-10 pb-6">
-          <div className="flex items-end justify-between gap-4 flex-wrap">
+        <div className="relative h-full flex items-center px-6 sm:px-10">
+          <div className="flex items-end justify-between gap-4 flex-wrap w-full">
             <div>
               <p className="text-xs font-mono uppercase tracking-widest mb-1" style={{ color: activeColor.accent }}>
                 Red Level Circle
