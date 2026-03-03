@@ -232,6 +232,8 @@ export const news = mysqlTable("news", {
   isPublished: boolean("isPublished").default(false).notNull(),
   isFeatured: boolean("isFeatured").default(false).notNull(),
   viewCount: int("viewCount").default(0).notNull(),
+  referenceUrl: text("referenceUrl"),
+  gallery: text("gallery"), // JSON array of up to 4 image URLs
   publishedAt: timestamp("publishedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),

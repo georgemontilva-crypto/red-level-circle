@@ -996,10 +996,14 @@ export const appRouter = router({
         category: z.enum(["torneos", "equipos", "juegos", "plataforma", "general"]).default("general"),
         isPublished: z.boolean().default(false),
         isFeatured: z.boolean().default(false),
+        referenceUrl: z.string().url().optional().or(z.literal("")),
+        gallery: z.array(z.string()).max(4).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        const { gallery, ...rest } = input;
         const id = await createNews({
-          ...input,
+          ...rest,
+          gallery: gallery ? JSON.stringify(gallery) : undefined,
           authorId: ctx.user.id,
           publishedAt: input.isPublished ? new Date() : undefined,
         });
@@ -1016,19 +1020,36 @@ export const appRouter = router({
         category: z.enum(["torneos", "equipos", "juegos", "plataforma", "general"]).optional(),
         isPublished: z.boolean().optional(),
         isFeatured: z.boolean().optional(),
+        referenceUrl: z.string().optional(),
+        gallery: z.array(z.string()).max(4).optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
+        const updateData: any = { ...data };
+        if (data.gallery !== undefined) {
+          updateData.gallery = JSON.stringify(data.gallery);
+        }
         if (data.isPublished) {
-          await updateNews(id, { ...data, publishedAt: new Date() });
+          await updateNews(id, { ...updateData, publishedAt: new Date() });
         } else {
-          await updateNews(id, data);
+          await updateNews(id, updateData);
         }
         return { success: true };
       }),
 
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteNews(input.id);
+        return { success: true };
+      }),
+
     adminList: adminProcedure.query(async () => {
-      return getNews({ publishedOnly: false });
+      const items = await getNews({ publishedOnly: false });
+      return items.map(item => ({
+        ...item,
+        gallery: item.gallery ? (() => { try { return JSON.parse(item.gallery as string); } catch { return []; } })() : [],
+      }));
     }),
   }),
 

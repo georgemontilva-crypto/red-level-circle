@@ -197,6 +197,13 @@
       "when": 1772700000000,
       "tag": "0027_creator_social_networks",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "5",
+      "when": 1772800000000,
+      "tag": "0028_news_reference_gallery",
+      "breakpoints": true
     }
   ]
 }
