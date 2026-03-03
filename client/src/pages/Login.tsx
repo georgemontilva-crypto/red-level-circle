@@ -397,7 +397,7 @@ export default function Login() {
                 style={{
                   background: loading ? "oklch(0.40 0.15 25)" : neonRed,
                   color: "#fff",
-                  boxShadow: loading ? "none" : `0 0 24px oklch(0.55 0.22 25 / 0.5)`,
+                  boxShadow: "none",
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
               >
