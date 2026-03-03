@@ -3,11 +3,12 @@ import { useState, useRef } from "react";
 import { Link, useSearch } from "wouter";
 import {
   Search, Trophy, Shield, Users,
-  ExternalLink, X, ChevronDown, CheckCircle, MapPin, Lock,
+  X, ChevronDown, CheckCircle, MapPin, Lock,
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
 // ─── Colores temáticos por juego (idéntico a Ranking y Torneos) ───────────────
 const GAME_COLORS: Record<string, { from: string; to: string; glow: string; accent: string }> = {
@@ -77,7 +78,7 @@ function AllGamesChip({ active, onClick }: { active: boolean; onClick: () => voi
   );
 }
 
-// ─── Team Card premium ─────────────────────────────────────────────────────────
+// ─── Team Card (mismo diseño que AllyCard) ────────────────────────────────────
 function TeamCard({ team }: { team: any }) {
   const gameSlug = team.gameSlug ?? "";
   const c = getGameColor(gameSlug);
@@ -86,83 +87,72 @@ function TeamCard({ team }: { team: any }) {
 
   return (
     <Link href={`/teams/${team.id}`}>
-      <div
-        className="group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300"
-        style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.border = `1px solid ${c.accent}44`;
-          el.style.boxShadow = `0 8px 32px ${c.glow}, 0 2px 8px rgba(0,0,0,0.6)`;
-          el.style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget as HTMLDivElement;
-          el.style.border = "1px solid oklch(0.16 0.01 0)";
-          el.style.boxShadow = "none";
-          el.style.transform = "none";
-        }}
-      >
+      <div className="w-full bg-black rounded-3xl shadow-2xl cursor-pointer">
         {/* Banner */}
-        <div className="relative h-28 overflow-hidden" style={{ background: `linear-gradient(135deg, ${c.from} 0%, ${c.to} 100%)` }}>
+        <div className="relative h-48 w-full overflow-hidden rounded-3xl">
           {team.banner ? (
-            <img src={team.banner || undefined} alt={team.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-60" />
+            <img src={team.banner} alt={team.name} className="w-full h-full object-cover" />
           ) : (
-            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `repeating-linear-gradient(45deg, ${c.accent} 0px, ${c.accent} 1px, transparent 1px, transparent 20px)` }} />
+            <DefaultBannerBg />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.09_0.005_0)] via-transparent to-transparent" />
+          {/* Badge verificado */}
           {team.isVerified && (
-            <div className="absolute top-2.5 right-2.5 flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono font-semibold" style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(250,204,21,0.4)", color: "#fbbf24", backdropFilter: "blur(4px)" }}>
-              <CheckCircle size={10} />
+            <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+              <CheckCircle className="w-2.5 h-2.5" />
               OFICIAL
             </div>
           )}
-          <div className="absolute top-2.5 left-2.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-mono" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(4px)", color: "white" }}>
-              <ExternalLink size={10} /> Ver perfil
-            </div>
-          </div>
         </div>
-        {/* Content */}
-        <div className="p-4 -mt-6 relative">
-          <div className="flex items-end gap-3 mb-3">
-            <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-lg" style={{ border: `2px solid ${c.accent}33`, background: "var(--bg-card)" }}>
+
+        {/* Contenido */}
+        <div className="relative px-6 pb-6">
+          {/* Logo circular superpuesto */}
+          <div className="flex justify-center -mt-16 mb-4">
+            <div className="w-32 h-32 bg-gray-800 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
               {team.logo ? (
-                <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
+                <img src={team.logo} alt={team.name} className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center"><Shield size={20} style={{ color: c.accent, opacity: 0.6 }} /></div>
+                <Shield className="w-12 h-12" style={{ color: c.accent, opacity: 0.7 }} />
               )}
             </div>
-            <div className="flex-1 min-w-0 pb-1">
-              <h3 className="font-mono font-bold text-white truncate text-sm leading-tight">{team.name}</h3>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {team.tag && (
-                  <span className="text-xs font-mono font-semibold px-1.5 py-0.5 rounded" style={{ background: `${c.accent}18`, border: `1px solid ${c.accent}33`, color: c.accent }}>[{team.tag}]</span>
-                )}
-                {team.country && (
-                  <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><MapPin size={10} />{team.country}</span>
-                )}
-              </div>
-            </div>
           </div>
-          {(team.game || team.gameSlug) && (
-            <p className="text-xs font-mono mb-3 truncate" style={{ color: c.accent, opacity: 0.8 }}>{team.game ?? team.gameSlug}</p>
-          )}
-          <div className="flex items-center gap-3 pt-3" style={{ borderTop: "1px solid oklch(0.16 0.01 0)" }}>
-            <div className="flex items-center gap-1.5 text-xs">
-              <Trophy size={11} className="text-yellow-500" />
-              <span className="font-mono text-secondary-foreground">{team.points ?? 0}</span>
-              <span className="text-muted-foreground font-mono">pts</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-mono">
+
+          {/* Nombre, tag, juego */}
+          <div className="text-center mb-4">
+            <h3 className="text-2xl font-bold text-white mb-1">{team.name}</h3>
+            {team.tag && (
+              <span
+                className="inline-block text-xs font-mono font-semibold px-2 py-0.5 rounded mb-2"
+                style={{ background: `${c.accent}22`, border: `1px solid ${c.accent}44`, color: c.accent }}
+              >
+                [{team.tag}]
+              </span>
+            )}
+            {(team.game || team.gameSlug) && (
+              <p className="text-sm mt-1" style={{ color: c.accent }}>{team.game ?? team.gameSlug}</p>
+            )}
+            {team.country && (
+              <p className="text-xs text-gray-400 flex items-center justify-center gap-1 mt-1">
+                <MapPin className="w-3 h-3" />{team.country}
+              </p>
+            )}
+          </div>
+
+          {/* Stats */}
+          <div className="flex items-center justify-between text-xs font-mono">
+            <div className="flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5 text-yellow-500" />
+              <span className="text-white">{team.points ?? 0}</span>
+              <span className="text-gray-500">pts</span>
+              <span className="mx-1 text-gray-700">·</span>
               <span style={{ color: "#4ade80" }}>{team.wins ?? 0}V</span>
-              <span className="text-zinc-700">/</span>
+              <span className="text-gray-700">/</span>
               <span style={{ color: "#f87171" }}>{team.losses ?? 0}D</span>
             </div>
-            {winRate !== null ? (
-              <div className="ml-auto text-xs font-mono font-semibold px-2 py-0.5 rounded-lg" style={{ background: winRate >= 60 ? "rgba(74,222,128,0.1)" : winRate >= 40 ? "rgba(250,204,21,0.1)" : "rgba(248,113,113,0.1)", color: winRate >= 60 ? "#4ade80" : winRate >= 40 ? "#facc15" : "#f87171", border: `1px solid ${winRate >= 60 ? "rgba(74,222,128,0.2)" : winRate >= 40 ? "rgba(250,204,21,0.2)" : "rgba(248,113,113,0.2)"}` }}>{winRate}% WR</div>
-            ) : (
-              <div className="ml-auto flex items-center gap-1 text-xs font-mono text-muted-foreground"><Users size={10} />{team.tournamentsPlayed ?? 0} torneos</div>
-            )}
+            <div className="flex items-center gap-1 text-gray-400">
+              <Users className="w-3.5 h-3.5" />
+              {team.tournamentsPlayed ?? 0} torneos
+            </div>
           </div>
         </div>
       </div>
