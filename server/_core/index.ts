@@ -44,32 +44,34 @@ async function runMigrations() {
 }
 
 // Apply manual schema changes that were added outside of drizzle-kit generate
+// NOTE: Railway MySQL does NOT support ADD COLUMN IF NOT EXISTS syntax.
+// We use plain ALTER TABLE and catch error 1060 (ER_DUP_FIELDNAME) when column already exists.
 async function runCustomMigrations() {
   if (!process.env.DATABASE_URL) return;
   const mysql2 = await import("mysql2/promise");
   const conn = await mysql2.createConnection(process.env.DATABASE_URL);
   const customMigrations = [
     // 0027: creator social networks
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `facebook` varchar(256)",
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `kick` varchar(256)",
+    "ALTER TABLE `content_creators` ADD COLUMN `facebook` varchar(256)",
+    "ALTER TABLE `content_creators` ADD COLUMN `kick` varchar(256)",
     // content_creators extra columns that may be missing in Railway
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `subscribers` int DEFAULT 0",
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `adminNote` text",
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `appliedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP",
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `reviewedAt` timestamp NULL",
-    "ALTER TABLE `content_creators` ADD COLUMN IF NOT EXISTS `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+    "ALTER TABLE `content_creators` ADD COLUMN `subscribers` int DEFAULT 0",
+    "ALTER TABLE `content_creators` ADD COLUMN `adminNote` text",
+    "ALTER TABLE `content_creators` ADD COLUMN `appliedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP",
+    "ALTER TABLE `content_creators` ADD COLUMN `reviewedAt` timestamp NULL",
+    "ALTER TABLE `content_creators` ADD COLUMN `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
     // 0028: news reference and gallery
-    "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `referenceUrl` text",
-    "ALTER TABLE `news` ADD COLUMN IF NOT EXISTS `gallery` text",
+    "ALTER TABLE `news` ADD COLUMN `referenceUrl` text",
+    "ALTER TABLE `news` ADD COLUMN `gallery` text",
     // 0029: allies tiktok
-    "ALTER TABLE `allies` ADD COLUMN IF NOT EXISTS `tiktok` varchar(128)",
+    "ALTER TABLE `allies` ADD COLUMN `tiktok` varchar(128)",
   ];
   for (const sql of customMigrations) {
     try {
       await conn.execute(sql);
     } catch (err: any) {
-      // Ignore duplicate column errors (ER_DUP_FIELDNAME)
-      if (err.code !== "ER_DUP_FIELDNAME") {
+      // 1060 = ER_DUP_FIELDNAME: column already exists — safe to ignore
+      if (err.errno !== 1060 && err.code !== "ER_DUP_FIELDNAME") {
         console.warn("[DB] Custom migration warning:", err.message);
       }
     }
