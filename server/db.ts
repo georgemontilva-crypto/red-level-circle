@@ -1929,6 +1929,7 @@ export async function getUserPublicProfile(userId: number) {
       rlcBalance: users.rlcBalance,
       createdAt: users.createdAt,
       isVerified: users.isVerified,
+      canUploadBanner: users.canUploadBanner,
     })
     .from(users)
     .where(eq(users.id, userId))
@@ -1970,6 +1971,8 @@ export async function adminListUsers(search?: string) {
       rlcBalance: users.rlcBalance,
       createdAt: users.createdAt,
       lastSignedIn: users.lastSignedIn,
+      isVerified: users.isVerified,
+      canUploadBanner: users.canUploadBanner,
     })
     .from(users)
     .orderBy(desc(users.createdAt));
@@ -1988,6 +1991,18 @@ export async function adminUpdateUserRole(userId: number, role: "user" | "premiu
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
+export async function adminUpdateBannerPermission(userId: number, canUploadBanner: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(users).set({ canUploadBanner }).where(eq(users.id, userId));
+}
+
+export async function adminUpdateVerified(userId: number, isVerified: boolean) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(users).set({ isVerified }).where(eq(users.id, userId));
 }
 
 export async function adminAdjustRLC(userId: number, amount: number, reason: string) {

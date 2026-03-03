@@ -86,13 +86,17 @@ function AvatarUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
     </div>
   );
 }
-function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; onUpload: (url: string) => void }) {
+function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?: string | null; canUpload?: boolean; onUpload: (url: string) => void }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const uploadMutation = trpc.profile.uploadImage.useMutation();
 
   const handleFile = async (file: File) => {
+    if (!canUpload) {
+      toast.error("No tienes permiso para subir un banner personalizado");
+      return;
+    }
     if (!file.type.startsWith("image/")) {
       toast.error("Solo se permiten imágenes");
       return;
@@ -123,37 +127,60 @@ function BannerUpload({ currentUrl, onUpload }: { currentUrl?: string | null; on
   const displayUrl = preview || currentUrl;
 
   return (
-    <div
-      className="relative w-full h-32 rounded-xl cursor-pointer group overflow-hidden border border-border hover:border-red-500/50 transition-colors"
-      onClick={() => inputRef.current?.click()}
-    >
-      {displayUrl ? (
-        <img src={displayUrl} alt="Banner" className="w-full h-full object-cover" />
-      ) : (
-        <div className="w-full h-full bg-gradient-to-r from-zinc-900 via-red-950/20 to-zinc-900 flex items-center justify-center">
-          <div className="text-center">
-            <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground font-mono">Subir banner</p>
+    <div className="space-y-2">
+      <div
+        className={`relative w-full h-32 rounded-xl overflow-hidden border transition-colors ${
+          canUpload
+            ? "cursor-pointer group border-border hover:border-red-500/50"
+            : "cursor-not-allowed border-border/30 opacity-70"
+        }`}
+        onClick={() => canUpload && inputRef.current?.click()}
+      >
+        {/* Default gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-r from-red-950/70 via-zinc-950 to-black" />
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage: "repeating-linear-gradient(45deg, #dc2626 0, #dc2626 1px, transparent 0, transparent 50%)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        {displayUrl && (
+          <img src={displayUrl} alt="Banner" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+        {canUpload ? (
+          <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            {uploading ? (
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            ) : (
+              <div className="text-center">
+                <Camera className="w-8 h-8 text-white mx-auto mb-1" />
+                <p className="text-sm text-white font-mono">{displayUrl ? "Cambiar banner" : "Subir banner"}</p>
+              </div>
+            )}
           </div>
-        </div>
-      )}
-      <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-        {uploading ? (
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
         ) : (
-          <div className="text-center">
-            <Camera className="w-8 h-8 text-white mx-auto mb-1" />
-            <p className="text-sm text-white font-mono">Cambiar banner</p>
+          <div className="absolute inset-0 flex items-end justify-center pb-3">
+            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono" style={{ background: "rgba(0,0,0,0.7)", border: "1px solid rgba(239,68,68,0.3)", color: "rgba(239,68,68,0.8)" }}>
+              <span>🔒</span>
+              <span>BANNER BLOQUEADO</span>
+            </div>
           </div>
         )}
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+        />
       </div>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-      />
+      {!canUpload && (
+        <p className="text-xs font-mono text-muted-foreground/70 text-center">
+          El banner personalizado está disponible para creadores de contenido, capitanes oficiales y negocios verificados.
+          Contacta al equipo de RLC para solicitar acceso.
+        </p>
+      )}
     </div>
   );
 }
@@ -598,6 +625,7 @@ export default function Settings() {
           </h2>
           <BannerUpload
             currentUrl={form.bannerUrl || null}
+            canUpload={(me as { canUploadBanner?: boolean; role?: string })?.canUploadBanner === true || (me as { role?: string })?.role === "admin"}
             onUpload={(url) => setForm((f) => ({ ...f, bannerUrl: url }))}
           />
           <div className="flex items-center gap-4">

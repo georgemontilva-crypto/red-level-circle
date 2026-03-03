@@ -97,6 +97,8 @@ import {
   adminVerifyTeam,
   adminListTournaments,
   adminUpdateUserRole,
+  adminUpdateBannerPermission,
+  adminUpdateVerified,
   adminAdjustRLC,
   adminCreateShopItem,
   adminUpdateShopItem,
@@ -1520,6 +1522,18 @@ export const appRouter = router({
         await adminUpdateUserRole(input.userId, input.role);
         return { success: true };
       }),
+    updateBannerPermission: adminProcedure
+      .input(z.object({ userId: z.number(), canUploadBanner: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await adminUpdateBannerPermission(input.userId, input.canUploadBanner);
+        return { success: true };
+      }),
+    updateVerified: adminProcedure
+      .input(z.object({ userId: z.number(), isVerified: z.boolean() }))
+      .mutation(async ({ input }) => {
+        await adminUpdateVerified(input.userId, input.isVerified);
+        return { success: true };
+      }),
     adjustRLC: adminProcedure
       .input(z.object({ userId: z.number(), amount: z.number().int(), reason: z.string() }))
       .mutation(async ({ input }) => {
@@ -2022,6 +2036,17 @@ export const appRouter = router({
         type: z.enum(["avatar", "banner"]),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Banner upload requires explicit permission (granted by admin)
+        if (input.type === "banner") {
+          const userProfile = await getUserPublicProfile(ctx.user.id);
+          const hasPermission = userProfile?.canUploadBanner || ctx.user.role === "admin";
+          if (!hasPermission) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "No tienes permiso para subir un banner personalizado. Este privilegio es otorgado por el equipo de RLC a creadores de contenido, capitanes oficiales y negocios verificados.",
+            });
+          }
+        }
         const ext = input.mimeType.split("/")[1];
         const key = `profiles/${ctx.user.id}/${input.type}-${Date.now()}.${ext}`;
         const buffer = Buffer.from(input.base64, "base64");

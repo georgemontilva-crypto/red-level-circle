@@ -40,6 +40,8 @@ export const users = mysqlTable("users", {
   rosterPhoto: text("rosterPhoto"),
   rosterImageUrl: text("rosterImageUrl"),
   isVerified: boolean("isVerified").default(false).notNull(),
+  // Banner upload permission — granted by super admin to content creators, team captains, businesses
+  canUploadBanner: boolean("canUploadBanner").default(false).notNull(),
   // RLC Coins wallet
   rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
   createdAt: timestamp("createdAt").defaultNow().notNull(),

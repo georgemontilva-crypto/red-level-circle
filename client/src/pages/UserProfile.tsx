@@ -153,22 +153,26 @@ export default function UserProfile() {
       <div className="relative w-full">
         {/* Banner */}
         <div
-          className="w-full h-40 sm:h-56 overflow-hidden"
-          style={{ background: "linear-gradient(135deg, #1a0000 0%, #2d0000 50%, #0a0000 100%)", position: "relative", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}
+          className="w-full h-40 sm:h-56"
+          style={{ position: "relative", paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)', paddingTop: '0', background: 'var(--bg-main)' }}
         >
-          <div className="relative w-full h-full rounded-xl overflow-hidden">
+          <div className="relative w-full h-full rounded-xl overflow-hidden" style={{ background: 'var(--bg-card)' }}>
+          {/* Default background matching SectionBanner */}
+          <div className="absolute inset-0 bg-gradient-to-r from-red-950/70 via-zinc-950 to-black" />
+          <div
+            className="absolute inset-0 opacity-[0.08]"
+            style={{
+              backgroundImage: "repeating-linear-gradient(45deg, #dc2626 0, #dc2626 1px, transparent 0, transparent 50%)",
+              backgroundSize: "20px 20px",
+            }}
+          />
           {profile.bannerUrl ? (
             <img
               src={profile.bannerUrl}
               alt="Banner"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
             />
-          ) : (
-            <>
-              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "linear-gradient(rgba(255,0,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,0,0,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-              <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-transparent to-red-900/20" />
-            </>
-          )}
+          ) : null}
           {/* Top-right actions — inside the banner */}
           <div className="absolute top-3 right-3 flex items-center gap-2" style={{ zIndex: 20 }}>
             {isOwnProfile && (

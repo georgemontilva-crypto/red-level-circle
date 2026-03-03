@@ -71,6 +71,14 @@ function UsersTab() {
     onSuccess: () => { toast.success("Rol actualizado"); refetch(); },
     onError: e => toast.error(e.message),
   });
+  const updateBannerPermission = trpc.admin.updateBannerPermission.useMutation({
+    onSuccess: () => { toast.success("Permiso de banner actualizado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+  const updateVerified = trpc.admin.updateVerified.useMutation({
+    onSuccess: () => { toast.success("Estado de verificación actualizado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
   const adjustRLC = trpc.admin.adjustRLC.useMutation({
     onSuccess: () => { toast.success("RLC ajustado"); setRlcForm(null); refetch(); },
     onError: e => toast.error(e.message),
@@ -128,6 +136,28 @@ function UsersTab() {
                 <Coins className="w-3 h-3 mr-1" />
                 RLC
               </Button>
+              <button
+                onClick={() => updateBannerPermission.mutate({ userId: u.id, canUploadBanner: !(u as any).canUploadBanner })}
+                title={(u as any).canUploadBanner ? "Revocar permiso de banner" : "Otorgar permiso de banner"}
+                className={`h-7 px-2 rounded text-xs font-mono border transition-colors ${
+                  (u as any).canUploadBanner
+                    ? "bg-purple-900/40 border-purple-600/60 text-purple-300 hover:bg-purple-900/60"
+                    : "bg-card border-border/50 text-muted-foreground hover:border-purple-600/40 hover:text-purple-300"
+                }`}
+              >
+                {(u as any).canUploadBanner ? "🖼️ BANNER" : "🔒 BANNER"}
+              </button>
+              <button
+                onClick={() => updateVerified.mutate({ userId: u.id, isVerified: !(u as any).isVerified })}
+                title={(u as any).isVerified ? "Quitar verificación" : "Verificar usuario"}
+                className={`h-7 px-2 rounded text-xs font-mono border transition-colors ${
+                  (u as any).isVerified
+                    ? "bg-blue-900/40 border-blue-600/60 text-blue-300 hover:bg-blue-900/60"
+                    : "bg-card border-border/50 text-muted-foreground hover:border-blue-600/40 hover:text-blue-300"
+                }`}
+              >
+                {(u as any).isVerified ? "✅ VERIF." : "○ VERIF."}
+              </button>
             </div>
           </div>
         ))}
