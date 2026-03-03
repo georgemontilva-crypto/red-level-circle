@@ -9,7 +9,7 @@ import {
   ExternalLink, Search, Store, Plus, X,
   CheckCircle, Star, Youtube
 } from "lucide-react";
-import { DefaultBannerBg } from "@/const";
+import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {

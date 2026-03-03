@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
-import { DefaultBannerBg } from "@/const";
+import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {

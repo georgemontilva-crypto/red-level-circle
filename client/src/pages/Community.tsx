@@ -10,7 +10,7 @@ import {
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { SectionBanner } from "@/components/SectionBanner";
-import { DefaultBannerBg } from "@/const";
+import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
