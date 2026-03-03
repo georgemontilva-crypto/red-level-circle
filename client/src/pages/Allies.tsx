@@ -2,6 +2,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { SectionBanner } from "@/components/SectionBanner";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Globe, MapPin, Phone, Mail, Instagram, Twitter, Facebook,
   ExternalLink, Search, Filter, ChevronDown, Store, Plus, X,
@@ -302,35 +303,31 @@ export function AlliesPage() {
             </div>
 
             {/* Country filter */}
-            <div className="relative">
-              <select
-                value={country}
-                onChange={e => { setCountry(e.target.value); setCity(""); }}
-                className="appearance-none bg-zinc-900/80 border border-white/10 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-red-500/60 transition-colors cursor-pointer"
-              >
-                <option value="">Todos los países</option>
+            <Select value={country || "__all__"} onValueChange={v => { setCountry(v === "__all__" ? "" : v); setCity(""); }}>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Todos los países" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Todos los países</SelectItem>
                 {(locations?.countries ?? []).map((c: string) => (
-                  <option key={c} value={c}>{c}</option>
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
-              </select>
-              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-            </div>
+              </SelectContent>
+            </Select>
 
             {/* City filter */}
             {availableCities.length > 0 && (
-              <div className="relative">
-                <select
-                  value={city}
-                  onChange={e => setCity(e.target.value)}
-                  className="appearance-none bg-zinc-900/80 border border-white/10 rounded-lg pl-3 pr-8 py-2 text-sm text-white focus:outline-none focus:border-red-500/60 transition-colors cursor-pointer"
-                >
-                  <option value="">Todas las ciudades</option>
+              <Select value={city || "__all__"} onValueChange={v => setCity(v === "__all__" ? "" : v)}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="Todas las ciudades" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">Todas las ciudades</SelectItem>
                   {availableCities.map((c: string) => (
-                    <option key={c} value={c}>{c}</option>
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
             )}
 
             {/* Clear filters */}
