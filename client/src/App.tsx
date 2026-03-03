@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./_core/hooks/useAuth";
@@ -79,6 +79,13 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  const [location] = useLocation();
+
+  // Intercept ALL /admin routes before the Switch processes them
+  if (location === "/admin" || location.startsWith("/admin/")) {
+    return <AdminRouter />;
+  }
+
   return (
     <Switch>
       {/* Blank page routes (no sidebar/topnav) */}
@@ -89,10 +96,6 @@ function Router() {
       <Route path="/legal/tienda" component={Tienda} />
       <Route path="/legal/aliados" component={Aliados} />
       <Route path="/legal/devoluciones" component={Devoluciones} />
-
-      {/* Admin routes (no sidebar layout - has its own) */}
-      <Route path="/admin" component={AdminRouter} />
-      <Route path="/admin/:rest*" component={AdminRouter} />
 
       {/* App routes with sidebar layout */}
       <Route>
