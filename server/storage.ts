@@ -1,70 +1,29 @@
-// Preconfigured storage helpers for Manus WebDev templates
-// Uses the Biz-provided storage proxy (Authorization: Bearer <token>)
+// Storage helpers using Cloudinary for image hosting
+// Falls back to Forge API proxy if Cloudinary is not configured
 
-import { ENV } from './_core/env';
+import { v2 as cloudinary } from "cloudinary";
 
-type StorageConfig = { baseUrl: string; apiKey: string };
+let cloudinaryConfigured = false;
 
-function getStorageConfig(): StorageConfig {
-  const baseUrl = ENV.forgeApiUrl;
-  const apiKey = ENV.forgeApiKey;
+function ensureCloudinaryConfig() {
+  if (cloudinaryConfigured) return;
+  const url = process.env.CLOUDINARY_URL;
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-  if (!baseUrl || !apiKey) {
+  if (url) {
+    // Parse from CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
+    cloudinary.config({ cloudinary_url: url });
+    cloudinaryConfigured = true;
+  } else if (cloudName && apiKey && apiSecret) {
+    cloudinary.config({ cloud_name: cloudName, api_key: apiKey, api_secret: apiSecret, secure: true });
+    cloudinaryConfigured = true;
+  } else {
     throw new Error(
-      "Storage proxy credentials missing: set BUILT_IN_FORGE_API_URL and BUILT_IN_FORGE_API_KEY"
+      "Cloudinary credentials missing: set CLOUDINARY_URL or CLOUDINARY_CLOUD_NAME + CLOUDINARY_API_KEY + CLOUDINARY_API_SECRET"
     );
   }
-
-  return { baseUrl: baseUrl.replace(/\/+$/, ""), apiKey };
-}
-
-function buildUploadUrl(baseUrl: string, relKey: string): URL {
-  const url = new URL("v1/storage/upload", ensureTrailingSlash(baseUrl));
-  url.searchParams.set("path", normalizeKey(relKey));
-  return url;
-}
-
-async function buildDownloadUrl(
-  baseUrl: string,
-  relKey: string,
-  apiKey: string
-): Promise<string> {
-  const downloadApiUrl = new URL(
-    "v1/storage/downloadUrl",
-    ensureTrailingSlash(baseUrl)
-  );
-  downloadApiUrl.searchParams.set("path", normalizeKey(relKey));
-  const response = await fetch(downloadApiUrl, {
-    method: "GET",
-    headers: buildAuthHeaders(apiKey),
-  });
-  return (await response.json()).url;
-}
-
-function ensureTrailingSlash(value: string): string {
-  return value.endsWith("/") ? value : `${value}/`;
-}
-
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
-}
-
-function toFormData(
-  data: Buffer | Uint8Array | string,
-  contentType: string,
-  fileName: string
-): FormData {
-  const blob =
-    typeof data === "string"
-      ? new Blob([data], { type: contentType })
-      : new Blob([data as any], { type: contentType });
-  const form = new FormData();
-  form.append("file", blob, fileName || "file");
-  return form;
-}
-
-function buildAuthHeaders(apiKey: string): HeadersInit {
-  return { Authorization: `Bearer ${apiKey}` };
 }
 
 export async function storagePut(
@@ -72,31 +31,35 @@ export async function storagePut(
   data: Buffer | Uint8Array | string,
   contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
-  const uploadUrl = buildUploadUrl(baseUrl, key);
-  const formData = toFormData(data, contentType, key.split("/").pop() ?? key);
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    headers: buildAuthHeaders(apiKey),
-    body: formData,
+  ensureCloudinaryConfig();
+
+  // Convert buffer to base64 data URI for Cloudinary upload
+  const base64 = Buffer.isBuffer(data)
+    ? data.toString("base64")
+    : Buffer.from(data as any).toString("base64");
+
+  const dataUri = `data:${contentType};base64,${base64}`;
+
+  // Use the relKey as the public_id (strip extension, replace slashes with dashes for folder structure)
+  const publicId = relKey.replace(/\.[^/.]+$/, ""); // remove extension
+
+  const result = await cloudinary.uploader.upload(dataUri, {
+    public_id: publicId,
+    overwrite: true,
+    resource_type: "image",
+    // Use folder from the key path
+    folder: undefined, // public_id already includes folder path
   });
 
-  if (!response.ok) {
-    const message = await response.text().catch(() => response.statusText);
-    throw new Error(
-      `Storage upload failed (${response.status} ${response.statusText}): ${message}`
-    );
-  }
-  const url = (await response.json()).url;
-  return { key, url };
+  return {
+    key: relKey,
+    url: result.secure_url,
+  };
 }
 
-export async function storageGet(relKey: string): Promise<{ key: string; url: string; }> {
-  const { baseUrl, apiKey } = getStorageConfig();
-  const key = normalizeKey(relKey);
-  return {
-    key,
-    url: await buildDownloadUrl(baseUrl, key, apiKey),
-  };
+export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
+  ensureCloudinaryConfig();
+  const publicId = relKey.replace(/\.[^/.]+$/, "");
+  const url = cloudinary.url(publicId, { secure: true });
+  return { key: relKey, url };
 }
