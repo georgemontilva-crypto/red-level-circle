@@ -180,7 +180,7 @@ export default function Tournaments() {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      <div className="pt-6 pb-16 max-w-7xl mx-auto px-4">
+      <div className="container pt-6 pb-16">
 
         <SectionBanner sectionKey="tournaments" height="h-48 sm:h-64 lg:h-72" />
 

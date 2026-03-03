@@ -76,7 +76,7 @@ export default function Streams() {
 
   return (
     <div className="min-h-screen bg-card text-white">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-20">
+      <div className="container pt-6 pb-20">
 
         {/* ── Page header ── */}
         <div className="mb-10">

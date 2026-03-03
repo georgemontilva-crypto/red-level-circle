@@ -210,7 +210,7 @@ export default function Community() {
     : users;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 overflow-x-hidden">
+    <div className="container py-6 overflow-x-hidden">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">

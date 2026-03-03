@@ -671,7 +671,7 @@ export default function Ranking() {
   };
 
   return (
-    <div className="min-h-screen" style={{ background: "oklch(0.06 0.005 0)" }}>
+    <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
       {/* Header hero */}
       <div
         className="relative overflow-hidden"

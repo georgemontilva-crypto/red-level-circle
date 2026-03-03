@@ -578,7 +578,7 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Header */}
-      <div className="px-4 sm:px-6 pt-6 pb-4 border-b border-border/50">
+      <div className="container pt-6 pb-4 border-b border-border/50">
         <div className="flex items-center gap-4">
           <Link href={`/profile/${user?.id}`}>
             <button className="flex items-center gap-2 text-muted-foreground hover:text-white transition-colors font-mono text-sm">

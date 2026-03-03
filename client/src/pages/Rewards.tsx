@@ -712,12 +712,12 @@ export default function Rewards() {
       </div>
 
       {/* ── Section Banner ── */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-4">
+      <div className="container pt-4">
         <SectionBanner sectionKey="rewards" height="h-48 sm:h-64 lg:h-72" />
       </div>
 
       {/* ── Quest grid ── */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
+      <div className="container py-8">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-white font-bold text-lg">
             {activeTab === "all" ? "Misiones disponibles" : "Misiones reclamadas"}

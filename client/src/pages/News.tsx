@@ -22,7 +22,7 @@ export function NewsList() {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      <div className="pt-6 pb-16 max-w-5xl mx-auto px-4">
+      <div className="container pt-6 pb-16">
         <SectionBanner sectionKey="news" height="h-48 sm:h-64 lg:h-72" />
 
 
@@ -107,7 +107,7 @@ export function NewsArticle() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background text-white">
-        <div className="pt-6 max-w-3xl mx-auto px-4">
+        <div className="container pt-6">
           <div className="h-64 bg-card/50 rounded-xl animate-pulse mb-6" />
           <div className="h-8 bg-card/50 rounded animate-pulse mb-4 w-3/4" />
           <div className="space-y-3">
@@ -131,7 +131,7 @@ export function NewsArticle() {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      <div className="pt-6 pb-16 max-w-3xl mx-auto px-4">
+      <div className="container pt-6 pb-16">
         {article.coverImage && (
           <img src={article.coverImage} alt={article.title} className="w-full h-64 object-cover rounded-xl mb-6" />
         )}
