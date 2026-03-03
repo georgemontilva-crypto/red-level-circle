@@ -674,13 +674,21 @@ export default function Ranking() {
     <div className="min-h-screen" style={{ background: "var(--bg-main)" }}>
       {/* Header hero */}
       <div
-        className="relative overflow-hidden"
+        className="relative overflow-hidden rounded-xl mb-6"
         style={{
           background: `linear-gradient(135deg, ${activeColor.from} 0%, oklch(0.06 0.005 0) 60%)`,
-          borderBottom: `1px solid ${activeColor.accent}18`,
+          border: `1px solid ${activeColor.accent}18`,
           transition: "background 600ms ease, border-color 600ms ease",
         }}
       >
+        {/* Diagonal stripe pattern */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.06]"
+          style={{
+            backgroundImage: "repeating-linear-gradient(45deg, #dc2626 0, #dc2626 1px, transparent 0, transparent 50%)",
+            backgroundSize: "20px 20px",
+          }}
+        />
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
