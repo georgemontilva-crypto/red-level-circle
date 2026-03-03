@@ -83,103 +83,85 @@ function UserCard({ user, myId }: UserCardProps) {
     : "Jugador";
 
   return (
-    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
-      style={{ border: "1px solid rgba(255,255,255,0.06)" }}
-      onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)")}
-      onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(255,255,255,0.06)")}
-    >
-      <Link href={`/profile/${user.id}`} className="flex flex-col flex-1">
-        {/* ── Banner ── */}
-        <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
-          {user.bannerUrl ? (
-            <img
-              src={user.bannerUrl}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden">
+      {/* Banner Section */}
+      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
+        {user.bannerUrl ? (
+          <img
+            src={user.bannerUrl}
+            alt="Banner"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <DefaultBannerBg />
+        )}
+      </div>
+
+      {/* Avatar + Info + Button */}
+      <div className="relative px-6 pb-6">
+        {/* Avatar — overlapping banner */}
+        <div className="flex justify-center -mt-16 mb-4">
+          <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden">
+            <UserAvatar
+              avatar={user.avatar}
+              name={user.name ?? user.nickname}
+              activeFrameImage={user.activeFrameImage}
+              size={128}
             />
-          ) : (
-            <DefaultBannerBg />
-          )}
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
-
-          {/* Admin badge */}
-          {isAdmin && (
-            <div className="absolute top-3 right-3 text-[10px] px-2 py-0.5 rounded-full font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 z-10">
-              ADMIN
-            </div>
-          )}
-
-          {/* Avatar — centered, overlapping banner bottom edge */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
-          <div
-            className="rounded-full overflow-hidden flex-shrink-0"
-            style={{ border: "3px solid #111111", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
-          >
-              <UserAvatar
-                avatar={user.avatar}
-                name={user.name ?? user.nickname}
-                activeFrameImage={user.activeFrameImage}
-                size={72}
-              />
-            </div>
           </div>
         </div>
 
-        {/* ── Info ── */}
-        <div className="flex flex-col flex-1 px-4 pt-10 pb-3 text-center">
-          {/* Name + verified badge */}
-          <div className="flex items-center justify-center gap-1.5 mb-0.5">
-            <span className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors truncate">
-              {displayName}
-            </span>
-            {user.isVerified && <VerifiedBadge size={15} />}
+        {/* Name + verified */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-white font-orbitron">{displayName}</h1>
+            {user.isVerified && <VerifiedBadge size={18} />}
+            {isAdmin && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+                ADMIN
+              </span>
+            )}
           </div>
-
-          {/* Subtitle: role + country */}
-          <div className="flex items-center justify-center gap-1.5 text-zinc-500 text-xs">
+          <div className="flex items-center justify-center gap-1.5 text-sm text-gray-400">
             <ProfileTypeIcon type={user.profileType} />
-            <span className="font-mono">{subtitle}</span>
+            <span>{subtitle}</span>
             {user.country && (
               <>
                 <span className="text-zinc-700">·</span>
                 <MapPin className="w-3 h-3 text-zinc-600 flex-shrink-0" />
-                <span className="font-mono truncate">{user.country}</span>
+                <span className="truncate">{user.country}</span>
               </>
             )}
           </div>
         </div>
-      </Link>
 
-      {/* ── Follow button ── */}
-      <div className="px-4 pb-4">
-        {me && myId !== user.id ? (
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              isFollowing
-                ? unfollowMutation.mutate({ userId: user.id })
-                : followMutation.mutate({ userId: user.id });
-            }}
-            disabled={mutating || followLoading}
-            className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-semibold transition-all duration-200 border"
-            style={isFollowing
-              ? { background: "#2a2a2a", borderColor: "rgba(255,255,255,0.10)", color: "#888" }
-              : { background: "#2a2a2a", borderColor: "rgba(255,255,255,0.12)", color: "#ccc" }
-            }
-          >
-            {mutating || followLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : isFollowing ? (
-              <><UserMinus className="w-4 h-4" /> Siguiendo</>
-            ) : (
-              <><UserPlus className="w-4 h-4" /> Seguir</>
-            )}
-          </button>
-        ) : (
-          /* Placeholder to keep card height consistent when not logged in */
-          <div className="h-9" />
-        )}
+        {/* Follow button */}
+        <Link href={`/profile/${user.id}`}>
+          {me && myId !== user.id ? (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                isFollowing
+                  ? unfollowMutation.mutate({ userId: user.id })
+                  : followMutation.mutate({ userId: user.id });
+              }}
+              disabled={mutating || followLoading}
+              className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-2 rounded-full transition-colors flex items-center justify-center gap-2"
+            >
+              {mutating || followLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : isFollowing ? (
+                <><UserMinus className="w-4 h-4" /> Siguiendo</>
+              ) : (
+                <><UserPlus className="w-4 h-4" /> Seguir</>
+              )}
+            </button>
+          ) : (
+            <button className="w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold py-2 rounded-full transition-colors">
+              Ver perfil
+            </button>
+          )}
+        </Link>
       </div>
     </div>
   );

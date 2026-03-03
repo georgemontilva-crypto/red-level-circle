@@ -50,21 +50,18 @@ function AllyCard({ ally }: { ally: any }) {
   const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
 
   return (
-    <div className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] border border-white/[0.06] hover:border-white/20 transition-all duration-300 hover:shadow-2xl hover:shadow-black/60 cursor-pointer">
-
-      {/* ── Banner ── */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
+    <div className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden">
+      {/* Banner Section */}
+      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {ally.coverImage ? (
           <img
             src={ally.coverImage}
             alt={ally.name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover"
           />
         ) : (
           <DefaultBannerBg />
         )}
-        {/* Dark gradient at bottom so avatar blends */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
 
         {/* Featured badge */}
         {ally.isFeatured && (
@@ -73,41 +70,36 @@ function AllyCard({ ally }: { ally: any }) {
             Destacado
           </div>
         )}
+      </div>
 
-        {/* Avatar/Logo — centered, overlapping the banner bottom edge */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
-          <div className="w-[72px] h-[72px] rounded-full overflow-hidden border-[3px] border-[#111111] bg-[#3a3a3a] shadow-xl flex items-center justify-center">
+      {/* Avatar + Info + Socials */}
+      <div className="relative px-6 pb-6">
+        {/* Logo/Avatar — overlapping banner */}
+        <div className="flex justify-center -mt-16 mb-4">
+          <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden bg-zinc-800 flex items-center justify-center">
             {ally.logo ? (
               <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
             ) : (
-              <Store className="w-8 h-8 text-zinc-600" />
+              <Store className="w-12 h-12 text-zinc-500" />
             )}
           </div>
         </div>
-      </div>
 
-      {/* ── Info ── */}
-      <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
-        {/* Name */}
-        <div className="flex items-center justify-center gap-1.5 mb-0.5">
-          <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
-            {ally.name}
-          </h3>
+        {/* Name + subtitle */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-white font-orbitron">{ally.name}</h1>
+          </div>
+          {(subtitle || ally.description) && (
+            <p className="text-sm text-gray-400 line-clamp-2">
+              {subtitle || ally.description}
+            </p>
+          )}
         </div>
-
-        {/* Subtitle — location or description */}
-        {(subtitle || ally.description) && (
-          <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 mb-3">
-            {subtitle || ally.description}
-          </p>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
 
         {/* Social buttons */}
         {socials.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-3">
+          <div className="flex items-center gap-1.5">
             {socials.map((s, i) => (
               <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
             ))}

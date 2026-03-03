@@ -81,25 +81,20 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   return (
     <div
       onClick={() => navigate(`/profile/${c.userId}`)}
-      className="group flex flex-col rounded-2xl overflow-hidden bg-[#111111] cursor-pointer transition-all duration-300 hover:shadow-2xl hover:shadow-black/60"
-      style={{
-        border: isLive ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.06)",
-        boxShadow: isLive ? "0 0 20px rgba(239,68,68,0.15)" : undefined,
-      }}
+      className="w-full max-w-sm bg-black rounded-3xl shadow-2xl overflow-hidden cursor-pointer"
+      style={isLive ? { boxShadow: "0 0 20px rgba(239,68,68,0.3), 0 25px 50px -12px rgba(0,0,0,0.8)" } : undefined}
     >
-      {/* ── Banner ── */}
-      <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "160px" }}>
+      {/* Banner Section */}
+      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {c.banner ? (
           <img
             src={c.banner}
             alt={name}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            className="w-full h-full object-cover"
           />
         ) : (
           <DefaultBannerBg />
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111111] via-[#111111]/10 to-transparent" />
 
         {/* LIVE badge */}
         {isLive && (
@@ -116,56 +111,37 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
             <cat.icon size={9} /> {cat.label}
           </div>
         )}
+      </div>
 
-        {/* Avatar — centered, overlapping the banner bottom edge */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 z-20">
-          <div
-            className="rounded-full overflow-hidden flex-shrink-0"
-            style={{ border: "3px solid #111111", boxShadow: "0 4px 16px rgba(0,0,0,0.6)" }}
-          >
+      {/* Avatar + Info + Socials */}
+      <div className="relative px-6 pb-6">
+        {/* Avatar — overlapping banner */}
+        <div className="flex justify-center -mt-16 mb-4">
+          <div className="w-32 h-32 rounded-full border-4 border-black shadow-lg overflow-hidden">
             <UserAvatar
               avatar={c.avatar}
               name={name}
               activeFrameImage={c.activeFrameImage}
-              size={72}
+              size={128}
             />
           </div>
         </div>
-      </div>
 
-      {/* ── Info ── */}
-      <div className="flex flex-col flex-1 px-4 pb-4 pt-10 text-center">
-          {/* Name + verified badge */}
-          <div className="flex items-center justify-center gap-1.5 mb-0.5">
-            <h3 className="font-orbitron font-black text-white text-base leading-tight tracking-wide group-hover:text-zinc-100 transition-colors">
-              {name}
-            </h3>
-            {c.isVerified && <VerifiedBadge size={15} />}
+        {/* Name + verified */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h1 className="text-2xl font-bold text-white font-orbitron">{name}</h1>
+            {c.isVerified && <VerifiedBadge size={18} />}
           </div>
-
-        {/* Subtitle */}
-        <p className="text-zinc-500 text-xs leading-relaxed line-clamp-1 mb-1">
-          {subtitle}
-        </p>
-
-        {/* Subscribers count */}
-        {c.subscribers > 0 && (
-          <p className="text-zinc-600 text-[11px] font-mono mb-2">
-            {c.subscribers.toLocaleString()} seguidores
-          </p>
-        )}
-
-        {/* Bio */}
-        {c.bio && (
-          <p className="text-zinc-500 text-xs leading-relaxed line-clamp-2 mb-2">{c.bio}</p>
-        )}
-
-        {/* Spacer */}
-        <div className="flex-1" />
+          <p className="text-sm text-gray-400">{subtitle}</p>
+          {c.subscribers > 0 && (
+            <p className="text-xs text-zinc-600 font-mono mt-1">{c.subscribers.toLocaleString()} seguidores</p>
+          )}
+        </div>
 
         {/* Social buttons */}
         {socials.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-3">
+          <div className="flex items-center gap-1.5">
             {socials.slice(0, 4).map((s, i) => (
               <SocialBtn key={i} href={s.href} icon={s.icon} label={s.label} color={s.color} />
             ))}
