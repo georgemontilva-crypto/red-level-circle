@@ -226,26 +226,14 @@ export default function UserProfile() {
                   style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "var(--accent-red)"} 0%, transparent 70%)`, zIndex: 0 }}
                 />
               )}
-              {/* Avatar with border rendered as box-shadow so overflow:visible works */}
-              <div
-                style={{
-                  borderRadius: "50%",
-                  boxShadow: "0 0 0 4px oklch(0.10 0.005 0), 0 0 0 6px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
-                  overflow: "visible",
-                  display: "inline-flex",
-                  position: "relative",
-                  zIndex: 1,
-                }}
-              >
-                <UserAvatar
+              <UserAvatar
                   avatar={profile.avatar}
                   name={profile.name}
                   activeFrameImage={equippedFrame?.frameImage ?? null}
                   size={109}
-                  containerSize={109}
-                  framePortal={true}
+                  ringColor="oklch(0.55 0.22 25 / 0.6)"
+                  ringWidth={4}
                 />
-              </div>
             </div>
           </div>
 

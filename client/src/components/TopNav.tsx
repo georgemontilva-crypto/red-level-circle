@@ -274,24 +274,13 @@ export function TopNav() {
               title={user.name ?? "Mi perfil"}
               style={{ overflow: "visible" }}
             >
-              <div
-                style={{
-                  borderRadius: "50%",
-                  boxShadow: `0 0 0 2px ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}`,
-                  overflow: "visible",
-                  display: "inline-flex",
-                  position: "relative",
-                }}
-              >
-                <UserAvatar
+              <UserAvatar
                   avatar={user.avatar}
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
                   size={40}
-                  containerSize={40}
-                  framePortal={true}
+                  ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}
                 />
-              </div>
               <span
                 className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
                 style={{ background: "#22c55e", borderColor: "var(--bg-main)", zIndex: 20 }}

@@ -34,6 +34,15 @@ interface UserAvatarProps {
    * Kept for backwards compatibility but has no effect.
    */
   framePortal?: boolean;
+  /**
+   * Color for the ring border drawn directly on the avatar circle.
+   * Pass a CSS color value (e.g. "#FFD700", "var(--accent-red)").
+   * The ring is applied as a box-shadow on the avatar image layer so it
+   * always aligns perfectly with the visible circle regardless of frame size.
+   */
+  ringColor?: string;
+  /** Ring width in pixels. Defaults to 2. */
+  ringWidth?: number;
 }
 
 /**
@@ -43,9 +52,8 @@ interface UserAvatarProps {
  * ┌─────────────────────────────────────────────────────┐
  * │  Outer container  (position: relative, square)      │
  * │  ┌─────────────────────────────────────────────┐    │
- * │  │  Avatar image  (inset: 15%, z-index: 1)     │    │
- * │  │  Frame layer   (inset: 0,   z-index: 2)     │    │
- * │  │  Status dot    (bottom-right, z-index: 5)   │    │
+ * │  │  Avatar image  (inset: 16.7%, z-index: 1)   │    │
+ * │  │  Frame layer   (inset: 0,     z-index: 2)   │    │
  * │  └─────────────────────────────────────────────┘    │
  * └─────────────────────────────────────────────────────┘
  *
@@ -55,8 +63,8 @@ interface UserAvatarProps {
  * The frame PNG must follow the cosmetic asset guidelines:
  *   • Square canvas (e.g. 512×512)
  *   • Transparent background
- *   • Circular cutout centered — the cutout diameter = canvas × 0.666
- *     (so the frame ring extends ~15% beyond the avatar on each side)
+ *   • Circular cutout centered — the cutout diameter ≈ canvas × 0.666
+ *     (so the frame ring extends ~16.7% beyond the avatar on each side)
  */
 export function UserAvatar({
   avatar,
@@ -65,8 +73,10 @@ export function UserAvatar({
   size = "md",
   containerSize,
   className = "",
-  // framePortal is intentionally ignored — kept only for API compatibility
+  // Deprecated props — kept for API compatibility, no effect
   framePortal: _framePortal,
+  ringColor,
+  ringWidth = 2,
 }: UserAvatarProps) {
   const outerPx = containerSize ?? (typeof size === "number" ? size : AVATAR_SIZES[size]);
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
@@ -74,8 +84,7 @@ export function UserAvatar({
   // The avatar image sits inset from the container edges.
   // The frame PNG is designed so its inner hole = 66.6% of the canvas.
   // Therefore the avatar must occupy 66.6% of the container,
-  // centered → inset = (100% - 66.6%) / 2 = 16.7% on each side.
-  // We use CSS percentage values so this works at any size.
+  // centered → inset = (100% - 66.6%) / 2 ≈ 16.7% on each side.
   const avatarInset = "16.7%";
 
   return (
@@ -84,8 +93,6 @@ export function UserAvatar({
       style={{
         width: outerPx,
         height: outerPx,
-        // overflow:visible so the frame (which fills 100% of container) can
-        // extend slightly beyond parent bounds if needed
         overflow: "visible",
         flexShrink: 0,
       }}
@@ -102,6 +109,10 @@ export function UserAvatar({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          // Ring border applied directly on the avatar circle
+          boxShadow: ringColor
+            ? `0 0 0 ${ringWidth}px ${ringColor}`
+            : undefined,
         }}
       >
         {avatar ? (
