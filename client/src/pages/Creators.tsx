@@ -368,7 +368,7 @@ export default function Creators() {
         </SectionBanner>
       </div>
 
-      <div className="px-4 sm:px-6 pb-16 py-6 space-y-6">
+      <div className="pb-16 py-6 space-y-6">
 
         {/* Filter tabs */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1">
