@@ -1683,6 +1683,7 @@ export const appRouter = router({
         tagline: z.string().optional(),
         description: z.string().optional(),
         imageUrl: z.string().optional(),
+        mobileImageUrl: z.string().optional(),
         linkUrl: z.string().optional(),
         ctaLabel: z.string().optional(),
         isFeatured: z.boolean().optional(),
@@ -1690,11 +1691,12 @@ export const appRouter = router({
         accentColor: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, imageUrl, linkUrl, ...rest } = input;
+        const { id, imageUrl, linkUrl, mobileImageUrl, ...rest } = input;
         await adminUpdateBrandAd(id, {
           ...rest,
           ...(imageUrl !== undefined ? { bannerImage: imageUrl } : {}),
           ...(linkUrl !== undefined ? { destinationUrl: linkUrl } : {}),
+          ...(mobileImageUrl !== undefined ? { logoImage: mobileImageUrl } : {}),
         });
         return { success: true };
       }),
