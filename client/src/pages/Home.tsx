@@ -513,43 +513,117 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
 }
 
 // ─── News Card (horizontal, estilo sección de noticias) ──────────────────────
+const NEWS_CAT_STYLES: Record<string, { bg: string; border: string; text: string }> = {
+  torneos:    { bg: "oklch(0.45 0.22 25 / 0.18)",  border: "oklch(0.50 0.22 25 / 0.50)",  text: "oklch(0.70 0.22 25)" },
+  equipos:    { bg: "oklch(0.25 0.10 240 / 0.18)", border: "oklch(0.45 0.15 240 / 0.50)", text: "oklch(0.65 0.18 240)" },
+  juegos:     { bg: "oklch(0.25 0.10 145 / 0.18)", border: "oklch(0.45 0.15 145 / 0.50)", text: "oklch(0.65 0.18 145)" },
+  plataforma: { bg: "oklch(0.25 0.10 80 / 0.18)",  border: "oklch(0.50 0.18 80 / 0.50)",  text: "oklch(0.70 0.18 80)" },
+  general:    { bg: "oklch(0.20 0.005 0 / 0.40)",  border: "oklch(0.30 0.005 0 / 0.50)",  text: "oklch(0.55 0.005 0)" },
+};
+
 function NewsCard({ n }: { n: any }) {
   const imageUrl = n.imageUrl ?? n.coverImage;
+  const catStyle = NEWS_CAT_STYLES[n.category] ?? NEWS_CAT_STYLES.general;
   return (
     <Link href={`/news/${n.slug ?? n.id}`}>
-      <div className="group flex gap-3 bg-card/80 border border-border hover:border-red-500/30 rounded-xl p-4 transition-all cursor-pointer h-full">
-        {/* Imagen */}
-        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
+      <div
+        className="group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 h-full flex flex-col"
+        style={{
+          background: "oklch(0.12 0.008 0)",
+          border: "1px solid oklch(0.20 0.01 0)",
+        }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.35)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "0 12px 40px rgba(0,0,0,0.5)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+          (e.currentTarget as HTMLDivElement).style.boxShadow = "none";
+        }}
+      >
+        {/* Imagen grande */}
+        <div className="relative w-full overflow-hidden" style={{ height: "200px" }}>
           {imageUrl ? (
-            <img src={imageUrl} alt={n.title} className="w-full h-full object-contain" />
+            <img
+              src={imageUrl}
+              alt={n.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Newspaper size={22} className="text-muted-foreground" />
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: "oklch(0.14 0.01 0)" }}
+            >
+              <Newspaper size={36} style={{ color: "oklch(0.28 0.01 0)" }} />
             </div>
           )}
+          {/* Gradient overlay */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(to top, oklch(0.12 0.008 0) 0%, transparent 60%)" }}
+          />
         </div>
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          {n.category && (
-            <span className="text-xs font-mono text-red-400 uppercase tracking-wider">{n.category}</span>
-          )}
-          {n.isFeatured && (
-            <span className="ml-1.5 text-xs font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded uppercase">Destacado</span>
-          )}
-          <h3 className="font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-2 mt-1 leading-snug">{n.title}</h3>
-          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Clock size={11} />
-              {new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
-            </span>
-            {n.viewCount != null && (
-              <span className="flex items-center gap-1">
-                <Eye size={11} />{n.viewCount}
+
+        {/* Content */}
+        <div className="flex flex-col flex-1 px-5 py-4">
+          {/* Badges */}
+          <div className="flex items-center gap-2 mb-3 flex-wrap">
+            {n.category && (
+              <span
+                className="text-xs font-display font-bold tracking-widest uppercase px-2.5 py-1 rounded-md"
+                style={{
+                  background: catStyle.bg,
+                  border: `1px solid ${catStyle.border}`,
+                  color: catStyle.text,
+                }}
+              >
+                {n.category}
+              </span>
+            )}
+            {n.isFeatured && (
+              <span
+                className="text-xs font-display font-bold tracking-widest uppercase px-2.5 py-1 rounded-md"
+                style={{
+                  background: "oklch(0.45 0.18 80 / 0.18)",
+                  border: "1px solid oklch(0.55 0.18 80 / 0.45)",
+                  color: "oklch(0.75 0.18 80)",
+                }}
+              >
+                Destacado
               </span>
             )}
           </div>
+
+          {/* Title */}
+          <h3
+            className="font-display font-bold text-base leading-snug line-clamp-2 mb-auto group-hover:text-red-300 transition-colors duration-200"
+            style={{ color: "var(--text-primary)" }}
+          >
+            {n.title}
+          </h3>
+
+          {/* Footer: fecha + vistas + chevron */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center gap-4">
+              <span className="flex items-center gap-1.5 text-xs" style={{ color: "oklch(0.45 0.005 0)" }}>
+                <Clock size={12} />
+                {new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "numeric", year: "numeric" })}
+              </span>
+              {n.viewCount != null && (
+                <span className="flex items-center gap-1.5 text-xs" style={{ color: "oklch(0.45 0.005 0)" }}>
+                  <Eye size={12} />{n.viewCount}
+                </span>
+              )}
+            </div>
+            <ChevronRight
+              size={16}
+              className="group-hover:text-red-400 transition-colors"
+              style={{ color: "oklch(0.35 0.005 0)" }}
+            />
+          </div>
         </div>
-        <ChevronRight size={16} className="text-muted-foreground group-hover:text-red-400 transition-colors flex-shrink-0 self-center" />
       </div>
     </Link>
   );
@@ -922,8 +996,8 @@ export default function Home() {
                 Ver todas <ArrowRight size={13} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {news!.slice(0, 8).map(n => <NewsCard key={n.id} n={n} />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {news!.slice(0, 2).map(n => <NewsCard key={n.id} n={n} />)}
             </div>
           </section>
         )}
