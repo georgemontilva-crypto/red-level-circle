@@ -256,7 +256,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       {/* Mobile top bar */}
       <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-md border-b z-30 flex items-center justify-between px-4 md:hidden" style={{ background: "rgba(14,14,16,0.92)", borderColor: "var(--border-main)" }}>
-        <img src="/logocompleto.webp" alt="Red Level Circle" className="h-7 w-auto object-contain" />
+        <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
         <div className="flex items-center gap-1">
           {isAuthenticated && (
             <button
