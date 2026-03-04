@@ -152,7 +152,7 @@ export default function UserProfile() {
       {/* Single padded container so banner and card body share the same width */}
       <div
         className="w-full"
-        style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)', background: 'var(--bg-main)' }}
+        style={{ background: 'var(--bg-main)' }}
       >
         {/* Inner card that contains both banner and info body */}
         <div className="relative w-full rounded-xl overflow-visible" style={{ background: "#16191f" }}>
