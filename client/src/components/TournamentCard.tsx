@@ -1,33 +1,96 @@
 /**
  * TournamentCard — Componente universal de tarjeta de torneo.
- * Muestra: banner, juego, nombre, estado, bracket, formato, slots, organizador, fecha y premio.
+ * Estructura basada en el diseño de referencia, adaptada a los colores RLC.
  * Usado en: Home (scroll horizontal), Tournaments (grid), MyTournaments, Dashboard, Betting, etc.
  */
 import { Link } from "wouter";
-import { Trophy, Calendar, Users, GitBranch, Hash, Radio, Coins } from "lucide-react";
+import { Trophy, Calendar, Users, GitBranch, Hash, Radio, Coins, CheckCircle2 } from "lucide-react";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 export function bracketLabel(b: string | null | undefined) {
   const m: Record<string, string> = {
-    single_elimination: "Eliminación Simple",
-    double_elimination: "Eliminación Doble",
+    single_elimination: "Elim. Simple",
+    double_elimination: "Doble Elim.",
     groups: "Grupos",
   };
   return m[b ?? ""] ?? b ?? "";
 }
 
 export function tournamentStatusInfo(s: string | null | undefined) {
-  const map: Record<string, { text: string; color: string; dot: string }> = {
-    registration_open: { text: "Inscripciones abiertas", color: "text-green-400", dot: "bg-green-500" },
-    in_progress:       { text: "En curso",               color: "text-yellow-400", dot: "bg-yellow-400 animate-pulse" },
-    upcoming:          { text: "Próximamente",            color: "text-blue-400",   dot: "bg-blue-500" },
-    completed:         { text: "Finalizado",              color: "text-muted-foreground",   dot: "bg-zinc-600" },
-    cancelled:         { text: "Cancelado",               color: "text-red-600",    dot: "bg-red-700" },
-    draft:             { text: "Borrador",                color: "text-muted-foreground",   dot: "bg-muted" },
-    pending_approval:  { text: "Pendiente de aprobación", color: "text-orange-400", dot: "bg-orange-500" },
-    registration_closed: { text: "Inscripciones cerradas", color: "text-muted-foreground", dot: "bg-zinc-600" },
+  const map: Record<string, { text: string; color: string; dot: string; badgeBg: string; badgeBorder: string; badgeText: string }> = {
+    registration_open: {
+      text: "Inscripciones abiertas",
+      color: "text-emerald-400",
+      dot: "bg-emerald-500",
+      badgeBg: "oklch(0.25 0.10 145 / 0.20)",
+      badgeBorder: "oklch(0.45 0.15 145 / 0.40)",
+      badgeText: "oklch(0.70 0.18 145)",
+    },
+    in_progress: {
+      text: "En curso",
+      color: "text-yellow-400",
+      dot: "bg-yellow-400 animate-pulse",
+      badgeBg: "oklch(0.25 0.10 80 / 0.20)",
+      badgeBorder: "oklch(0.55 0.18 80 / 0.40)",
+      badgeText: "oklch(0.75 0.18 80)",
+    },
+    upcoming: {
+      text: "Próximamente",
+      color: "text-blue-400",
+      dot: "bg-blue-500",
+      badgeBg: "oklch(0.25 0.10 240 / 0.20)",
+      badgeBorder: "oklch(0.45 0.15 240 / 0.40)",
+      badgeText: "oklch(0.65 0.18 240)",
+    },
+    registration_closed: {
+      text: "Inscripciones cerradas",
+      color: "text-orange-400",
+      dot: "bg-orange-500",
+      badgeBg: "oklch(0.25 0.10 50 / 0.20)",
+      badgeBorder: "oklch(0.50 0.18 50 / 0.40)",
+      badgeText: "oklch(0.70 0.18 50)",
+    },
+    completed: {
+      text: "Finalizado",
+      color: "text-zinc-400",
+      dot: "bg-zinc-600",
+      badgeBg: "oklch(0.18 0.005 0 / 0.40)",
+      badgeBorder: "oklch(0.30 0.005 0 / 0.50)",
+      badgeText: "oklch(0.50 0.005 0)",
+    },
+    cancelled: {
+      text: "Cancelado",
+      color: "text-red-500",
+      dot: "bg-red-700",
+      badgeBg: "oklch(0.25 0.18 25 / 0.20)",
+      badgeBorder: "oklch(0.40 0.18 25 / 0.40)",
+      badgeText: "oklch(0.55 0.18 25)",
+    },
+    draft: {
+      text: "Borrador",
+      color: "text-zinc-500",
+      dot: "bg-zinc-600",
+      badgeBg: "oklch(0.18 0.005 0 / 0.40)",
+      badgeBorder: "oklch(0.30 0.005 0 / 0.50)",
+      badgeText: "oklch(0.45 0.005 0)",
+    },
+    pending_approval: {
+      text: "Pendiente de aprobación",
+      color: "text-orange-400",
+      dot: "bg-orange-500",
+      badgeBg: "oklch(0.25 0.10 50 / 0.20)",
+      badgeBorder: "oklch(0.50 0.18 50 / 0.40)",
+      badgeText: "oklch(0.70 0.18 50)",
+    },
   };
-  return map[s ?? ""] ?? { text: s ?? "", color: "text-muted-foreground", dot: "bg-zinc-600" };
+  return map[s ?? ""] ?? {
+    text: s ?? "",
+    color: "text-zinc-400",
+    dot: "bg-zinc-600",
+    badgeBg: "oklch(0.18 0.005 0 / 0.40)",
+    badgeBorder: "oklch(0.30 0.005 0 / 0.50)",
+    badgeText: "oklch(0.50 0.005 0)",
+  };
 }
 
 export function formatTournamentDate(d: Date | string | null | undefined) {
@@ -60,16 +123,9 @@ type CardVariant = "default" | "compact" | "horizontal";
 
 interface TournamentCardProps {
   tournament: TournamentCardData;
-  /** default = tarjeta vertical estándar (scroll horizontal, grid)
-   *  compact  = fila horizontal compacta (dashboard, listas)
-   *  horizontal = fila con banner a la izquierda (betting, inscripciones)
-   */
   variant?: CardVariant;
-  /** Si se pasa, envuelve en Link; si no, solo renderiza el div */
   href?: string;
-  /** Callback al hacer click (para Betting, etc.) */
   onClick?: () => void;
-  /** Resaltar como seleccionado */
   selected?: boolean;
   className?: string;
 }
@@ -102,21 +158,21 @@ export function TournamentCard({
         className={`flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all duration-200 ${className}`}
         style={{
           background: selected ? "var(--bg-hover)" : "var(--bg-card)",
-          border: "none",
+          border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"}`,
           borderRadius: "12px",
-          boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 20px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.4)",
         }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-      }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+          (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.3)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+          (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)";
+        }}
         onClick={onClick}
       >
-        {/* Thumbnail */}
         <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-secondary flex items-center justify-center">
           {t.banner ? (
             <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
@@ -124,7 +180,6 @@ export function TournamentCard({
             <Trophy size={16} className="text-red-500/40" />
           )}
         </div>
-        {/* Info */}
         <div className="flex-1 min-w-0">
           <p className="text-white font-semibold text-sm truncate">{t.name}</p>
           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
@@ -134,7 +189,6 @@ export function TournamentCard({
             </span>
           </div>
         </div>
-        {/* Prize */}
         {(t.prizeAmount ?? 0) > 0 && (
           <span className="font-orbitron font-bold text-xs shrink-0 flex items-center gap-0.5" style={{ color: "oklch(0.65 0.18 80)" }}>
             <Coins size={11} />{t.prizeAmount} RLC
@@ -152,21 +206,21 @@ export function TournamentCard({
         className={`flex gap-4 rounded-xl overflow-hidden cursor-pointer transition-all duration-200 ${className}`}
         style={{
           background: selected ? "var(--bg-hover)" : "var(--bg-card)",
-          border: "none",
+          border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)"}`,
           borderRadius: "12px",
-          boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 20px rgba(0,0,0,0.4)" : "0 4px 20px rgba(0,0,0,0.4)",
         }}
-      onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-      }}
+        onMouseEnter={e => {
+          (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
+          (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.3)";
+        }}
+        onMouseLeave={e => {
+          (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
+          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
+          (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)";
+        }}
         onClick={onClick}
       >
-        {/* Banner lateral */}
         <div className="w-28 h-24 shrink-0 bg-card overflow-hidden relative">
           {t.banner ? (
             <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover" />
@@ -181,7 +235,6 @@ export function TournamentCard({
             </div>
           )}
         </div>
-        {/* Info */}
         <div className="flex-1 min-w-0 py-3 pr-4">
           {t.game && <p className="text-xs font-mono text-red-400 mb-0.5">{t.game}</p>}
           <p className="text-white font-bold text-sm line-clamp-1 mb-1">{t.name}</p>
@@ -212,105 +265,176 @@ export function TournamentCard({
     return onClick ? inner : <Link href={defaultHref}>{inner}</Link>;
   }
 
-  // ── Variante default (tarjeta vertical) ──────────────────────────────────
+  // ── Variante default — nueva estructura de referencia con colores RLC ──────
   const inner = (
     <div
-      className={`shrink-0 w-64 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
+      className={`shrink-0 w-72 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
       style={{
         scrollSnapAlign: "start",
-        background: selected ? "var(--bg-hover)" : "var(--bg-card)",
-        border: "none",
-        borderRadius: "12px",
-        boxShadow: selected ? "0 0 0 2px var(--accent-red), 0 4px 24px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.4)",
+        background: selected
+          ? "linear-gradient(to bottom, oklch(0.16 0.01 0), oklch(0.11 0.005 0))"
+          : "linear-gradient(to bottom, oklch(0.14 0.01 0), oklch(0.10 0.005 0))",
+        border: `1px solid ${selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.20 0.01 0)"}`,
+        borderRadius: "16px",
+        boxShadow: selected
+          ? "0 0 0 1px oklch(0.55 0.22 25 / 0.3), 0 8px 32px rgba(0,0,0,0.5)"
+          : "0 4px 24px rgba(0,0,0,0.4)",
       }}
       onMouseEnter={e => {
-        (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 8px 32px rgba(0,0,0,0.5)";
+        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-4px)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.55 0.22 25 / 0.35)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px oklch(0.55 0.22 25 / 0.2)";
       }}
       onMouseLeave={e => {
-        (e.currentTarget as HTMLDivElement).style.background = selected ? "var(--bg-hover)" : "var(--bg-card)";
         (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-        (e.currentTarget as HTMLDivElement).style.boxShadow = selected ? "0 0 0 2px var(--accent-red), 0 4px 24px rgba(0,0,0,0.4)" : "0 4px 24px rgba(0,0,0,0.4)";
+        (e.currentTarget as HTMLDivElement).style.borderColor = selected ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.20 0.01 0)";
+        (e.currentTarget as HTMLDivElement).style.boxShadow = selected
+          ? "0 0 0 1px oklch(0.55 0.22 25 / 0.3), 0 8px 32px rgba(0,0,0,0.5)"
+          : "0 4px 24px rgba(0,0,0,0.4)";
       }}
       onClick={onClick}
     >
-      {/* Banner */}
-      <div className="relative h-36 bg-card overflow-hidden">
+      {/* ── Banner Section ── */}
+      <div className="relative h-40 w-full overflow-hidden" style={{ borderRadius: "16px 16px 0 0" }}>
         {t.banner ? (
-          <img src={t.banner || undefined} alt={t.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          <img
+            src={t.banner || undefined}
+            alt={t.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+          />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, oklch(0.12 0.02 25) 0%, oklch(0.08 0.005 0) 100%)" }}>
-            <Trophy size={36} style={{ color: "oklch(0.55 0.22 25 / 0.3)" }} />
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: "linear-gradient(135deg, oklch(0.14 0.04 25) 0%, oklch(0.09 0.005 0) 100%)" }}
+          >
+            <Trophy size={40} style={{ color: "oklch(0.55 0.22 25 / 0.25)" }} />
           </div>
         )}
-        <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.12 0.005 0) 0%, transparent 60%)" }} />
-        {/* Game badge */}
-        {t.game && (
-          <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-xs font-mono font-semibold"
-            style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.75 0.18 80)", border: "1px solid oklch(0.55 0.18 80 / 0.4)", backdropFilter: "blur(8px)" }}>
-            {t.game}
-          </div>
-        )}
-        {/* EN VIVO badge */}
+
+        {/* Gradient overlay bottom */}
+        <div
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to top, oklch(0.10 0.005 0) 0%, transparent 55%)" }}
+        />
+
+        {/* LIVE badge */}
         {t.isLive && (
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-red-600 text-white text-xs px-2 py-0.5 rounded font-mono animate-pulse">
+          <div className="absolute top-3 left-3 flex items-center gap-1 px-2 py-1 rounded-full text-xs font-display tracking-wider font-bold animate-pulse"
+            style={{ background: "oklch(0.45 0.22 25)", color: "#fff", boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.6)" }}>
             <Radio size={9} /> EN VIVO
+          </div>
+        )}
+
+        {/* Game badge — top right */}
+        {t.game && (
+          <div
+            className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-display font-semibold tracking-wider"
+            style={{
+              background: "rgba(0,0,0,0.75)",
+              color: "oklch(0.85 0.005 0)",
+              border: "1px solid oklch(0.28 0.01 0)",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            {t.game}
           </div>
         )}
       </div>
 
-      {/* Body */}
-      <div className="p-4 space-y-3">
-        {/* Título */}
-        <p className="text-white font-bold text-sm leading-snug line-clamp-2 group-hover:text-red-300 transition-colors">{t.name}</p>
+      {/* ── Content Section ── */}
+      <div className="px-5 py-5">
 
-        {/* Estado */}
-        <div className="flex items-center gap-1.5">
-          <span className={`w-2 h-2 rounded-full shrink-0 ${st.dot}`} />
-          <span className={`text-xs font-semibold ${st.color}`}>{st.text}</span>
+        {/* Tournament title */}
+        <h2
+          className="font-display text-base font-bold tracking-wide leading-snug mb-4 line-clamp-2 group-hover:text-red-300 transition-colors duration-200"
+          style={{ color: "var(--text-primary)" }}
+        >
+          {t.name}
+        </h2>
+
+        {/* Status badge */}
+        <div
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border mb-5"
+          style={{
+            background: st.badgeBg,
+            borderColor: st.badgeBorder,
+            color: st.badgeText,
+          }}
+        >
+          <CheckCircle2 size={14} />
+          <span className="text-xs font-display font-semibold tracking-wider">{st.text}</span>
         </div>
 
-        {/* Meta tags: bracket + formato + slots */}
-        <div className="flex flex-wrap gap-1.5">
-          {t.bracketType && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
-              <GitBranch size={10} /> {bracketLabel(t.bracketType)}
-            </span>
-          )}
-          {formatLabel && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
-              <Users size={10} /> {formatLabel}
-            </span>
-          )}
+        {/* Stats grid */}
+        <div
+          className="space-y-2.5 mb-5 pb-5"
+          style={{ borderBottom: "1px solid oklch(0.20 0.01 0)" }}
+        >
+          {/* Equipos */}
           {t.maxTeams != null && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-mono"
-              style={{ background: "var(--bg-hover)", color: "oklch(0.55 0.01 0)" }}>
-              <Hash size={10} /> {t.registeredCount ?? 0} / {t.maxTeams}
-            </span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Trophy size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
+                <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.50 0.005 0)" }}>
+                  Equipos
+                </span>
+              </div>
+              <span className="text-xs font-display font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
+                {t.registeredCount ?? 0} / {t.maxTeams}
+              </span>
+            </div>
+          )}
+
+          {/* Formato */}
+          {(t.bracketType || formatLabel) && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <GitBranch size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
+                <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.50 0.005 0)" }}>
+                  Formato
+                </span>
+              </div>
+              <span className="text-xs font-display font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
+                {bracketLabel(t.bracketType)}{formatLabel ? ` · ${formatLabel}` : ""}
+              </span>
+            </div>
+          )}
+
+          {/* Premio */}
+          {(t.prizeAmount ?? 0) > 0 && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
+                <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.50 0.005 0)" }}>
+                  Premio
+                </span>
+              </div>
+              <span className="text-xs font-display font-bold tracking-wider" style={{ color: "oklch(0.70 0.18 80)" }}>
+                {t.prizeAmount} RLC
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Organizador */}
+        {/* Organizer */}
         {t.creatorName && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-muted-foreground text-xs font-mono">Organizado por</span>
-            <span className="text-muted-foreground text-xs font-semibold truncate">{t.creatorName}</span>
+          <div className="mb-4">
+            <p
+              className="text-xs font-display tracking-widest uppercase mb-0.5"
+              style={{ color: "oklch(0.38 0.005 0)" }}
+            >
+              Organizador
+            </p>
+            <p className="text-sm font-display font-semibold truncate" style={{ color: "oklch(0.65 0.005 0)" }}>
+              {t.creatorName}
+            </p>
           </div>
         )}
 
-        {/* Fecha + Premio */}
-        <div className="flex items-center justify-between pt-1 border-t border-border/60">
-          <span className="text-muted-foreground text-xs flex items-center gap-1 font-mono">
-            <Calendar size={10} />{formatTournamentDate(t.startDate)}
-          </span>
-          {(t.prizeAmount ?? 0) > 0 && (
-            <span className="flex items-center gap-1 font-orbitron font-bold text-xs" style={{ color: "oklch(0.65 0.18 80)" }}>
-              <Coins size={11} className="inline mr-0.5" />{t.prizeAmount} RLC
-            </span>
-          )}
+        {/* Date */}
+        <div className="flex items-center gap-2" style={{ color: "oklch(0.45 0.005 0)" }}>
+          <Calendar size={14} />
+          <span className="text-xs font-display tracking-wider">{formatTournamentDate(t.startDate)}</span>
         </div>
       </div>
     </div>
