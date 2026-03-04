@@ -49,7 +49,7 @@ export function UserAvatar({
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
   const outerPx = containerSize ?? px;
-  const framePx = outerPx; // same size as avatar photo
+  const framePx = Math.round(outerPx * 1.5017); // inner hole = avatar diameter
 
   const avatarRef = useRef<HTMLDivElement>(null);
   const [framePos, setFramePos] = useState<{ top: number; left: number } | null>(null);
