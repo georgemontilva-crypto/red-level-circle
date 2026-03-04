@@ -268,9 +268,10 @@ export function TournamentCard({
   // ── Variante default — nueva estructura de referencia con colores RLC ──────
   const inner = (
     <div
-      className={`shrink-0 w-72 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
+      className={`shrink-0 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
       style={{
         scrollSnapAlign: "start",
+        width: "340px",
         background: selected
           ? "linear-gradient(to bottom, oklch(0.16 0.01 0), oklch(0.11 0.005 0))"
           : "linear-gradient(to bottom, oklch(0.14 0.01 0), oklch(0.10 0.005 0))",
