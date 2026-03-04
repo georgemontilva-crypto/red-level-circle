@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
-import { Trophy, Search, Shield, Gamepad2, X, ChevronRight, Zap, CheckCircle2, Radio, ChevronDown } from "lucide-react";
+import { Trophy, Search, Shield, Gamepad2, X, ChevronRight, Zap, CheckCircle2, Radio } from "lucide-react";
 import { Link, useSearch } from "wouter";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { TournamentGridCard } from "@/components/TournamentCard";
 
@@ -21,99 +21,64 @@ function getGameColor(slug: string) { return GAME_COLORS[slug] ?? DEFAULT_COLOR;
 
 // ─── Status config ─────────────────────────────────────────────────────────────
 const STATUS_CONFIG = [
-  { value: "",                   label: "Todos los estados", icon: <Gamepad2 size={13} /> },
-  { value: "registration_open",  label: "Inscripciones",     icon: <Zap size={13} /> },
-  { value: "in_progress",        label: "En curso",          icon: <Radio size={13} /> },
-  { value: "completed",          label: "Finalizados",       icon: <CheckCircle2 size={13} /> },
+  { value: "",                   label: "Todos",         icon: <Gamepad2 size={13} /> },
+  { value: "registration_open",  label: "Inscripciones", icon: <Zap size={13} /> },
+  { value: "in_progress",        label: "En curso",      icon: <Radio size={13} /> },
+  { value: "completed",          label: "Finalizados",   icon: <CheckCircle2 size={13} /> },
 ];
 
-// ─── RLC Dropdown ─────────────────────────────────────────────────────────────
-function RlcDropdown({
-  label,
-  active,
-  options,
-  onSelect,
-}: {
-  label: string;
-  active: boolean;
-  options: { value: string; label: string; icon?: React.ReactNode; img?: string }[];
-  onSelect: (value: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
-
+// ─── Game Chip ─────────────────────────────────────────────────────────────────
+function GameChip({ game, active, onClick }: { game: any; active: boolean; onClick: () => void }) {
+  const c = getGameColor(game.slug);
   return (
-    <div ref={ref} className="relative">
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((p) => !p)}
-        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-mono text-xs font-semibold transition-all duration-200 select-none w-full"
-        style={{
-          background: active
-            ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)"
-            : "oklch(0.12 0.005 0)",
-          border: active
-            ? "1px solid rgba(220,38,38,0.55)"
-            : open
-            ? "1px solid rgba(220,38,38,0.35)"
-            : "1px solid oklch(0.20 0.01 0)",
-          color: active ? "#ef4444" : "oklch(0.65 0.01 0)",
-          boxShadow: active ? "0 0 14px rgba(220,38,38,0.25)" : "none",
-        }}
-      >
-        <span className="flex-1 text-left truncate">{label}</span>
-        <ChevronDown
-          size={13}
-          className="shrink-0 transition-transform duration-200"
-          style={{ transform: open ? "rotate(180deg)" : "rotate(0deg)", opacity: 0.6 }}
+    <button
+      onClick={onClick}
+      className="relative flex items-center gap-2.5 px-4 py-2.5 rounded-xl font-mono text-xs font-semibold shrink-0 transition-all duration-300 select-none"
+      style={{
+        background: active ? `linear-gradient(135deg, ${c.from} 0%, ${c.to} 100%)` : "oklch(0.12 0.005 0)",
+        border: active ? `1px solid ${c.accent}55` : "1px solid oklch(0.20 0.01 0)",
+        color: active ? c.accent : "oklch(0.55 0.01 0)",
+        boxShadow: active ? `0 0 16px ${c.glow}, 0 2px 8px rgba(0,0,0,0.5)` : "none",
+        transform: active ? "translateY(-1px)" : "none",
+        position: "relative",
+        zIndex: active ? 2 : 1,
+      }}
+    >
+      {(game.logo || game.banner) ? (
+        <img
+          src={(game.logo || game.banner) as string}
+          alt={game.name}
+          className="w-5 h-5 object-contain rounded"
+          style={{ filter: active ? "none" : "grayscale(60%) opacity(0.6)" }}
         />
-      </button>
-
-      {/* Dropdown panel */}
-      {open && (
-        <div
-          className="absolute left-0 top-full mt-1.5 z-50 min-w-[200px] rounded-xl overflow-hidden"
-          style={{
-            background: "oklch(0.10 0.005 0)",
-            border: "1px solid oklch(0.20 0.01 0)",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(220,38,38,0.08)",
-          }}
-        >
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => { onSelect(opt.value); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-mono font-semibold transition-all duration-150 text-left"
-              style={{
-                background: label === opt.label
-                  ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)"
-                  : "transparent",
-                color: label === opt.label ? "#ef4444" : "oklch(0.60 0.01 0)",
-              }}
-              onMouseEnter={(e) => {
-                if (label !== opt.label) (e.currentTarget as HTMLButtonElement).style.background = "oklch(0.15 0.01 0)";
-              }}
-              onMouseLeave={(e) => {
-                if (label !== opt.label) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              }}
-            >
-                <span className="truncate">{opt.label}</span>
-              {label === opt.label && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-              )}
-            </button>
-          ))}
-        </div>
+      ) : null}
+      <span style={{ letterSpacing: "0.05em" }}>{game.name}</span>
+      {active && (
+        <span className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse" style={{ background: c.accent }} />
       )}
-    </div>
+    </button>
+  );
+}
+
+// ─── All-games chip ────────────────────────────────────────────────────────────
+function AllGamesChip({ active, onClick }: { active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-mono text-xs font-semibold shrink-0 transition-all duration-300 select-none"
+      style={{
+        background: active ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)" : "oklch(0.12 0.005 0)",
+        border: active ? "1px solid rgba(220,38,38,0.5)" : "1px solid oklch(0.20 0.01 0)",
+        color: active ? "#ef4444" : "oklch(0.55 0.01 0)",
+        boxShadow: active ? "0 0 16px rgba(220,38,38,0.3), 0 2px 8px rgba(0,0,0,0.5)" : "none",
+        transform: active ? "translateY(-1px)" : "none",
+        position: "relative",
+        zIndex: active ? 2 : 1,
+      }}
+    >
+      <Trophy size={14} />
+      Todos los juegos
+    </button>
   );
 }
 
@@ -179,6 +144,7 @@ export default function Tournaments() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const { data: games } = trpc.games.list.useQuery();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const rawGameParam = params.get("game") ?? "";
   const resolveInitialSlug = (raw: string): string => {
@@ -209,25 +175,8 @@ export default function Tournaments() {
 
   const clearAll = () => { setSearchText(""); setSelectedGame(""); setSelectedStatus(""); };
   const activeGame = games?.find((g) => g.slug === selectedGame);
+  const activeColor = selectedGame ? getGameColor(selectedGame) : DEFAULT_COLOR;
   const hasFilters = !!(selectedGame || selectedStatus || searchText);
-
-  // Build game options for dropdown
-  const gameOptions = [
-    { value: "", label: "Todos los juegos", icon: <Trophy size={13} /> },
-    ...(games ?? []).map((g) => ({
-      value: g.slug,
-      label: g.name,
-      img: (g.logo || g.banner) as string | undefined,
-    })),
-  ];
-
-  // Current labels for dropdown triggers
-  const activeGameLabel = selectedGame
-    ? (games?.find((g) => g.slug === selectedGame)?.name ?? "Todos los juegos")
-    : "Todos los juegos";
-  const activeStatusLabel = selectedStatus
-    ? (STATUS_CONFIG.find((s) => s.value === selectedStatus)?.label ?? "Todos los estados")
-    : "Todos los estados";
 
   return (
     <div className="min-h-screen bg-background text-white">
@@ -243,8 +192,8 @@ export default function Tournaments() {
         </SectionBanner>
 
         {/* ── Fila 1: Búsqueda ──────────────────────────────────────────────── */}
-        <div className="mt-3 mb-4 sm:mt-6 sm:mb-5">
-          <div className="relative">
+        <div className="mt-3 mb-4 sm:mt-8 sm:mb-5">
+          <div className="relative max-w-xl">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input
               placeholder="Buscar torneo por nombre..."
@@ -263,40 +212,55 @@ export default function Tournaments() {
           </div>
         </div>
 
-        {/* ── Fila 2: Dropdowns de juego y estado ───────────────────────────── */}
-        <div className="flex flex-col gap-2 mb-5">
-          {/* Dropdown juego */}
-          <RlcDropdown
-            label={activeGameLabel}
-            active={!!selectedGame}
-            options={gameOptions}
-            onSelect={(val) => setSelectedGame(val)}
-          />
-
-          {/* Dropdown estado */}
-          <RlcDropdown
-            label={activeStatusLabel}
-            active={!!selectedStatus}
-            options={STATUS_CONFIG}
-            onSelect={(val) => setSelectedStatus(val)}
-          />
-
-          {/* Limpiar filtros */}
-          {hasFilters && (
-            <button
-              onClick={clearAll}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl font-mono text-xs font-semibold transition-all duration-200"
+        {/* ── Fila 2: Chips de juegos ────────────────────────────────────────── */}
+        {games && games.length > 0 && (
+          <div className="mb-5" style={{ overflowY: "visible" }}>
+            <div
+              ref={scrollRef}
+              className="flex gap-2"
               style={{
-                background: "oklch(0.12 0.005 0)",
-                border: "1px solid oklch(0.20 0.01 0)",
-                color: "oklch(0.55 0.01 0)",
+                overflowX: "auto",
+                overflowY: "visible",
+                scrollbarWidth: "none",
+                msOverflowStyle: "none",
+                paddingTop: "8px",
+                paddingBottom: "8px",
               }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "#ef4444"; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = "oklch(0.55 0.01 0)"; }}
             >
-              <X size={12} /> Limpiar
-            </button>
-          )}
+              <AllGamesChip active={selectedGame === ""} onClick={() => setSelectedGame("")} />
+              {games.map((game) => (
+                <GameChip
+                  key={game.id}
+                  game={game}
+                  active={selectedGame === game.slug}
+                  onClick={() => setSelectedGame((prev) => (prev === game.slug ? "" : game.slug))}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Fila 3: Estado ────────────────────────────────────────────────── */}
+        <div className="mb-6">
+          <p className="text-muted-foreground text-xs font-mono mb-2 uppercase tracking-widest">Estado</p>
+          <div className="flex flex-wrap gap-2">
+            {STATUS_CONFIG.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSelectedStatus(s.value)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-mono text-xs font-semibold transition-all duration-200"
+                style={{
+                  background: selectedStatus === s.value ? "oklch(0.18 0.02 25)" : "oklch(0.10 0.005 0)",
+                  border: selectedStatus === s.value ? "1px solid rgba(220,38,38,0.5)" : "1px solid oklch(0.18 0.01 0)",
+                  color: selectedStatus === s.value ? "#ef4444" : "oklch(0.50 0.01 0)",
+                  boxShadow: selectedStatus === s.value ? "0 0 10px rgba(220,38,38,0.15)" : "none",
+                }}
+              >
+                <span style={{ color: selectedStatus === s.value ? "#ef4444" : "oklch(0.45 0.01 0)" }}>{s.icon}</span>
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── Cross-filter link ─────────────────────────────────────────────── */}
@@ -329,6 +293,9 @@ export default function Tournaments() {
                 ? "Sin resultados"
                 : `${tournaments!.length} torneo${tournaments!.length !== 1 ? "s" : ""} encontrado${tournaments!.length !== 1 ? "s" : ""}`}
             </p>
+            <button onClick={clearAll} className="flex items-center gap-1.5 text-xs font-mono text-muted-foreground hover:text-red-400 transition-colors">
+              <X size={12} /> Limpiar filtros
+            </button>
           </div>
         )}
 
