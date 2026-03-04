@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Star, Plus, Edit3, Trash2, CheckCircle2 } from "lucide-react";
+import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "../components/AdminUI";
@@ -12,9 +12,14 @@ export function CosmeticsPage() {
   const [editing, setEditing] = useState<number | null>(null);
   const [uploadingPreview, setUploadingPreview] = useState(false);
   const [uploadingFrame, setUploadingFrame] = useState(false);
+  const [aiReport, setAiReport] = useState<any>(null);
 
   const { data: cosmetics, refetch } = trpc.cosmetics.list.useQuery({});
   const uploadImage = trpc.admin.uploadImage.useMutation();
+  const suggestPrice = trpc.admin.suggestPrice.useMutation({
+    onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
+    onError: e => toast.error("Error IA: " + e.message),
+  });
   const create = trpc.cosmetics.adminCreate.useMutation({
     onSuccess: () => { toast.success("Cosmético creado"); setForm(emptyForm); refetch(); },
     onError: e => toast.error(e.message),
@@ -137,6 +142,45 @@ export function CosmeticsPage() {
             <p className="text-zinc-600 text-xs mt-1 font-rajdhani">Recomendado: PNG con fondo transparente, 512×512px</p>
           </div>
         </div>
+
+        {/* RLC Economy Architect */}
+        <div className="flex items-center justify-between bg-red-950/30 border border-red-800/40 rounded-xl px-4 py-3">
+          <div>
+            <p className="text-xs font-orbitron text-red-400 uppercase tracking-wider">✦ RLC Economy Architect</p>
+            <p className="text-xs text-zinc-500 font-rajdhani mt-0.5">Escribe el nombre y selecciona la rareza para obtener un precio sugerido por IA</p>
+          </div>
+          <Button
+            type="button"
+            disabled={!form.name || suggestPrice.isPending}
+            onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: "digital", rarity: form.rarity })}
+            className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron text-xs px-4 py-2 h-auto"
+          >
+            {suggestPrice.isPending
+              ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</>
+              : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
+          </Button>
+        </div>
+
+        {/* AI Report */}
+        {aiReport && (
+          <div className="bg-gradient-to-br from-red-950/40 to-zinc-900/80 border border-red-700/40 rounded-xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-red-400" />
+              <span className="text-xs font-orbitron text-red-400 uppercase tracking-wider">RLC Economy Architect</span>
+            </div>
+            <div className="flex items-center justify-between gap-3 bg-red-600/10 border border-red-600/30 rounded-xl p-3">
+              <div>
+                <p className="text-xs text-zinc-500 font-mono">PRECIO SUGERIDO</p>
+                <p className="text-2xl font-orbitron font-bold text-red-400">{aiReport.suggestedPriceRLC?.toLocaleString()} <span className="text-sm text-zinc-500">RLC</span></p>
+                <p className="text-xs text-zinc-500 font-rajdhani mt-1">{aiReport.effortHours?.toFixed(1)}h de actividad · {aiReport.rarity}</p>
+              </div>
+              <Button onClick={() => { setForm(f => ({ ...f, price: String(aiReport.suggestedPriceRLC) })); setAiReport(null); }} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">
+                APLICAR
+              </Button>
+            </div>
+            <p className="text-xs text-zinc-500 font-rajdhani leading-relaxed">{aiReport.justification}</p>
+          </div>
+        )}
 
         {/* Toggles */}
         <div className="flex gap-6 flex-wrap">
