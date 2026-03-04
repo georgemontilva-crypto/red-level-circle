@@ -175,11 +175,8 @@ export function TopNav() {
             >
               <Bookmark className="w-6 h-6" />
               {wishlistCount > 0 && (
-                <span
-                  className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-[11px] font-bold flex items-center justify-center px-1"
-                  style={{ background: "var(--accent-blue)", color: "#fff" }}
-                >
-                  {wishlistCount}
+                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                  {wishlistCount > 99 ? "99+" : wishlistCount}
                 </span>
               )}
             </button>
@@ -257,11 +254,8 @@ export function TopNav() {
           >
             <ShoppingCart className="w-6 h-6" />
             {cartCount > 0 && (
-              <span
-                className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-[11px] font-bold flex items-center justify-center px-1"
-                style={{ background: "var(--accent-blue)", color: "#fff" }}
-              >
-                {cartCount}
+              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                {cartCount > 99 ? "99+" : cartCount}
               </span>
             )}
           </button>
