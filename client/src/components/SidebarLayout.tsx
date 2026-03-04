@@ -292,8 +292,32 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </div>
       </div>
       {/* Main content */}
-      {/* Mobile: pt-14 (56px) = height of mobile top bar. Desktop: pt-[100px] = height of TopNav */}
-      <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0 md:pt-[100px]" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
+      {/* Mobile: calc(safe-area + 56px). Desktop: 100px (TopNav height). */}
+      {/* NOTE: inline style overrides Tailwind, so we use a CSS custom property trick:
+           on md+ the padding is set to 100px via the md:pt-[100px] class;
+           on mobile the inline style applies safe-area + 56px.
+           We achieve this by NOT using inline style on desktop. */}
+      <main
+        className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0"
+        style={{
+          /* Mobile: safe-area-inset-top + 56px header height */
+          paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
+        }}
+        ref={(el) => {
+          if (el) {
+            // On desktop (md = 768px+), override to 100px to match TopNav height
+            const applyDesktopPadding = () => {
+              if (window.innerWidth >= 768) {
+                el.style.paddingTop = "100px";
+              } else {
+                el.style.paddingTop = `calc(env(safe-area-inset-top, 0px) + 56px)`;
+              }
+            };
+            applyDesktopPadding();
+            window.addEventListener("resize", applyDesktopPadding);
+          }
+        }}
+      >
         <TopNav />
         <PageContainer className="pt-0 pb-2 md:py-2">
           {children}
