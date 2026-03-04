@@ -521,7 +521,7 @@ function NewsCard({ n }: { n: any }) {
         {/* Imagen */}
         <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
           {imageUrl ? (
-            <img src={imageUrl} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            <img src={imageUrl} alt={n.title} className="w-full h-full object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Newspaper size={22} className="text-muted-foreground" />
