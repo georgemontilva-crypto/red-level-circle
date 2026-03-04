@@ -901,12 +901,12 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
         {/* 1. Hero carousel — estilo Epic Games Store */}
-        <div className="px-3 sm:px-6 lg:px-10" style={{ paddingTop: "8px" }}>
+        <div style={{ paddingTop: "8px" }}>
           <HeroSection />
         </div>
 
       {/* Resto del contenido con padding interno */}
-      <div className="px-3 sm:px-6 lg:px-10 py-3 sm:py-6 space-y-6 sm:space-y-10">
+      <div className="py-3 sm:py-6 space-y-6 sm:space-y-10">
 
         {/* 2. Stats */}
         <PlatformStats />
