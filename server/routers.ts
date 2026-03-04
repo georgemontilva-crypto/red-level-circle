@@ -1737,6 +1737,8 @@ Productos más caros escalan proporcionalmente:
 Ejemplo: $40 USD → 48,000 RLC → effortHours = 48,000 / 800 = 60h (30 días × 2h)
 NUNCA devuelvas effortHours = 0. Calcula siempre: effortHours = suggestedPriceRLC / 800.
 
+IMPORTANTE: Todos los valores numéricos deben ser números enteros SIN separadores de miles ni puntos decimales. Ejemplo correcto: 86000 (NO "86,000" ni "86.000" ni 86).
+
 Responde SIEMPRE con JSON válido con exactamente estas claves:
 {
   "productName": string,
@@ -1780,6 +1782,30 @@ Genera el reporte de precio RLC para este producto.`;
         const raw = data.choices?.[0]?.message?.content ?? "{}";
         try {
           const parsed = JSON.parse(raw);
+
+          // Sanitizar suggestedPriceRLC: la IA a veces devuelve "86,000" o "86.000" como string
+          // o un número truncado. Normalizamos eliminando separadores de miles y convirtiendo a número.
+          if (parsed.suggestedPriceRLC !== undefined) {
+            const rawPrice = String(parsed.suggestedPriceRLC).replace(/[,\.]/g, "");
+            const numericPrice = parseInt(rawPrice, 10);
+            // Si el número resultante es sospechosamente pequeño (< 1000 para un producto físico),
+            // puede ser que la IA devolvió el valor en miles (ej: 86 en vez de 86000)
+            // Verificamos con marketPriceUSD si está disponible
+            if (!isNaN(numericPrice)) {
+              if (numericPrice < 1000 && parsed.marketPriceUSD && parsed.marketPriceUSD > 0) {
+                // Recalcular con la fórmula correcta: (USD * 1.20) / 0.001
+                parsed.suggestedPriceRLC = Math.round((parsed.marketPriceUSD * 1.20) / 0.001);
+              } else {
+                parsed.suggestedPriceRLC = numericPrice;
+              }
+            }
+          }
+
+          // Sanitizar marketPriceUSD
+          if (parsed.marketPriceUSD !== undefined && parsed.marketPriceUSD !== null) {
+            parsed.marketPriceUSD = parseFloat(String(parsed.marketPriceUSD).replace(/[,$]/g, "")) || null;
+          }
+
           // Fallback server-side: si la IA devuelve effortHours = 0 o undefined, calcular manualmente
           // Tasa calibrada: 800 RLC/hora, 1,600 RLC/día, 48,000 RLC/mes
           // Principio: producto de $40 USD = 1 mes de actividad (60h = 30 días × 2h/día)
