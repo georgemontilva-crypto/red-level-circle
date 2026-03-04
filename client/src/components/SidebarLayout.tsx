@@ -345,7 +345,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                   <UserAvatar
                     avatar={(user as any).avatar ?? null}
                     name={(user as any).nickname ?? (user as any).name ?? null}
-                    activeFrameImage={activeFrame?.frameImage ?? null}
                     size={32}
                     containerSize={32}
                   />
