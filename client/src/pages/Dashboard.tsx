@@ -1,9 +1,10 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
-import { Trophy, Users, ClipboardList, PlusCircle, ChevronRight, Crown, Swords } from "lucide-react";
+import { Trophy, Users, ClipboardList, PlusCircle, ChevronRight, Crown, Swords, Coins, AlertTriangle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   draft: { label: "Borrador", color: "oklch(0.55 0.18 220)" },
@@ -29,12 +30,19 @@ export default function Dashboard() {
   );
   const { data: myTeams, isLoading: loadingTeams } = trpc.teams.myTeams.useQuery();
 
+  const { data: wallet } = trpc.auth.wallet.useQuery();
+  const [showUpgradeConfirm, setShowUpgradeConfirm] = useState(false);
+
   const upgradeMutation = trpc.auth.upgradeToPremiun.useMutation({
     onSuccess: () => {
       toast.success("¡Cuenta actualizada a Premium! Recarga la página para ver los cambios.");
+      setShowUpgradeConfirm(false);
       setTimeout(() => window.location.reload(), 1500);
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => {
+      toast.error(err.message);
+      setShowUpgradeConfirm(false);
+    },
   });
 
   const stats = isPremium
@@ -181,7 +189,7 @@ export default function Dashboard() {
                 </div>
               </div>
               <button
-                onClick={() => upgradeMutation.mutate()}
+                onClick={() => setShowUpgradeConfirm(true)}
                 disabled={upgradeMutation.isPending}
                 className="shrink-0 px-6 py-3 rounded-lg font-display text-sm tracking-widest transition-all duration-300 disabled:opacity-50"
                 style={{
@@ -190,8 +198,99 @@ export default function Dashboard() {
                   boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)",
                 }}
               >
-                {upgradeMutation.isPending ? "ACTUALIZANDO..." : "MEJORAR PLAN"}
+                MEJORAR PLAN — 500 RLC
               </button>
+             </div>
+          </div>
+        )}
+
+        {/* Modal de confirmación de upgrade */}
+        {showUpgradeConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+            <div
+              className="w-full max-w-md mx-4 rounded-2xl p-6 space-y-5"
+              style={{ background: "oklch(0.11 0.005 0)", border: "1px solid oklch(0.55 0.22 25 / 0.40)" }}
+            >
+              {/* Header */}
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl" style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.30)" }}>
+                  <Crown size={22} style={{ color: "oklch(0.65 0.22 25)" }} />
+                </div>
+                <div>
+                  <h3 className="font-display text-lg font-bold tracking-wider text-white">MEJORAR A PREMIUM</h3>
+                  <p className="text-zinc-500 text-xs">Confirmación de pago</p>
+                </div>
+              </div>
+
+              {/* Costo */}
+              <div className="rounded-xl p-4 space-y-3" style={{ background: "oklch(0.14 0.005 0)", border: "1px solid oklch(0.20 0.005 0)" }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Costo del plan Premium</span>
+                  <span className="font-display font-bold text-white flex items-center gap-1.5">
+                    <Coins size={15} style={{ color: "oklch(0.75 0.18 80)" }} />
+                    500 RLC
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400 text-sm">Tu saldo actual</span>
+                  <span className="font-display font-bold flex items-center gap-1.5" style={{ color: (wallet?.balance ?? 0) >= 500 ? "oklch(0.65 0.18 145)" : "oklch(0.60 0.22 25)" }}>
+                    <Coins size={15} style={{ color: "oklch(0.75 0.18 80)" }} />
+                    {wallet?.balance ?? 0} RLC
+                  </span>
+                </div>
+                <div className="border-t pt-3" style={{ borderColor: "oklch(0.20 0.005 0)" }}>
+                  <div className="flex items-center justify-between">
+                    <span className="text-zinc-400 text-sm">Saldo tras el pago</span>
+                    <span className="font-display font-bold text-white">
+                      {Math.max(0, (wallet?.balance ?? 0) - 500)} RLC
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Advertencia si no tiene saldo */}
+              {(wallet?.balance ?? 0) < 500 && (
+                <div className="flex items-start gap-2.5 rounded-lg p-3" style={{ background: "oklch(0.18 0.08 25 / 0.30)", border: "1px solid oklch(0.45 0.18 25 / 0.40)" }}>
+                  <AlertTriangle size={16} className="shrink-0 mt-0.5" style={{ color: "oklch(0.65 0.22 25)" }} />
+                  <p className="text-xs" style={{ color: "oklch(0.70 0.18 25)" }}>
+                    No tienes suficientes RLC Coins. Necesitas 500 RLC pero tienes {wallet?.balance ?? 0}. Completa misiones o participa en torneos para ganar más RLC.
+                  </p>
+                </div>
+              )}
+
+              {/* Beneficios */}
+              <div className="space-y-1.5">
+                <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider mb-2">Incluye acceso a:</p>
+                {[
+                  "Crear y gestionar torneos propios",
+                  "Panel de inscripciones y equipos",
+                  "Estadísticas avanzadas de torneos",
+                  "Badge Premium en tu perfil",
+                ].map(b => (
+                  <div key={b} className="flex items-center gap-2 text-xs text-zinc-300">
+                    <span style={{ color: "oklch(0.65 0.22 25)" }}>✓</span> {b}
+                  </div>
+                ))}
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-1">
+                <button
+                  onClick={() => setShowUpgradeConfirm(false)}
+                  disabled={upgradeMutation.isPending}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => upgradeMutation.mutate()}
+                  disabled={upgradeMutation.isPending || (wallet?.balance ?? 0) < 500}
+                  className="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all disabled:opacity-50"
+                  style={{ background: "oklch(0.55 0.22 25)", color: "white", boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.35)" }}
+                >
+                  {upgradeMutation.isPending ? "PROCESANDO..." : "CONFIRMAR — 500 RLC"}
+                </button>
+              </div>
             </div>
           </div>
         )}

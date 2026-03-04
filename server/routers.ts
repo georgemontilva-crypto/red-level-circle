@@ -221,6 +221,28 @@ export const appRouter = router({
       return { success: true } as const;
     }),
     upgradeToPremiun: protectedProcedure.mutation(async ({ ctx }) => {
+      const UPGRADE_COST = 500;
+      // Verificar saldo suficiente
+      const balance = await getUserBalance(ctx.user.id);
+      if ((balance ?? 0) < UPGRADE_COST) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Saldo insuficiente. Necesitas ${UPGRADE_COST} RLC Coins para mejorar tu plan. Tienes ${balance ?? 0} RLC.`,
+        });
+      }
+      // Verificar que no sea ya premium
+      const user = await getUserById(ctx.user.id);
+      if (user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Ya tienes una cuenta Premium." });
+      }
+      // Descontar 500 RLC y registrar transacción
+      await addRlcTransaction({
+        userId: ctx.user.id,
+        amount: -UPGRADE_COST,
+        type: "withdrawal",
+        description: "Mejora de plan a Premium",
+      });
+      // Actualizar rol
       await updateUserRole(ctx.user.id, "premium");
       return { success: true };
     }),
