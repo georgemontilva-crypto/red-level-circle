@@ -125,6 +125,14 @@
 
 /* ── Horizontal scroll carrusel: ocultar scrollbar ── */
 .games-scroll::-webkit-scrollbar { display: none; }
+/* ── Utility: ocultar scrollbar manteniendo scroll funcional ── */
+.hide-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+/* ── En móvil, ocultar scrollbars horizontales globalmente ── */
+@media (max-width: 767px) {
+  .overflow-x-auto { scrollbar-width: none; -ms-overflow-style: none; }
+  .overflow-x-auto::-webkit-scrollbar { display: none; }
+}
 
 /* Cards del carrusel de juegos */
 .games-card {

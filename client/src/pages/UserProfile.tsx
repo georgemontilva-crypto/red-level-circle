@@ -390,7 +390,7 @@ export default function UserProfile() {
       {/* ── Tabs ── */}
       <div className="mt-4 w-full">
         {/* Tab bar */}
-        <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)" }}>
+        <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {(["overview", "cosmetics", "followers", "following", "roster"] as const)
             .filter((tab) => {
               // Only show roster tab if the user belongs to at least one team
