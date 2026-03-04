@@ -115,6 +115,7 @@ function UserCard({ user, myId }: UserCardProps) {
               name={displayName}
               activeFrameImage={(user as any).activeFrameImage}
               size={128}
+              containerSize={136}
             />
           </div>
         </div>

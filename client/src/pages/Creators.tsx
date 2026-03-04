@@ -112,6 +112,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
               name={name}
               activeFrameImage={(c as any).activeFrameImage}
               size={128}
+              containerSize={136}
             />
           </div>
         </div>

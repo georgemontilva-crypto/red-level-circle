@@ -287,6 +287,7 @@ export function TopNav() {
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
                   size={40}
+                  containerSize={44}
                 />
               </div>
               <span

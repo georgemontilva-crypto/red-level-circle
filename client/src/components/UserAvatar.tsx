@@ -20,8 +20,15 @@ interface UserAvatarProps {
   avatar?: string | null;
   name?: string | null;
   activeFrameImage?: string | null;
-  /** Numeric pixel size OR a semantic token */
+  /** Numeric pixel size OR a semantic token — the avatar image diameter */
   size?: number | AvatarSizeToken;
+  /**
+   * Total outer diameter of the container (image + border).
+   * When provided, the frame is scaled so its inner hole aligns with
+   * this diameter instead of the image-only size.
+   * Example: size=96, border=4px each side → containerSize=104
+   */
+  containerSize?: number;
   className?: string;
 }
 
@@ -29,28 +36,33 @@ interface UserAvatarProps {
  * UserAvatar — Single source of truth for all profile pictures.
  *
  * Frame overlay rules:
- * - Cosmetic frame PNGs have a transparent inner hole that occupies ~67.6% of
- *   the total image radius (measured from Mask_Pinkorb.png: inner radius ≈ 130px
- *   out of 192px total radius).
- * - To make the inner hole align exactly with the avatar circle, we scale the
- *   PNG so that its inner hole diameter equals the avatar diameter.
- * - Scale factor = 1 / 0.6758 ≈ 1.48
- * - The outer container keeps the original avatar size; the frame overflows
- *   via `overflow: visible` so the ring sits on the circumference.
+ * - Cosmetic frame PNGs have a transparent inner hole that occupies ~67.58%
+ *   of the total image radius (measured from Mask_Pinkorb.png).
+ * - We scale the PNG so that its inner hole diameter equals `containerSize`
+ *   (the full outer diameter including the border ring).
+ * - Scale factor = containerSize / (containerSize * 0.6758)
+ *               = 1 / 0.6758 ≈ 1.48 applied to containerSize.
+ * - The outer div keeps the avatar image size; the frame overflows via
+ *   `overflow: visible` so the ring sits exactly on the container edge.
  */
 export function UserAvatar({
   avatar,
   name,
   activeFrameImage,
   size = "md",
+  containerSize,
   className = "",
 }: UserAvatarProps) {
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
 
-  // Scale the frame PNG so its inner transparent hole matches the avatar diameter.
-  // The inner hole is ~67.58% of the total PNG width, so we need 1/0.6758 ≈ 1.48x.
-  const framePx = Math.round(px * 1.48);
+  // Base diameter for frame calculation: prefer containerSize (full outer circle)
+  // so the ring sits on the border edge, not inside the image.
+  const baseDiameter = containerSize ?? px;
+
+  // The inner transparent hole of the frame PNG is 67.58% of the total PNG width.
+  // To make the hole = baseDiameter, we need PNG rendered at baseDiameter / 0.6758.
+  const framePx = Math.round(baseDiameter / 0.6758);
 
   return (
     <div
@@ -80,7 +92,7 @@ export function UserAvatar({
         )}
       </div>
 
-      {/* Cosmetic frame overlay — scaled so inner hole = avatar diameter */}
+      {/* Cosmetic frame overlay — inner hole aligned to containerSize */}
       {activeFrameImage && (
         <img
           src={activeFrameImage}

@@ -406,6 +406,7 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
                   size={64}
+                  containerSize={68}
                 />
               </div>
               {/* Online dot */}

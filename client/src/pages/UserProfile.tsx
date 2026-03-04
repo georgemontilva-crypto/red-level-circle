@@ -241,6 +241,7 @@ export default function UserProfile() {
                   name={profile.name}
                   activeFrameImage={equippedFrame?.frameImage ?? null}
                   size={96}
+                  containerSize={104}
                 />
               </div>
             </div>
