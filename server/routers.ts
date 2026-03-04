@@ -1707,19 +1707,35 @@ export const appRouter = router({
 
         const systemPrompt = `Eres el "RLC Economy Architect", analista financiero especializado en economías de tokens digitales para la plataforma de esports Red Level Circle (RLC).
 
-# CONSTANTES DE LA ECONOMÍA
-- Ganancia Base del Usuario (Gh): 400 RLC por cada 1 hora de actividad.
+# CONSTANTES DE LA ECONOMÍA (CALIBRADAS)
+- Ganancia Base del Usuario (Gh): 800 RLC por cada 1 hora de actividad activa.
+- Ganancia Diaria Estimada: 1,600 RLC/día (asumiendo 2h de actividad diaria).
+- Ganancia Mensual Estimada: 48,000 RLC/mes (30 días × 2h/día).
 - Tasa de Cambio: 1,000 RLC = $1.00 USD.
 - Margen de Seguridad (Objetos Físicos): +20% sobre el precio de mercado.
 - Bono de Bienvenida: 500 RLC (referencia de accesibilidad inicial).
 
-# JERARQUÍA DE RAREZA (Productos Digitales)
-- COMÚN: 200-400 RLC | RARO: 1,200-2,000 RLC | ÉPICO: 4,000-6,000 RLC | LEGENDARIO: 12,000+ RLC
+# PRINCIPIO DE EQUILIBRIO
+Un producto de $40 USD debe costar exactamente 1 mes de actividad (48,000 RLC).
+Productos más caros escalan proporcionalmente:
+- $5 USD → 6,000 RLC (≈4 días)
+- $10 USD → 12,000 RLC (≈7 días)
+- $20 USD → 24,000 RLC (≈15 días)
+- $40 USD → 48,000 RLC (1 mes exacto)
+- $60 USD → 72,000 RLC (1.5 meses)
+- $100 USD → 120,000 RLC (2.5 meses)
+- $150 USD → 180,000 RLC (3.8 meses)
 
-# FÓRMULA FÍSICOS: P_RLC = ((Precio_USD * 1.20) / 0.001)
-# FÓRMULA ESFUERZO (OBLIGATORIA para TODOS los productos): effortHours = suggestedPriceRLC / 400
-Ejemplo: si suggestedPriceRLC = 7200, entonces effortHours = 7200 / 400 = 18.0
-NUNCA devuelvas effortHours = 0. Siempre calcula: effortHours = suggestedPriceRLC / 400.
+# JERARQUÍA DE RAREZA (Productos Digitales - calibrada)
+- COMÚN: 800-3,200 RLC (1-4 días de actividad)
+- RARO: 4,800-9,600 RLC (3-6 días)
+- ÉPICO: 16,000-32,000 RLC (10-20 días)
+- LEGENDARIO: 48,000+ RLC (1 mes o más)
+
+# FÓRMULA FÍSICOS: P_RLC = ((Precio_USD × 1.20) / 0.001)
+# FÓRMULA ESFUERZO: effortHours = P_RLC / 800
+Ejemplo: $40 USD → 48,000 RLC → effortHours = 48,000 / 800 = 60h (30 días × 2h)
+NUNCA devuelvas effortHours = 0. Calcula siempre: effortHours = suggestedPriceRLC / 800.
 
 Responde SIEMPRE con JSON válido con exactamente estas claves:
 {
@@ -1765,8 +1781,10 @@ Genera el reporte de precio RLC para este producto.`;
         try {
           const parsed = JSON.parse(raw);
           // Fallback server-side: si la IA devuelve effortHours = 0 o undefined, calcular manualmente
+          // Tasa calibrada: 800 RLC/hora, 1,600 RLC/día, 48,000 RLC/mes
+          // Principio: producto de $40 USD = 1 mes de actividad (60h = 30 días × 2h/día)
           if (!parsed.effortHours || parsed.effortHours === 0) {
-            parsed.effortHours = Math.round((parsed.suggestedPriceRLC / 400) * 10) / 10;
+            parsed.effortHours = Math.round((parsed.suggestedPriceRLC / 800) * 10) / 10;
           }
           return parsed as {
             productName: string;
@@ -1922,6 +1940,103 @@ Genera el reporte de precio RLC para este producto.`;
         await adminDeleteRewardTask(input.id);
         return { success: true };
       }),
+
+    // ─── Suggest reward with AI (RLC Economy Architect) ──────────────────────────────────────────────
+    suggestReward: adminProcedure
+      .input(z.object({
+        title: z.string(),
+        type: z.enum(["video", "ad", "daily_login", "share", "follow"]),
+        description: z.string().optional(),
+        sponsorName: z.string().optional(),
+        durationSeconds: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "OpenAI API key no configurada" });
+
+        const typeLabels: Record<string, string> = {
+          video: "Ver video",
+          ad: "Ver anuncio",
+          daily_login: "Login diario",
+          share: "Compartir contenido",
+          follow: "Seguir a alguien",
+        };
+
+        const systemPrompt = `Eres el "RLC Economy Architect", experto en diseño de sistemas de recompensas para plataformas de esports.
+
+# ECONOMÍA RLC CALIBRADA
+- Tasa de ganancia: 800 RLC/hora de actividad activa.
+- Ganancia diaria estimada (2h/día): 1,600 RLC/día.
+- Ganancia mensual (30 días): 48,000 RLC/mes.
+- Tasa de cambio: 1,000 RLC = $1.00 USD.
+- Bono de bienvenida: 500 RLC.
+
+# PRINCIPIOS DE RECOMPENSAS
+Las recompensas deben ser proporcionales al esfuerzo y tiempo requerido:
+- Login diario (30 seg): 50-100 RLC (micro-recompensa, fomenta hábito)
+- Ver anuncio corto (15-30 seg): 80-150 RLC
+- Ver video completo (1-3 min): 200-400 RLC
+- Ver video largo (5-10 min): 500-800 RLC
+- Compartir contenido: 300-600 RLC (acción de valor para la plataforma)
+- Seguir a alguien: 100-200 RLC
+
+# REGLA DE ORO
+Ninguna recompensa debe ser tan alta que permita conseguir un producto de $40 (48,000 RLC) en menos de 30 días solo con recompensas pasivas. Las recompensas complementan la actividad activa, no la reemplazan.
+
+Responde SIEMPRE con JSON válido con exactamente estas claves:
+{
+  "suggestedReward": number,
+  "minReward": number,
+  "maxReward": number,
+  "rationale": string,
+  "engagementTip": string
+}`;
+
+        const userMessage = `Tarea de recompensa:
+- Título: "${input.title}"
+- Tipo: ${typeLabels[input.type] ?? input.type}
+- Descripción: ${input.description ?? "Sin descripción"}
+${input.sponsorName ? `- Patrocinador: ${input.sponsorName}` : ""}
+${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segundos` : ""}
+
+¿Cuántos RLC debería otorgar esta tarea? Sugéreme el valor óptimo con justificación.`;
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            max_tokens: 400,
+            temperature: 0.3,
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.text();
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `OpenAI error: ${err}` });
+        }
+
+        const data = await response.json() as any;
+        const raw = data.choices?.[0]?.message?.content ?? "{}";
+        try {
+          const parsed = JSON.parse(raw);
+          return parsed as {
+            suggestedReward: number;
+            minReward: number;
+            maxReward: number;
+            rationale: string;
+            engagementTip: string;
+          };
+        } catch {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error al parsear respuesta de IA" });
+        }
+      }),
+
     listNews: adminProcedure
       .query(async () => adminListNews()),
     createNews: adminProcedure
