@@ -323,6 +323,11 @@ export const appRouter = router({
           startDate: input.startDate ? new Date(input.startDate) : undefined,
           endDate: input.endDate ? new Date(input.endDate) : undefined,
         });
+        // Generate news article for new tournament (non-blocking)
+        const { handleTournamentCreated } = await import("./newsGenerator");
+        handleTournamentCreated(id).catch((err: Error) =>
+          console.error("[NewsGenerator] Error generating tournament news:", err)
+        );
         return { id };
       }),
 

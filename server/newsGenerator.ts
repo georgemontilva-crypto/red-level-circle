@@ -139,7 +139,10 @@ async function handleTournamentStatusChanged(payload: {
 }) {
   const { tournamentId, newStatus, tournamentName } = payload;
 
-  if (newStatus !== "en_curso" && newStatus !== "finalizado") return;
+  // Accept both Spanish and English status values
+  const isStart = newStatus === "in_progress" || newStatus === "en_curso";
+  const isEnd = newStatus === "completed" || newStatus === "finalizado";
+  if (!isStart && !isEnd) return;
 
   const refKey = `tournament:${tournamentId}:${newStatus}`;
   if (await newsAlreadyExists(refKey)) return;
@@ -147,7 +150,6 @@ async function handleTournamentStatusChanged(payload: {
   const tournament = await getTournamentById(tournamentId);
   if (!tournament) return;
 
-  const isStart = newStatus === "en_curso";
   const prompt = isStart
     ? `El torneo "${tournamentName}" de ${tournament.game ?? "esports"} en Red Level Circle acaba de comenzar. 
        Tiene ${tournament.maxTeams ?? "varios"} equipos participantes. 
@@ -223,6 +225,47 @@ async function handleMatchFinished(payload: {
   });
 
   console.log(`[NewsGenerator] ✓ Created news for match ${matchId}`);
+  await broadcastNewsNotification(generated.title, generated.excerpt, slug);
+}
+
+// ─── Exported helper for tournament creation ─────────────────────────────────
+export async function handleTournamentCreated(tournamentId: number): Promise<void> {
+  const refKey = `tournament:${tournamentId}:created`;
+  if (await newsAlreadyExists(refKey)) return;
+
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament) return;
+
+  const prompt = `Se acaba de crear el torneo "${tournament.name}" de ${tournament.game ?? "esports"} en Red Level Circle.
+${tournament.description ? `Descripción: ${tournament.description}` : ""}
+Tiene cupo para ${tournament.maxTeams ?? "varios"} equipos.
+${tournament.prizeDescription ? `Premio: ${tournament.prizeDescription}` : ""}
+Genera una noticia de anuncio emocionante para que la comunidad RLC se entere y se inscriba.`;
+
+  console.log(`[NewsGenerator] Generating news for new tournament ${tournamentId} (${tournament.name})...`);
+
+  const generated = await generateNewsContent(prompt);
+  if (!generated) {
+    console.error("[NewsGenerator] Failed to generate content for tournament", tournamentId);
+    return;
+  }
+
+  const slug = toSlug(generated.title);
+  await createNews({
+    title: generated.title,
+    slug,
+    excerpt: generated.excerpt,
+    content: generated.content,
+    coverImage: tournament.banner ?? undefined,
+    category: "torneos",
+    authorId: SYSTEM_AUTHOR_ID,
+    isPublished: true,
+    isFeatured: false,
+    referenceUrl: refKey,
+    publishedAt: new Date(),
+  });
+
+  console.log(`[NewsGenerator] ✓ Created news for new tournament ${tournamentId} (${tournament.name})`);
   await broadcastNewsNotification(generated.title, generated.excerpt, slug);
 }
 
