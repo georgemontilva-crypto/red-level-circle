@@ -7,7 +7,7 @@ import { TournamentGridCard } from "@/components/TournamentCard";
 
 // ─── Colores temáticos por juego ──────────────────────────────────────────────
 const GAME_COLORS: Record<string, { from: string; to: string; glow: string; accent: string }> = {
-  "league-of-legends": { from: "#0a1628", to: "#0d2444", glow: "rgba(0,120,255,0.35)",  accent: "#4a9eff" },
+  "league-of-legends": { from: "#1a0505", to: "#2d0a0a", glow: "rgba(220,38,38,0.35)",  accent: "#ef4444" },
   "valorant":          { from: "#1a0a0a", to: "#2d0f0f", glow: "rgba(255,70,85,0.35)",   accent: "#ff4655" },
   "counter-strike":    { from: "#0a1a0a", to: "#0d2a0d", glow: "rgba(255,165,0,0.35)",   accent: "#f5a623" },
   "dota-2":            { from: "#0a0a1a", to: "#0f0f2a", glow: "rgba(180,0,255,0.35)",   accent: "#b400ff" },
@@ -268,16 +268,16 @@ export default function Tournaments() {
           <div
             className="flex items-center gap-2.5 mb-5 px-3.5 py-2.5 rounded-xl"
             style={{
-              background: `linear-gradient(135deg, ${activeColor.from} 0%, ${activeColor.to} 100%)`,
-              border: `1px solid ${activeColor.accent}33`,
+              background: "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)",
+              border: "1px solid rgba(220,38,38,0.30)",
             }}
           >
-            <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: activeColor.accent }} />
+            <Shield className="w-3.5 h-3.5 shrink-0" style={{ color: "#ef4444" }} />
             <span className="text-muted-foreground text-xs font-mono">Ver también:</span>
             <Link
               href={`/teams?game=${selectedGame}`}
               className="flex items-center gap-1 text-xs font-mono font-semibold transition-colors hover:opacity-80"
-              style={{ color: activeColor.accent }}
+              style={{ color: "#ef4444" }}
             >
               Equipos de {activeGame?.name ?? selectedGame}
               <ChevronRight size={12} />
