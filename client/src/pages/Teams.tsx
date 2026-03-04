@@ -234,7 +234,7 @@ export default function Teams() {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      <div className="pt-6 pb-16">
+      <div className="pt-2 pb-16">
 
         <SectionBanner hidden sectionKey="teams" height="h-48 sm:h-64 lg:h-72">
           <div className="flex flex-col gap-1">
@@ -246,7 +246,7 @@ export default function Teams() {
         </SectionBanner>
 
         {/* Búsqueda */}
-        <div className="mt-8 mb-5">
+        <div className="mt-3 mb-4 sm:mt-8 sm:mb-5">
           <div className="relative max-w-xl">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <input

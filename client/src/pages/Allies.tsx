@@ -284,7 +284,7 @@ export function AlliesPage() {
         </div>
       </SectionBanner>
 
-      <div className="py-6 space-y-6">
+      <div className="py-2 sm:py-6 space-y-6">
         {/* Filters bar */}
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
           <div className="flex flex-wrap gap-2 flex-1">

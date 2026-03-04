@@ -357,7 +357,7 @@ export default function Creators() {
   return (
     <div className="min-h-screen bg-background text-white overflow-x-hidden">
       {/* Section Banner */}
-      <div className="pt-4">
+      <div className="pt-1">
         <SectionBanner hidden sectionKey="creators" height="h-48 sm:h-64 lg:h-72">
           <div className="flex flex-col gap-1">
             <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>

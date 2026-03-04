@@ -170,7 +170,7 @@ export default function Community() {
   )?.filter((u) => u.id !== me?.id);
 
   return (
-    <div className="py-6 overflow-x-hidden">
+    <div className="py-2 sm:py-6 overflow-x-hidden">
       {/* Banner */}
       <SectionBanner hidden sectionKey="community" height="h-48 sm:h-64 lg:h-72" className="mb-6">
         <div className="flex flex-col gap-1">

@@ -286,7 +286,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       {/* Mobile: pt-14 (56px) = height of mobile top bar. Desktop: pt-[100px] = height of TopNav */}
       <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0 pt-14 md:pt-[100px]">
         <TopNav />
-        <PageContainer className="py-2 md:py-2">
+        <PageContainer className="pt-0 pb-2 md:py-2">
           {children}
         </PageContainer>
       </main>
