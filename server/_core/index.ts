@@ -109,6 +109,13 @@ async function startServer() {
   await runCustomMigrations();
   const app = express();
   const server = createServer(app);
+
+  // Railway (y cualquier proxy inverso) reenvía el tráfico HTTPS al servidor
+  // como HTTP interno. Sin esta línea, Express no sabe que está detrás de HTTPS
+  // y las cookies de sesión no reciben el flag `Secure`, lo que hace que
+  // Chrome muestre "No es seguro" aunque el certificado SSL sea válido.
+  app.set("trust proxy", 1);
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
