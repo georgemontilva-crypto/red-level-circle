@@ -4,6 +4,7 @@ import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
 import { Trophy, ChevronRight, ChevronLeft } from "lucide-react";
+import { DateTimePicker } from "@/components/DateTimePicker";
 import {
   Select,
   SelectContent,
@@ -589,29 +590,25 @@ export default function CreateTournament() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <NeonInput
+                <DateTimePicker
                   label="INICIO DE INSCRIPCIONES"
-                  type="datetime-local"
                   value={form.registrationStart}
-                  onChange={set("registrationStart")}
+                  onChange={(e) => set("registrationStart")(e.target.value)}
                 />
-                <NeonInput
+                <DateTimePicker
                   label="CIERRE DE INSCRIPCIONES"
-                  type="datetime-local"
                   value={form.registrationEnd}
-                  onChange={set("registrationEnd")}
+                  onChange={(e) => set("registrationEnd")(e.target.value)}
                 />
-                <NeonInput
+                <DateTimePicker
                   label="FECHA DE INICIO"
-                  type="datetime-local"
                   value={form.startDate}
-                  onChange={set("startDate")}
+                  onChange={(e) => set("startDate")(e.target.value)}
                 />
-                <NeonInput
+                <DateTimePicker
                   label="FECHA DE FIN"
-                  type="datetime-local"
                   value={form.endDate}
-                  onChange={set("endDate")}
+                  onChange={(e) => set("endDate")(e.target.value)}
                 />
               </div>
 
