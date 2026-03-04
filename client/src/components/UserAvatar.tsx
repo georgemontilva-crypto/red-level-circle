@@ -1,5 +1,4 @@
-import React, { useRef, useState, useEffect } from "react";
-import { createPortal } from "react-dom";
+import React from "react";
 
 /**
  * Semantic size tokens for avatars across the platform.
@@ -19,38 +18,45 @@ export type AvatarSizeToken = keyof typeof AVATAR_SIZES;
 interface UserAvatarProps {
   avatar?: string | null;
   name?: string | null;
+  /** Cosmetic frame image (PNG/GIF/WebP with transparent background, square canvas) */
   activeFrameImage?: string | null;
-  /** Numeric pixel size OR a semantic token — the avatar image diameter */
+  /** Numeric pixel size OR a semantic token — sets the outer container size */
   size?: number | AvatarSizeToken;
   /**
-   * Total outer diameter of the container (image + border px on each side × 2).
-   * When provided, the frame is centered on this diameter.
+   * @deprecated Use `size` instead. Kept for backwards compatibility.
+   * When provided, used as the outer container size.
    */
   containerSize?: number;
   className?: string;
   /**
-   * When true, the frame is rendered via a React Portal into document.body
-   * using position:fixed + viewport coords. Use this ONLY for prominent
-   * single avatars (TopNav header, profile page hero) where the frame must
-   * visually extend beyond clipping ancestors.
-   *
-   * When false (default), the frame is rendered inline with position:absolute
-   * and overflow:visible. This is safe for lists and grids where many avatars
-   * are visible at once — each frame stays exactly over its own avatar.
+   * @deprecated No longer needed. The new architecture renders all layers
+   * inline with percentage-based positioning — no portals required.
+   * Kept for backwards compatibility but has no effect.
    */
   framePortal?: boolean;
 }
 
 /**
- * UserAvatar — Single source of truth for all profile pictures.
+ * UserAvatar — Discord-style layered avatar component.
  *
- * Frame rendering modes:
- * - framePortal=false (default): frame is position:absolute inside the
- *   avatar container with overflow:visible. Always on top of its own avatar.
- *   Safe for lists/grids with many avatars.
- * - framePortal=true: frame is rendered via Portal into document.body with
- *   position:fixed + viewport coords. Use only for single prominent avatars
- *   (TopNav, profile hero) where the frame must escape clipping ancestors.
+ * Architecture:
+ * ┌─────────────────────────────────────────────────────┐
+ * │  Outer container  (position: relative, square)      │
+ * │  ┌─────────────────────────────────────────────┐    │
+ * │  │  Avatar image  (inset: 15%, z-index: 1)     │    │
+ * │  │  Frame layer   (inset: 0,   z-index: 2)     │    │
+ * │  │  Status dot    (bottom-right, z-index: 5)   │    │
+ * │  └─────────────────────────────────────────────┘    │
+ * └─────────────────────────────────────────────────────┘
+ *
+ * All layers use position:absolute with percentage-based insets so they
+ * scale perfectly at any size without pixel calculations or portals.
+ *
+ * The frame PNG must follow the cosmetic asset guidelines:
+ *   • Square canvas (e.g. 512×512)
+ *   • Transparent background
+ *   • Circular cutout centered — the cutout diameter = canvas × 0.666
+ *     (so the frame ring extends ~15% beyond the avatar on each side)
  */
 export function UserAvatar({
   avatar,
@@ -59,128 +65,91 @@ export function UserAvatar({
   size = "md",
   containerSize,
   className = "",
-  framePortal = false,
+  // framePortal is intentionally ignored — kept only for API compatibility
+  framePortal: _framePortal,
 }: UserAvatarProps) {
-  const px = typeof size === "number" ? size : AVATAR_SIZES[size];
+  const outerPx = containerSize ?? (typeof size === "number" ? size : AVATAR_SIZES[size]);
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
-  const outerPx = containerSize ?? px;
-  // Multiplier 1.5017x: inner hole of the PNG = avatar diameter
-  const framePx = Math.round(outerPx * 1.5017);
 
-  // Portal mode: track viewport-relative center of the avatar
-  const avatarRef = useRef<HTMLDivElement>(null);
-  const [framePos, setFramePos] = useState<{ top: number; left: number } | null>(null);
-
-  useEffect(() => {
-    if (!activeFrameImage || !framePortal) return;
-
-    const updatePos = () => {
-      if (!avatarRef.current) return;
-      const rect = avatarRef.current.getBoundingClientRect();
-      // Viewport-relative coords for position:fixed
-      setFramePos({
-        top: rect.top + rect.height / 2,
-        left: rect.left + rect.width / 2,
-      });
-    };
-
-    updatePos();
-    window.addEventListener("resize", updatePos, { passive: true });
-    window.addEventListener("scroll", updatePos, { passive: true });
-
-    const ro = new ResizeObserver(updatePos);
-    if (avatarRef.current) ro.observe(avatarRef.current);
-
-    return () => {
-      window.removeEventListener("resize", updatePos);
-      window.removeEventListener("scroll", updatePos);
-      ro.disconnect();
-    };
-  }, [activeFrameImage, framePortal]);
-
-  const avatarImage = (
-    <div
-      className="overflow-hidden bg-secondary flex items-center justify-center"
-      style={{
-        borderRadius: "50%",
-        width: px,
-        height: px,
-        position: "absolute",
-        top: Math.round((outerPx - px) / 2),
-        left: Math.round((outerPx - px) / 2),
-      }}
-    >
-      {avatar ? (
-        <img
-          src={avatar || undefined}
-          alt={name ?? "avatar"}
-          className="w-full h-full object-cover"
-          style={{ borderRadius: "50%" }}
-          draggable={false}
-        />
-      ) : (
-        <span
-          className="font-bold text-muted-foreground select-none"
-          style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
-        >
-          {initials}
-        </span>
-      )}
-    </div>
-  );
-
-  // Inline frame: position:absolute, extends outside via overflow:visible
-  const inlineFrame = activeFrameImage && !framePortal && (
-    <img
-      src={activeFrameImage}
-      alt="frame"
-      style={{
-        position: "absolute",
-        width: framePx,
-        height: framePx,
-        top: Math.round((outerPx - framePx) / 2),
-        left: Math.round((outerPx - framePx) / 2),
-        objectFit: "contain",
-        pointerEvents: "none",
-        zIndex: 10,
-      }}
-      draggable={false}
-    />
-  );
-
-  // Portal frame: position:fixed, viewport coords, escapes all clipping
-  const portalFrame = activeFrameImage && framePortal && framePos &&
-    createPortal(
-      <img
-        src={activeFrameImage}
-        alt="frame"
-        style={{
-          position: "fixed",
-          width: framePx,
-          height: framePx,
-          top: framePos.top,
-          left: framePos.left,
-          transform: "translate(-50%, -50%)",
-          objectFit: "contain",
-          pointerEvents: "none",
-          zIndex: 99999,
-        }}
-        draggable={false}
-      />,
-      document.body
-    );
+  // The avatar image sits inset from the container edges.
+  // The frame PNG is designed so its inner hole = 66.6% of the canvas.
+  // Therefore the avatar must occupy 66.6% of the container,
+  // centered → inset = (100% - 66.6%) / 2 = 16.7% on each side.
+  // We use CSS percentage values so this works at any size.
+  const avatarInset = "16.7%";
 
   return (
-    <>
+    <div
+      className={`relative shrink-0 ${className}`}
+      style={{
+        width: outerPx,
+        height: outerPx,
+        // overflow:visible so the frame (which fills 100% of container) can
+        // extend slightly beyond parent bounds if needed
+        overflow: "visible",
+        flexShrink: 0,
+      }}
+    >
+      {/* ── Layer 1: Avatar image ── */}
       <div
-        ref={framePortal ? avatarRef : undefined}
-        className={`relative shrink-0 ${className}`}
-        style={{ width: outerPx, height: outerPx, overflow: "visible" }}
+        style={{
+          position: "absolute",
+          inset: avatarInset,
+          borderRadius: "50%",
+          overflow: "hidden",
+          zIndex: 1,
+          background: "var(--bg-card, #1a1d23)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
-        {avatarImage}
-        {inlineFrame}
+        {avatar ? (
+          <img
+            src={avatar}
+            alt={name ?? "avatar"}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              borderRadius: "50%",
+              display: "block",
+            }}
+            draggable={false}
+          />
+        ) : (
+          <span
+            style={{
+              fontSize: `${Math.max(10, Math.round(outerPx * 0.25))}px`,
+              fontWeight: 700,
+              color: "var(--text-muted, #888)",
+              userSelect: "none",
+              lineHeight: 1,
+            }}
+          >
+            {initials}
+          </span>
+        )}
       </div>
-      {portalFrame}
-    </>
+
+      {/* ── Layer 2: Cosmetic frame ── */}
+      {activeFrameImage && (
+        <img
+          src={activeFrameImage}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            pointerEvents: "none",
+            zIndex: 2,
+          }}
+          draggable={false}
+        />
+      )}
+    </div>
   );
 }
