@@ -29,11 +29,14 @@ interface UserAvatarProps {
  * UserAvatar — Single source of truth for all profile pictures.
  *
  * Frame overlay rules:
- * - The PNG cosmetic is designed as a ring/frame that fits exactly over a circle.
- * - We render it at 100% of the avatar diameter so the frame sits precisely
- *   on the circumference of the circle (no overhang).
- * - The outer container keeps the original avatar size so layout is
- *   unaffected; the frame overflows via `overflow: visible`.
+ * - Cosmetic frame PNGs have a transparent inner hole that occupies ~67.6% of
+ *   the total image radius (measured from Mask_Pinkorb.png: inner radius ≈ 130px
+ *   out of 192px total radius).
+ * - To make the inner hole align exactly with the avatar circle, we scale the
+ *   PNG so that its inner hole diameter equals the avatar diameter.
+ * - Scale factor = 1 / 0.6758 ≈ 1.48
+ * - The outer container keeps the original avatar size; the frame overflows
+ *   via `overflow: visible` so the ring sits on the circumference.
  */
 export function UserAvatar({
   avatar,
@@ -44,8 +47,10 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
-  // Frame at 100% so it matches exactly the circumference of the circle
-  const framePx = px;
+
+  // Scale the frame PNG so its inner transparent hole matches the avatar diameter.
+  // The inner hole is ~67.58% of the total PNG width, so we need 1/0.6758 ≈ 1.48x.
+  const framePx = Math.round(px * 1.48);
 
   return (
     <div
@@ -75,7 +80,7 @@ export function UserAvatar({
         )}
       </div>
 
-      {/* Cosmetic frame overlay — 100% of avatar diameter, centered on circle */}
+      {/* Cosmetic frame overlay — scaled so inner hole = avatar diameter */}
       {activeFrameImage && (
         <img
           src={activeFrameImage}
