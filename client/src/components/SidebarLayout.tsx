@@ -6,6 +6,7 @@ import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
   Users, Plus, ClipboardList, Settings, LogOut, Menu, X, Bell,
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
+  Bookmark, ShoppingCart,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { TopNav } from "./TopNav";
@@ -136,7 +137,16 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     enabled: isAuthenticated,
   });
   const activeFrame = activeCosmetics?.find((c) => c.isEquipped && c.type === "frame");
-
+  const { data: cartData } = trpc.shop.getCart.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: 10000,
+  });
+  const cartCount = cartData?.items?.length ?? 0;
+  const { data: wishlistData } = trpc.shop.getWishlist.useQuery(undefined, {
+    enabled: isAuthenticated,
+    refetchInterval: 10000,
+  });
+  const wishlistCount = wishlistData?.items?.length ?? 0;
   const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0, liveData?.count ?? 0);
 
   const isActive = (href: string) => location === href;
@@ -268,19 +278,41 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         }}
       >
         <div className="h-14 flex items-center justify-between px-3 gap-2">
-          {/* Left: hamburger */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-muted-foreground hover:text-white transition-colors flex-shrink-0"
-          >
-            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-          {/* Center: logo */}
-          <Link href="/" className="flex-1 flex justify-center">
-            <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
-          </Link>
-          {/* Right: bell + avatar */}
-          <div className="flex items-center gap-1 flex-shrink-0">
+          {/* Left: hamburger + logo */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="p-2 text-muted-foreground hover:text-white transition-colors"
+            >
+              {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            <Link href="/">
+              <img src="/logocompleto.webp" alt="Red Level Circle" className="h-8 w-auto object-contain" />
+            </Link>
+          </div>
+          {/* Right: wishlist, gifts, bell, cart, avatar */}
+          <div className="flex items-center gap-0.5 flex-shrink-0">
+            {isAuthenticated && (
+              <button
+                onClick={() => openPanel("wishlist")}
+                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
+              >
+                <Bookmark className="w-5 h-5" />
+                {wishlistCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                    {wishlistCount > 9 ? "9+" : wishlistCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {isAuthenticated && (
+              <button
+                onClick={() => openPanel("rewards")}
+                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
+              >
+                <Gift className="w-5 h-5" />
+              </button>
+            )}
             {isAuthenticated && (
               <button
                 onClick={() => openPanel("notifications")}
@@ -288,15 +320,28 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </button>
             )}
+            <Link href="/shop?tab=cart">
+              <button className="relative p-2 text-muted-foreground hover:text-white transition-colors">
+                <ShoppingCart className="w-5 h-5" />
+                {cartCount > 0 && (
+                  <span
+                    className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full text-[8px] font-bold flex items-center justify-center px-0.5"
+                    style={{ background: "var(--accent-blue)", color: "#fff" }}
+                  >
+                    {cartCount > 9 ? "9+" : cartCount}
+                  </span>
+                )}
+              </button>
+            </Link>
             {isAuthenticated && user && (
               <Link href={`/profile/${user.id}`}>
-                <div style={{ overflow: "visible", display: "inline-flex" }}>
+                <div className="ml-1" style={{ overflow: "visible", display: "inline-flex" }}>
                   <UserAvatar
                     avatar={(user as any).avatar ?? null}
                     name={(user as any).nickname ?? (user as any).name ?? null}
