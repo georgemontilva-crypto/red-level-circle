@@ -153,6 +153,8 @@ export const tournaments = mysqlTable("tournaments", {
   isFeatured: boolean("isFeatured").default(false).notNull(),
   streamUrl: text("streamUrl"),
   streamPlatform: mysqlEnum("streamPlatform", ["twitch", "youtube", "discord", "other"]),
+  // Formato de serie por defecto para todos los matches del torneo (BO1, BO2, BO3, BO5, BO7)
+  defaultSeriesFormat: mysqlEnum("defaultSeriesFormat", ["BO1", "BO2", "BO3", "BO5", "BO7"]).default("BO1").notNull(),
   isLive: boolean("isLive").default(false).notNull(),
   viewCount: int("viewCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

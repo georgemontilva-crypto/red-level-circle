@@ -346,6 +346,7 @@ export const appRouter = router({
         secondaryColor: z.string().optional(),
         streamUrl: z.string().optional(),
         streamPlatform: z.enum(["twitch", "youtube", "discord", "other"]).optional(),
+        defaultSeriesFormat: z.enum(["BO1", "BO2", "BO3", "BO5", "BO7"]).default("BO1"),
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await createTournament({
@@ -392,6 +393,7 @@ export const appRouter = router({
         streamUrl: z.string().optional(),
         streamPlatform: z.enum(["twitch", "youtube", "discord", "other"]).optional(),
         isLive: z.boolean().optional(),
+        defaultSeriesFormat: z.enum(["BO1", "BO2", "BO3", "BO5", "BO7"]).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);

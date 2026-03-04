@@ -438,12 +438,14 @@ export function SeriesPanel({
 interface CreateSeriesButtonProps {
   matchId: number;
   tournamentId: number;
+  /** Formato por defecto del torneo (pre-seleccionado) */
+  defaultFormat?: "BO1" | "BO2" | "BO3" | "BO5" | "BO7";
   onCreated?: () => void;
 }
 
-export function CreateSeriesButton({ matchId, tournamentId, onCreated }: CreateSeriesButtonProps) {
+export function CreateSeriesButton({ matchId, tournamentId, defaultFormat = "BO3", onCreated }: CreateSeriesButtonProps) {
   const [open, setOpen] = useState(false);
-  const [format, setFormat] = useState<"BO1" | "BO2" | "BO3" | "BO5" | "BO7">("BO3");
+  const [format, setFormat] = useState<"BO1" | "BO2" | "BO3" | "BO5" | "BO7">(defaultFormat);
   const [scheduledAt, setScheduledAt] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

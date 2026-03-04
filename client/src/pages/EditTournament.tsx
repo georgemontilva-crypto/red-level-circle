@@ -22,6 +22,13 @@ const BRACKET_TYPES = [
   { value: "double_elimination", label: "Doble Eliminación", desc: "Los equipos tienen una segunda oportunidad antes de ser eliminados." },
   { value: "groups", label: "Fase de Grupos", desc: "Todos los equipos se enfrentan entre sí en una fase de grupos." },
 ];
+const SERIES_FORMATS = [
+  { value: "BO1", label: "BO1 — Partido Único", desc: "Un solo mapa decide el ganador. Ideal para fases de grupos." },
+  { value: "BO2", label: "BO2 — Al Mejor de 2", desc: "Máximo 2 mapas. Puede terminar en empate (1-1)." },
+  { value: "BO3", label: "BO3 — Al Mejor de 3", desc: "Primero en ganar 2 mapas avanza. El más común en torneos." },
+  { value: "BO5", label: "BO5 — Al Mejor de 5", desc: "Primero en ganar 3 mapas. Para semifinales y finales." },
+  { value: "BO7", label: "BO7 — Al Mejor de 7", desc: "Primero en ganar 4 mapas. Para grandes finales épicas." },
+];
 
 interface FormData {
   name: string;
@@ -30,6 +37,7 @@ interface FormData {
   description: string;
   rules: string;
   bracketType: "single_elimination" | "double_elimination" | "groups";
+  defaultSeriesFormat: "BO1" | "BO2" | "BO3" | "BO5" | "BO7";
   maxTeams: number;
   minPlayersPerTeam: number;
   maxPlayersPerTeam: number;
@@ -99,7 +107,7 @@ export default function EditTournament() {
 
   const [form, setForm] = useState<FormData>({
     name: "", game: "", customGame: "", description: "", rules: "",
-    bracketType: "single_elimination", maxTeams: 16, minPlayersPerTeam: 1,
+    bracketType: "single_elimination", defaultSeriesFormat: "BO3", maxTeams: 16, minPlayersPerTeam: 1,
     maxPlayersPerTeam: 5, prizeDescription: "", prizeAmount: 0,
     registrationStart: "", registrationEnd: "", startDate: "", endDate: "",
     isPublic: true, banner: "",
@@ -122,6 +130,7 @@ export default function EditTournament() {
         description: tournament.description ?? "",
         rules: tournament.rules ?? "",
         bracketType: (tournament.bracketType as FormData["bracketType"]) ?? "single_elimination",
+        defaultSeriesFormat: ((tournament as { defaultSeriesFormat?: string }).defaultSeriesFormat as FormData["defaultSeriesFormat"]) ?? "BO3",
         maxTeams: tournament.maxTeams ?? 16,
         minPlayersPerTeam: tournament.minPlayersPerTeam ?? 1,
         maxPlayersPerTeam: tournament.maxPlayersPerTeam ?? 5,
@@ -185,6 +194,7 @@ export default function EditTournament() {
       description: form.description || undefined,
       rules: form.rules || undefined,
       bracketType: form.bracketType,
+      defaultSeriesFormat: form.defaultSeriesFormat,
       maxTeams: form.maxTeams,
       minPlayersPerTeam: form.minPlayersPerTeam,
       maxPlayersPerTeam: form.maxPlayersPerTeam,
@@ -369,6 +379,48 @@ export default function EditTournament() {
                   ))}
                 </div>
               </div>
+              {/* Formato de serie por defecto */}
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
+                  FORMATO DE SERIE <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
+                </label>
+                <p className="text-xs text-zinc-500 mb-3">Define cuántos mapas se juegan por enfrentamiento. Puedes sobreescribirlo por match individualmente.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {SERIES_FORMATS.map((sf) => (
+                    <button
+                      key={sf.value}
+                      onClick={() => set("defaultSeriesFormat")(sf.value)}
+                      className="text-left p-3 rounded-xl transition-all duration-200"
+                      style={
+                        form.defaultSeriesFormat === sf.value
+                          ? { background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.5)" }
+                          : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }
+                      }
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3.5 h-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
+                          style={{ borderColor: form.defaultSeriesFormat === sf.value ? "oklch(0.55 0.22 25)" : "oklch(0.35 0.005 0)" }}
+                        >
+                          {form.defaultSeriesFormat === sf.value && (
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.55 0.22 25)" }} />
+                          )}
+                        </div>
+                        <div>
+                          <p
+                            className="font-display text-xs font-bold tracking-wide"
+                            style={{ color: form.defaultSeriesFormat === sf.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}
+                          >
+                            {sf.label}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{sf.desc}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <NeonInput label="MÁX. EQUIPOS" type="number" value={form.maxTeams} onChange={(v) => set("maxTeams")(parseInt(v) || 2)} min={2} max={256} />
                 <NeonInput label="MÍN. JUGADORES" type="number" value={form.minPlayersPerTeam} onChange={(v) => set("minPlayersPerTeam")(parseInt(v) || 1)} min={1} max={20} />
@@ -415,6 +467,10 @@ export default function EditTournament() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Formato:</span>
                     <span className="text-foreground">{BRACKET_TYPES.find((b) => b.value === form.bracketType)?.label}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Serie:</span>
+                    <span className="text-foreground">{SERIES_FORMATS.find((s) => s.value === form.defaultSeriesFormat)?.label ?? form.defaultSeriesFormat}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Equipos:</span>

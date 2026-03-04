@@ -18,6 +18,11 @@ export interface BracketMatch {
   team2Score?: number | null;
   winnerId?: number | null;
   status: string;
+  /** Formato de la serie si ya fue configurada (BO1/BO2/BO3/BO5/BO7) */
+  seriesFormat?: string | null;
+  /** Marcador de la serie (mapas ganados por cada equipo) */
+  seriesScore1?: number | null;
+  seriesScore2?: number | null;
 }
 
 interface BracketViewProps {
@@ -27,6 +32,8 @@ interface BracketViewProps {
   canEditResults?: boolean;
   /** Show a demo/example bracket when no matches exist */
   showDemo?: boolean;
+  /** Formato de serie por defecto del torneo (BO1/BO2/BO3/BO5/BO7) */
+  defaultSeriesFormat?: string;
 }
 
 const CARD_H = 90;   // height of each match card
@@ -340,6 +347,21 @@ function MatchCard({
       <div className="absolute top-1 left-2 text-xs font-mono opacity-30" style={{ fontSize: 9 }}>
         #{match.matchNumber}
       </div>
+
+      {/* Badge de formato de serie */}
+      {match.seriesFormat && !isDemo && (
+        <div
+          className="absolute top-1 right-2 text-xs font-mono font-bold"
+          style={{ fontSize: 8, color: "oklch(0.65 0.22 25)", opacity: 0.85 }}
+        >
+          {match.seriesFormat}
+          {match.seriesScore1 != null && match.seriesScore2 != null && (
+            <span style={{ color: "oklch(0.80 0.005 0)" }}>
+              {" "}{match.seriesScore1}-{match.seriesScore2}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Demo badge */}
       {isDemo && (

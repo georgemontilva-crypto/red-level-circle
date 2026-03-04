@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import BracketView from "@/components/BracketView";
+import { SeriesPanel, CreateSeriesButton } from "@/components/SeriesPanel";
 import PremiumLayout from "@/components/PremiumLayout";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
@@ -415,10 +416,11 @@ export default function TournamentManage() {
                         .filter((m) => m.round === round)
                         .map((match) => {
                           const isCompleted = match.status === "completed";
+                          const tournamentSeriesFormat = ((tournament as { defaultSeriesFormat?: string }).defaultSeriesFormat ?? "BO3") as "BO1" | "BO2" | "BO3" | "BO5" | "BO7";
                           return (
                             <div
                               key={match.id}
-                              className="flex items-center justify-between p-4 rounded-xl transition-all duration-200"
+                              className="rounded-xl overflow-hidden transition-all duration-200"
                               style={{
                                 background: "var(--bg-card)",
                                 border: isCompleted
@@ -426,6 +428,7 @@ export default function TournamentManage() {
                                   : "1px solid oklch(0.20 0.01 0)",
                               }}
                             >
+                            <div className="flex items-center justify-between p-4">
                               <div className="flex items-center gap-4 flex-1 min-w-0">
                                 <span className="text-xs text-muted-foreground font-tech w-16 flex-shrink-0">
                                   #{match.matchNumber}
@@ -480,6 +483,40 @@ export default function TournamentManage() {
                                   </button>
                                 )}
                               </div>
+                            </div>
+                            {/* Serie BOx — panel de mapas y apuestas */}
+                            {match.team1Id && match.team2Id && tournament.status === "in_progress" && (
+                              <div style={{ borderTop: "1px solid oklch(0.15 0.01 0)" }}>
+                                <SeriesPanel
+                                  matchId={match.id}
+                                  tournamentId={id}
+                                  team1Id={match.team1Id}
+                                  team2Id={match.team2Id}
+                                  team1Name={match.team1Name ?? `Equipo ${match.team1Id}`}
+                                  team2Name={match.team2Name ?? `Equipo ${match.team2Id}`}
+                                  canEdit={true}
+                                  onSeriesComplete={async (winnerId) => {
+                                    if (winnerId) {
+                                      await updateResultMutation.mutateAsync({
+                                        matchId: match.id,
+                                        tournamentId: id,
+                                        team1Score: match.team1Id === winnerId ? 1 : 0,
+                                        team2Score: match.team2Id === winnerId ? 1 : 0,
+                                      });
+                                    }
+                                  }}
+                                />
+                                {/* Botón para crear/configurar la serie si no existe */}
+                                <div className="px-4 pb-3">
+                                  <CreateSeriesButton
+                                    matchId={match.id}
+                                    tournamentId={id}
+                                    defaultFormat={tournamentSeriesFormat}
+                                    onCreated={refetchMatches}
+                                  />
+                                </div>
+                              </div>
+                            )}
                             </div>
                           );
                         })}
