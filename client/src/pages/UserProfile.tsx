@@ -399,7 +399,7 @@ export default function UserProfile() {
       </div>{/* end padded container */}
 
       {/* ── Tabs ── */}
-      <div className="mt-4 w-full" style={{ paddingLeft: 'clamp(16px, 2.5vw, 40px)', paddingRight: 'clamp(16px, 2.5vw, 40px)' }}>
+      <div className="mt-4 w-full">
         {/* Tab bar */}
         <div className="flex border-b overflow-x-auto" style={{ borderColor: "var(--border-main)" }}>
           {(["overview", "cosmetics", "followers", "following", "roster"] as const)
@@ -412,7 +412,7 @@ export default function UserProfile() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className="px-4 py-2.5 text-xs font-mono tracking-wider transition-all duration-200 relative whitespace-nowrap flex items-center gap-1.5"
+              className="px-2 sm:px-4 py-2.5 text-[10px] sm:text-xs font-mono tracking-wider transition-all duration-200 relative whitespace-nowrap flex items-center gap-1 flex-shrink-0"
               style={{ color: activeTab === tab ? "oklch(0.65 0.22 25)" : "oklch(0.50 0.005 0)" }}
             >
               {tab === "overview" && "PERFIL"}
