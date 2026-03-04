@@ -32,7 +32,7 @@ export function UsersPage() {
   const roleColors: Record<string, string> = {
     super_admin: "bg-purple-500/20 text-purple-300 border-purple-600/40",
     admin: "bg-yellow-500/20 text-yellow-400 border-yellow-600/40",
-    premium: "bg-red-500/20 text-red-400 border-red-600/40",
+    premium: "bg-blue-500/20 text-blue-400 border-blue-600/40",
     user: "bg-zinc-500/20 text-zinc-400 border-zinc-600/40",
   };
 
@@ -57,14 +57,14 @@ export function UsersPage() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`font-orbitron text-xs border ${roleColors[u.role] ?? roleColors.user}`}>
-                {u.role.toUpperCase()}
+                {u.role === "premium" ? "CDC" : u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : "USUARIO"}
               </Badge>
               <span className="text-yellow-400 text-xs font-orbitron">{u.rlcBalance ?? 0} RLC</span>
               <Select value={u.role} onValueChange={role => updateRole.mutate({ userId: u.id, role: role as any })}>
                 <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Usuario</SelectItem>
-                  <SelectItem value="premium">Premium</SelectItem>
+                  <SelectItem value="premium">CDC</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>

@@ -269,7 +269,7 @@ export default function UserProfile() {
                   <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-yellow-500/15 text-yellow-400 border border-yellow-500/30">ADMIN</span>
                 )}
                 {profile.role === "premium" && (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-red-500/15 text-red-400 border border-red-500/30">PREMIUM</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono bg-blue-500/15 text-blue-400 border border-blue-500/30">CDC</span>
                 )}
                 {activeStream && (
                   <a

@@ -158,10 +158,10 @@ export function DashboardPage() {
                 <span className={`text-xs px-2 py-0.5 rounded-full font-mono border ${
                   u.role === "super_admin" ? "bg-purple-500/20 text-purple-300 border-purple-600/40" :
                   u.role === "admin" ? "bg-yellow-500/20 text-yellow-400 border-yellow-600/40" :
-                  u.role === "premium" ? "bg-red-500/20 text-red-400 border-red-600/40" :
+                  u.role === "premium" ? "bg-blue-500/20 text-blue-400 border-blue-600/40" :
                   "bg-zinc-500/20 text-zinc-400 border-zinc-600/40"
                 }`}>
-                  {u.role.toUpperCase()}
+                  {u.role === "premium" ? "CDC" : u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : "USUARIO"}
                 </span>
               </div>
             ))}
