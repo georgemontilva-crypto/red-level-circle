@@ -267,7 +267,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       {/* Mobile top bar — extends behind the status bar via paddingTop: safe-area-inset-top */}
       <div
-        className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-30 flex flex-col md:hidden"
+        className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-[100001] flex flex-col md:hidden"
         style={{
           background: "rgba(14,14,16,0.92)",
           borderColor: "var(--border-main)",
