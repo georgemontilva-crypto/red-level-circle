@@ -342,7 +342,7 @@ export function AlliesPage() {
           {/* CTA */}
           <Button
             onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center gap-2 flex-shrink-0"
+            className="hidden sm:flex bg-red-600 hover:bg-red-700 text-white font-semibold items-center gap-2 flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             Ser Aliado
