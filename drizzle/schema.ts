@@ -615,3 +615,62 @@ export const allies = mysqlTable("allies", {
 });
 export type Ally = typeof allies.$inferSelect;
 export type InsertAlly = typeof allies.$inferInsert;
+
+// ─── Match Series (BOx Format) ────────────────────────────────────────────────
+// Extiende tournament_matches con soporte para series BO1/BO2/BO3/BO5/BO7.
+// Cada tournamentMatch puede tener UNA serie asociada (1:1).
+export const matchSeries = mysqlTable("match_series", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull().unique(), // FK → tournament_matches.id
+  tournamentId: int("tournamentId").notNull(),
+  format: mysqlEnum("format", ["BO1", "BO2", "BO3", "BO5", "BO7"]).default("BO1").notNull(),
+  // Victorias acumuladas por cada equipo en la serie
+  winsTeam1: int("winsTeam1").default(0).notNull(),
+  winsTeam2: int("winsTeam2").default(0).notNull(),
+  // Mapas ganados/perdidos para estadísticas de desempate en ranking
+  mapsWonTeam1: int("mapsWonTeam1").default(0).notNull(),
+  mapsWonTeam2: int("mapsWonTeam2").default(0).notNull(),
+  // Equipo ganador de la serie (se rellena al completarse)
+  seriesWinnerId: int("seriesWinnerId"),
+  // Estado de la serie
+  status: mysqlEnum("status", ["pending", "in_progress", "completed"]).default("pending").notNull(),
+  // Ventana de apuestas: abre 60 min antes del mapa 1, cierra 5 min antes
+  betsOpenAt: timestamp("betsOpenAt"),
+  betsCloseAt: timestamp("betsCloseAt"),
+  // Escrow: total de RLC en custodia hasta resolver la serie
+  escrowAmount: int("escrowAmount").default(0).notNull(),
+  startedAt: timestamp("startedAt"),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type MatchSeries = typeof matchSeries.$inferSelect;
+export type InsertMatchSeries = typeof matchSeries.$inferInsert;
+
+// ─── Series Maps (Sub-Matches / Mapas individuales) ───────────────────────────
+// Cada fila representa un mapa/juego individual dentro de una serie.
+// mapNumber = 1, 2, 3... hasta el máximo del formato (2, 3, 5, 7).
+export const seriesMaps = mysqlTable("series_maps", {
+  id: int("id").autoincrement().primaryKey(),
+  seriesId: int("seriesId").notNull(),   // FK → match_series.id
+  matchId: int("matchId").notNull(),     // FK → tournament_matches.id (para joins rápidos)
+  mapNumber: int("mapNumber").notNull(), // 1-indexed
+  mapName: varchar("mapName", { length: 128 }), // nombre del mapa/escenario (opcional)
+  // Resultado del mapa
+  scoreTeam1: int("scoreTeam1"),
+  scoreTeam2: int("scoreTeam2"),
+  winnerId: int("winnerId"), // teamId ganador de este mapa
+  // Estado del mapa
+  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending").notNull(),
+  // Mapa cancelado: ej. mapa 3 de BO3 si alguien ya ganó 2-0
+  isCancelled: boolean("isCancelled").default(false).notNull(),
+  scheduledAt: timestamp("scheduledAt"),
+  completedAt: timestamp("completedAt"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type SeriesMap = typeof seriesMaps.$inferSelect;
+export type InsertSeriesMap = typeof seriesMaps.$inferInsert;
+
+

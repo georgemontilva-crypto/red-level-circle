@@ -175,6 +175,17 @@ import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification } from "./notifications";
 import { eventBus } from "./eventBus";
+import {
+  createMatchSeries,
+  getSeriesWithMaps,
+  getSeriesById,
+  reportMapResult,
+  isSeriesBettingOpen,
+  addToSeriesEscrow,
+  resolveSeriesBets,
+  refundSeriesBets,
+} from "./db.series";
+
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
 // Helper: checks if a role has admin-level privileges (admin or super_admin)
@@ -2990,6 +3001,106 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         const buffer = Buffer.from(input.base64, "base64");
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
+      }),
+  }),
+
+  // ─── Series BOx ─────────────────────────────────────────────────────────────
+  series: router({
+    /** Obtiene la serie y sus mapas para un match */
+    byMatch: publicProcedure
+      .input(z.object({ matchId: z.number() }))
+      .query(async ({ input }) => {
+        return getSeriesWithMaps(input.matchId);
+      }),
+
+    /** Crea una serie BOx para un match existente */
+    create: premiumProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(),
+        format: z.enum(["BO1", "BO2", "BO3", "BO5", "BO7"]),
+        scheduledAt: z.string().optional(), // ISO date string
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const scheduledAt = input.scheduledAt ? new Date(input.scheduledAt) : undefined;
+        return createMatchSeries({
+          matchId: input.matchId,
+          tournamentId: input.tournamentId,
+          format: input.format,
+          scheduledAt,
+        });
+      }),
+
+    /** Reporta el resultado de un mapa individual dentro de la serie */
+    reportMap: premiumProcedure
+      .input(z.object({
+        seriesId: z.number(),
+        mapNumber: z.number().int().min(1),
+        scoreTeam1: z.number().int().min(0),
+        scoreTeam2: z.number().int().min(0),
+        team1Id: z.number(),
+        team2Id: z.number(),
+        tournamentId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+
+        const result = await reportMapResult({
+          seriesId: input.seriesId,
+          mapNumber: input.mapNumber,
+          scoreTeam1: input.scoreTeam1,
+          scoreTeam2: input.scoreTeam2,
+          team1Id: input.team1Id,
+          team2Id: input.team2Id,
+        });
+
+        // Emitir evento en tiempo real
+        eventBus.emit("series.map_reported", {
+          seriesId: input.seriesId,
+          mapNumber: input.mapNumber,
+          ...result,
+        });
+
+        if (result.seriesComplete) {
+          eventBus.emit("series.completed", {
+            seriesId: input.seriesId,
+            winnerId: result.seriesWinnerId,
+            isDraw: result.isDraw,
+          });
+        }
+
+        return result;
+      }),
+
+    /** Verifica si las apuestas de una serie están abiertas */
+    bettingOpen: publicProcedure
+      .input(z.object({ matchId: z.number() }))
+      .query(async ({ input }) => {
+        return isSeriesBettingOpen(input.matchId);
+      }),
+
+    /** Admin: resuelve manualmente las apuestas de una serie */
+    resolveBets: premiumProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(),
+        winnerTeamId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await resolveSeriesBets(input.matchId, input.tournamentId, input.winnerTeamId);
+        return { ok: true };
       }),
   }),
 });
