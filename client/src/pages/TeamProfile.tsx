@@ -37,7 +37,7 @@ const TOURNAMENT_STATUS: Record<string, { label: string; color: string; bg: stri
 function StatCard({ icon, value, label, accent }: { icon: React.ReactNode; value: string | number; label: string; accent: string }) {
   return (
     <div className="flex flex-col items-center gap-1.5 p-4 rounded-2xl text-center"
-      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      style={{ background: "#16191f", border: "1px solid #22262e" }}>
       <div style={{ color: accent }}>{icon}</div>
       <span className="text-2xl font-black font-mono" style={{ color: accent }}>{value}</span>
       <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">{label}</span>
@@ -51,7 +51,7 @@ function WinRateBar({ wins, losses, accent }: { wins: number; losses: number; ac
   const color = rate === null ? "#52525b" : rate >= 60 ? "#4ade80" : rate >= 40 ? "#facc15" : "#f87171";
   return (
     <div className="flex flex-col gap-1.5 p-4 rounded-2xl"
-      style={{ background: "var(--bg-main)", border: "1px solid oklch(0.16 0.01 0)" }}>
+      style={{ background: "#16191f", border: "1px solid #22262e" }}>
       <div className="flex items-center justify-between mb-1">
         <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tasa de Victoria</span>
         <span className="text-lg font-black font-mono" style={{ color }}>{rate !== null ? `${rate}%` : "—"}</span>
