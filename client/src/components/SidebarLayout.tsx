@@ -254,16 +254,18 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         <SidebarContent />
       </aside>
 
-      {/* Safe-area glasmorphism overlay — covers the status bar zone with the same style as the mobile header */}
+      {/* Mobile top bar — extends behind the status bar via paddingTop: safe-area-inset-top */}
       <div
-        className="fixed top-0 left-0 right-0 z-30 md:hidden backdrop-blur-md"
+        className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-30 flex flex-col md:hidden"
         style={{
-          height: "env(safe-area-inset-top, 0px)",
           background: "rgba(14,14,16,0.92)",
+          borderColor: "var(--border-main)",
+          paddingTop: "env(safe-area-inset-top, 0px)",
+          /* Ensure the blur covers the full area including safe-zone */
+          WebkitBackdropFilter: "blur(12px)",
+          backdropFilter: "blur(12px)",
         }}
-      />
-      {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-30 flex flex-col md:hidden" style={{ background: "rgba(14,14,16,0.92)", borderColor: "var(--border-main)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      >
         <div className="h-14 flex items-center justify-between px-4">
         <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
         <div className="flex items-center gap-1">
