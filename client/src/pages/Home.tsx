@@ -271,7 +271,7 @@ function HScrollSection({ title, href, icon, children, viewAllLabel = "Ver todos
   const scroll = (dir: number) => ref.current?.scrollBy({ left: dir * 300, behavior: "smooth" });
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
         <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           {icon}{title}
         </h2>
@@ -317,7 +317,7 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
   }, {});
   return (
     <section>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-2 sm:mb-5">
         <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           <Gamepad2 size={18} className="text-red-500" /> Juegos
         </h2>
@@ -692,7 +692,7 @@ function TeamsAndPeopleSection() {
 
   return (
     <section>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2 sm:mb-4">
         <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
           <Users size={18} className="text-blue-400" /> Comunidad
         </h2>
@@ -901,12 +901,12 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
 
         {/* 1. Hero carousel — estilo Epic Games Store */}
-        <div className="px-3 sm:px-6 lg:px-10" style={{ paddingTop: "15px" }}>
+        <div className="px-3 sm:px-6 lg:px-10" style={{ paddingTop: "8px" }}>
           <HeroSection />
         </div>
 
       {/* Resto del contenido con padding interno */}
-      <div className="px-3 sm:px-6 lg:px-10 py-6 space-y-10">
+      <div className="px-3 sm:px-6 lg:px-10 py-3 sm:py-6 space-y-6 sm:space-y-10">
 
         {/* 2. Stats */}
         <PlatformStats />
@@ -974,7 +974,7 @@ export default function Home() {
         {/* 3. Últimas Noticias */}
         {(news?.length ?? 0) > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
               <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
                 <Newspaper size={18} /> Últimas Noticias
               </h2>
@@ -990,7 +990,7 @@ export default function Home() {
         {/* 4. Aliados Destacados */}
         {(featuredAllies?.length ?? 0) > 0 && (
           <section>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-2 sm:mb-4">
               <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
                 <Handshake className="w-5 h-5" /> Aliados Destacados
               </h2>

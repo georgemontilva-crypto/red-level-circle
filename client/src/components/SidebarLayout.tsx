@@ -283,10 +283,10 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </div>
 
       {/* Main content */}
-      {/* TopNav is fixed, so we need pt-14 on desktop to push content below it */}
-      <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0" style={{ paddingTop: "100px" }}>
+      {/* Mobile: pt-14 (56px) = height of mobile top bar. Desktop: pt-[100px] = height of TopNav */}
+      <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0 pt-14 md:pt-[100px]">
         <TopNav />
-        <PageContainer className="py-2">
+        <PageContainer className="py-2 md:py-2">
           {children}
         </PageContainer>
       </main>
