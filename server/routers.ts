@@ -173,7 +173,7 @@ import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
-import { getUserNotifications, getUnreadCount, markAllRead, markOneRead } from "./notifications";
+import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification } from "./notifications";
 import { eventBus } from "./eventBus";
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -1779,13 +1779,47 @@ export const appRouter = router({
     approveTournament: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
+        const t = await getTournamentById(input.id);
         await adminApproveTournament(input.id);
+        // Notify the tournament creator
+        if (t?.creatorId) {
+          try {
+            await createNotification({
+              userId: t.creatorId,
+              type: "general",
+              title: "✅ Torneo aprobado",
+              message: `Tu torneo "${t.name}" ha sido aprobado. ¡Ya puedes recibir inscripciones!`,
+              link: `/dashboard/tournament/${t.id}`,
+            });
+          } catch (e) { console.error("[ApproveTournament] Notification error:", e); }
+        }
+        // Emit status change for news generator
+        try {
+          eventBus.emit("tournament.status_changed", {
+            tournamentId: input.id,
+            newStatus: "registration_open",
+            tournamentName: t?.name ?? "",
+          });
+        } catch (e) { console.error("[ApproveTournament] EventBus error:", e); }
         return { success: true };
       }),
     rejectTournament: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
+        const t = await getTournamentById(input.id);
         await adminRejectTournament(input.id);
+        // Notify the tournament creator
+        if (t?.creatorId) {
+          try {
+            await createNotification({
+              userId: t.creatorId,
+              type: "general",
+              title: "❌ Torneo rechazado",
+              message: `Tu torneo "${t.name}" no fue aprobado. Revisa las normas de RLC y vuelve a intentarlo.`,
+              link: `/dashboard/my-tournaments`,
+            });
+          } catch (e) { console.error("[RejectTournament] Notification error:", e); }
+        }
         return { success: true };
       }),
     stats: adminProcedure

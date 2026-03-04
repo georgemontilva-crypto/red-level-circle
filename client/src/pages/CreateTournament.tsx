@@ -3,7 +3,7 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Trophy, ChevronRight, ChevronLeft } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, CheckCircle, Clock, Bell } from "lucide-react";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import {
   Select,
@@ -179,6 +179,8 @@ export default function CreateTournament() {
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [createdId, setCreatedId] = useState<number | null>(null);
+  const [createdName, setCreatedName] = useState("");
   const totalSteps = 3;
 
   const uploadImage = trpc.profile.uploadImage.useMutation();
@@ -210,8 +212,8 @@ export default function CreateTournament() {
 
   const createMutation = trpc.tournaments.create.useMutation({
     onSuccess: (data) => {
-      toast.success("¡Torneo creado exitosamente!");
-      navigate(`/dashboard/tournament/${data.id}`);
+      setCreatedId(data.id);
+      setCreatedName(form.name);
     },
     onError: (err) => toast.error(err.message),
   });
@@ -240,6 +242,121 @@ export default function CreateTournament() {
       banner: form.banner || undefined,
     });
   };
+
+  // ── Success modal ──────────────────────────────────────────────────────────
+  if (createdId !== null) {
+    return (
+      <PremiumLayout title="TORNEO ENVIADO">
+        <div className="max-w-lg mx-auto">
+          <div
+            className="rounded-2xl p-10 text-center"
+            style={{
+              background: "#16191f",
+              border: "1px solid oklch(0.55 0.22 25 / 0.3)",
+            }}
+          >
+            {/* Icon */}
+            <div
+              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
+              style={{
+                background: "oklch(0.55 0.22 25 / 0.12)",
+                border: "2px solid oklch(0.55 0.22 25 / 0.5)",
+              }}
+            >
+              <CheckCircle size={40} style={{ color: "oklch(0.65 0.22 25)" }} />
+            </div>
+
+            <h2
+              className="font-display text-2xl font-bold tracking-widest mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
+              ¡TORNEO ENVIADO!
+            </h2>
+            <p
+              className="font-display font-bold tracking-wide text-lg mb-6"
+              style={{ color: "oklch(0.65 0.22 25)" }}
+            >
+              {createdName}
+            </p>
+
+            {/* Steps */}
+            <div className="space-y-3 mb-8 text-left">
+              <div
+                className="flex items-start gap-4 rounded-xl p-4"
+                style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}
+              >
+                <Clock size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.65 0.18 80)" }} />
+                <div>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
+                    EN REVISIÓN
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Tu torneo está siendo revisado por el equipo de RLC para verificar que cumple con las normas de la plataforma.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="flex items-start gap-4 rounded-xl p-4"
+                style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+              >
+                <Bell size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.55 0.18 220)" }} />
+                <div>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
+                    RECIBIRÁS UNA NOTIFICACIÓN
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Cuando tu torneo sea aprobado, recibirás una notificación en la campana y podrás comenzar a recibir inscripciones.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                className="flex items-start gap-4 rounded-xl p-4"
+                style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}
+              >
+                <Trophy size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.65 0.18 80)" }} />
+                <div>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
+                    GESTIONA TU TORNEO
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+                    Puedes ver el estado de tu torneo en "Mis Torneos" en cualquier momento.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => navigate("/dashboard/my-tournaments")}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
+                style={{
+                  background: "oklch(0.55 0.22 25)",
+                  color: "#fff",
+                  boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
+                }}
+              >
+                VER MIS TORNEOS
+              </button>
+              <button
+                onClick={() => navigate(`/dashboard/tournament/${createdId}`)}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid oklch(0.22 0.01 0)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                GESTIONAR TORNEO
+              </button>
+            </div>
+          </div>
+        </div>
+      </PremiumLayout>
+    );
+  }
 
   return (
     <PremiumLayout title="CREAR TORNEO">
