@@ -167,9 +167,9 @@ export default function Shop() {
     const params = new URLSearchParams(window.location.search);
     const t = params.get("tab");
     if (t === "orders" || t === "products" || t === "cosmetics" || t === "cart" || t === "wishlist") return t;
-    return "all";
+    return "products";
   })();
-  const [mainTab, setMainTab] = useState<"all" | "products" | "cosmetics" | "orders" | "cart" | "wishlist">(initialTab);
+  const [mainTab, setMainTab] = useState<"products" | "cosmetics" | "orders" | "cart" | "wishlist">(initialTab as any);
 
   // Products state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -282,18 +282,21 @@ export default function Shop() {
   const pendingOrdersCount = myOrders.filter((o: any) => o.status === "pending" || o.status === "processing").length;
 
   // ─── Tab config ─────────────────────────────────────────────────────────────
-  const MAIN_TABS = [
-    { id: "all",       label: "Todo",        icon: <ShoppingBag className="w-4 h-4" /> },
+  // Switcher principal: Productos / Cosméticos (estilo login)
+  const SWITCHER_TABS = [
     { id: "products",  label: "Productos",   icon: <Package className="w-4 h-4" /> },
     { id: "cosmetics", label: "Cosméticos",  icon: <Sparkles className="w-4 h-4" /> },
+  ] as const;
+  // Tabs secundarios (solo autenticados)
+  const SECONDARY_TABS = [
     ...(isAuthenticated ? [{ id: "orders", label: `Mis Pedidos${pendingOrdersCount > 0 ? ` (${pendingOrdersCount})` : ""}`, icon: <Clock className="w-4 h-4" /> }] : []),
     ...(isAuthenticated ? [{ id: "cart", label: `Carrito${cartItems.length > 0 ? ` (${cartItems.length})` : ""}`, icon: <ShoppingCart className="w-4 h-4" /> }] : []),
     ...(isAuthenticated ? [{ id: "wishlist", label: `Favoritos${wishlistItems.length > 0 ? ` (${wishlistItems.length})` : ""}`, icon: <Heart className="w-4 h-4" /> }] : []),
-  ] as const;
+  ];
 
   // ─── Render helpers ──────────────────────────────────────────────────────────
-  const showProducts = mainTab === "all" || mainTab === "products";
-  const showCosmetics = mainTab === "all" || mainTab === "cosmetics";
+  const showProducts = mainTab === "products";
+  const showCosmetics = mainTab === "cosmetics";
   const showOrders = mainTab === "orders";
   const showCart = mainTab === "cart";
   const showWishlist = mainTab === "wishlist";
@@ -325,25 +328,55 @@ export default function Shop() {
       )}
 
       <div className="py-8">
-        {/* Main Tabs — scroll horizontal en móvil, wrap en desktop */}
-        <div className="-mx-0 mb-8 border-b border-white/10 pb-4">
-          <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-            {MAIN_TABS.map((tab) => (
+        {/* ── Switcher principal estilo login: Productos / Cosméticos ── */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          {/* Switcher pill */}
+          <div
+            className="flex rounded-xl p-1"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.07)",
+              width: "fit-content",
+            }}
+          >
+            {SWITCHER_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setMainTab(tab.id as any)}
-                className={`flex items-center gap-2 flex-shrink-0 px-4 py-2.5 rounded-full font-mono text-sm font-semibold transition-all whitespace-nowrap ${
-                  mainTab === tab.id
-                    ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
-                    : "bg-card border border-white/10 text-muted-foreground hover:border-red-500/50 hover:text-white"
-                }`}
+                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200 whitespace-nowrap"
+                style={{
+                  background: mainTab === tab.id ? "oklch(0.55 0.22 25)" : "transparent",
+                  color: mainTab === tab.id ? "#fff" : "rgba(255,255,255,0.4)",
+                }}
               >
                 {tab.icon}
                 {tab.label}
               </button>
             ))}
           </div>
+          {/* Tabs secundarios: Pedidos, Carrito, Favoritos */}
+          {SECONDARY_TABS.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+              {SECONDARY_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setMainTab(tab.id as any)}
+                  className="flex items-center gap-1.5 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
+                  style={{
+                    borderRadius: "6px",
+                    background: mainTab === tab.id ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
+                    border: mainTab === tab.id ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.08)",
+                    color: mainTab === tab.id ? "#ef4444" : "rgba(255,255,255,0.45)",
+                  }}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+        <div className="border-b border-white/10 mb-8" />
 
         {/* ── CART TAB ───────────────────────────────────────────────────────── */}
         {showCart && (
@@ -575,17 +608,19 @@ export default function Shop() {
               </div>
             )}
 
-            {/* Category filters — scroll horizontal en móvil */}
+            {/* Category filters — scroll horizontal en móvil, border-radius 3px */}
             <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-2 flex-shrink-0 px-4 py-2 rounded-full border font-mono text-sm font-medium transition-all whitespace-nowrap ${
-                    activeCategory === cat
-                      ? "border-red-500 bg-red-500/10 text-red-400"
-                      : "border-white/10 bg-white/5 text-muted-foreground hover:border-red-500/50 hover:text-white"
-                  }`}
+                  className="flex items-center gap-2 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
+                  style={{
+                    borderRadius: "3px",
+                    background: activeCategory === cat ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
+                    border: activeCategory === cat ? "1px solid rgba(239,68,68,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                    color: activeCategory === cat ? "#ef4444" : "rgba(255,255,255,0.5)",
+                  }}
                 >
                   {cat !== "all" && CATEGORY_ICONS[cat]}
                   {label}
@@ -703,17 +738,19 @@ export default function Shop() {
               </div>
             )}
 
-            {/* Type filters — scroll horizontal en móvil */}
+            {/* Type filters — scroll horizontal en móvil, border-radius 3px */}
             <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {["all", "frame", "aura", "badge", "background"].map((type) => (
                 <button
                   key={type}
                   onClick={() => setActiveType(type)}
-                  className={`flex items-center gap-2 flex-shrink-0 px-4 py-2 rounded-full border font-mono text-sm font-medium transition-all whitespace-nowrap ${
-                    activeType === type
-                      ? "border-purple-500 bg-purple-500/10 text-purple-400"
-                      : "border-white/10 bg-white/5 text-muted-foreground hover:border-purple-500/50 hover:text-white"
-                  }`}
+                  className="flex items-center gap-2 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
+                  style={{
+                    borderRadius: "3px",
+                    background: activeType === type ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.04)",
+                    border: activeType === type ? "1px solid rgba(168,85,247,0.6)" : "1px solid rgba(255,255,255,0.1)",
+                    color: activeType === type ? "#a855f7" : "rgba(255,255,255,0.5)",
+                  }}
                 >
                   {type !== "all" && TYPE_ICONS[type]}
                   {type === "all" ? "Todos" : TYPE_LABELS[type]}
