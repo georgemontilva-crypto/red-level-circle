@@ -149,9 +149,7 @@ export function NewsArticle() {
         </div>
         <h1 className="font-orbitron font-black text-3xl text-white mb-4">{article.title}</h1>
         {article.excerpt && <p className="text-muted-foreground font-rajdhani text-lg mb-6 border-l-2 border-red-500 pl-4">{article.excerpt}</p>}
-        <div className="prose prose-invert prose-sm max-w-none font-rajdhani text-secondary-foreground leading-relaxed whitespace-pre-wrap">
-          {article.content}
-        </div>
+        <div className="prose prose-invert prose-sm max-w-none font-rajdhani text-secondary-foreground leading-relaxed" dangerouslySetInnerHTML={{ __html: article.content }} />
         <div className="mt-8 pt-6 border-t border-border">
           <Link href="/news">
             <Button variant="outline" className="border-border text-muted-foreground hover:border-red-500 font-orbitron text-xs">

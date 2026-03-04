@@ -10,11 +10,12 @@
  *  - ally approved              → called directly from allies router
  */
 
-import { createNews, getTournamentById, getTeamById } from "./db";
+import { createNews, getTournamentById, getTeamById, getAllUsers } from "./db";
 import { eventBus } from "./eventBus";
 import { getDb } from "./db";
 import { allies, news } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
+import { createNotification } from "./notifications";
 
 // ─── System author ID (1 = first admin / system user) ────────────────────────
 const SYSTEM_AUTHOR_ID = 1;
@@ -45,6 +46,28 @@ async function newsAlreadyExists(referenceKey: string): Promise<boolean> {
     .where(eq(news.referenceUrl, referenceKey))
     .limit(1);
   return rows.length > 0;
+}
+
+// ─── Broadcast notification to all users ─────────────────────────────────────
+async function broadcastNewsNotification(title: string, excerpt: string, slug: string): Promise<void> {
+  try {
+    const allUsers = await getAllUsers({ limit: 5000 });
+    const link = `/news/${slug}`;
+    await Promise.all(
+      allUsers.map((u) =>
+        createNotification({
+          userId: u.id,
+          type: "general",
+          title: "📰 Nueva noticia",
+          message: title,
+          link,
+        }).catch(() => {/* ignore per-user errors */})
+      )
+    );
+    console.log(`[NewsGenerator] ✓ Notified ${allUsers.length} users about: ${title}`);
+  } catch (err) {
+    console.error("[NewsGenerator] Failed to broadcast notification:", err);
+  }
 }
 
 // ─── Core GPT call via OpenAI API ────────────────────────────────────────────
@@ -136,9 +159,10 @@ async function handleTournamentStatusChanged(payload: {
   const generated = await generateNewsContent(prompt);
   if (!generated) return;
 
+  const slug = toSlug(generated.title);
   await createNews({
     title: generated.title,
-    slug: toSlug(generated.title),
+    slug,
     excerpt: generated.excerpt,
     content: generated.content,
     coverImage: tournament.banner ?? undefined,
@@ -151,6 +175,7 @@ async function handleTournamentStatusChanged(payload: {
   });
 
   console.log(`[NewsGenerator] ✓ Created news for tournament ${tournamentId} (${newStatus})`);
+  await broadcastNewsNotification(generated.title, generated.excerpt, slug);
 }
 
 async function handleMatchFinished(payload: {
@@ -182,9 +207,10 @@ async function handleMatchFinished(payload: {
   const generated = await generateNewsContent(prompt);
   if (!generated) return;
 
+  const slug = toSlug(generated.title);
   await createNews({
     title: generated.title,
-    slug: toSlug(generated.title),
+    slug,
     excerpt: generated.excerpt,
     content: generated.content,
     coverImage: winner.banner ?? winner.logo ?? tournament.banner ?? undefined,
@@ -197,6 +223,7 @@ async function handleMatchFinished(payload: {
   });
 
   console.log(`[NewsGenerator] ✓ Created news for match ${matchId}`);
+  await broadcastNewsNotification(generated.title, generated.excerpt, slug);
 }
 
 // ─── Exported helper for ally approval ───────────────────────────────────────
@@ -229,9 +256,10 @@ Genera una noticia de bienvenida emocionante para la comunidad RLC.`;
     return;
   }
 
+  const slug = toSlug(generated.title);
   await createNews({
     title: generated.title,
-    slug: toSlug(generated.title),
+    slug,
     excerpt: generated.excerpt,
     content: generated.content,
     coverImage: ally.coverImage ?? ally.logo ?? undefined,
@@ -244,6 +272,7 @@ Genera una noticia de bienvenida emocionante para la comunidad RLC.`;
   });
 
   console.log(`[NewsGenerator] ✓ Created news for ally ${allyId} (${ally.name})`);
+  await broadcastNewsNotification(generated.title, generated.excerpt, slug);
 }
 
 // ─── Register all event listeners ────────────────────────────────────────────
