@@ -58,9 +58,9 @@ export function UserAvatar({
   // If containerSize provided, use it as the reference for frame positioning
   const outerPx = containerSize ?? px;
 
-  // The outer ring edge of the frame PNG sits at 80.14% of the total PNG radius.
-  // To make the outer ring edge = outerPx, scale = outerPx / 0.8014
-  const framePx = Math.round(outerPx / 0.8014);
+  // Visual test confirmed: multiplier 1.75x makes the ring sit exactly on the
+  // avatar circumference (tested with frame_test.html across 7 multiplier values).
+  const framePx = Math.round(outerPx * 1.75);
 
   // Offset to center the avatar image within the outer container
   const offset = Math.round((outerPx - px) / 2);
