@@ -172,7 +172,7 @@ export default function Community() {
   return (
     <div className="py-6 overflow-x-hidden">
       {/* Banner */}
-      <SectionBanner sectionKey="community" height="h-48 sm:h-64 lg:h-72" className="mb-6">
+      <SectionBanner hidden sectionKey="community" height="h-48 sm:h-64 lg:h-72" className="mb-6">
         <div className="flex flex-col gap-1">
           <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
           <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">

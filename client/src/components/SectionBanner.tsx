@@ -12,6 +12,8 @@ interface SectionBannerProps {
   className?: string;
   /** Contenido superpuesto sobre la imagen (título, descripción, etc.) */
   children?: ReactNode;
+  /** Si es true, oculta completamente el banner (solo admins pueden verlo para editarlo) */
+  hidden?: boolean;
 }
 
 /**
@@ -26,6 +28,7 @@ export function SectionBanner({
   height = "h-48 sm:h-64 lg:h-72",
   className = "",
   children,
+  hidden = false,
 }: SectionBannerProps) {
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
@@ -93,6 +96,9 @@ export function SectionBanner({
   const displayImageUrl = editing ? (previewUrl ?? (banner?.isActive ? banner?.imageUrl : null)) : (banner?.isActive ? banner?.imageUrl : null);
   const displayTitle = editing ? title : (banner?.title ?? "");
   const displaySubtitle = editing ? subtitle : (banner?.subtitle ?? "");
+
+  // Si hidden=true, usuarios normales no ven el banner; admins sí (para poder editarlo)
+  if (hidden && !isAdmin) return null;
 
   return (
     <>

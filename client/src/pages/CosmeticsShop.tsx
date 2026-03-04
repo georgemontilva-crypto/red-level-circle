@@ -261,7 +261,7 @@ export default function CosmeticsShop() {
     <div className="min-h-screen bg-background text-white">
       {/* Section Banner */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4">
-        <SectionBanner sectionKey="cosmetics" height="h-48 sm:h-64 lg:h-72" />
+        <SectionBanner hidden sectionKey="cosmetics" height="h-48 sm:h-64 lg:h-72" />
       </div>
       {/* Purchase confirmation modal */}
       {confirmCosmetic && (
