@@ -301,13 +301,13 @@ export default function Tournaments() {
 
         {/* ── Grid de torneos ───────────────────────────────────────────────── */}
         {isLoading ? (
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="rounded-2xl animate-pulse" style={{ height: "280px", background: "var(--bg-card)", border: "1px solid oklch(0.16 0.01 0)" }} />
             ))}
           </div>
         ) : tournaments && tournaments.length > 0 ? (
-          <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
             {tournaments.map((t) => (
               <TournamentGridCard key={t.id} tournament={t} />
             ))}
