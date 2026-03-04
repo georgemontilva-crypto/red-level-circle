@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import { TopNav } from "./TopNav";
 import RightPanel, { type RightPanelTab } from "./RightPanel";
 import PageContainer from "./PageContainer";
+import { UserAvatar } from "./UserAvatar";
 
 interface NavItem {
   label: string;
@@ -266,29 +267,47 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           backdropFilter: "blur(12px)",
         }}
       >
-        <div className="h-14 flex items-center justify-between px-4">
-        <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
-        <div className="flex items-center gap-1">
-          {isAuthenticated && (
-            <button
-              onClick={() => openPanel("notifications")}
-              className="relative p-2 text-muted-foreground hover:text-white transition-colors"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                  {unreadCount > 99 ? "99+" : unreadCount}
-                </span>
-              )}
-            </button>
-          )}
+        <div className="h-14 flex items-center justify-between px-3 gap-2">
+          {/* Left: hamburger */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="p-2 text-muted-foreground hover:text-white transition-colors"
+            className="p-2 text-muted-foreground hover:text-white transition-colors flex-shrink-0"
           >
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-        </div>
+          {/* Center: logo */}
+          <Link href="/" className="flex-1 flex justify-center">
+            <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
+          </Link>
+          {/* Right: bell + avatar */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {isAuthenticated && (
+              <button
+                onClick={() => openPanel("notifications")}
+                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[16px] h-[16px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {isAuthenticated && user && (
+              <Link href={`/profile/${user.id}`}>
+                <div style={{ overflow: "visible", display: "inline-flex" }}>
+                  <UserAvatar
+                    avatar={(user as any).avatar ?? null}
+                    name={(user as any).nickname ?? (user as any).name ?? null}
+                    activeFrameImage={activeFrame?.frameImage ?? null}
+                    size={32}
+                    containerSize={32}
+                  />
+                </div>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
       {/* Main content */}
