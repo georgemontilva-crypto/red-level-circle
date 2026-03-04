@@ -58,8 +58,8 @@ export function UserAvatar({
   // If containerSize provided, use it as the reference for frame positioning
   const outerPx = containerSize ?? px;
 
-  // Multiplier 3.5x — cosmetic renders large over the avatar circle.
-  const framePx = Math.round(outerPx * 3.5);
+  // Cosmetic PNG size = (outerPx * 3.5) + 30px extra as requested.
+  const framePx = Math.round(outerPx * 3.5) + 30;
 
   // Offset to center the avatar image within the outer container
   const offset = Math.round((outerPx - px) / 2);
