@@ -25,6 +25,7 @@ const nav: NavItem[] = [
     label: "Contenido",
     icon: Layout,
     children: [
+      { href: "/admin/content/ads", label: "Publicidades", icon: Megaphone },
       { href: "/admin/content/banners", label: "Banners", icon: Layout },
       { href: "/admin/content/news", label: "Noticias", icon: Newspaper },
       { href: "/admin/content/allies", label: "Aliados", icon: MapPin },
