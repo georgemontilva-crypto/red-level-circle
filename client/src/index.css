@@ -154,6 +154,10 @@
   [class*="border"] {
     border-color: var(--border-main);
   }
+  html {
+    /* Ensures the safe-area (status bar zone) has the same dark background as the mobile header */
+    background-color: #0e0e10;
+  }
   html, body {
     @apply bg-background text-foreground;
     font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
