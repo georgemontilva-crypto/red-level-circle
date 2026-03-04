@@ -325,22 +325,24 @@ export default function Shop() {
       )}
 
       <div className="py-8">
-        {/* Main Tabs */}
-        <div className="flex flex-wrap gap-2 mb-8 border-b border-white/10 pb-4">
-          {MAIN_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setMainTab(tab.id as any)}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-mono text-sm font-semibold transition-all ${
-                mainTab === tab.id
-                  ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
-                  : "bg-card border border-white/10 text-muted-foreground hover:border-red-500/50 hover:text-white"
-              }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
+        {/* Main Tabs — scroll horizontal en móvil, wrap en desktop */}
+        <div className="-mx-0 mb-8 border-b border-white/10 pb-4">
+          <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+            {MAIN_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setMainTab(tab.id as any)}
+                className={`flex items-center gap-2 flex-shrink-0 px-4 py-2.5 rounded-full font-mono text-sm font-semibold transition-all whitespace-nowrap ${
+                  mainTab === tab.id
+                    ? "bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+                    : "bg-card border border-white/10 text-muted-foreground hover:border-red-500/50 hover:text-white"
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* ── CART TAB ───────────────────────────────────────────────────────── */}
@@ -573,13 +575,13 @@ export default function Shop() {
               </div>
             )}
 
-            {/* Category filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
+            {/* Category filters — scroll horizontal en móvil */}
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm transition-all ${
+                  className={`flex items-center gap-2 flex-shrink-0 px-4 py-2 rounded-full border font-mono text-sm font-medium transition-all whitespace-nowrap ${
                     activeCategory === cat
                       ? "border-red-500 bg-red-500/10 text-red-400"
                       : "border-white/10 bg-white/5 text-muted-foreground hover:border-red-500/50 hover:text-white"
@@ -701,13 +703,13 @@ export default function Shop() {
               </div>
             )}
 
-            {/* Type filters */}
-            <div className="flex flex-wrap gap-3 mb-6">
+            {/* Type filters — scroll horizontal en móvil */}
+            <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {["all", "frame", "aura", "badge", "background"].map((type) => (
                 <button
                   key={type}
                   onClick={() => setActiveType(type)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full border font-mono text-sm transition-all ${
+                  className={`flex items-center gap-2 flex-shrink-0 px-4 py-2 rounded-full border font-mono text-sm font-medium transition-all whitespace-nowrap ${
                     activeType === type
                       ? "border-purple-500 bg-purple-500/10 text-purple-400"
                       : "border-white/10 bg-white/5 text-muted-foreground hover:border-purple-500/50 hover:text-white"
