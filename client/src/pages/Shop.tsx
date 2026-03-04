@@ -860,7 +860,7 @@ export default function Shop() {
 
       {/* Buy Product Dialog */}
       <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
-        <DialogContent className="bg-card border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#141416] border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
               {isPhysical ? <><Package className="w-5 h-5" />PEDIDO FÍSICO</> : <><Key className="w-5 h-5" />ENTREGA DIGITAL</>}
@@ -871,7 +871,7 @@ export default function Shop() {
           </DialogHeader>
           {itemToBuy && (
             <div className="space-y-5">
-              <div className="flex gap-3 p-3 rounded-lg bg-secondary border border-white/10">
+              <div className="flex gap-3 p-3 rounded-lg bg-zinc-800/80 border border-white/10">
                 {itemToBuy.image ? <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover flex-shrink-0" /> : <div className="w-16 h-16 rounded bg-muted flex items-center justify-center flex-shrink-0"><ShoppingBag className="w-8 h-8 text-muted-foreground" /></div>}
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white truncate">{itemToBuy.name}</p>
@@ -893,13 +893,13 @@ export default function Shop() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-mono text-orange-400 uppercase"><MapPin className="w-3.5 h-3.5" />Dirección de envío (obligatoria)</div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><User className="w-3 h-3" />Nombre completo *</label><input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" />Dirección *</label><input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Ciudad *</label><input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Provincia / Estado</label><input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Globe className="w-3 h-3" />País *</label><input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Hash className="w-3 h-3" />Código postal *</label><input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Phone className="w-3 h-3" />Discord o teléfono de contacto *</label><input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><User className="w-3 h-3" />Nombre completo *</label><input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" />Dirección *</label><input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Ciudad *</label><input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 block">Provincia / Estado</label><input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Globe className="w-3 h-3" />País *</label><input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Hash className="w-3 h-3" />Código postal *</label><input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Phone className="w-3 h-3" />Discord o teléfono de contacto *</label><input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
                   </div>
                   <div className="flex items-start gap-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />Tus datos de envío son confidenciales y solo se usarán para procesar este pedido.</div>
                 </div>
@@ -913,15 +913,15 @@ export default function Shop() {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Mail className="w-3 h-3" />Email de confirmación (opcional)</label>
-                    <input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} placeholder="tu@email.com" className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" />
+                    <input type="email" value={confirmEmail} onChange={e => setConfirmEmail(e.target.value)} placeholder="tu@email.com" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" />
                   </div>
                 </div>
               )}
               <div>
                 <label className="text-xs text-muted-foreground font-mono mb-2 block uppercase">Nota adicional (opcional)</label>
-                <textarea value={userNote} onChange={(e) => setUserNote(e.target.value)} placeholder={isPhysical ? "Ej: Talla M, color azul..." : "Ej: Nombre de usuario, plataforma preferida..."} rows={2} className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none resize-none" />
+                <textarea value={userNote} onChange={(e) => setUserNote(e.target.value)} placeholder={isPhysical ? "Ej: Talla M, color azul..." : "Ej: Nombre de usuario, plataforma preferida..."} rows={2} className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none resize-none" />
               </div>
-              <div className="p-3 rounded-lg bg-background border border-white/10 space-y-2">
+              <div className="p-3 rounded-lg bg-zinc-900 border border-white/10 space-y-2">
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({quantity}x)</span><span className="font-mono">{totalCost} RLC</span></div>
                 <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tu balance</span><span className={`font-mono ${userBalance < totalCost ? "text-red-400" : "text-green-400"}`}>{userBalance} RLC</span></div>
                 <div className="border-t border-white/10 pt-2 flex justify-between font-bold"><span>Balance restante</span><span className={`font-mono ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>{userBalance - totalCost} RLC</span></div>
