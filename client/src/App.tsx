@@ -1,48 +1,67 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./_core/hooks/useAuth";
 import { trpc } from "./lib/trpc";
 import SidebarLayout from "./components/SidebarLayout";
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Tournaments from "./pages/Tournaments";
-import TournamentDetail from "./pages/TournamentDetail";
-import Dashboard from "./pages/Dashboard";
-import CreateTournament from "./pages/CreateTournament";
-import EditTournament from "./pages/EditTournament";
-import MyTournaments from "./pages/MyTournaments";
-import TournamentManage from "./pages/TournamentManage";
-import ManageRegistrations from "./pages/ManageRegistrations";
-import MyTeams from "./pages/MyTeams";
-import Ranking from "./pages/Ranking";
-import { NewsList, NewsArticle } from "./pages/News";
-import Streams from "./pages/Streams";
-import StreamDetail from "./pages/StreamDetail";
-import Betting from "./pages/Betting";
-import TeamProfile from "./pages/TeamProfile";
-import Teams from "./pages/Teams";
-import Shop from "./pages/Shop";
-import Rewards from "./pages/Rewards";
-import BrandAds from "./pages/BrandAds";
-import AdminRouter from "./pages/admin";
-import UserProfile from "./pages/UserProfile";
-import Settings from "./pages/Settings";
-import Community from "./pages/Community";
-import Creators from "./pages/Creators";
-import { AlliesPage } from "./pages/Allies";
-import OnboardingModal from "./components/OnboardingModal";
-import Terminos from "./pages/legal/terminos";
-import Privacidad from "./pages/legal/privacidad";
-import Cookies from "./pages/legal/cookies";
-import Tienda from "./pages/legal/tienda";
-import Aliados from "./pages/legal/aliados";
-import Devoluciones from "./pages/legal/devoluciones";
 
+// ── Critical routes (loaded eagerly — needed on first paint) ──────────────────
+import Home from "./pages/Home";
+import NotFound from "@/pages/NotFound";
+
+// ── Lazy routes (loaded only when navigated to) ───────────────────────────────
+const Login              = lazy(() => import("./pages/Login"));
+const Tournaments        = lazy(() => import("./pages/Tournaments"));
+const TournamentDetail   = lazy(() => import("./pages/TournamentDetail"));
+const Dashboard          = lazy(() => import("./pages/Dashboard"));
+const CreateTournament   = lazy(() => import("./pages/CreateTournament"));
+const EditTournament     = lazy(() => import("./pages/EditTournament"));
+const MyTournaments      = lazy(() => import("./pages/MyTournaments"));
+const TournamentManage   = lazy(() => import("./pages/TournamentManage"));
+const ManageRegistrations = lazy(() => import("./pages/ManageRegistrations"));
+const MyTeams            = lazy(() => import("./pages/MyTeams"));
+const Ranking            = lazy(() => import("./pages/Ranking"));
+const Streams            = lazy(() => import("./pages/Streams"));
+const StreamDetail       = lazy(() => import("./pages/StreamDetail"));
+const Betting            = lazy(() => import("./pages/Betting"));
+const TeamProfile        = lazy(() => import("./pages/TeamProfile"));
+const Teams              = lazy(() => import("./pages/Teams"));
+const Shop               = lazy(() => import("./pages/Shop"));
+const Rewards            = lazy(() => import("./pages/Rewards"));
+const BrandAds           = lazy(() => import("./pages/BrandAds"));
+const AdminRouter        = lazy(() => import("./pages/admin"));
+const UserProfile        = lazy(() => import("./pages/UserProfile"));
+const Settings           = lazy(() => import("./pages/Settings"));
+const Community          = lazy(() => import("./pages/Community"));
+const Creators           = lazy(() => import("./pages/Creators"));
+const OnboardingModal    = lazy(() => import("./components/OnboardingModal"));
+
+// News exports named — wrap in lazy
+const NewsListLazy    = lazy(() => import("./pages/News").then(m => ({ default: m.NewsList })));
+const NewsArticleLazy = lazy(() => import("./pages/News").then(m => ({ default: m.NewsArticle })));
+const AlliesPageLazy  = lazy(() => import("./pages/Allies").then(m => ({ default: m.AlliesPage })));
+
+// Legal pages (very rarely visited)
+const Terminos     = lazy(() => import("./pages/legal/terminos"));
+const Privacidad   = lazy(() => import("./pages/legal/privacidad"));
+const Cookies      = lazy(() => import("./pages/legal/cookies"));
+const Tienda       = lazy(() => import("./pages/legal/tienda"));
+const Aliados      = lazy(() => import("./pages/legal/aliados"));
+const Devoluciones = lazy(() => import("./pages/legal/devoluciones"));
+
+// ── Page loader fallback ──────────────────────────────────────────────────────
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[40vh]">
+      <div className="w-8 h-8 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
+
+// ── Onboarding wrapper ────────────────────────────────────────────────────────
 function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   const { data: me } = trpc.auth.me.useQuery();
@@ -50,9 +69,6 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   const [dismissed, setDismissed] = useState(false);
 
   const meUser = me as { nickname?: string; loginMethod?: string } | undefined;
-  // Show onboarding only if:
-  // - Google user without a nickname (needs to pick one)
-  // - OR any new user who has never seen the welcome screen (no nickname set)
   const showOnboarding =
     !loading &&
     isAuthenticated &&
@@ -69,83 +85,83 @@ function OnboardingWrapper({ children }: { children: React.ReactNode }) {
     <>
       {children}
       {showOnboarding && (
-        <OnboardingModal
-          onComplete={handleComplete}
-          loginMethod={(meUser as any)?.loginMethod}
-        />
+        <Suspense fallback={null}>
+          <OnboardingModal
+            onComplete={handleComplete}
+            loginMethod={(meUser as any)?.loginMethod}
+          />
+        </Suspense>
       )}
     </>
   );
 }
 
+// ── Router ────────────────────────────────────────────────────────────────────
 function Router() {
   const [location] = useLocation();
 
-  // Intercept ALL /admin routes before the Switch processes them
   if (location === "/admin" || location.startsWith("/admin/")) {
-    return <AdminRouter />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <AdminRouter />
+      </Suspense>
+    );
   }
 
   return (
     <Switch>
-      {/* Blank page routes (no sidebar/topnav) */}
-      <Route path="/login" component={Login} />
-      <Route path="/legal/terminos" component={Terminos} />
-      <Route path="/legal/privacidad" component={Privacidad} />
-      <Route path="/legal/cookies" component={Cookies} />
-      <Route path="/legal/tienda" component={Tienda} />
-      <Route path="/legal/aliados" component={Aliados} />
-      <Route path="/legal/devoluciones" component={Devoluciones} />
+      {/* Blank page routes */}
+      <Route path="/login">{() => <Suspense fallback={<PageLoader />}><Login /></Suspense>}</Route>
+      <Route path="/legal/terminos">{() => <Suspense fallback={<PageLoader />}><Terminos /></Suspense>}</Route>
+      <Route path="/legal/privacidad">{() => <Suspense fallback={<PageLoader />}><Privacidad /></Suspense>}</Route>
+      <Route path="/legal/cookies">{() => <Suspense fallback={<PageLoader />}><Cookies /></Suspense>}</Route>
+      <Route path="/legal/tienda">{() => <Suspense fallback={<PageLoader />}><Tienda /></Suspense>}</Route>
+      <Route path="/legal/aliados">{() => <Suspense fallback={<PageLoader />}><Aliados /></Suspense>}</Route>
+      <Route path="/legal/devoluciones">{() => <Suspense fallback={<PageLoader />}><Devoluciones /></Suspense>}</Route>
 
       {/* App routes with sidebar layout */}
       <Route>
         <SidebarLayout>
-          <Switch>
-            {/* Public routes */}
-            <Route path="/" component={Home} />
-        <Route path="/tournaments" component={Tournaments} />
-        <Route path="/tournaments/:id" component={TournamentDetail} />
-        <Route path="/ranking" component={Ranking} />
-        <Route path="/news" component={NewsList} />
-        <Route path="/news/:slug" component={NewsArticle} />
-        <Route path="/streams" component={Streams} />
-        <Route path="/streams/:id" component={StreamDetail} />
-        <Route path="/betting" component={Betting} />
-        <Route path="/teams" component={Teams} />
-        <Route path="/teams/:id" component={TeamProfile} />
-        <Route path="/shop/cosmetics">{() => { window.location.replace("/shop?tab=cosmetics"); return null; }}</Route>
-        <Route path="/shop" component={Shop} />
-        <Route path="/rewards" component={Rewards} />
-        <Route path="/ads" component={BrandAds} />
-
-        {/* Premium dashboard routes */}
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/dashboard/create-tournament" component={CreateTournament} />
-        <Route path="/dashboard/edit-tournament/:id" component={EditTournament} />
-        <Route path="/dashboard/tournaments" component={MyTournaments} />
-        <Route path="/dashboard/tournament/:id" component={TournamentManage} />
-        <Route path="/dashboard/registrations" component={ManageRegistrations} />
-        <Route path="/dashboard/teams" component={MyTeams} />
-
-        {/* Community */}
-        <Route path="/community" component={Community} />
-        <Route path="/creators" component={Creators} />
-        <Route path="/allies" component={AlliesPage} />
-
-        {/* User profiles */}
-        <Route path="/profile/:id" component={UserProfile} />
-        <Route path="/settings" component={Settings} />
-
-            {/* 404 */}
-            <Route path="/404" component={NotFound} />
-            <Route component={NotFound} />
-          </Switch>
+          <Suspense fallback={<PageLoader />}>
+            <Switch>
+              <Route path="/" component={Home} />
+              <Route path="/tournaments" component={Tournaments} />
+              <Route path="/tournaments/:id" component={TournamentDetail} />
+              <Route path="/ranking" component={Ranking} />
+              <Route path="/news" component={NewsListLazy} />
+              <Route path="/news/:slug" component={NewsArticleLazy} />
+              <Route path="/streams" component={Streams} />
+              <Route path="/streams/:id" component={StreamDetail} />
+              <Route path="/betting" component={Betting} />
+              <Route path="/teams" component={Teams} />
+              <Route path="/teams/:id" component={TeamProfile} />
+              <Route path="/shop/cosmetics">{() => { window.location.replace("/shop?tab=cosmetics"); return null; }}</Route>
+              <Route path="/shop" component={Shop} />
+              <Route path="/rewards" component={Rewards} />
+              <Route path="/ads" component={BrandAds} />
+              <Route path="/dashboard" component={Dashboard} />
+              <Route path="/dashboard/create-tournament" component={CreateTournament} />
+              <Route path="/dashboard/edit-tournament/:id" component={EditTournament} />
+              <Route path="/dashboard/tournaments" component={MyTournaments} />
+              <Route path="/dashboard/tournament/:id" component={TournamentManage} />
+              <Route path="/dashboard/registrations" component={ManageRegistrations} />
+              <Route path="/dashboard/teams" component={MyTeams} />
+              <Route path="/community" component={Community} />
+              <Route path="/creators" component={Creators} />
+              <Route path="/allies" component={AlliesPageLazy} />
+              <Route path="/profile/:id" component={UserProfile} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/404" component={NotFound} />
+              <Route component={NotFound} />
+            </Switch>
+          </Suspense>
         </SidebarLayout>
       </Route>
     </Switch>
   );
 }
 
+// ── App root ──────────────────────────────────────────────────────────────────
 function App() {
   return (
     <ErrorBoundary>
