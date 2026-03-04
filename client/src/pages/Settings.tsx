@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import ImageCropperModal from "@/components/ImageCropperModal";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -265,6 +266,7 @@ function BannerUpload({ currentUrl, canUpload = false, onUpload }: { currentUrl?
 function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
   const [generatedCardUrl, setGeneratedCardUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { data: hasApproved, isLoading: checkingTeam } = trpc.profile.hasApprovedTeam.useQuery();
 
@@ -281,19 +283,27 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
     },
   });
 
-  const handleFile = async (file: File) => {
+  // Paso 1: el usuario elige un archivo → abrimos el cropper
+  const handleFile = (file: File) => {
     if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
     if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10MB"); return; }
-    const supportedTypes = ["image/jpeg", "image/png", "image/webp", "image/avif", "image/bmp", "image/tiff"];
-    if (!supportedTypes.includes(file.type)) { toast.error("Formato no soportado. Usa JPG, PNG o WEBP."); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => setCropSrc(e.target?.result as string);
+    reader.readAsDataURL(file);
+    // Resetear el input para que pueda volver a elegir el mismo archivo
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  // Paso 2: el usuario confirma el recorte → enviamos al servidor
+  const handleCropConfirm = async (blob: Blob) => {
+    setCropSrc(null);
     setUploading(true);
     const reader = new FileReader();
     reader.onload = async (e) => {
       const base64 = (e.target?.result as string).split(",")[1];
-      const mimeType = file.type as "image/jpeg" | "image/png" | "image/webp";
-      await uploadMutation.mutateAsync({ base64, mimeType });
+      await uploadMutation.mutateAsync({ base64, mimeType: "image/jpeg" });
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(blob);
   };
 
   const displayUrl = generatedCardUrl || currentUrl;
@@ -301,6 +311,15 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
 
   return (
     <div className="space-y-4">
+      {/* Modal de recorte */}
+      {cropSrc && (
+        <ImageCropperModal
+          imageSrc={cropSrc}
+          aspect={2 / 3}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
       <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
         <Shield className="w-4 h-4" /> FICHA COMPETITIVA (ROSTER CARD)
       </h2>
@@ -359,7 +378,7 @@ function RosterPhotoUpload({ currentUrl }: { currentUrl?: string | null }) {
                 <p className="text-sm text-white font-bold mb-1">Cómo funciona</p>
                 <ul className="space-y-1.5 text-xs text-muted-foreground font-mono">
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">1.</span><span>Sube una foto tuya (cualquier proporción)</span></li>
-                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">2.</span><span>El sistema recorta a 2:3 y aplica el diseño oficial oscuro</span></li>
+                  <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">2.</span><span>Ajusta el encuadre con el cropper 2:3 y confirma</span></li>
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">3.</span><span>Tu nick, rol y logo del equipo se añaden automáticamente</span></li>
                   <li className="flex items-start gap-2"><span className="text-red-500 mt-0.5">4.</span><span>La ficha aparece en perfil de equipo, ranking y brackets</span></li>
                 </ul>
