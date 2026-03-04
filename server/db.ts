@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, isNotNull, like, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/mysql-core";
 import { drizzle } from "drizzle-orm/mysql2";
+import * as mysql from "mysql2/promise";
 import {
   InsertUser,
   registrationAuditLog,
@@ -38,18 +39,94 @@ import {
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+// ─── Pool de conexiones MySQL ─────────────────────────────────────────────────
+//
+// Configuración para producción en Railway Pro con TiDB/MySQL.
+//
+// connectionLimit: 25 conexiones paralelas a la DB.
+//   - Cada request que necesita DB toma una conexión del pool.
+//   - Si todas están ocupadas, el request espera en cola (waitForConnections).
+//   - TiDB soporta miles de conexiones; 25 es conservador y suficiente para
+//     1.000+ usuarios simultáneos con queries rápidas (<50ms).
+//
+// queueLimit: 200 requests pueden esperar en cola antes de recibir error.
+//   - Protege contra picos de tráfico sin rechazar requests inmediatamente.
+//
+// idleTimeout: cierra conexiones inactivas después de 60s para liberar recursos.
+// keepAlive: mantiene conexiones vivas y detecta desconexiones de red.
 
+let _pool: mysql.Pool | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let _db: any = null;
+
+function createDbPool(): mysql.Pool {
+  const uri = process.env.DATABASE_URL;
+  if (!uri) throw new Error("DATABASE_URL no está configurado");
+
+  const pool = mysql.createPool({
+    uri,
+    connectionLimit: 25,
+    waitForConnections: true,
+    queueLimit: 200,
+    idleTimeout: 60_000,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 10_000,
+    // Reconexión automática en caso de pérdida de conexión
+    connectTimeout: 10_000,
+    // TiDB/PlanetScale requieren SSL en producción
+    ssl: uri.includes("tidb") || uri.includes("planetscale") ? { rejectUnauthorized: true } : undefined,
+  });
+
+  // Monitoreo del pool: loguear eventos críticos
+  pool.on("connection", () => {
+    // Nueva conexión creada en el pool
+  });
+
+  (pool as any).on("error", (err: Error) => {
+    console.error("[DB Pool] Error inesperado:", err.message);
+    // Resetear el pool para forzar reconexión en el próximo getDb()
+    if ((err as any).code === "PROTOCOL_CONNECTION_LOST" || (err as any).code === "ECONNRESET") {
+      console.warn("[DB Pool] Conexión perdida — reconectando en el próximo request");
+      _pool = null;
+      _db = null;
+    }
+  });
+
+  return pool;
+}
+
+/**
+ * Retorna la instancia de Drizzle ORM conectada al pool de MySQL.
+ * El pool se crea una sola vez y se reutiliza en todos los requests.
+ * Si la conexión se pierde, se reconecta automáticamente.
+ */
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  if (!_db || !_pool) {
+    if (!process.env.DATABASE_URL) return null;
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _pool = createDbPool();
+      _db = drizzle(_pool);
+      console.log("[DB Pool] Inicializado — connectionLimit: 25, queueLimit: 200");
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[DB Pool] Error al inicializar:", (error as Error).message);
+      _pool = null;
       _db = null;
     }
   }
   return _db;
+}
+
+/**
+ * Cierra el pool de conexiones limpiamente.
+ * Llamar en el graceful shutdown del servidor.
+ */
+export async function closeDbPool(): Promise<void> {
+  if (_pool) {
+    await _pool.end();
+    _pool = null;
+    _db = null;
+    console.log("[DB Pool] Cerrado limpiamente");
+  }
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────

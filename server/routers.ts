@@ -190,6 +190,7 @@ import {
   scheduleMatchBettingWindow,
   syncTournamentRankings,
 } from "./orchestrator";
+import { withCache, cache, CacheKey, TTL } from "./cache";
 
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -310,7 +311,11 @@ export const appRouter = router({
         // Solo torneos aprobados son visibles públicamente
         const publicStatuses = ["registration_open", "registration_closed", "in_progress", "completed"];
         const status = input?.status && publicStatuses.includes(input.status) ? input.status : undefined;
-        return getTournaments({ status, gameSlug: input?.gameSlug, search: input?.search, isPublic: true, publicOnly: true });
+        // Caché de 30s — la lista de torneos cambia poco y es muy consultada
+        const cacheKey = CacheKey.tournamentsList() + `:${status ?? "all"}:${input?.gameSlug ?? ""}:${input?.search ?? ""}`;
+        return withCache(cacheKey, TTL.TOURNAMENTS_LIST, () =>
+          getTournaments({ status, gameSlug: input?.gameSlug, search: input?.search, isPublic: true, publicOnly: true })
+        );
       }),
 
     myTournaments: premiumProcedure.query(async ({ ctx }) => {
@@ -320,7 +325,12 @@ export const appRouter = router({
     byId: publicProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
-        const t = await getTournamentById(input.id);
+        // Caché de 10s — el detalle del torneo es muy consultado durante el evento
+        const t = await withCache(
+          CacheKey.tournament(input.id),
+          TTL.TOURNAMENT,
+          () => getTournamentById(input.id)
+        );
         if (!t) throw new TRPCError({ code: "NOT_FOUND", message: "Torneo no encontrado." });
         return t;
       }),
@@ -884,7 +894,13 @@ export const appRouter = router({
     byTournament: publicProcedure
       .input(z.object({ tournamentId: z.number() }))
       .query(async ({ input }) => {
-        return getMatchesByTournament(input.tournamentId);
+        // Caché de 5s — el bracket es la query más consultada durante el torneo.
+        // Con 1.000 usuarios haciendo polling cada 10s = 100 req/s → 1 query cada 5s.
+        return withCache(
+          CacheKey.bracket(input.tournamentId),
+          TTL.BRACKET,
+          () => getMatchesByTournament(input.tournamentId)
+        );
       }),
 
     updateResult: premiumProcedure
@@ -977,6 +993,9 @@ export const appRouter = router({
             }
           }
         } catch (e) { console.error("[MatchResult] Notification error:", e); }
+        // Invalidar caché del bracket para que el LiveBracket vea el resultado inmediatamente
+        cache.del(CacheKey.bracket(input.tournamentId));
+        cache.del(CacheKey.tournament(input.tournamentId));
         return { success: true };
       }),
 
@@ -3148,6 +3167,13 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           team2Id: input.team2Id,
           tournamentId: input.tournamentId,
         });
+
+        // Invalidar caché del bracket para que el LiveBracket vea el resultado inmediatamente
+        cache.del(CacheKey.bracket(input.tournamentId));
+        if (result.seriesComplete) {
+          cache.del(CacheKey.rankings(input.tournamentId));
+          cache.del(CacheKey.tournament(input.tournamentId));
+        }
 
         // Emitir eventos en tiempo real para el bracket en vivo
         eventBus.emit("series.map_reported", {

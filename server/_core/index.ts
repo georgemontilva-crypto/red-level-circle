@@ -4,6 +4,8 @@ import { registerNotificationListeners } from "../notifications";
 import { registerNewsGeneratorListeners } from "../newsGenerator";
 import { startTwitchSyncJob } from "../twitchSync";
 import { startBetsClosingJob } from "../betsClosingJob";
+import { startSeriesCronJob } from "../seriesCronJob";
+import { closeDbPool } from "../db";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -66,6 +68,27 @@ async function runCustomMigrations() {
     "ALTER TABLE `news` ADD COLUMN `gallery` text",
     // 0029: allies tiktok
     "ALTER TABLE `allies` ADD COLUMN `tiktok` varchar(128)",
+    // 0030: tournament matches — nuevos estados y ventana de apuestas
+    "ALTER TABLE `tournament_matches` MODIFY COLUMN `status` ENUM('pending','betting_open','locked','in_progress','completed') NOT NULL DEFAULT 'pending'",
+    "ALTER TABLE `tournament_matches` ADD COLUMN `betsOpenAt` timestamp NULL",
+    // 0031: tournaments — formato de serie por defecto
+    "ALTER TABLE `tournaments` ADD COLUMN `defaultSeriesFormat` ENUM('BO1','BO2','BO3','BO5','BO7') NOT NULL DEFAULT 'BO1'",
+    // 0032: tournament_rankings — tabla de clasificación por torneo
+    `CREATE TABLE IF NOT EXISTS \`tournament_rankings\` (
+      \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
+      \`tournamentId\` int NOT NULL,
+      \`teamId\` int NOT NULL,
+      \`points\` int NOT NULL DEFAULT 0,
+      \`seriesPlayed\` int NOT NULL DEFAULT 0,
+      \`seriesWon\` int NOT NULL DEFAULT 0,
+      \`seriesDrawn\` int NOT NULL DEFAULT 0,
+      \`seriesLost\` int NOT NULL DEFAULT 0,
+      \`mapsWon\` int NOT NULL DEFAULT 0,
+      \`mapsLost\` int NOT NULL DEFAULT 0,
+      \`mapDiff\` int NOT NULL DEFAULT 0,
+      \`position\` int NOT NULL DEFAULT 0,
+      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
   ];
   for (const sql of customMigrations) {
     try {
@@ -126,5 +149,36 @@ registerNewsGeneratorListeners();
 startTwitchSyncJob();
 // Start bets closing job (checks every 60s for expired betting windows)
 startBetsClosingJob();
+// Start series cron job: regla 60/5 (abrir/bloquear apuestas, transiciones de estado)
+startSeriesCronJob();
+
+// ─── Graceful Shutdown ───────────────────────────────────────────────────────────────
+//
+// Railway envía SIGTERM antes de detener el contenedor.
+// Cerramos el pool de DB limpiamente para evitar conexiones colgadas
+// y asegurar que todas las queries en vuelo terminen.
+
+async function shutdown(signal: string): Promise<void> {
+  console.log(`\n[Server] ${signal} recibido — iniciando graceful shutdown...`);
+  try {
+    await closeDbPool();
+    console.log("[Server] Shutdown completo.");
+  } catch (err) {
+    console.error("[Server] Error durante shutdown:", err);
+  }
+  process.exit(0);
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT",  () => shutdown("SIGINT"));
+
+// Capturar errores no manejados para evitar que el proceso muera silenciosamente
+process.on("uncaughtException", (err) => {
+  console.error("[Server] uncaughtException:", err);
+  // No salir — Railway reiniciará el proceso si es necesario
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[Server] unhandledRejection:", reason);
+});
 
 startServer().catch(console.error);
