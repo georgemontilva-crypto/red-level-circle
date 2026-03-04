@@ -959,7 +959,9 @@ export default function Home() {
             </div>
           </section>
         )}
-        {/* 3. Torneos activos */}
+         {/* 1. Lista de juegos */}
+        <GamesSection allTournaments={allTournaments ?? []} />
+        {/* 2. Torneos activos */}
         {(featuredTournaments?.length ?? 0) > 0 && (
           <HScrollSection
             title="Torneos Activos"
@@ -969,23 +971,7 @@ export default function Home() {
             {featuredTournaments!.map(t => <TournamentCard key={t.id} t={t} />)}
           </HScrollSection>
         )}
-
-        {/* 4. Lista de juegos (MOBAs / team vs team) */}
-        <GamesSection allTournaments={allTournaments ?? []} />
-
-        {/* 5. Misiones disponibles — scroll horizontal completo */}
-        {(missions?.length ?? 0) > 0 && (
-          <HScrollSection
-            title="Misiones Disponibles"
-            href="/rewards"
-            icon={<Target size={18} className="text-green-400" />}
-            viewAllLabel="Ver todas"
-          >
-            {missions!.map((m: any) => <MissionCard key={m.id} m={m} />)}
-          </HScrollSection>
-        )}
-
-        {/* 8. Noticias */}
+        {/* 3. Últimas Noticias */}
         {(news?.length ?? 0) > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
@@ -1001,9 +987,71 @@ export default function Home() {
             </div>
           </section>
         )}
-
-        {/* 9. Equipos + Personas (sección combinada con scroll interno y auto-refresh) */}
+        {/* 4. Aliados Destacados */}
+        {(featuredAllies?.length ?? 0) > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
+                <Handshake className="w-5 h-5" /> Aliados Destacados
+              </h2>
+              <Link href="/allies" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver directorio <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {featuredAllies!.map((ally: any) => {
+                const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
+                return (
+                  <Link key={ally.id} href="/allies">
+                    <div className="w-full bg-black rounded-3xl shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
+                      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
+                        {ally.coverImage ? (
+                          <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <DefaultBannerBg />
+                        )}
+                        {ally.isFeatured && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+                            <Star className="w-2.5 h-2.5 fill-black" />
+                            Destacado
+                          </div>
+                        )}
+                      </div>
+                      <div className="relative px-4 pb-4">
+                        <div className="flex justify-center -mt-12 mb-3">
+                          <div className="w-24 h-24 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
+                            {ally.logo ? (
+                              <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Store className="w-9 h-9 text-gray-600" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <h3 className="text-base font-bold text-white truncate">{ally.name}</h3>
+                          {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+        {/* 5. Comunidad — Equipos + Personas */}
         <TeamsAndPeopleSection />
+        {/* 5. Misiones disponibles */}
+        {(missions?.length ?? 0) > 0 && (
+          <HScrollSection
+            title="Misiones Disponibles"
+            href="/rewards"
+            icon={<Target size={18} className="text-green-400" />}
+            viewAllLabel="Ver todas"
+          >
+            {missions!.map((m: any) => <MissionCard key={m.id} m={m} />)}
+          </HScrollSection>
+        )}
 
         {/* 10. CTA para no autenticados */}
         {!isAuthenticated && (
@@ -1025,61 +1073,6 @@ export default function Home() {
                   VER TORNEOS
                 </Link>
               </div>
-            </div>
-          </section>
-        )}
-
-        {/* 10. Aliados Destacados */}
-        {(featuredAllies?.length ?? 0) > 0 && (
-          <section>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
-                <Handshake className="w-5 h-5" /> Aliados Destacados
-              </h2>
-              <Link href="/allies" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
-                Ver directorio <ArrowRight size={13} />
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {featuredAllies!.map((ally: any) => {
-                const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
-                return (
-                  <Link key={ally.id} href="/allies">
-                    <div className="w-full bg-black rounded-3xl shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
-                      {/* Banner */}
-                      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
-                        {ally.coverImage ? (
-                          <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <DefaultBannerBg />
-                        )}
-                        {ally.isFeatured && (
-                          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
-                            <Star className="w-2.5 h-2.5 fill-black" />
-                            Destacado
-                          </div>
-                        )}
-                      </div>
-                      {/* Logo superpuesto + info */}
-                      <div className="relative px-4 pb-4">
-                        <div className="flex justify-center -mt-12 mb-3">
-                          <div className="w-24 h-24 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
-                            {ally.logo ? (
-                              <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
-                            ) : (
-                              <Store className="w-9 h-9 text-gray-600" />
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <h3 className="text-base font-bold text-white truncate">{ally.name}</h3>
-                          {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
             </div>
           </section>
         )}
