@@ -85,7 +85,12 @@ function PurchaseModal({
               <div className="relative w-24 h-24">
                 <img src={AVATAR_PLACEHOLDER} alt="avatar" className="w-full h-full rounded-full" />
                 {cosmetic.frameImage && (
-                  <img src={cosmetic.frameImage} alt="frame" className="absolute inset-0 w-full h-full" />
+                  <img
+                    src={cosmetic.frameImage}
+                    alt="frame"
+                    className="absolute pointer-events-none"
+                    style={{ width: "144px", height: "144px", top: "50%", left: "50%", transform: "translate(-50%, -50%)", objectFit: "contain", zIndex: 10 }}
+                  />
                 )}
               </div>
             </div>

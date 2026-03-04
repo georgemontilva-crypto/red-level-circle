@@ -230,7 +230,7 @@ export default function UserProfile() {
                   src={equippedFrame.frameImage}
                   alt="Frame"
                   className="absolute z-10 pointer-events-none"
-                  style={{ width: "120px", height: "120px", top: "50%", left: "50%", transform: "translate(-50%, -50%)" }}
+                  style={{ width: "144px", height: "144px", top: "50%", left: "50%", transform: "translate(-50%, -50%)", objectFit: "contain" }}
                 />
               )}
               <div

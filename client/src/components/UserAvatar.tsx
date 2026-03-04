@@ -29,7 +29,8 @@ interface UserAvatarProps {
  * UserAvatar — Single source of truth for all profile pictures.
  * - Always circular (border-radius: 50%)
  * - Source images are 288x288 px; CSS controls display size
- * - Optional cosmetic frame overlay
+ * - Optional cosmetic frame overlay: rendered at 150% of avatar size,
+ *   perfectly centered so the frame surrounds the avatar on all sides.
  */
 export function UserAvatar({
   avatar,
@@ -40,6 +41,8 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+  // Frame is 150% of avatar size so it visually surrounds the circle
+  const framePx = Math.round(px * 1.5);
 
   return (
     <div
@@ -69,13 +72,22 @@ export function UserAvatar({
         )}
       </div>
 
-      {/* Cosmetic frame overlay */}
+      {/* Cosmetic frame overlay — 150% of avatar, centered */}
       {activeFrameImage && (
         <img
           src={activeFrameImage}
           alt="frame"
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          style={{ objectFit: "fill" }}
+          className="absolute pointer-events-none"
+          style={{
+            width: framePx,
+            height: framePx,
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            objectFit: "contain",
+            zIndex: 10,
+          }}
+          draggable={false}
         />
       )}
     </div>
