@@ -34,9 +34,10 @@ interface UserAvatarProps {
  * UserAvatar — Single source of truth for all profile pictures.
  *
  * The cosmetic frame is rendered via a React Portal directly into document.body
- * with `position: absolute` using document-absolute coordinates
- * (getBoundingClientRect + scrollX/scrollY). This means the frame moves
- * naturally with the page scroll — no lag, no jump.
+ * with `position: fixed` using viewport-relative coordinates from
+ * getBoundingClientRect(). Using `fixed` (not `absolute`) ensures the frame
+ * stays correctly positioned over the avatar regardless of page scroll,
+ * which is critical for avatars inside `position: fixed` headers.
  */
 export function UserAvatar({
   avatar,
@@ -53,6 +54,7 @@ export function UserAvatar({
   const framePx = Math.round(outerPx * 1.5017);
 
   const avatarRef = useRef<HTMLDivElement>(null);
+  // Viewport-relative center coordinates (for position: fixed)
   const [framePos, setFramePos] = useState<{ top: number; left: number } | null>(null);
 
   useEffect(() => {
@@ -61,22 +63,25 @@ export function UserAvatar({
     const updatePos = () => {
       if (!avatarRef.current) return;
       const rect = avatarRef.current.getBoundingClientRect();
-      // Convert viewport-relative coords to document-absolute coords
+      // Use viewport-relative coords (no scrollX/scrollY) — works correctly
+      // with both position:fixed headers and normal scrollable content.
       setFramePos({
-        top: rect.top + rect.height / 2 + window.scrollY,
-        left: rect.left + rect.width / 2 + window.scrollX,
+        top: rect.top + rect.height / 2,
+        left: rect.left + rect.width / 2,
       });
     };
 
     updatePos();
 
     window.addEventListener("resize", updatePos, { passive: true });
+    window.addEventListener("scroll", updatePos, { passive: true });
 
     const ro = new ResizeObserver(updatePos);
     if (avatarRef.current) ro.observe(avatarRef.current);
 
     return () => {
       window.removeEventListener("resize", updatePos);
+      window.removeEventListener("scroll", updatePos);
       ro.disconnect();
     };
   }, [activeFrameImage]);
@@ -120,15 +125,16 @@ export function UserAvatar({
         </div>
       </div>
 
-      {/* Cosmetic frame — rendered via Portal into document.body, position absolute
-          Uses document-absolute coordinates so it scrolls naturally with the page */}
+      {/* Cosmetic frame — rendered via Portal into document.body.
+          Uses position:fixed + viewport-relative coords so it always overlays
+          the avatar correctly, even when inside a position:fixed header. */}
       {activeFrameImage && framePos &&
         createPortal(
           <img
             src={activeFrameImage}
             alt="frame"
             style={{
-              position: "absolute",
+              position: "fixed",
               width: framePx,
               height: framePx,
               top: framePos.top,
