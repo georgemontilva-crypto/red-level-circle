@@ -1,14 +1,16 @@
 /**
  * ImageCropperModal
- * Modal con cropper interactivo 2:3 (para fotos de roster).
- * Usa react-easy-crop + canvas para generar el blob recortado.
+ * Modal con cropper interactivo 2:3 para fotos de roster.
+ * Usa createPortal para renderizar directamente en document.body
+ * y evitar que overflow-hidden de contenedores padres lo bloquee.
  */
 
 import { useState, useCallback } from "react";
+import { createPortal } from "react-dom";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helper: recortar imagen con canvas ──────────────────────────────────────
 
 async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -37,19 +39,18 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
   );
 
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob);
-      else reject(new Error("No se pudo generar el recorte"));
-    }, "image/jpeg", 0.92);
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("No se pudo generar el recorte"))),
+      "image/jpeg",
+      0.92
+    );
   });
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 interface ImageCropperModalProps {
-  /** URL o data-URL de la imagen original */
   imageSrc: string;
-  /** Relación de aspecto: por defecto 2/3 (portrait para roster) */
   aspect?: number;
   onConfirm: (blob: Blob) => void;
   onCancel: () => void;
@@ -85,15 +86,25 @@ export default function ImageCropperModal({
     }
   };
 
-  return (
-    /* Overlay */
+  const modal = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.85)" }}
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "rgba(0,0,0,0.88)",
+      }}
     >
       <div
-        className="relative flex flex-col rounded-2xl overflow-hidden"
         style={{
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 16,
+          overflow: "hidden",
           background: "#16191f",
           border: "1px solid #22262e",
           width: "min(92vw, 480px)",
@@ -101,20 +112,45 @@ export default function ImageCropperModal({
         }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#22262e]">
-          <span className="text-sm font-mono font-bold text-white tracking-widest uppercase">
-            Ajustar foto
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "16px 20px",
+            borderBottom: "1px solid #22262e",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 13,
+              fontFamily: "monospace",
+              fontWeight: 700,
+              color: "#fff",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+            }}
+          >
+            Ajustar foto del roster
           </span>
           <button
             onClick={onCancel}
-            className="text-gray-400 hover:text-white transition-colors text-xl leading-none"
+            style={{
+              background: "none",
+              border: "none",
+              color: "#9ca3af",
+              cursor: "pointer",
+              fontSize: 20,
+              lineHeight: 1,
+              padding: "0 4px",
+            }}
           >
             ✕
           </button>
         </div>
 
-        {/* Cropper area */}
-        <div className="relative" style={{ height: 380 }}>
+        {/* Área del cropper */}
+        <div style={{ position: "relative", height: 380, background: "#0d0d0d" }}>
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -125,14 +161,24 @@ export default function ImageCropperModal({
             onCropComplete={onCropComplete}
             style={{
               containerStyle: { background: "#0d0d0d" },
-              cropAreaStyle: { border: "2px solid #dc2626" },
+              cropAreaStyle: { border: "2px solid #dc2626", color: "rgba(220,38,38,0.3)" },
             }}
           />
         </div>
 
-        {/* Zoom slider */}
-        <div className="px-5 py-3 flex items-center gap-3 border-t border-[#22262e]">
-          <span className="text-xs text-gray-400 font-mono w-10">Zoom</span>
+        {/* Slider de zoom */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "12px 20px",
+            borderTop: "1px solid #22262e",
+          }}
+        >
+          <span style={{ fontSize: 12, color: "#9ca3af", fontFamily: "monospace", width: 40 }}>
+            Zoom
+          </span>
           <input
             type="range"
             min={1}
@@ -140,25 +186,57 @@ export default function ImageCropperModal({
             step={0.01}
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="flex-1 accent-red-600"
+            style={{ flex: 1, accentColor: "#dc2626" }}
           />
-          <span className="text-xs text-gray-400 font-mono w-10 text-right">
+          <span
+            style={{
+              fontSize: 12,
+              color: "#9ca3af",
+              fontFamily: "monospace",
+              width: 40,
+              textAlign: "right",
+            }}
+          >
             {zoom.toFixed(1)}×
           </span>
         </div>
 
         {/* Botones */}
-        <div className="flex gap-3 px-5 pb-5">
+        <div style={{ display: "flex", gap: 12, padding: "0 20px 20px" }}>
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-[#22262e] text-gray-400 hover:text-white text-sm font-mono font-semibold transition-colors"
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              borderRadius: 12,
+              border: "1px solid #22262e",
+              background: "transparent",
+              color: "#9ca3af",
+              fontFamily: "monospace",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
           >
             Cancelar
           </button>
           <button
             onClick={handleConfirm}
             disabled={processing}
-            className="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-sm font-mono font-bold tracking-widest transition-colors"
+            style={{
+              flex: 1,
+              padding: "10px 0",
+              borderRadius: 12,
+              border: "none",
+              background: processing ? "#7f1d1d" : "#dc2626",
+              color: "#fff",
+              fontFamily: "monospace",
+              fontSize: 13,
+              fontWeight: 700,
+              letterSpacing: "0.08em",
+              cursor: processing ? "not-allowed" : "pointer",
+              opacity: processing ? 0.7 : 1,
+            }}
           >
             {processing ? "Procesando..." : "CONFIRMAR"}
           </button>
@@ -166,4 +244,6 @@ export default function ImageCropperModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
