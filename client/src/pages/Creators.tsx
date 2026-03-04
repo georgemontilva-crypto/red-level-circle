@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { UserAvatar } from "@/components/UserAvatar";
 
 // ─── TikTok icon ──────────────────────────────────────────────────────────────
 function TikTokIcon({ className }: { className?: string }) {
@@ -97,12 +98,21 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
       {/* Avatar / Logo - Overlapping */}
       <div className="relative px-6 pb-6">
         <div className="flex justify-center -mt-16 mb-4">
-          <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
-            {c.avatar ? (
-              <img src={c.avatar} alt={name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-4xl font-bold text-gray-600 select-none">{name.charAt(0).toUpperCase()}</span>
-            )}
+          <div
+            style={{
+              borderRadius: "50%",
+              border: "4px solid black",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+              overflow: "visible",
+              display: "inline-flex",
+            }}
+          >
+            <UserAvatar
+              avatar={c.avatar}
+              name={name}
+              activeFrameImage={(c as any).activeFrameImage}
+              size={128}
+            />
           </div>
         </div>
         {/* Name and Description */}

@@ -11,6 +11,7 @@ import { SectionBanner } from "@/components/SectionBanner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { Button } from "@/components/ui/button";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
+import { UserAvatar } from "@/components/UserAvatar";
 
 const PROFILE_TYPE_LABEL: Record<string, string> = {
   player: "Jugador",
@@ -100,12 +101,21 @@ function UserCard({ user, myId }: UserCardProps) {
       <div className="relative px-6 pb-6">
         {/* Avatar Circle */}
         <div className="flex justify-center -mt-20 mb-4">
-          <div className="w-32 h-32 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
-            {user.avatar ? (
-              <img src={user.avatar} alt={displayName} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-4xl font-bold text-gray-600 select-none">{displayName.charAt(0).toUpperCase()}</span>
-            )}
+          <div
+            style={{
+              borderRadius: "50%",
+              border: "4px solid black",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+              overflow: "visible",
+              display: "inline-flex",
+            }}
+          >
+            <UserAvatar
+              avatar={user.avatar}
+              name={displayName}
+              activeFrameImage={(user as any).activeFrameImage}
+              size={128}
+            />
           </div>
         </div>
         {/* Name and Description */}

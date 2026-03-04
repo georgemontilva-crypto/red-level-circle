@@ -5,6 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import RightPanel, { type RightPanelTab } from "./RightPanel";
+import { UserAvatar } from "./UserAvatar";
 
 export function TopNav() {
   const [, navigate] = useLocation();
@@ -269,23 +270,28 @@ export function TopNav() {
           {isAuthenticated && user ? (
             <button
               onClick={() => navigate(`/profile/${user.id}`)}
-              className="relative flex items-center justify-center w-11 h-11 rounded-full overflow-hidden border-2 transition-all duration-150 flex-shrink-0 ml-2"
-              style={{ borderColor: isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)" }}
+              className="relative flex items-center justify-center transition-all duration-150 flex-shrink-0 ml-2"
               title={user.name ?? "Mi perfil"}
+              style={{ overflow: "visible" }}
             >
-              {user.avatar ? (
-                <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-              ) : (
-                <div
-                  className="w-full h-full flex items-center justify-center font-bold text-base"
-                  style={{ background: isAdmin ? "#3a2e00" : "var(--bg-hover)", color: isAdmin ? "#FFD700" : "var(--text-primary)" }}
-                >
-                  {userInitial}
-                </div>
-              )}
+              <div
+                style={{
+                  borderRadius: "50%",
+                  border: `2px solid ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}`,
+                  overflow: "visible",
+                  display: "inline-flex",
+                }}
+              >
+                <UserAvatar
+                  avatar={user.avatar}
+                  name={user.name}
+                  activeFrameImage={(user as any).activeFrameImage}
+                  size={40}
+                />
+              </div>
               <span
                 className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
-                style={{ background: "#22c55e", borderColor: "var(--bg-main)" }}
+                style={{ background: "#22c55e", borderColor: "var(--bg-main)", zIndex: 20 }}
               />
             </button>
           ) : (

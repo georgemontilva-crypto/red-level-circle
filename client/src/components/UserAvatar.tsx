@@ -27,10 +27,13 @@ interface UserAvatarProps {
 
 /**
  * UserAvatar — Single source of truth for all profile pictures.
- * - Always circular (border-radius: 50%)
- * - Source images are 288x288 px; CSS controls display size
- * - Optional cosmetic frame overlay: rendered at 150% of avatar size,
- *   perfectly centered so the frame surrounds the avatar on all sides.
+ *
+ * Frame overlay rules:
+ * - The PNG cosmetic is designed as a ring/frame that fits exactly over a circle.
+ * - We render it at 100% of the avatar diameter so the frame sits precisely
+ *   on the circumference of the circle (no overhang).
+ * - The outer container keeps the original avatar size so layout is
+ *   unaffected; the frame overflows via `overflow: visible`.
  */
 export function UserAvatar({
   avatar,
@@ -41,13 +44,13 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
-  // Frame is 150% of avatar size so it visually surrounds the circle
-  const framePx = Math.round(px * 1.5);
+  // Frame at 100% so it matches exactly the circumference of the circle
+  const framePx = px;
 
   return (
     <div
       className={`relative shrink-0 ${className}`}
-      style={{ width: px, height: px }}
+      style={{ width: px, height: px, overflow: "visible" }}
     >
       {/* Base avatar — always circular */}
       <div
@@ -72,7 +75,7 @@ export function UserAvatar({
         )}
       </div>
 
-      {/* Cosmetic frame overlay — 150% of avatar, centered */}
+      {/* Cosmetic frame overlay — 100% of avatar diameter, centered on circle */}
       {activeFrameImage && (
         <img
           src={activeFrameImage}

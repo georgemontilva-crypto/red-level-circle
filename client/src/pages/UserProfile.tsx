@@ -219,32 +219,29 @@ export default function UserProfile() {
           {/* Avatar row — pulled up to overlap the banner */}
           <div className="flex items-end justify-between mb-3" style={{ marginTop: "-52px" }}>
             <div className="relative inline-block" style={{ zIndex: 10 }}>
+              {/* Aura glow effect (separate from frame) */}
               {equippedAura && (
                 <div
                   className="absolute inset-0 rounded-full blur-2xl opacity-60 scale-150 pointer-events-none"
                   style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "var(--accent-red)"} 0%, transparent 70%)` }}
                 />
               )}
-              {equippedFrame?.frameImage && (
-                <img
-                  src={equippedFrame.frameImage}
-                  alt="Frame"
-                  className="absolute z-10 pointer-events-none"
-                  style={{ width: "144px", height: "144px", top: "50%", left: "50%", transform: "translate(-50%, -50%)", objectFit: "contain" }}
-                />
-              )}
               <div
                 className="relative z-0"
                 style={{
-                  width: "96px",
-                  height: "96px",
                   borderRadius: "50%",
                   border: "4px solid oklch(0.10 0.005 0)",
                   boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
-                  overflow: "hidden",
+                  overflow: "visible",
+                  display: "inline-flex",
                 }}
               >
-                <UserAvatar avatar={profile.avatar} name={profile.name} size={96} />
+                <UserAvatar
+                  avatar={profile.avatar}
+                  name={profile.name}
+                  activeFrameImage={equippedFrame?.frameImage ?? null}
+                  size={96}
+                />
               </div>
             </div>
           </div>

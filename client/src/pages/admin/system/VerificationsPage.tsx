@@ -4,6 +4,7 @@ import { useState } from "react";
 import { BadgeCheck, CheckCircle, XCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageHeader } from "../components/AdminUI";
+import { UserAvatar } from "@/components/UserAvatar";
 
 export function VerificationsPage() {
   const [filter, setFilter] = useState<"pending" | "approved" | "rejected" | "all">("pending");
@@ -42,8 +43,13 @@ export function VerificationsPage() {
         ) : requests.map((req: any) => (
           <div key={req.id} className="bg-zinc-900/60 border border-white/8 rounded-xl p-5 space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-zinc-800 flex-shrink-0 overflow-hidden">
-                {req.avatar ? <img src={req.avatar} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><Users className="w-5 h-5 text-zinc-600" /></div>}
+              <div style={{ overflow: "visible", display: "inline-flex", flexShrink: 0 }}>
+                <UserAvatar
+                  avatar={req.avatar}
+                  name={req.nickname ?? req.userName}
+                  activeFrameImage={req.activeFrameImage}
+                  size={40}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

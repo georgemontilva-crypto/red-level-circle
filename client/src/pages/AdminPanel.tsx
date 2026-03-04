@@ -419,21 +419,28 @@ function ShopTab() {
               </div>
             </div>
 
+            {/* AI Suggest Price Button */}
+            <div className="flex items-center justify-between bg-red-950/30 border border-red-800/40 rounded-xl px-4 py-3">
+              <div>
+                <p className="text-xs font-orbitron text-red-400 uppercase tracking-wider">RLC Economy Architect</p>
+                <p className="text-xs text-muted-foreground font-rajdhani mt-0.5">Escribe el nombre del producto y presiona para obtener un precio sugerido por IA</p>
+              </div>
+              <Button
+                type="button"
+                disabled={!form.name || suggestPrice.isPending}
+                onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: form.category })}
+                className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs px-4 py-2 h-auto"
+              >
+                {suggestPrice.isPending
+                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</>
+                  : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
+              </Button>
+            </div>
+
             {/* Row 4: Price + Stock + MaxPerUser */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase flex items-center gap-1.5">
-                  Precio (RLC) *
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={!form.name || suggestPrice.isPending}
-                    onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: form.category })}
-                    className="h-5 px-2 text-[10px] bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron ml-auto"
-                  >
-                    {suggestPrice.isPending ? <><div className="w-2.5 h-2.5 border border-red-400 border-t-transparent rounded-full animate-spin" /> IA...</> : <><Sparkles className="w-2.5 h-2.5" /> IA</>}
-                  </Button>
-                </label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Precio (RLC) *</label>
                 <input
                   type="number"
                   value={form.price}
@@ -800,16 +807,27 @@ function ShopTab() {
                 rows={2} className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none" />
             </div>
 
+            {/* AI Suggest Price - Edit Modal */}
+            <div className="flex items-center justify-between bg-red-950/30 border border-red-800/40 rounded-xl px-4 py-3">
+              <div>
+                <p className="text-xs font-orbitron text-red-400 uppercase tracking-wider">RLC Economy Architect</p>
+                <p className="text-xs text-muted-foreground font-rajdhani mt-0.5">Obtén un precio sugerido por IA para este producto</p>
+              </div>
+              <Button
+                type="button"
+                disabled={!editingItem.name || suggestPriceEdit.isPending}
+                onClick={() => suggestPriceEdit.mutate({ name: editingItem.name, description: editingItem.description || undefined, category: editingItem.category as any })}
+                className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs px-4 py-2 h-auto"
+              >
+                {suggestPriceEdit.isPending
+                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</>
+                  : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
+              </Button>
+            </div>
+
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase flex items-center gap-1">
-                  Precio (RLC)
-                  <Button type="button" size="sm" disabled={!editingItem.name || suggestPriceEdit.isPending}
-                    onClick={() => suggestPriceEdit.mutate({ name: editingItem.name, description: editingItem.description || undefined, category: editingItem.category as any })}
-                    className="h-4 px-1.5 text-[9px] bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron ml-auto">
-                    {suggestPriceEdit.isPending ? <div className="w-2 h-2 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Sparkles className="w-2 h-2" />}
-                  </Button>
-                </label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Precio (RLC)</label>
                 <input type="number" value={editingItem.price} onChange={e => setEditingItem(ei => ei ? { ...ei, price: e.target.value } : ei)}
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
               </div>
@@ -2798,14 +2816,13 @@ function VerificationsTab() {
           <div key={req.id} className="bg-card/60 border border-border rounded-xl p-5 space-y-3">
             {/* User info */}
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-secondary flex-shrink-0 overflow-hidden">
-                {req.avatar ? (
-                  <img src={req.avatar} alt="" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                )}
+              <div style={{ overflow: "visible", display: "inline-flex", flexShrink: 0 }}>
+                <UserAvatar
+                  avatar={req.avatar}
+                  name={req.nickname ?? req.userName}
+                  activeFrameImage={req.activeFrameImage}
+                  size={40}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">

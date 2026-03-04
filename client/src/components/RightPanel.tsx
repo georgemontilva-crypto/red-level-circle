@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { UserAvatar } from "./UserAvatar";
 
 export type RightPanelTab = "notifications" | "rewards" | "wishlist";
 
@@ -393,21 +394,24 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
             {/* Avatar */}
             <div className="relative inline-block mb-3">
               <div
-                className="w-16 h-16 rounded-full overflow-hidden flex items-center justify-center mx-auto"
-                style={{ background: isAdmin ? "rgba(234,179,8,0.2)" : "rgba(220,38,38,0.15)", border: `2px solid ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}` }}
+                style={{
+                  borderRadius: "50%",
+                  border: `2px solid ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}`,
+                  overflow: "visible",
+                  display: "inline-flex",
+                }}
               >
-                {user.avatar ? (
-                  <img src={user.avatar} alt={user.name ?? ""} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="font-orbitron font-black text-2xl" style={{ color: isAdmin ? "#FFD700" : "var(--accent-red)" }}>
-                    {userInitial}
-                  </span>
-                )}
+                <UserAvatar
+                  avatar={user.avatar}
+                  name={user.name}
+                  activeFrameImage={(user as any).activeFrameImage}
+                  size={64}
+                />
               </div>
               {/* Online dot */}
               <span
                 className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2"
-                style={{ background: "#22c55e", borderColor: "#1a1a1f" }}
+                style={{ background: "#22c55e", borderColor: "#1a1a1f", zIndex: 20 }}
               />
             </div>
 
