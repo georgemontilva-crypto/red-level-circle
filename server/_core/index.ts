@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import { registerNotificationListeners } from "../notifications";
+import { registerNewsGeneratorListeners } from "../newsGenerator";
 import { startTwitchSyncJob } from "../twitchSync";
 import { startBetsClosingJob } from "../betsClosingJob";
 import { createServer } from "http";
@@ -119,6 +120,8 @@ async function startServer() {
 
 // Register event-driven notification listeners
 registerNotificationListeners();
+// Register auto-news generation listeners (GPT-powered)
+registerNewsGeneratorListeners();
 // Start Twitch stream sync job (polls every 2 minutes)
 startTwitchSyncJob();
 // Start bets closing job (checks every 60s for expired betting windows)

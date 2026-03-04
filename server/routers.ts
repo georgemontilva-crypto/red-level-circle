@@ -2578,10 +2578,16 @@ export const appRouter = router({
         const db = await getDb();
         const { allies: alliesTable } = await import("../drizzle/schema");
         const { id, ...rest } = input;
+        // Check previous status to detect approval transition
+        const [before] = await db.select({ status: alliesTable.status }).from(alliesTable).where(eq(alliesTable.id, id)).limit(1);
         await db.update(alliesTable).set(rest).where(eq(alliesTable.id, id));
+        // Trigger auto-news when an ally is approved for the first time
+        if (input.status === "approved" && before?.status !== "approved") {
+          const { handleAllyApproved } = await import("./newsGenerator");
+          handleAllyApproved(id).catch((err: Error) => console.error("[NewsGenerator] ally error:", err));
+        }
         return { success: true };
       }),
-
     // Admin: delete
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
