@@ -9,8 +9,9 @@ import {
   Calendar, Gamepad2, Crown, UserPlus, ArrowRight,
   Swords, Target, TrendingUp, Globe, Medal, Coins, Flame,
   Shield, Clock, CheckCircle2, BarChart3, RefreshCw,
-  GitBranch, User2, Hash
+  GitBranch, User2, Hash, Handshake, Store, Facebook
 } from "lucide-react";
+import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { TournamentCard as UniversalTournamentCard } from "@/components/TournamentCard";
@@ -934,28 +935,48 @@ export default function Home() {
           <HScrollSection
             title="Aliados Destacados"
             href="/allies"
-            icon={<span style={{ fontSize: 18 }}>🤝</span>}
+            icon={<Handshake className="w-5 h-5" />}
             viewAllLabel="Ver directorio"
           >
-            {featuredAllies!.map((ally: any) => (
-              <Link key={ally.id} href="/allies">
-                <div className="shrink-0 w-56 rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1" style={{ background: "var(--bg-card)", border: "1px solid rgba(255,255,255,0.08)" }}>
-                  <div className="relative overflow-hidden" style={{ aspectRatio: "16/9" }}>
-                    {ally.coverImage ? (
-                      <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-red-950/60 via-zinc-900 to-black flex items-center justify-center">
-                        {ally.logo ? <img src={ally.logo} alt={ally.name} className="max-h-10 max-w-[60%] object-contain opacity-80" /> : <span style={{ fontSize: 28 }}>🏪</span>}
+            {featuredAllies!.map((ally: any) => {
+              const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
+              return (
+                <Link key={ally.id} href="/allies">
+                  <div className="shrink-0 w-64 bg-black rounded-3xl shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
+                    {/* Banner */}
+                    <div className="relative h-48 w-full overflow-hidden rounded-3xl">
+                      {ally.coverImage ? (
+                        <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <DefaultBannerBg />
+                      )}
+                      {ally.isFeatured && (
+                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+                          <Star className="w-2.5 h-2.5 fill-black" />
+                          Destacado
+                        </div>
+                      )}
+                    </div>
+                    {/* Logo superpuesto + info */}
+                    <div className="relative px-4 pb-4">
+                      <div className="flex justify-center -mt-12 mb-3">
+                        <div className="w-24 h-24 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
+                          {ally.logo ? (
+                            <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <Store className="w-9 h-9 text-gray-600" />
+                          )}
+                        </div>
                       </div>
-                    )}
+                      <div className="text-center">
+                        <h3 className="text-base font-bold text-white truncate">{ally.name}</h3>
+                        {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
+                      </div>
+                    </div>
                   </div>
-                  <div className="p-3">
-                    <p className="font-orbitron font-bold text-foreground text-sm truncate group-hover:text-red-400 transition-colors">{ally.name}</p>
-                    {(ally.city || ally.country) && <p className="text-muted-foreground text-xs truncate mt-0.5">{[ally.city, ally.country].filter(Boolean).join(", ")}</p>}
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </HScrollSection>
         )}
 
