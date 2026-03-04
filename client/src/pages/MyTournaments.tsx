@@ -1,10 +1,13 @@
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
-import { Trophy, PlusCircle, ChevronRight, Swords, Users, Settings, Edit } from "lucide-react";
+import { Trophy, PlusCircle, Users, Settings, Edit, Trash2, AlertTriangle, X } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   draft: { label: "Borrador", color: "oklch(0.55 0.18 220)" },
+  pending_approval: { label: "Pendiente", color: "oklch(0.65 0.18 60)" },
   registration_open: { label: "Inscripciones Abiertas", color: "oklch(0.65 0.18 145)" },
   registration_closed: { label: "Inscripciones Cerradas", color: "oklch(0.55 0.22 25)" },
   in_progress: { label: "En Curso", color: "oklch(0.65 0.18 80)" },
@@ -18,8 +21,26 @@ const BRACKET_LABELS: Record<string, string> = {
   groups: "Grupos",
 };
 
+// Statuses where deletion is blocked
+const BLOCKED_DELETE = ["in_progress", "completed"];
+
 export default function MyTournaments() {
+  const utils = trpc.useUtils();
   const { data: tournaments, isLoading } = trpc.tournaments.myTournaments.useQuery();
+  const deleteMutation = trpc.tournaments.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Torneo eliminado correctamente.");
+      utils.tournaments.myTournaments.invalidate();
+      setConfirmId(null);
+    },
+    onError: (err) => {
+      toast.error(err.message ?? "Error al eliminar el torneo.");
+      setConfirmId(null);
+    },
+  });
+
+  const [confirmId, setConfirmId] = useState<number | null>(null);
+  const confirmTournament = tournaments?.find((t) => t.id === confirmId);
 
   return (
     <PremiumLayout title="MIS TORNEOS">
@@ -88,6 +109,7 @@ export default function MyTournaments() {
           <div className="space-y-4">
             {tournaments.map((t) => {
               const statusInfo = STATUS_LABELS[t.status] ?? { label: t.status, color: "var(--text-muted)" };
+              const canDelete = !BLOCKED_DELETE.includes(t.status);
               return (
                 <div
                   key={t.id}
@@ -193,6 +215,21 @@ export default function MyTournaments() {
                           <Settings size={12} /> GESTIONAR
                         </button>
                       </Link>
+                      {/* Delete button — hidden for in_progress / completed */}
+                      {canDelete && (
+                        <button
+                          onClick={() => setConfirmId(t.id)}
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
+                          style={{
+                            background: "oklch(0.35 0.18 25 / 0.15)",
+                            border: "1px solid oklch(0.45 0.18 25 / 0.4)",
+                            color: "oklch(0.60 0.18 25)",
+                          }}
+                          title="Eliminar torneo"
+                        >
+                          <Trash2 size={12} /> ELIMINAR
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -201,6 +238,86 @@ export default function MyTournaments() {
           </div>
         )}
       </div>
+
+      {/* ── Confirmation Modal ── */}
+      {confirmId !== null && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.75)" }}
+          onClick={() => setConfirmId(null)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl p-8"
+            style={{
+              background: "#16191f",
+              border: "1px solid oklch(0.45 0.18 25 / 0.5)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close */}
+            <button
+              onClick={() => setConfirmId(null)}
+              className="absolute top-4 right-4 p-1 rounded-lg transition-colors"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <X size={18} />
+            </button>
+
+            {/* Icon */}
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-5"
+              style={{ background: "oklch(0.35 0.18 25 / 0.2)", border: "1px solid oklch(0.45 0.18 25 / 0.4)" }}
+            >
+              <AlertTriangle size={28} style={{ color: "oklch(0.60 0.18 25)" }} />
+            </div>
+
+            <h2
+              className="font-display text-xl font-bold tracking-widest text-center mb-2"
+              style={{ color: "var(--text-primary)" }}
+            >
+              ELIMINAR TORNEO
+            </h2>
+            <p className="text-center text-sm mb-1" style={{ color: "var(--text-muted)" }}>
+              ¿Estás seguro de que deseas eliminar
+            </p>
+            <p
+              className="text-center font-display font-bold tracking-wide mb-5"
+              style={{ color: "oklch(0.65 0.22 25)" }}
+            >
+              "{confirmTournament?.name}"
+            </p>
+            <p className="text-center text-xs mb-8" style={{ color: "oklch(0.45 0.005 0)" }}>
+              Esta acción es irreversible. Se eliminarán todas las inscripciones, partidos y apuestas asociadas.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmId(null)}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
+                style={{
+                  background: "var(--bg-card)",
+                  border: "1px solid oklch(0.22 0.01 0)",
+                  color: "var(--text-muted)",
+                }}
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => deleteMutation.mutate({ id: confirmId })}
+                disabled={deleteMutation.isPending}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-50"
+                style={{
+                  background: "oklch(0.45 0.18 25)",
+                  border: "1px solid oklch(0.50 0.20 25)",
+                  color: "#fff",
+                }}
+              >
+                {deleteMutation.isPending ? "ELIMINANDO..." : "SÍ, ELIMINAR"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </PremiumLayout>
   );
 }

@@ -152,6 +152,7 @@ import {
   getTournamentResults,
   transferCaptaincy,
   dissolveTeam,
+  deleteTournament,
   getTeamMemberCount,
   scheduleMatch,
   getOpenBetMatches,
@@ -396,6 +397,27 @@ export const appRouter = router({
             tournamentName: t.name,
           });
         } catch (e) { console.error("[StatusChange] Notification error:", e); }
+        return { success: true };
+      }),
+
+    delete: premiumProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.id);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        // Only the creator or an admin can delete
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        // Block deletion of active/completed tournaments
+        const blockedStatuses = ["in_progress", "completed"];
+        if (blockedStatuses.includes(t.status)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No se puede eliminar un torneo que está en curso o finalizado.",
+          });
+        }
+        await deleteTournament(input.id);
         return { success: true };
       }),
 

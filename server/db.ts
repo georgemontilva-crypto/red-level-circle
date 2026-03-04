@@ -3381,3 +3381,19 @@ export async function dissolveTeam(teamId: number): Promise<void> {
   await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.teamId, teamId));
   await db.delete(teams).where(eq(teams.id, teamId));
 }
+
+// ─── Delete Tournament (cascade) ──────────────────────────────────────────────
+/**
+ * Permanently deletes a tournament and all its related data:
+ * bets, matches, registrations, streams, and the tournament record itself.
+ */
+export async function deleteTournament(id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  // Delete in dependency order to avoid FK constraint issues
+  await db.delete(bets).where(eq(bets.tournamentId, id));
+  await db.delete(tournamentMatches).where(eq(tournamentMatches.tournamentId, id));
+  await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, id));
+  await db.delete(streams).where(eq(streams.tournamentId, id));
+  await db.delete(tournaments).where(eq(tournaments.id, id));
+}
