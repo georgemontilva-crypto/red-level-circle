@@ -1,24 +1,17 @@
 /**
- * RosterCard — Esports Premium
- *
- * Layout: 60% foto izquierda / 40% panel info derecho
- * Paleta: negro + dorado (#FFD700)
- * Sin emojis · Sin duplicar rol · Sin colores chillones
- *
- * Spec: pasted_content_3.txt + pasted_content_4.txt (Feb 2026)
+ * RosterCard — Diseño PlayerCard (Feb 2026)
+ * Imagen superior h-64, info inferior con grid de datos
+ * Azul → Rojo RLC (#dc2626)
  */
 
 import { Link } from "wouter";
-import "./RosterCard.css";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
 export interface RosterCardProps {
   playerName: string;
   realName?: string;
-  /** Slug del rol: top | jungle | mid | adc | support | duelist | etc. */
   role?: string;
-  /** Código de región: NA | EU | KR | CN | BR | LAN | LAS | etc. */
   region?: string;
   game?: string;
   photoUrl?: string | null;
@@ -27,34 +20,6 @@ export interface RosterCardProps {
   stats?: { wins?: number; losses?: number; kda?: number };
   userId?: number;
   isCaptain?: boolean;
-}
-
-// ─── Mapeo de roles ───────────────────────────────────────────────────────────
-
-const ROLE_META: Record<string, { label: string; icon: string }> = {
-  top:        { label: "TOP",  icon: "/role-top.svg"     },
-  jungle:     { label: "JGL",  icon: "/role-jungle.svg"  },
-  mid:        { label: "MID",  icon: "/role-mid.svg"     },
-  adc:        { label: "ADC",  icon: "/role-adc.svg"     },
-  support:    { label: "SUP",  icon: "/role-support.svg" },
-  // Valorant / otros juegos — reutilizan iconos disponibles
-  duelist:    { label: "DUE",  icon: "/role-adc.svg"     },
-  initiator:  { label: "INI",  icon: "/role-mid.svg"     },
-  controller: { label: "CTR",  icon: "/role-jungle.svg"  },
-  sentinel:   { label: "SEN",  icon: "/role-support.svg" },
-  flex:       { label: "FLX",  icon: "/role-top.svg"     },
-  entry:      { label: "ENT",  icon: "/role-adc.svg"     },
-  awper:      { label: "AWP",  icon: "/role-mid.svg"     },
-  lurker:     { label: "LRK",  icon: "/role-jungle.svg"  },
-  igl:        { label: "IGL",  icon: "/role-top.svg"     },
-};
-
-function getRoleMeta(role?: string) {
-  if (!role) return null;
-  return ROLE_META[role.toLowerCase()] ?? {
-    label: role.toUpperCase().slice(0, 3),
-    icon: null,
-  };
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -72,127 +37,100 @@ export default function RosterCard({
   userId,
   isCaptain = false,
 }: RosterCardProps) {
-  const roleMeta = getRoleMeta(role);
-
-  const totalGames = (stats?.wins ?? 0) + (stats?.losses ?? 0);
-  const hasStats = totalGames > 0 || (stats?.kda !== undefined && stats.kda > 0);
-
   const inner = (
-    <div className="roster-card">
-      {/* ══ COLUMNA IZQUIERDA — FOTO (60%) ══ */}
-      <div className="roster-card__photo-container">
+    <div className="w-full max-w-sm bg-black rounded-3xl overflow-hidden">
+      {/* Imagen del jugador */}
+      <div className="relative h-64 w-full overflow-hidden">
         {photoUrl ? (
           <img
             src={photoUrl}
             alt={playerName}
-            className="roster-card__photo"
+            className="w-full h-full object-cover"
             draggable={false}
           />
         ) : (
-          <div className="roster-card__photo-placeholder">
-            <span className="roster-card__photo-placeholder-letter">
-              {playerName.charAt(0)}
+          <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
+            <span className="text-5xl font-black text-zinc-600">
+              {playerName.charAt(0).toUpperCase()}
             </span>
           </div>
         )}
 
-        {/* Fade suave hacia el panel info */}
-        <div className="roster-card__photo-fade" aria-hidden="true" />
-
-        {/* Badge circular del rol — icono + label, SIN duplicar */}
-        {roleMeta && (
-          <div className="roster-card__role-badge" aria-label={`Rol: ${roleMeta.label}`}>
-            {roleMeta.icon ? (
-              <img
-                src={roleMeta.icon}
-                alt=""
-                className="roster-card__role-icon"
-              />
-            ) : null}
-            <span className="roster-card__role-label">{roleMeta.label}</span>
-          </div>
-        )}
-
-        {/* Badge de capitán — posicionado dentro de la foto */}
+        {/* Badge capitán */}
         {isCaptain && (
-          <div className="roster-card__captain-badge">
-            <svg viewBox="0 0 24 24" className="roster-card__captain-icon" aria-hidden="true">
+          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+            <svg viewBox="0 0 24 24" className="w-2.5 h-2.5 fill-black" aria-hidden="true">
               <path d="M2 19l2-9 4 4 4-8 4 8 4-4 2 9H2z" />
             </svg>
-            <span className="roster-card__captain-label">CAP</span>
+            CAP
           </div>
         )}
       </div>
 
-      {/* ══ COLUMNA DERECHA — INFO (40%) ══ */}
-      <div className="roster-card__info">
+      {/* Info del jugador */}
+      <div className="px-6 py-6">
         {/* Nombre */}
-        <div className="roster-card__name-section">
-          <h2 className="roster-card__player-name">{playerName}</h2>
-          {realName && (
-            <p className="roster-card__real-name">{realName}</p>
-          )}
-        </div>
+        <h2 className="text-2xl font-bold text-white mb-4">{playerName}</h2>
 
-        {/* Divider dorado → transparente */}
-        <div className="roster-card__divider" aria-hidden="true" />
-
-        {/* Meta info */}
-        <div className="roster-card__meta">
-          {/* Región */}
-          {region && (
-            <div className="roster-card__region">
-              <span className="roster-card__region-text">{region}</span>
+        {/* Grid de datos */}
+        <div className="space-y-3">
+          {/* Rol */}
+          {role && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Rol</span>
+              <span className="text-white font-semibold">{role}</span>
             </div>
           )}
 
           {/* Juego */}
           {game && (
-            <div className="roster-card__field">
-              <span className="roster-card__field-label">GAME</span>
-              <span className="roster-card__field-value">{game}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Juego</span>
+              <span className="text-white font-semibold">{game}</span>
+            </div>
+          )}
+
+          {/* Región */}
+          {region && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Región</span>
+              <span className="text-white font-semibold">{region}</span>
+            </div>
+          )}
+
+          {/* Nombre real */}
+          {realName && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">Nombre</span>
+              <span className="text-white font-semibold">{realName}</span>
+            </div>
+          )}
+
+          {/* Stats W/L */}
+          {((stats?.wins !== undefined) || (stats?.losses !== undefined)) && (
+            <div className="flex justify-between items-center">
+              <span className="text-gray-400 text-sm">W / L</span>
+              <span className="text-white font-semibold">
+                <span className="text-green-400">{stats?.wins ?? 0}W</span>
+                {" / "}
+                <span className="text-red-400">{stats?.losses ?? 0}L</span>
+              </span>
             </div>
           )}
 
           {/* Equipo */}
           {(team || teamLogo) && (
-            <div className="roster-card__field">
-              <span className="roster-card__field-label">TEAM</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 5, minWidth: 0 }}>
+            <div className="flex justify-between items-center border-t border-gray-800 pt-3">
+              <span className="text-gray-400 text-sm">Equipo</span>
+              <div className="flex items-center gap-1.5">
                 {teamLogo && (
-                  <img
-                    src={teamLogo}
-                    alt=""
-                    style={{ width: 14, height: 14, objectFit: "contain", flexShrink: 0 }}
-                  />
+                  <img src={teamLogo} alt="" className="w-4 h-4 object-contain" />
                 )}
-                <span className="roster-card__field-value">{team}</span>
+                <span className="text-red-400 font-semibold">{team}</span>
               </div>
             </div>
           )}
         </div>
-
-        {/* Stats W/L y KDA — solo si existen */}
-        {hasStats && (
-          <div className="roster-card__stats">
-            {(stats?.wins !== undefined || stats?.losses !== undefined) && (
-              <div className="roster-card__stat">
-                <span className="roster-card__stat-label">W/L</span>
-                <span className="roster-card__stat-value">
-                  {stats?.wins ?? 0}W {stats?.losses ?? 0}L
-                </span>
-              </div>
-            )}
-            {stats?.kda !== undefined && stats.kda > 0 && (
-              <div className="roster-card__stat">
-                <span className="roster-card__stat-label">KDA</span>
-                <span className="roster-card__stat-value">
-                  {stats.kda.toFixed(2)}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );
