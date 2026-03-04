@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Link } from "wouter";
 import {
   Search, Users, Crown, Swords, Shield,
-  UserPlus, UserMinus, Loader2, MapPin,
+  UserPlus, UserMinus, Loader2,
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
@@ -32,25 +32,23 @@ function ProfileTypeIcon({ type }: { type: string | null }) {
   return <Shield className="w-3.5 h-3.5 text-blue-400" />;
 }
 
-interface UserCardProps {
-  user: {
-    id: number;
-    name: string | null;
-    nickname: string | null;
-    avatar: string | null;
-    bannerUrl: string | null;
-    bio: string | null;
-    profileType: string | null;
-    mainGame: string | null;
-    country: string | null;
-    role: string;
-    activeFrameImage?: string | null;
-    isVerified?: boolean | null;
-  };
-  myId?: number;
+interface UserType {
+  id: number;
+  name: string | null;
+  nickname: string | null;
+  avatar: string | null;
+  bannerUrl: string | null;
+  bio: string | null;
+  profileType: string | null;
+  mainGame: string | null;
+  country: string | null;
+  role: string;
+  activeFrameImage?: string | null;
+  isVerified?: boolean | null;
 }
 
-function UserCard({ user, myId }: UserCardProps) {
+// ─── Desktop card (unchanged) ────────────────────────────────────────────────
+function UserCard({ user, myId }: { user: UserType; myId?: number }) {
   const utils = trpc.useUtils();
   const { user: me } = useAuth();
 
@@ -58,7 +56,6 @@ function UserCard({ user, myId }: UserCardProps) {
     { followerId: myId ?? 0, followingId: user.id },
     { enabled: !!myId && myId !== user.id }
   );
-
   const followMutation = trpc.follows.follow.useMutation({
     onSuccess: () => {
       utils.follows.isFollowing.invalidate({ followerId: myId!, followingId: user.id });
@@ -66,7 +63,6 @@ function UserCard({ user, myId }: UserCardProps) {
     },
     onError: (e) => toast.error(e.message),
   });
-
   const unfollowMutation = trpc.follows.unfollow.useMutation({
     onSuccess: () => {
       utils.follows.isFollowing.invalidate({ followerId: myId!, followingId: user.id });
@@ -78,48 +74,28 @@ function UserCard({ user, myId }: UserCardProps) {
   const isFollowing = followData ?? false;
   const mutating = followMutation.isPending || unfollowMutation.isPending;
   const displayName = user.nickname ?? user.name ?? "Usuario";
-  const isAdmin = user.role === "admin" || user.role === "super_admin";
   const subtitle = user.profileType
     ? (PROFILE_TYPE_LABEL[user.profileType] ?? user.profileType)
     : "Jugador";
 
   return (
     <div className="w-full bg-black rounded-3xl shadow-2xl">
-      {/* Banner Section */}
       <div className="relative h-48 w-full overflow-hidden rounded-3xl">
         {user.bannerUrl ? (
-          <img
-            src={user.bannerUrl}
-            alt="Banner"
-            className="w-full h-full object-cover"
-          />
+          <img src={user.bannerUrl} alt="Banner" className="w-full h-full object-cover" />
         ) : (
           <DefaultBannerBg />
         )}
       </div>
-      {/* Avatar Section - Overlapping */}
       <div className="relative px-6 pb-6">
-        {/* Avatar Circle */}
         <div className="flex justify-center -mt-20 mb-4">
-          <div
-            style={{
-              borderRadius: "50%",
-              boxShadow: "0 0 0 4px black, 0 4px 24px rgba(0,0,0,0.5)",
-              overflow: "visible",
-              display: "inline-flex",
-              position: "relative",
-            }}
-          >
-            <UserAvatar
-              avatar={user.avatar}
-              name={displayName}
-              activeFrameImage={(user as any).activeFrameImage}
-              size={128}
-              containerSize={128}
-            />
-          </div>
+          <UserAvatar
+            avatar={user.avatar}
+            name={displayName}
+            activeFrameImage={user.activeFrameImage}
+            size={128}
+          />
         </div>
-        {/* Name and Description */}
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2 mb-2">
             <h1 className="text-2xl font-bold text-white">{displayName}</h1>
@@ -129,7 +105,6 @@ function UserCard({ user, myId }: UserCardProps) {
             {subtitle}{user.country ? ` · ${user.country}` : ""}
           </p>
         </div>
-        {/* Follow Button */}
         {me && myId !== user.id ? (
           <Button
             onClick={() => isFollowing
@@ -151,6 +126,76 @@ function UserCard({ user, myId }: UserCardProps) {
           </Link>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── Mobile row (list style, same as Home sidebar) ────────────────────────────
+function UserRow({ user, myId }: { user: UserType; myId?: number }) {
+  const utils = trpc.useUtils();
+  const { data: followData, isLoading: followLoading } = trpc.follows.isFollowing.useQuery(
+    { followerId: myId ?? 0, followingId: user.id },
+    { enabled: !!myId && myId !== user.id }
+  );
+  const followMutation = trpc.follows.follow.useMutation({
+    onSuccess: () => {
+      utils.follows.isFollowing.invalidate({ followerId: myId!, followingId: user.id });
+      toast.success(`¡Ahora sigues a ${user.nickname ?? user.name}!`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const unfollowMutation = trpc.follows.unfollow.useMutation({
+    onSuccess: () => {
+      utils.follows.isFollowing.invalidate({ followerId: myId!, followingId: user.id });
+      toast.success(`Dejaste de seguir a ${user.nickname ?? user.name}`);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const isFollowing = followData ?? false;
+  const mutating = followMutation.isPending || unfollowMutation.isPending;
+  const displayName = user.nickname ?? user.name ?? "Usuario";
+
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/30 last:border-0 hover:bg-muted/40 transition-colors">
+      <Link href={`/profile/${user.id}`} className="flex items-center gap-3 flex-1 min-w-0">
+        <UserAvatar
+          avatar={user.avatar}
+          name={displayName}
+          activeFrameImage={user.activeFrameImage}
+          size={38}
+          className="shrink-0"
+        />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5">
+            <p className="text-foreground font-semibold text-sm truncate">{displayName}</p>
+            {user.isVerified && <VerifiedBadge size={13} />}
+          </div>
+          <p className="text-muted-foreground text-xs font-mono truncate">@{user.name ?? "user"}</p>
+        </div>
+      </Link>
+      {myId && myId !== user.id && (
+        <button
+          onClick={() => isFollowing
+            ? unfollowMutation.mutate({ userId: user.id })
+            : followMutation.mutate({ userId: user.id })
+          }
+          disabled={mutating || followLoading}
+          className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono transition-colors"
+          style={isFollowing
+            ? { background: "rgba(255,255,255,0.06)", color: "var(--text-muted)" }
+            : { background: "rgba(47,107,255,0.15)", color: "#60a5fa" }
+          }
+        >
+          {mutating || followLoading ? (
+            <Loader2 className="w-3 h-3 animate-spin" />
+          ) : isFollowing ? (
+            <><UserMinus size={10} /> Siguiendo</>
+          ) : (
+            <><UserPlus size={10} /> Seguir</>
+          )}
+        </button>
+      )}
     </div>
   );
 }
@@ -204,7 +249,6 @@ export default function Community() {
             className="w-full pl-9 pr-4 py-2.5 rounded-xl text-sm font-mono text-white placeholder-zinc-500 focus:outline-none transition-colors bg-zinc-900/80 border border-white/10 focus:border-red-500/60"
           />
         </div>
-
         <div className="flex gap-2 flex-wrap">
           {PROFILE_TYPE_FILTER.map((f) => (
             <button
@@ -228,20 +272,36 @@ export default function Community() {
         <span>{filtered?.length ?? 0} usuarios encontrados</span>
       </div>
 
-      {/* Grid */}
+      {/* Content */}
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="rounded-2xl bg-[#111111] border border-white/[0.06] overflow-hidden animate-pulse">
-              <div className="bg-zinc-800/60" style={{ height: "160px" }} />
-              <div className="p-4 pt-10 space-y-3">
-                <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
-                <div className="h-3 bg-zinc-800/60 rounded w-1/2 mx-auto" />
-                <div className="h-9 bg-zinc-800/60 rounded-xl mt-3" />
+        <>
+          {/* Mobile skeleton */}
+          <div className="sm:hidden rounded-2xl overflow-hidden border border-border/50" style={{ background: "var(--bg-card)" }}>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3 border-b border-border/30 last:border-0 animate-pulse">
+                <div className="w-9 h-9 rounded-full bg-zinc-800/60 shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 bg-zinc-800/60 rounded w-2/5" />
+                  <div className="h-3 bg-zinc-800/60 rounded w-1/4" />
+                </div>
+                <div className="h-6 w-16 bg-zinc-800/60 rounded-lg shrink-0" />
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+          {/* Desktop skeleton */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {[...Array(10)].map((_, i) => (
+              <div key={i} className="rounded-2xl bg-[#111111] border border-white/[0.06] overflow-hidden animate-pulse">
+                <div className="bg-zinc-800/60" style={{ height: "160px" }} />
+                <div className="p-4 pt-10 space-y-3">
+                  <div className="h-4 bg-zinc-800/60 rounded w-2/3 mx-auto" />
+                  <div className="h-3 bg-zinc-800/60 rounded w-1/2 mx-auto" />
+                  <div className="h-9 bg-zinc-800/60 rounded-xl mt-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
       ) : !filtered || filtered.length === 0 ? (
         <div className="rounded-2xl p-12 text-center bg-[#111111] border border-white/[0.06]">
           <Users className="w-12 h-12 text-zinc-700 mx-auto mb-3" />
@@ -256,11 +316,21 @@ export default function Community() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-          {filtered.map((user) => (
-            <UserCard key={user.id} user={user} myId={me?.id} />
-          ))}
-        </div>
+        <>
+          {/* ── Móvil: lista compacta (< sm) ── */}
+          <div className="sm:hidden rounded-2xl overflow-hidden border border-border/50" style={{ background: "var(--bg-card)" }}>
+            {filtered.map((user) => (
+              <UserRow key={user.id} user={user} myId={me?.id} />
+            ))}
+          </div>
+
+          {/* ── Escritorio: grid de tarjetas (≥ sm) ── */}
+          <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filtered.map((user) => (
+              <UserCard key={user.id} user={user} myId={me?.id} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
