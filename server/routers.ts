@@ -1661,6 +1661,151 @@ export const appRouter = router({
         await adminDeleteShopItem(input.id);
         return { success: true };
       }),
+
+    // ─── RLC Economy Architect: AI Price Suggestion ─────────────────────────────
+    suggestPrice: adminProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        category: z.enum(["physical", "digital", "bundle", "limited"]),
+        rarity: z.enum(["common", "rare", "epic", "legendary"]).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const apiKey = process.env.OPENAI_API_KEY;
+        if (!apiKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "OPENAI_API_KEY no configurado" });
+
+        const isPhysical = input.category === "physical" || input.category === "bundle";
+
+        // For physical products, try to search for real price via SerpAPI
+        let marketPriceContext = "";
+        if (isPhysical) {
+          try {
+            const serpKey = process.env.SERPAPI_KEY ?? "";
+            if (serpKey) {
+              const searchRes = await fetch(
+                `https://serpapi.com/search.json?q=${encodeURIComponent(input.name + " precio USD")}&engine=google_shopping&api_key=${serpKey}&hl=es&gl=us&num=5`,
+                { signal: AbortSignal.timeout(8000) }
+              );
+              if (searchRes.ok) {
+                const searchData = await searchRes.json() as any;
+                const results = (searchData.shopping_results ?? []).slice(0, 5);
+                if (results.length > 0) {
+                  const prices = results
+                    .map((r: any) => r.extracted_price ?? r.price)
+                    .filter(Boolean)
+                    .join(", ");
+                  marketPriceContext = `Precios encontrados en Google Shopping para "${input.name}": ${prices}. Usa estos como referencia para el precio de mercado en USD.`;
+                }
+              }
+            } else {
+              marketPriceContext = `Estima el precio de mercado actual en USD para "${input.name}" basado en tu conocimiento actualizado.`;
+            }
+          } catch {
+            marketPriceContext = `Estima el precio de mercado actual en USD para "${input.name}" basado en tu conocimiento actualizado.`;
+          }
+        }
+
+        const systemPrompt = `Eres el "RLC Economy Architect", analista financiero especializado en economías de tokens digitales para la plataforma de esports Red Level Circle (RLC).
+
+# CONSTANTES DE LA ECONOMÍA
+- Ganancia Base del Usuario (Gh): 400 RLC por cada 1 hora de actividad.
+- Tasa de Cambio: 1,000 RLC = $1.00 USD.
+- Margen de Seguridad (Objetos Físicos): +20% sobre el precio de mercado.
+- Bono de Bienvenida: 500 RLC (referencia de accesibilidad inicial).
+
+# JERARQUÍA DE RAREZA (Productos Digitales)
+- COMÚN: 200-400 RLC | RARO: 1,200-2,000 RLC | ÉPICO: 4,000-6,000 RLC | LEGENDARIO: 12,000+ RLC
+
+# FÓRMULA FÍSICOS: P_RLC = ((Precio_USD * 1.20) / 0.001)
+
+Responde SIEMPRE con JSON válido con exactamente estas claves:
+{
+  "productName": string,
+  "type": "Físico" | "Digital",
+  "rarity": "COMÚN" | "RARO" | "ÉPICO" | "LEGENDARIO" | null,
+  "marketPriceUSD": number | null,
+  "suggestedPriceRLC": number,
+  "effortHours": number,
+  "justification": string
+}`;
+
+        const userMessage = `Producto: "${input.name}"
+Categoría: ${input.category}
+Descripción: ${input.description ?? "Sin descripción"}
+${input.rarity ? `Rareza indicada: ${input.rarity}` : ""}
+${marketPriceContext}
+
+Genera el reporte de precio RLC para este producto.`;
+
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            response_format: { type: "json_object" },
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            max_tokens: 600,
+            temperature: 0.3,
+          }),
+        });
+
+        if (!response.ok) {
+          const err = await response.text();
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `OpenAI error: ${err}` });
+        }
+
+        const data = await response.json() as any;
+        const raw = data.choices?.[0]?.message?.content ?? "{}";
+        try {
+          const parsed = JSON.parse(raw);
+          return parsed as {
+            productName: string;
+            type: string;
+            rarity: string | null;
+            marketPriceUSD: number | null;
+            suggestedPriceRLC: number;
+            effortHours: number;
+            justification: string;
+          };
+        } catch {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error al parsear respuesta de IA" });
+        }
+      }),
+
+    // ─── Upload image for shop items ─────────────────────────────────────────────────
+    uploadShopImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]),
+        itemId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const ext = input.mimeType.split("/")[1];
+        const key = `shop/${input.itemId ?? "new"}/image-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
+      }),
+
+    // ─── Upload image for cosmetics (previewImage or frameImage) ─────────────────────
+    uploadCosmeticImage: adminProcedure
+      .input(z.object({
+        base64: z.string(),
+        mimeType: z.enum(["image/jpeg", "image/png", "image/gif", "image/webp", "image/avif"]),
+        cosmeticId: z.number().optional(),
+        imageType: z.enum(["preview", "frame"]),
+      }))
+      .mutation(async ({ input }) => {
+        const ext = input.mimeType.split("/")[1];
+        const key = `cosmetics/${input.cosmeticId ?? "new"}/${input.imageType}-${Date.now()}.${ext}`;
+        const buffer = Buffer.from(input.base64, "base64");
+        const { url } = await storagePut(key, buffer, input.mimeType);
+        return { url };
+      }),
+
     listAds: adminProcedure
       .query(async () => adminListBrandAds()),
     createAd: adminProcedure

@@ -11,7 +11,7 @@ import {
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
   BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database,
-  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil
+  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil, Sparkles
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -205,25 +205,88 @@ function UsersTab() {
 // ─── Shop Tab ─────────────────────────────────────────────────────────────────
 const isPhysicalCat = (cat?: string | null) => cat === "physical" || cat === "bundle";
 
+// ─── AI Price Report Card ─────────────────────────────────────────────────────
+function AIPriceCard({ report, onAccept }: { report: any; onAccept: (price: number) => void }) {
+  const rarityColors: Record<string, string> = {
+    "COMÚN": "text-gray-400 border-gray-500/30 bg-gray-500/10",
+    "RARO": "text-blue-400 border-blue-500/30 bg-blue-500/10",
+    "ÉPICO": "text-purple-400 border-purple-500/30 bg-purple-500/10",
+    "LEGENDARIO": "text-yellow-400 border-yellow-500/30 bg-yellow-500/10",
+  };
+  return (
+    <div className="bg-gradient-to-br from-red-950/40 to-card/80 border border-red-700/40 rounded-xl p-4 space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
+      <div className="flex items-center gap-2 mb-1">
+        <div className="w-6 h-6 rounded-full bg-red-600/20 border border-red-600/40 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-3.5 h-3.5 text-red-400" />
+        </div>
+        <span className="text-xs font-orbitron text-red-400 uppercase tracking-wider">RLC Economy Architect</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-black/20 rounded-lg p-3">
+          <p className="text-xs text-muted-foreground font-mono mb-0.5">TIPO</p>
+          <p className="text-white font-rajdhani font-bold text-sm">{report.type}</p>
+        </div>
+        {report.rarity && (
+          <div className="bg-black/20 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground font-mono mb-0.5">RAREZA</p>
+            <span className={`text-xs px-2 py-0.5 rounded-full border font-mono ${rarityColors[report.rarity] ?? "text-gray-400"}`}>{report.rarity}</span>
+          </div>
+        )}
+        {report.marketPriceUSD && (
+          <div className="bg-black/20 rounded-lg p-3">
+            <p className="text-xs text-muted-foreground font-mono mb-0.5">PRECIO MERCADO</p>
+            <p className="text-white font-rajdhani font-bold text-sm">${report.marketPriceUSD.toFixed(2)} USD</p>
+          </div>
+        )}
+        <div className="bg-black/20 rounded-lg p-3">
+          <p className="text-xs text-muted-foreground font-mono mb-0.5">ESFUERZO</p>
+          <p className="text-white font-rajdhani font-bold text-sm">{report.effortHours.toFixed(1)}h actividad</p>
+        </div>
+      </div>
+      <div className="flex items-center justify-between gap-3 bg-red-600/10 border border-red-600/30 rounded-xl p-3">
+        <div>
+          <p className="text-xs text-muted-foreground font-mono">PRECIO SUGERIDO</p>
+          <p className="text-2xl font-orbitron font-bold text-red-400">{report.suggestedPriceRLC.toLocaleString()} <span className="text-sm text-muted-foreground">RLC</span></p>
+        </div>
+        <Button onClick={() => onAccept(report.suggestedPriceRLC)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">
+          APLICAR
+        </Button>
+      </div>
+      <p className="text-xs text-muted-foreground font-rajdhani leading-relaxed">{report.justification}</p>
+    </div>
+  );
+}
+
 function ShopTab() {
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null });
+  const emptyForm = { name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null, isFeatured: false, isActive: true };
+  const [form, setForm] = useState(emptyForm);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [aiReport, setAiReport] = useState<any>(null);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
   const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "delivered" | "cancelled" | "all">("all");
-  // Edit product modal state
   const [editingItem, setEditingItem] = useState<null | { id: number; name: string; description: string; imageUrl: string; price: string; stock: string; category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean }>(null);
   const [uploadingEditImg, setUploadingEditImg] = useState(false);
+  const [aiEditReport, setAiEditReport] = useState<any>(null);
+
   const { data: orders, refetch: refetchOrders } = trpc.admin.listOrders.useQuery();
   const { data: shopItemsList = [], refetch: refetchItems } = trpc.admin.listShopItems.useQuery();
   const uploadImage = trpc.admin.uploadImage.useMutation();
+  const suggestPrice = trpc.admin.suggestPrice.useMutation({
+    onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
+    onError: e => toast.error("Error IA: " + e.message),
+  });
+  const suggestPriceEdit = trpc.admin.suggestPrice.useMutation({
+    onSuccess: (data) => { setAiEditReport(data); toast.success("Precio sugerido por IA"); },
+    onError: e => toast.error("Error IA: " + e.message),
+  });
   const createItem = trpc.admin.createShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm({ name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital", maxPerUser: null }); refetchItems(); },
+    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm(emptyForm); setAiReport(null); refetchItems(); },
     onError: e => toast.error(e.message),
   });
   const updateItem = trpc.admin.updateShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto actualizado"); setEditingItem(null); refetchItems(); },
+    onSuccess: () => { toast.success("Producto actualizado"); setEditingItem(null); setAiEditReport(null); refetchItems(); },
     onError: e => toast.error(e.message),
   });
   const deleteItem = trpc.admin.deleteShopItem.useMutation({
@@ -235,36 +298,34 @@ function ShopTab() {
     onError: e => toast.error(e.message),
   });
 
-  const handleEditImageUpload = async (file: File) => {
-    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
-    setUploadingEditImg(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1];
-        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "shop/products" });
-        setEditingItem(ei => ei ? { ...ei, imageUrl: result.url } : ei);
-        setUploadingEditImg(false);
-      };
-      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingEditImg(false); };
-      reader.readAsDataURL(file);
-    } catch { toast.error("Error al subir imagen"); setUploadingEditImg(false); }
-  };
+  const readFileAsBase64 = (file: File): Promise<string> =>
+    new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res((r.result as string).split(",")[1]);
+      r.onerror = rej;
+      r.readAsDataURL(file);
+    });
 
   const handleImageUpload = async (file: File) => {
     if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
     setUploadingImg(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1];
-        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "shop/products" });
-        setForm(f => ({ ...f, imageUrl: result.url }));
-        setUploadingImg(false);
-      };
-      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingImg(false); };
-      reader.readAsDataURL(file);
-    } catch { toast.error("Error al subir imagen"); setUploadingImg(false); }
+      const base64 = await readFileAsBase64(file);
+      const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "shop/products" });
+      setForm(f => ({ ...f, imageUrl: result.url }));
+    } catch { toast.error("Error al subir imagen"); }
+    setUploadingImg(false);
+  };
+
+  const handleEditImageUpload = async (file: File) => {
+    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
+    setUploadingEditImg(true);
+    try {
+      const base64 = await readFileAsBase64(file);
+      const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "shop/products" });
+      setEditingItem(ei => ei ? { ...ei, imageUrl: result.url } : ei);
+    } catch { toast.error("Error al subir imagen"); }
+    setUploadingEditImg(false);
   };
 
   return (
@@ -274,43 +335,105 @@ function ShopTab() {
       {/* Create product */}
       <div>
         <Button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { setShowForm(!showForm); setAiReport(null); }}
           className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs mb-4"
         >
           <Plus className="w-3.5 h-3.5 mr-1.5" />
           NUEVO PRODUCTO
         </Button>
         {showForm && (
-          <div className="bg-card/60 border border-red-900/40 rounded-xl p-5 space-y-4">
+          <div className="bg-card/60 border border-red-900/40 rounded-xl p-5 space-y-5">
+            <h3 className="text-sm font-orbitron text-white flex items-center gap-2">
+              <ShoppingBag className="w-4 h-4 text-red-400" />
+              NUEVO PRODUCTO
+            </h3>
+
+            {/* Row 1: Name + Category */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Nombre</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Nombre del producto *</label>
                 <input
                   value={form.name}
                   onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                  placeholder="Nombre del producto"
+                  placeholder="Ej: Teclado Mecánico HyperX Alloy"
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                 />
               </div>
-              {/* Image upload */}
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Imagen del producto</label>
-                <div className="flex items-center gap-3">
-                  {form.imageUrl && (
-                    <img src={form.imageUrl} alt="" className="w-14 h-14 object-cover rounded-lg border border-border flex-shrink-0" />
-                  )}
-                  <label className="cursor-pointer flex-1">
-                    <div className="bg-secondary hover:bg-muted border border-dashed border-gray-600 hover:border-red-500 rounded-lg px-3 py-3 text-muted-foreground text-xs font-rajdhani flex items-center justify-center gap-2 transition-colors">
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Categoría</label>
+                <Select value={form.category} onValueChange={v => { setForm(f => ({ ...f, category: v as any })); setAiReport(null); }}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="physical">📦 Físico</SelectItem>
+                    <SelectItem value="digital">⚡ Digital</SelectItem>
+                    <SelectItem value="bundle">🎁 Paquete</SelectItem>
+                    <SelectItem value="limited">⏱ Edición Limitada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Row 2: Description */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Descripción</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Describe el producto brevemente..."
+                rows={2}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none"
+              />
+            </div>
+
+            {/* Row 3: Image upload */}
+            <div>
+              <label className="block text-xs text-muted-foreground mb-2 font-rajdhani uppercase">Imagen de venta</label>
+              <div className="flex items-start gap-4">
+                {form.imageUrl ? (
+                  <div className="relative flex-shrink-0">
+                    <img src={form.imageUrl} alt="" className="w-24 h-24 object-cover rounded-xl border border-red-900/40" />
+                    <button onClick={() => setForm(f => ({ ...f, imageUrl: "" }))} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700">
+                      <XCircle className="w-3 h-3 text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer flex-shrink-0">
+                    <div className="w-24 h-24 bg-secondary hover:bg-muted border-2 border-dashed border-gray-600 hover:border-red-500 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-colors">
                       {uploadingImg
-                        ? <><div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Subiendo...</>
-                        : <><Plus className="w-3.5 h-3.5" /> {form.imageUrl ? "Cambiar imagen" : "Subir imagen"}</>}
+                        ? <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                        : <><Plus className="w-5 h-5 text-muted-foreground" /><span className="text-xs text-muted-foreground font-rajdhani">Imagen</span></>}
                     </div>
                     <input type="file" accept="image/*" className="hidden" disabled={uploadingImg} onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
                   </label>
+                )}
+                <div className="flex-1 text-xs text-muted-foreground font-rajdhani leading-relaxed pt-1">
+                  <p className="text-white font-semibold mb-1">Imagen de portada del producto</p>
+                  <p>Se mostrará en la tienda y en el carrito. Recomendado: 800×800px, formato JPG o PNG.</p>
+                  {form.imageUrl && (
+                    <label className="cursor-pointer mt-2 inline-block">
+                      <span className="text-red-400 hover:text-red-300 underline">Cambiar imagen</span>
+                      <input type="file" accept="image/*" className="hidden" disabled={uploadingImg} onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
+                    </label>
+                  )}
                 </div>
               </div>
+            </div>
+
+            {/* Row 4: Price + Stock + MaxPerUser */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Precio (RLC)</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase flex items-center gap-1.5">
+                  Precio (RLC) *
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={!form.name || suggestPrice.isPending}
+                    onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: form.category })}
+                    className="h-5 px-2 text-[10px] bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron ml-auto"
+                  >
+                    {suggestPrice.isPending ? <><div className="w-2.5 h-2.5 border border-red-400 border-t-transparent rounded-full animate-spin" /> IA...</> : <><Sparkles className="w-2.5 h-2.5" /> IA</>}
+                  </Button>
+                </label>
                 <input
                   type="number"
                   value={form.price}
@@ -320,7 +443,7 @@ function ShopTab() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Stock (-1 = ilimitado)</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Stock (-1 = ∞)</label>
                 <input
                   type="number"
                   value={form.stock}
@@ -330,19 +453,7 @@ function ShopTab() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Categoría</label>
-                <Select value={form.category} onValueChange={v => setForm(f => ({ ...f, category: v as any }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="physical">Físico</SelectItem>
-                    <SelectItem value="digital">Digital</SelectItem>
-                    <SelectItem value="bundle">Paquete</SelectItem>
-                    <SelectItem value="limited">Edición Limitada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Límite por usuario</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Límite / usuario</label>
                 <input
                   type="number"
                   value={form.maxPerUser ?? ""}
@@ -351,28 +462,35 @@ function ShopTab() {
                   min={1}
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500"
                 />
-                <p className="text-muted-foreground text-xs mt-1">Ej: 1 = sólo 1 por usuario</p>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Descripción</label>
-                <textarea
-                  value={form.description}
-                  onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  placeholder="Descripción del producto..."
-                  rows={2}
-                  className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none"
-                />
               </div>
             </div>
-            <div className="flex gap-3">
+
+            {/* Checkboxes */}
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.isActive} onChange={e => setForm(f => ({ ...f, isActive: e.target.checked }))} className="w-4 h-4 accent-red-500" />
+                <span className="text-xs text-muted-foreground font-rajdhani">Activo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.isFeatured} onChange={e => setForm(f => ({ ...f, isFeatured: e.target.checked }))} className="w-4 h-4 accent-yellow-500" />
+                <span className="text-xs text-muted-foreground font-rajdhani">Destacado</span>
+              </label>
+            </div>
+
+            {/* AI Price Report */}
+            {aiReport && (
+              <AIPriceCard report={aiReport} onAccept={(price) => { setForm(f => ({ ...f, price: String(price) })); setAiReport(null); }} />
+            )}
+
+            <div className="flex gap-3 pt-1">
               <Button
                 onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null })}
                 disabled={!form.name || !form.price || createItem.isPending || uploadingImg}
                 className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
               >
-                CREAR PRODUCTO
+                {createItem.isPending ? "CREANDO..." : "CREAR PRODUCTO"}
               </Button>
-              <Button onClick={() => setShowForm(false)} variant="outline" className="border-border text-muted-foreground font-orbitron text-xs">
+              <Button onClick={() => { setShowForm(false); setAiReport(null); }} variant="outline" className="border-border text-muted-foreground font-orbitron text-xs">
                 CANCELAR
               </Button>
             </div>
@@ -626,34 +744,72 @@ function ShopTab() {
 
       {/* Edit Product Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.8)" }}>
-          <div className="bg-card border border-red-900/40 rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.85)" }}>
+          <div className="bg-card border border-red-900/40 rounded-2xl p-6 w-full max-w-xl max-h-[92vh] overflow-y-auto space-y-4 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-orbitron text-sm">EDITAR PRODUCTO</h3>
-              <button onClick={() => setEditingItem(null)} className="text-muted-foreground hover:text-white transition-colors">
+              <h3 className="text-white font-orbitron text-sm flex items-center gap-2"><Pencil className="w-4 h-4 text-red-400" /> EDITAR PRODUCTO</h3>
+              <button onClick={() => { setEditingItem(null); setAiEditReport(null); }} className="text-muted-foreground hover:text-white transition-colors">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Nombre</label>
-                <input value={editingItem.name} onChange={e => setEditingItem(ei => ei ? { ...ei, name: e.target.value } : ei)}
-                  className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Imagen</label>
-                <div className="flex items-center gap-2">
-                  {editingItem.imageUrl && <img src={editingItem.imageUrl} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" />}
-                  <label className="cursor-pointer flex-1">
-                    <div className="bg-secondary hover:bg-muted border border-dashed border-gray-600 rounded-lg px-2 py-2 text-muted-foreground text-xs flex items-center justify-center gap-1 transition-colors">
-                      {uploadingEditImg ? <><div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Subiendo...</> : <><Plus className="w-3 h-3" /> Cambiar</>}
+
+            {/* Image + Name */}
+            <div className="flex items-start gap-4">
+              <div className="relative flex-shrink-0">
+                {editingItem.imageUrl ? (
+                  <>
+                    <img src={editingItem.imageUrl} alt="" className="w-20 h-20 object-cover rounded-xl border border-red-900/40" />
+                    <label className="cursor-pointer absolute inset-0 flex items-center justify-center bg-black/50 rounded-xl opacity-0 hover:opacity-100 transition-opacity">
+                      {uploadingEditImg ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-5 h-5 text-white" />}
+                      <input type="file" accept="image/*" className="hidden" disabled={uploadingEditImg} onChange={e => e.target.files?.[0] && handleEditImageUpload(e.target.files[0])} />
+                    </label>
+                  </>
+                ) : (
+                  <label className="cursor-pointer">
+                    <div className="w-20 h-20 bg-secondary hover:bg-muted border-2 border-dashed border-gray-600 hover:border-red-500 rounded-xl flex flex-col items-center justify-center gap-1 transition-colors">
+                      {uploadingEditImg ? <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <><Plus className="w-5 h-5 text-muted-foreground" /><span className="text-xs text-muted-foreground">Imagen</span></>}
                     </div>
                     <input type="file" accept="image/*" className="hidden" disabled={uploadingEditImg} onChange={e => e.target.files?.[0] && handleEditImageUpload(e.target.files[0])} />
                   </label>
+                )}
+              </div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Nombre</label>
+                  <input value={editingItem.name} onChange={e => setEditingItem(ei => ei ? { ...ei, name: e.target.value } : ei)}
+                    className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
+                </div>
+                <div>
+                  <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Categoría</label>
+                  <Select value={editingItem.category} onValueChange={v => setEditingItem(ei => ei ? { ...ei, category: v } : ei)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="physical">📦 Físico</SelectItem>
+                      <SelectItem value="digital">⚡ Digital</SelectItem>
+                      <SelectItem value="bundle">🎁 Paquete</SelectItem>
+                      <SelectItem value="limited">⏱ Edición Limitada</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Descripción</label>
+              <textarea value={editingItem.description} onChange={e => setEditingItem(ei => ei ? { ...ei, description: e.target.value } : ei)}
+                rows={2} className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none" />
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Precio (RLC)</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase flex items-center gap-1">
+                  Precio (RLC)
+                  <Button type="button" size="sm" disabled={!editingItem.name || suggestPriceEdit.isPending}
+                    onClick={() => suggestPriceEdit.mutate({ name: editingItem.name, description: editingItem.description || undefined, category: editingItem.category as any })}
+                    className="h-4 px-1.5 text-[9px] bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron ml-auto">
+                    {suggestPriceEdit.isPending ? <div className="w-2 h-2 border border-red-400 border-t-transparent rounded-full animate-spin" /> : <Sparkles className="w-2 h-2" />}
+                  </Button>
+                </label>
                 <input type="number" value={editingItem.price} onChange={e => setEditingItem(ei => ei ? { ...ei, price: e.target.value } : ei)}
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
               </div>
@@ -663,40 +819,29 @@ function ShopTab() {
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
               </div>
               <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Categoría</label>
-                <Select value={editingItem.category} onValueChange={v => setEditingItem(ei => ei ? { ...ei, category: v } : ei)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="physical">Físico</SelectItem>
-                    <SelectItem value="digital">Digital</SelectItem>
-                    <SelectItem value="bundle">Paquete</SelectItem>
-                    <SelectItem value="limited">Edición Limitada</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Límite por usuario</label>
+                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Límite/usuario</label>
                 <input type="number" value={editingItem.maxPerUser ?? ""} min={1}
                   onChange={e => setEditingItem(ei => ei ? { ...ei, maxPerUser: e.target.value ? parseInt(e.target.value) : null } : ei)}
                   placeholder="Sin límite"
                   className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500" />
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-xs text-muted-foreground mb-1 font-rajdhani uppercase">Descripción</label>
-                <textarea value={editingItem.description} onChange={e => setEditingItem(ei => ei ? { ...ei, description: e.target.value } : ei)}
-                  rows={2} className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 resize-none" />
-              </div>
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={editingItem.isActive} onChange={e => setEditingItem(ei => ei ? { ...ei, isActive: e.target.checked } : ei)} className="w-4 h-4 accent-red-500" />
-                  <span className="text-xs text-muted-foreground font-rajdhani">Activo</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={editingItem.isFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, isFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-yellow-500" />
-                  <span className="text-xs text-muted-foreground font-rajdhani">Destacado</span>
-                </label>
-              </div>
             </div>
+
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={editingItem.isActive} onChange={e => setEditingItem(ei => ei ? { ...ei, isActive: e.target.checked } : ei)} className="w-4 h-4 accent-red-500" />
+                <span className="text-xs text-muted-foreground font-rajdhani">Activo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={editingItem.isFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, isFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-yellow-500" />
+                <span className="text-xs text-muted-foreground font-rajdhani">Destacado</span>
+              </label>
+            </div>
+
+            {aiEditReport && (
+              <AIPriceCard report={aiEditReport} onAccept={(price) => { setEditingItem(ei => ei ? { ...ei, price: String(price) } : ei); setAiEditReport(null); }} />
+            )}
+
             <div className="flex gap-3">
               <Button
                 onClick={() => updateItem.mutate({
@@ -716,7 +861,7 @@ function ShopTab() {
               >
                 {updateItem.isPending ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
               </Button>
-              <Button onClick={() => setEditingItem(null)} variant="outline" className="border-border text-muted-foreground font-orbitron text-xs">
+              <Button onClick={() => { setEditingItem(null); setAiEditReport(null); }} variant="outline" className="border-border text-muted-foreground font-orbitron text-xs">
                 CANCELAR
               </Button>
             </div>
@@ -2296,17 +2441,23 @@ function CosmeticsAdminTab() {
   const emptyForm = { name: "", description: "", type: "frame" as any, rarity: "common" as any, previewImage: "", frameImage: "", price: "", originalPrice: "", isActive: true, isFeatured: false, isLimited: false, collection: "", sortOrder: "0" };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<number | null>(null);
+  const [showForm, setShowForm] = useState(false);
   const [uploadingPreview, setUploadingPreview] = useState(false);
   const [uploadingFrame, setUploadingFrame] = useState(false);
+  const [aiReport, setAiReport] = useState<any>(null);
 
   const { data: cosmetics, refetch } = trpc.cosmetics.list.useQuery({});
   const uploadImage = trpc.admin.uploadImage.useMutation();
+  const suggestPrice = trpc.admin.suggestPrice.useMutation({
+    onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
+    onError: e => toast.error("Error IA: " + e.message),
+  });
   const create = trpc.cosmetics.adminCreate.useMutation({
-    onSuccess: () => { toast.success("Cosmético creado"); setForm(emptyForm); refetch(); },
+    onSuccess: () => { toast.success("Cosmético creado"); setForm(emptyForm); setAiReport(null); setShowForm(false); refetch(); },
     onError: e => toast.error(e.message),
   });
   const update = trpc.cosmetics.adminUpdate.useMutation({
-    onSuccess: () => { toast.success("Cosmético actualizado"); setEditing(null); setForm(emptyForm); refetch(); },
+    onSuccess: () => { toast.success("Cosmético actualizado"); setEditing(null); setForm(emptyForm); setAiReport(null); setShowForm(false); refetch(); },
     onError: e => toast.error(e.message),
   });
   const del = trpc.cosmetics.adminDelete.useMutation({
@@ -2314,27 +2465,27 @@ function CosmeticsAdminTab() {
     onError: e => toast.error(e.message),
   });
 
+  const readFileAsBase64 = (file: File): Promise<string> =>
+    new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(",")[1]); r.onerror = rej; r.readAsDataURL(file); });
+
   const handleUpload = async (field: "previewImage" | "frameImage", file: File) => {
-    if (file.size > 5 * 1024 * 1024) { toast.error("La imagen no puede superar 5MB"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("El archivo no puede superar 10MB"); return; }
     if (field === "previewImage") setUploadingPreview(true);
     else setUploadingFrame(true);
     try {
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const base64 = (reader.result as string).split(",")[1];
-        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "cosmetics" });
-        setForm(f => ({ ...f, [field]: result.url }));
-        if (field === "previewImage") setUploadingPreview(false);
-        else setUploadingFrame(false);
-      };
-      reader.onerror = () => { toast.error("Error al leer el archivo"); setUploadingPreview(false); setUploadingFrame(false); };
-      reader.readAsDataURL(file);
-    } catch { toast.error("Error al subir imagen"); setUploadingPreview(false); setUploadingFrame(false); }
+      const base64 = await readFileAsBase64(file);
+      const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "cosmetics" });
+      setForm(f => ({ ...f, [field]: result.url }));
+    } catch { toast.error("Error al subir archivo"); }
+    if (field === "previewImage") setUploadingPreview(false);
+    else setUploadingFrame(false);
   };
 
   const startEdit = (c: any) => {
     setEditing(c.id);
     setForm({ name: c.name, description: c.description ?? "", type: c.type, rarity: c.rarity, previewImage: c.previewImage ?? "", frameImage: c.frameImage ?? "", price: String(c.price), originalPrice: c.originalPrice ? String(c.originalPrice) : "", isActive: c.isActive, isFeatured: c.isFeatured, isLimited: c.isLimited, collection: c.collection ?? "", sortOrder: String(c.sortOrder) });
+    setAiReport(null);
+    setShowForm(true);
   };
 
   const handleSubmit = () => {
@@ -2343,165 +2494,259 @@ function CosmeticsAdminTab() {
     else create.mutate(data);
   };
 
-  const rarityColors: Record<string, string> = { common: "text-muted-foreground", rare: "text-blue-400", epic: "text-purple-400", legendary: "text-yellow-400" };
+  const rarityConfig: Record<string, { label: string; color: string; badge: string }> = {
+    common: { label: "Común", color: "text-gray-400", badge: "border-gray-500/30 bg-gray-500/10 text-gray-400" },
+    rare: { label: "Raro", color: "text-blue-400", badge: "border-blue-500/30 bg-blue-500/10 text-blue-400" },
+    epic: { label: "Épico", color: "text-purple-400", badge: "border-purple-500/30 bg-purple-500/10 text-purple-400" },
+    legendary: { label: "Legendario", color: "text-yellow-400", badge: "border-yellow-500/30 bg-yellow-500/10 text-yellow-400" },
+  };
 
   return (
     <div className="space-y-6">
-      <SectionHeader icon={Star} title="GESTIÓN DE COSMÉTICOS" subtitle="Crea y administra marcos, auras y badges de perfil" />
+      <SectionHeader icon={Star} title="GESTIÓN DE COSMÉTICOS" subtitle="Crea y administra marcos, auras, insignias y fondos de perfil" />
+
+      {/* New cosmetic button */}
+      <Button
+        onClick={() => { setShowForm(!showForm); if (editing !== null) { setEditing(null); setForm(emptyForm); setAiReport(null); } }}
+        className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs"
+      >
+        <Plus className="w-3.5 h-3.5 mr-1.5" />
+        NUEVO COSMÉTICO
+      </Button>
 
       {/* Form */}
-      <div className="bg-card/60 border border-border rounded-xl p-5 space-y-4">
-        <p className="text-white font-orbitron text-sm">{editing !== null ? "EDITAR COSMÉTICO" : "NUEVO COSMÉTICO"}</p>
+      {showForm && (
+        <div className="bg-card/60 border border-red-900/40 rounded-xl p-5 space-y-5">
+          <h3 className="text-white font-orbitron text-sm flex items-center gap-2">
+            <Star className="w-4 h-4 text-red-400" />
+            {editing !== null ? "EDITAR COSMÉTICO" : "NUEVO COSMÉTICO"}
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">NOMBRE *</label>
-            <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Marco Neon Rojo" />
+          {/* Row 1: Name + Collection */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Nombre *</label>
+              <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Marco Neon Rojo" />
+            </div>
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Colección</label>
+              <input value={form.collection} onChange={e => setForm(f => ({ ...f, collection: e.target.value }))}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Red Level Pack" />
+            </div>
           </div>
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">COLECCIÓN</label>
-            <input value={form.collection} onChange={e => setForm(f => ({ ...f, collection: e.target.value }))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Ej: Red Level Pack" />
+
+          {/* Row 2: Type + Rarity */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Tipo</label>
+              <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as any }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="frame">📷 Marco</SelectItem>
+                  <SelectItem value="aura">✨ Aura</SelectItem>
+                  <SelectItem value="badge">🏅 Insignia</SelectItem>
+                  <SelectItem value="background">🌄 Fondo</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Rareza</label>
+              <Select value={form.rarity} onValueChange={v => setForm(f => ({ ...f, rarity: v as any }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="common">□ Común</SelectItem>
+                  <SelectItem value="rare">🔵 Raro</SelectItem>
+                  <SelectItem value="epic">🟣 Épico</SelectItem>
+                  <SelectItem value="legendary">🟡 Legendario</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Row 3: Description */}
           <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">TIPO</label>
-            <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as any }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="frame">Marco</SelectItem>
-                <SelectItem value="aura">Aura</SelectItem>
-                <SelectItem value="badge">Insignia</SelectItem>
-                <SelectItem value="background">Fondo</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">RAREZA</label>
-            <Select value={form.rarity} onValueChange={v => setForm(f => ({ ...f, rarity: v as any }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="common">Común</SelectItem>
-                <SelectItem value="rare">Raro</SelectItem>
-                <SelectItem value="epic">Épico</SelectItem>
-                <SelectItem value="legendary">Legendario</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">PRECIO (RLC) *</label>
-            <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="500" />
-          </div>
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">PRECIO ORIGINAL (opcional)</label>
-            <input type="number" value={form.originalPrice} onChange={e => setForm(f => ({ ...f, originalPrice: e.target.value }))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="800 (para mostrar descuento)" />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">DESCRIPCIÓN</label>
+            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Descripción</label>
             <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Descripción breve del cosmético" />
+              className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="Descripción breve del cosmético" />
           </div>
-        </div>
 
-        {/* Image uploads */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Preview Image */}
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">IMAGEN DE PREVIEW (tarjeta en la tienda)</label>
-            <div className="flex items-center gap-3">
+          {/* Row 4: Images - two distinct zones */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Zone A: Imagen de venta (preview) */}
+            <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-blue-600/20 border border-blue-600/40 flex items-center justify-center">
+                  <Star className="w-3 h-3 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-white text-xs font-orbitron">IMAGEN DE VENTA</p>
+                  <p className="text-muted-foreground text-[10px] font-rajdhani">Se muestra en la tienda y en la tarjeta del producto</p>
+                </div>
+              </div>
+              {form.previewImage ? (
+                <div className="relative">
+                  <img src={form.previewImage} alt="" className="w-full h-36 object-cover rounded-lg border border-blue-900/30" />
+                  <button onClick={() => setForm(f => ({ ...f, previewImage: "" }))} className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700">
+                    <XCircle className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer block">
+                  <div className="w-full h-36 bg-secondary hover:bg-muted border-2 border-dashed border-blue-600/30 hover:border-blue-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
+                    {uploadingPreview
+                      ? <div className="w-6 h-6 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                      : <><Plus className="w-6 h-6 text-blue-400" /><span className="text-xs text-blue-400 font-rajdhani">Subir imagen de venta</span><span className="text-[10px] text-muted-foreground">JPG, PNG, WebP · máx 10MB</span></>}
+                  </div>
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingPreview} onChange={e => e.target.files?.[0] && handleUpload("previewImage", e.target.files[0])} />
+                </label>
+              )}
               {form.previewImage && (
-                <img src={form.previewImage} alt="" className="w-16 h-16 object-cover rounded-lg border border-border flex-shrink-0" />
+                <label className="cursor-pointer">
+                  <span className="text-blue-400 hover:text-blue-300 text-xs underline font-rajdhani">Cambiar imagen</span>
+                  <input type="file" accept="image/*" className="hidden" disabled={uploadingPreview} onChange={e => e.target.files?.[0] && handleUpload("previewImage", e.target.files[0])} />
+                </label>
               )}
-              <label className="cursor-pointer flex-1">
-                <div className="bg-secondary hover:bg-muted border border-dashed border-gray-600 hover:border-red-500 rounded-lg px-3 py-3 text-muted-foreground text-xs font-rajdhani flex items-center justify-center gap-2 transition-colors">
-                  {uploadingPreview
-                    ? <><div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Subiendo...</>
-                    : <><Plus className="w-3.5 h-3.5" /> {form.previewImage ? "Cambiar preview" : "Subir preview"}</>}
-                </div>
-                <input type="file" accept="image/*" className="hidden" disabled={uploadingPreview} onChange={e => e.target.files?.[0] && handleUpload("previewImage", e.target.files[0])} />
-              </label>
             </div>
-          </div>
 
-          {/* Frame PNG */}
-          <div>
-            <label className="text-muted-foreground text-xs font-rajdhani mb-1 block">PNG DEL MARCO/AURA (overlay transparente)</label>
-            <div className="flex items-center gap-3">
+            {/* Zone B: Archivo cosmético (frame PNG) */}
+            <div className="bg-black/20 border border-white/10 rounded-xl p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 rounded bg-purple-600/20 border border-purple-600/40 flex items-center justify-center">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                </div>
+                <div>
+                  <p className="text-white text-xs font-orbitron">ARCHIVO COSMÉTICO</p>
+                  <p className="text-muted-foreground text-[10px] font-rajdhani">PNG transparente que se aplica sobre el avatar del usuario</p>
+                </div>
+              </div>
+              {form.frameImage ? (
+                <div className="relative">
+                  <div className="w-full h-36 bg-[#1a1a2e] rounded-lg border border-purple-900/30 flex items-center justify-center overflow-hidden">
+                    <img src={form.frameImage} alt="" className="w-32 h-32 object-contain" />
+                  </div>
+                  <button onClick={() => setForm(f => ({ ...f, frameImage: "" }))} className="absolute top-1.5 right-1.5 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700">
+                    <XCircle className="w-3 h-3 text-white" />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer block">
+                  <div className="w-full h-36 bg-secondary hover:bg-muted border-2 border-dashed border-purple-600/30 hover:border-purple-500 rounded-lg flex flex-col items-center justify-center gap-2 transition-colors">
+                    {uploadingFrame
+                      ? <div className="w-6 h-6 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                      : <><Sparkles className="w-6 h-6 text-purple-400" /><span className="text-xs text-purple-400 font-rajdhani">Subir PNG del cosmético</span><span className="text-[10px] text-muted-foreground">PNG con fondo transparente · 512×512px</span></>}
+                  </div>
+                  <input type="file" accept="image/png,image/webp" className="hidden" disabled={uploadingFrame} onChange={e => e.target.files?.[0] && handleUpload("frameImage", e.target.files[0])} />
+                </label>
+              )}
               {form.frameImage && (
-                <div className="w-16 h-16 rounded-lg border border-border flex-shrink-0 bg-secondary/50 flex items-center justify-center overflow-hidden">
-                  <img src={form.frameImage} alt="" className="w-full h-full object-contain" />
-                </div>
+                <label className="cursor-pointer">
+                  <span className="text-purple-400 hover:text-purple-300 text-xs underline font-rajdhani">Cambiar PNG</span>
+                  <input type="file" accept="image/png,image/webp" className="hidden" disabled={uploadingFrame} onChange={e => e.target.files?.[0] && handleUpload("frameImage", e.target.files[0])} />
+                </label>
               )}
-              <label className="cursor-pointer flex-1">
-                <div className="bg-secondary hover:bg-muted border border-dashed border-gray-600 hover:border-red-500 rounded-lg px-3 py-3 text-muted-foreground text-xs font-rajdhani flex items-center justify-center gap-2 transition-colors">
-                  {uploadingFrame
-                    ? <><div className="w-3 h-3 border border-red-400 border-t-transparent rounded-full animate-spin" /> Subiendo...</>
-                    : <><Plus className="w-3.5 h-3.5" /> {form.frameImage ? "Cambiar PNG" : "Subir PNG"}</>}
-                </div>
-                <input type="file" accept="image/png,image/webp" className="hidden" disabled={uploadingFrame} onChange={e => e.target.files?.[0] && handleUpload("frameImage", e.target.files[0])} />
-              </label>
             </div>
-            <p className="text-muted-foreground text-xs mt-1 font-rajdhani">Recomendado: PNG con fondo transparente, 512×512px</p>
           </div>
-        </div>
 
-        {/* Toggles */}
-        <div className="flex gap-6 flex-wrap">
-          {[
-            { key: "isActive", label: "Activo" },
-            { key: "isFeatured", label: "Destacado" },
-            { key: "isLimited", label: "Edición Limitada" },
-          ].map(({ key, label }) => (
-            <label key={key} className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-red-500" />
-              <span className="text-muted-foreground text-xs font-rajdhani">{label}</span>
-            </label>
-          ))}
-        </div>
+          {/* Row 5: Price + Original Price + AI button */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase flex items-center gap-1.5">
+                Precio (RLC) *
+                <Button type="button" size="sm" disabled={!form.name || suggestPrice.isPending}
+                  onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: "digital", rarity: form.rarity as any })}
+                  className="h-5 px-2 text-[10px] bg-red-600/20 hover:bg-red-600/40 text-red-400 border border-red-700/40 font-orbitron ml-auto">
+                  {suggestPrice.isPending ? <><div className="w-2.5 h-2.5 border border-red-400 border-t-transparent rounded-full animate-spin" /> IA...</> : <><Sparkles className="w-2.5 h-2.5" /> IA</>}
+                </Button>
+              </label>
+              <input type="number" value={form.price} onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="500" />
+            </div>
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Precio Original (descuento)</label>
+              <input type="number" value={form.originalPrice} onChange={e => setForm(f => ({ ...f, originalPrice: e.target.value }))}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="800" />
+            </div>
+            <div>
+              <label className="text-muted-foreground text-xs font-rajdhani mb-1 block uppercase">Orden</label>
+              <input type="number" value={form.sortOrder} onChange={e => setForm(f => ({ ...f, sortOrder: e.target.value }))}
+                className="w-full bg-background border border-red-900/50 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none" placeholder="0" />
+            </div>
+          </div>
 
-        <div className="flex gap-3">
-          <Button onClick={handleSubmit} disabled={!form.name || !form.price || create.isPending || update.isPending} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
-            {create.isPending || update.isPending ? "Guardando..." : editing !== null ? "ACTUALIZAR" : "CREAR COSMÉTICO"}
-          </Button>
-          {editing !== null && (
-            <Button variant="outline" onClick={() => { setEditing(null); setForm(emptyForm); }} className="border-border text-muted-foreground font-orbitron text-xs">
+          {/* AI Report */}
+          {aiReport && (
+            <AIPriceCard report={aiReport} onAccept={(price) => { setForm(f => ({ ...f, price: String(price) })); setAiReport(null); }} />
+          )}
+
+          {/* Toggles */}
+          <div className="flex gap-6 flex-wrap">
+            {[
+              { key: "isActive", label: "Activo" },
+              { key: "isFeatured", label: "Destacado" },
+              { key: "isLimited", label: "Edición Limitada" },
+            ].map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-red-500" />
+                <span className="text-muted-foreground text-xs font-rajdhani">{label}</span>
+              </label>
+            ))}
+          </div>
+
+          <div className="flex gap-3 pt-1">
+            <Button onClick={handleSubmit} disabled={!form.name || !form.price || create.isPending || update.isPending} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
+              {create.isPending || update.isPending ? "Guardando..." : editing !== null ? "ACTUALIZAR COSMÉTICO" : "CREAR COSMÉTICO"}
+            </Button>
+            <Button variant="outline" onClick={() => { setShowForm(false); setEditing(null); setForm(emptyForm); setAiReport(null); }} className="border-border text-muted-foreground font-orbitron text-xs">
               CANCELAR
             </Button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Cosmetics list */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-        {!cosmetics || cosmetics.length === 0 ? (
-          <p className="text-muted-foreground text-sm col-span-4 text-center py-8 font-rajdhani">Sin cosméticos registrados</p>
-        ) : cosmetics.map((c: any) => (
-          <div key={c.id} className="relative group rounded-xl overflow-hidden border border-border bg-card/60">
-            {c.previewImage ? (
-              <img src={c.previewImage} alt={c.name} className="w-full h-32 object-cover" />
-            ) : (
-              <div className="w-full h-32 bg-secondary flex items-center justify-center">
-                <Star className="w-8 h-8 text-muted-foreground" />
-              </div>
-            )}
-            <div className="p-3">
-              <p className="text-white font-rajdhani font-semibold text-sm truncate">{c.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs font-orbitron ${rarityColors[c.rarity] ?? "text-muted-foreground"}`}>{c.rarity?.toUpperCase()}</span>
-                <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
-              </div>
-              {c.frameImage && (
-                <p className="text-green-500 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5"><CheckCircle2 size={11} /> PNG cargado</p>
+      <div>
+        <h3 className="text-sm font-orbitron text-muted-foreground mb-3 flex items-center gap-2">
+          <Star className="w-4 h-4" />
+          CATÁLOGO ({cosmetics?.length ?? 0})
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {!cosmetics || cosmetics.length === 0 ? (
+            <p className="text-muted-foreground text-sm col-span-4 text-center py-8 font-rajdhani">Sin cosméticos registrados</p>
+          ) : cosmetics.map((c: any) => (
+            <div key={c.id} className="relative group rounded-xl overflow-hidden border border-border bg-card/60">
+              {c.previewImage ? (
+                <img src={c.previewImage} alt={c.name} className="w-full h-32 object-cover" />
+              ) : (
+                <div className="w-full h-32 bg-secondary flex items-center justify-center">
+                  <Star className="w-8 h-8 text-muted-foreground" />
+                </div>
               )}
+              {/* Cosmetic overlay preview */}
+              {c.frameImage && (
+                <div className="absolute top-0 left-0 w-full h-32 flex items-center justify-center pointer-events-none">
+                  <img src={c.frameImage} alt="" className="w-24 h-24 object-contain" style={{ filter: "drop-shadow(0 0 4px rgba(255,255,255,0.3))" }} />
+                </div>
+              )}
+              <div className="p-3">
+                <p className="text-white font-rajdhani font-semibold text-sm truncate">{c.name}</p>
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <span className={`text-xs font-mono px-1.5 py-0.5 rounded border ${rarityConfig[c.rarity]?.badge ?? "text-muted-foreground border-border"}`}>{rarityConfig[c.rarity]?.label ?? c.rarity}</span>
+                  <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1">
+                  {c.previewImage && <span className="text-blue-400 text-[10px] font-rajdhani flex items-center gap-0.5"><CheckCircle2 size={10} /> Venta</span>}
+                  {c.frameImage && <span className="text-purple-400 text-[10px] font-rajdhani flex items-center gap-0.5"><CheckCircle2 size={10} /> PNG</span>}
+                  {!c.isActive && <span className="text-red-400 text-[10px] font-rajdhani">Inactivo</span>}
+                </div>
+              </div>
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => startEdit(c)} className="bg-background/80 hover:bg-secondary rounded p-1"><Edit3 className="w-3 h-3 text-secondary-foreground" /></button>
+                <button onClick={() => { if (confirm(`¿Eliminar ${c.name}?`)) del.mutate({ id: c.id }); }} className="bg-background/80 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+              </div>
             </div>
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEdit(c)} className="bg-background/80 hover:bg-secondary rounded p-1"><Edit3 className="w-3 h-3 text-secondary-foreground" /></button>
-              <button onClick={() => { if (confirm(`¿Eliminar ${c.name}?`)) del.mutate({ id: c.id }); }} className="bg-background/80 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   );
