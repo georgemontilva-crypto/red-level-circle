@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 /**
  * Semantic size tokens for avatars across the platform.
- * All avatars are stored at 288x288 px; CSS controls the display size.
  */
 export const AVATAR_SIZES = {
   xs: 24,
@@ -24,8 +24,7 @@ interface UserAvatarProps {
   size?: number | AvatarSizeToken;
   /**
    * Total outer diameter of the container (image + border px on each side × 2).
-   * When provided, the frame outer ring edge aligns with this diameter.
-   * Example: size=96, border=4px each side → containerSize=104
+   * When provided, the frame is centered on this diameter.
    */
   containerSize?: number;
   className?: string;
@@ -34,15 +33,10 @@ interface UserAvatarProps {
 /**
  * UserAvatar — Single source of truth for all profile pictures.
  *
- * Frame overlay rules (measured from Mask_Pinkorb.png 384×384):
- * - The outer edge of the ring (including flame tips) sits at avg radius 153.9px
- *   out of 192px total → ratio = 0.8014
- * - To make the outer ring edge align with containerSize:
- *   framePx = containerSize / 0.8014 ≈ containerSize × 1.248
- *
- * The frame img is positioned absolutely relative to the OUTER wrapper,
- * which is sized to containerSize (not just the image). This ensures the
- * frame is centered on the full container including its border.
+ * The cosmetic frame is rendered via a React Portal directly into document.body
+ * with `position: fixed`, so it is never clipped by any parent container,
+ * overflow rule, or stacking context. It tracks the avatar's position using
+ * a ResizeObserver + scroll listener.
  */
 export function UserAvatar({
   avatar,
@@ -54,70 +48,101 @@ export function UserAvatar({
 }: UserAvatarProps) {
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
-
-  // If containerSize provided, use it as the reference for frame positioning
   const outerPx = containerSize ?? px;
-
-  // Cosmetic PNG size = (outerPx * 3.5) + 30px extra as requested.
   const framePx = Math.round(outerPx * 3.5) + 30;
 
-  // Offset to center the avatar image within the outer container
-  const offset = Math.round((outerPx - px) / 2);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  const [framePos, setFramePos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    if (!activeFrameImage) return;
+
+    const updatePos = () => {
+      if (!avatarRef.current) return;
+      const rect = avatarRef.current.getBoundingClientRect();
+      setFramePos({
+        top: rect.top + rect.height / 2,
+        left: rect.left + rect.width / 2,
+      });
+    };
+
+    updatePos();
+
+    // Update on scroll and resize
+    window.addEventListener("scroll", updatePos, { passive: true, capture: true });
+    window.addEventListener("resize", updatePos, { passive: true });
+
+    const ro = new ResizeObserver(updatePos);
+    if (avatarRef.current) ro.observe(avatarRef.current);
+
+    return () => {
+      window.removeEventListener("scroll", updatePos, { capture: true });
+      window.removeEventListener("resize", updatePos);
+      ro.disconnect();
+    };
+  }, [activeFrameImage]);
 
   return (
-    // Outer wrapper sized to containerSize — frame is positioned relative to this
-    <div
-      className={`relative shrink-0 ${className}`}
-      style={{ width: outerPx, height: outerPx, overflow: "visible" }}
-    >
-      {/* Avatar image — centered inside the outer wrapper */}
+    <>
+      {/* Avatar wrapper — reference point for frame positioning */}
       <div
-        className="overflow-hidden bg-secondary flex items-center justify-center"
-        style={{
-          borderRadius: "50%",
-          width: px,
-          height: px,
-          position: "absolute",
-          top: offset,
-          left: offset,
-        }}
+        ref={avatarRef}
+        className={`relative shrink-0 ${className}`}
+        style={{ width: outerPx, height: outerPx, overflow: "visible" }}
       >
-        {avatar ? (
-          <img
-            src={avatar || undefined}
-            alt={name ?? "avatar"}
-            className="w-full h-full object-cover"
-            style={{ borderRadius: "50%" }}
-            draggable={false}
-          />
-        ) : (
-          <span
-            className="font-bold text-muted-foreground select-none"
-            style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
-          >
-            {initials}
-          </span>
-        )}
+        {/* Avatar image */}
+        <div
+          className="overflow-hidden bg-secondary flex items-center justify-center"
+          style={{
+            borderRadius: "50%",
+            width: px,
+            height: px,
+            position: "absolute",
+            top: Math.round((outerPx - px) / 2),
+            left: Math.round((outerPx - px) / 2),
+          }}
+        >
+          {avatar ? (
+            <img
+              src={avatar || undefined}
+              alt={name ?? "avatar"}
+              className="w-full h-full object-cover"
+              style={{ borderRadius: "50%" }}
+              draggable={false}
+            />
+          ) : (
+            <span
+              className="font-bold text-muted-foreground select-none"
+              style={{ fontSize: Math.max(10, Math.round(px * 0.38)) }}
+            >
+              {initials}
+            </span>
+          )}
+        </div>
       </div>
 
-      {/* Cosmetic frame overlay — centered on the full outer container */}
-      {activeFrameImage && (
-        <img
-          src={activeFrameImage}
-          alt="frame"
-          className="absolute pointer-events-none"
-          style={{
-            width: framePx,
-            height: framePx,
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            objectFit: "contain",
-            zIndex: 20,
-          }}
-          draggable={false}
-        />
-      )}
-    </div>
+      {/* Cosmetic frame — rendered via Portal into document.body, position fixed */}
+      {activeFrameImage && framePos &&
+        createPortal(
+          <img
+            src={activeFrameImage}
+            alt="frame"
+            style={{
+              position: "fixed",
+              width: framePx,
+              height: framePx,
+              top: framePos.top,
+              left: framePos.left,
+              transform: "translate(-50%, -50%)",
+              objectFit: "contain",
+              pointerEvents: "none",
+              zIndex: 99999,
+            }}
+            draggable={false}
+          />,
+          document.body
+        )
+      }
+    </>
   );
 }
