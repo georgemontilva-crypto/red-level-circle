@@ -167,43 +167,25 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
-    // Increase chunk size warning limit (we split manually below)
     chunkSizeWarningLimit: 600,
     rollupOptions: {
       output: {
-        // Manual chunk splitting — keeps vendor libs separate from app code
+        // Safe manual chunk splitting:
+        // React + all libs that use React.createContext must be in the SAME chunk
+        // to avoid "Cannot read properties of undefined (reading 'createContext')" errors.
+        // Only split truly independent heavy libs (charts, dnd, icons).
         manualChunks(id) {
-          // React core
-          if (id.includes("node_modules/react") || id.includes("node_modules/react-dom") || id.includes("node_modules/scheduler")) {
-            return "vendor-react";
-          }
-          // tRPC + react-query
-          if (id.includes("@trpc") || id.includes("@tanstack/react-query") || id.includes("superjson")) {
-            return "vendor-trpc";
-          }
-          // Radix UI components
-          if (id.includes("@radix-ui")) {
-            return "vendor-radix";
-          }
-          // Framer Motion (heavy animation lib)
+          // Framer Motion (heavy animation lib, no React.createContext at module level)
           if (id.includes("framer-motion")) {
             return "vendor-framer";
           }
-          // Recharts (charting)
-          if (id.includes("recharts") || id.includes("d3-") || id.includes("victory")) {
+          // Recharts + D3 (charting, lazy-loaded pages only)
+          if (id.includes("recharts") || id.includes("/d3-") || id.includes("/d3/")) {
             return "vendor-charts";
           }
-          // DnD Kit
+          // DnD Kit (drag and drop, lazy-loaded pages only)
           if (id.includes("@dnd-kit")) {
             return "vendor-dnd";
-          }
-          // Lucide icons
-          if (id.includes("lucide-react")) {
-            return "vendor-icons";
-          }
-          // Other node_modules
-          if (id.includes("node_modules")) {
-            return "vendor-misc";
           }
         },
       },
