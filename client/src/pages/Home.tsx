@@ -922,8 +922,8 @@ export default function Home() {
                 Ver todas <ArrowRight size={13} />
               </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {news!.slice(0, 6).map(n => <NewsCard key={n.id} n={n} />)}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {news!.slice(0, 8).map(n => <NewsCard key={n.id} n={n} />)}
             </div>
           </section>
         )}
