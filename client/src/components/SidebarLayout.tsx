@@ -235,7 +235,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   );
 
   return (
-    <div className="min-h-screen flex overflow-x-hidden" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
+    <div className="min-h-screen flex overflow-x-clip" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
       {/* Desktop sidebar */}
       <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible" style={{ background: "transparent" }}>
         <SidebarContent />
@@ -298,7 +298,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
            on mobile the inline style applies safe-area + 56px.
            We achieve this by NOT using inline style on desktop. */}
       <main
-        className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0"
+        className="flex-1 md:ml-60 min-h-screen overflow-x-clip min-w-0"
         style={{
           /* Mobile: safe-area-inset-top + 56px header height */
           paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
