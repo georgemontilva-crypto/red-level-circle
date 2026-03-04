@@ -208,9 +208,16 @@ export const tournamentMatches = mysqlTable("tournament_matches", {
   winnerId: int("winnerId"),
   team1Score: int("team1Score"),
   team2Score: int("team2Score"),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed"]).default("pending").notNull(),
+  // Ciclo de vida del match:
+  //   pending       → creado, sin programar
+  //   betting_open  → apuestas abiertas (scheduledAt - 60 min)
+  //   locked        → apuestas cerradas (scheduledAt - 5 min)
+  //   in_progress   → match en curso
+  //   completed     → match finalizado
+  status: mysqlEnum("status", ["pending", "betting_open", "locked", "in_progress", "completed"]).default("pending").notNull(),
   scheduledAt: timestamp("scheduledAt"),
-  betsCloseAt: timestamp("betsCloseAt"),
+  betsOpenAt: timestamp("betsOpenAt"),   // scheduledAt - 60 min (calculado al programar)
+  betsCloseAt: timestamp("betsCloseAt"), // scheduledAt - 5 min
   completedAt: timestamp("completedAt"),
   notes: text("notes"),
   bracketPosition: json("bracketPosition"),
@@ -676,3 +683,39 @@ export type SeriesMap = typeof seriesMaps.$inferSelect;
 export type InsertSeriesMap = typeof seriesMaps.$inferInsert;
 
 
+
+// ─── Tournament Rankings ──────────────────────────────────────────────────────
+// Tabla de clasificación por torneo. Se actualiza automáticamente al finalizar
+// cada serie. Permite ordenar equipos por puntos y usar el diferencial de mapas
+// como criterio de desempate.
+//
+// Criterios de ordenación (en orden de prioridad):
+//   1. points (desc)
+//   2. seriesWon (desc)
+//   3. mapDiff = mapsWon - mapsLost (desc)
+//   4. mapsWon (desc)
+export const tournamentRankings = mysqlTable("tournament_rankings", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  teamId: int("teamId").notNull(),
+  // Puntos acumulados en el torneo
+  //   Victoria de serie  → +3 pts
+  //   Empate (BO2 1-1)   → +1 pt
+  //   Derrota de serie   → +0 pts
+  points: int("points").default(0).notNull(),
+  // Contadores de series
+  seriesPlayed: int("seriesPlayed").default(0).notNull(),
+  seriesWon: int("seriesWon").default(0).notNull(),
+  seriesDrawn: int("seriesDrawn").default(0).notNull(),
+  seriesLost: int("seriesLost").default(0).notNull(),
+  // Contadores de mapas individuales (para desempate)
+  mapsWon: int("mapsWon").default(0).notNull(),
+  mapsLost: int("mapsLost").default(0).notNull(),
+  // mapDiff = mapsWon - mapsLost (columna calculada, se actualiza en cada serie)
+  mapDiff: int("mapDiff").default(0).notNull(),
+  // Posición actual en el ranking del torneo (recalculada tras cada serie)
+  position: int("position").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TournamentRanking = typeof tournamentRankings.$inferSelect;
+export type InsertTournamentRanking = typeof tournamentRankings.$inferInsert;

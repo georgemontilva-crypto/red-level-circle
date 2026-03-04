@@ -185,6 +185,11 @@ import {
   resolveSeriesBets,
   refundSeriesBets,
 } from "./db.series";
+import {
+  submitMapResult as orchestratorSubmitMapResult,
+  scheduleMatchBettingWindow,
+  syncTournamentRankings,
+} from "./orchestrator";
 
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -3103,6 +3108,110 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         }
         await resolveSeriesBets(input.matchId, input.tournamentId, input.winnerTeamId);
         return { ok: true };
+      }),
+
+    /**
+     * submitMapResult — Punto de entrada principal del orquestador.
+     *
+     * Registra el resultado de un mapa individual dentro de una serie BOx.
+     * Valida la lógica BOx, detecta si la serie terminó y dispara automáticamente:
+     *   - Cancelación de mapas restantes
+     *   - Actualización del match en el bracket
+     *   - Pago de apuestas (pool betting, comisión 5%)
+     *   - Sincronización de rankings del torneo
+     *   - Avance del bracket al siguiente round
+     */
+    submitMapResult: premiumProcedure
+      .input(z.object({
+        seriesId: z.number(),
+        mapNumber: z.number().int().min(1),
+        scoreTeam1: z.number().int().min(0),
+        scoreTeam2: z.number().int().min(0),
+        team1Id: z.number(),
+        team2Id: z.number(),
+        tournamentId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verificar que el usuario es organizador del torneo o admin
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND", message: "Torneo no encontrado" });
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el organizador puede registrar resultados" });
+        }
+
+        const result = await orchestratorSubmitMapResult({
+          seriesId: input.seriesId,
+          mapNumber: input.mapNumber,
+          scoreTeam1: input.scoreTeam1,
+          scoreTeam2: input.scoreTeam2,
+          team1Id: input.team1Id,
+          team2Id: input.team2Id,
+          tournamentId: input.tournamentId,
+        });
+
+        // Emitir eventos en tiempo real para el bracket en vivo
+        eventBus.emit("series.map_reported", {
+          seriesId: input.seriesId,
+          mapNumber: input.mapNumber,
+          tournamentId: input.tournamentId,
+          ...result,
+        });
+
+        if (result.seriesComplete) {
+          eventBus.emit("series.completed", {
+            seriesId: input.seriesId,
+            tournamentId: input.tournamentId,
+            winnerId: result.seriesWinnerId,
+            isDraw: result.isDraw,
+            finalScore: result.seriesScore,
+          });
+        }
+
+        return result;
+      }),
+
+    /**
+     * scheduleMatch — Programa un match y calcula automáticamente las ventanas de apuestas.
+     *
+     * Regla 60/5:
+     *   betsOpenAt  = scheduledAt - 60 min
+     *   betsCloseAt = scheduledAt - 5 min
+     */
+    scheduleMatch: premiumProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(),
+        scheduledAt: z.string(), // ISO date string
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const scheduledAt = new Date(input.scheduledAt);
+        await scheduleMatchBettingWindow(input.matchId, scheduledAt);
+        return { ok: true, scheduledAt: scheduledAt.toISOString() };
+      }),
+
+    /** Obtiene el ranking del torneo ordenado por puntos + desempate por mapas. */
+    rankings: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const { tournamentRankings } = await import("../drizzle/schema");
+        const { desc } = await import("drizzle-orm");
+        return db
+          .select()
+          .from(tournamentRankings)
+          .where(eq(tournamentRankings.tournamentId, input.tournamentId))
+          .orderBy(
+            desc(tournamentRankings.points),
+            desc(tournamentRankings.seriesWon),
+            desc(tournamentRankings.mapDiff),
+            desc(tournamentRankings.mapsWon)
+          );
       }),
   }),
 });
