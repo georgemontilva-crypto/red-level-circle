@@ -255,7 +255,8 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </aside>
 
       {/* Mobile top bar */}
-      <div className="fixed top-0 left-0 right-0 h-14 backdrop-blur-md border-b z-30 flex items-center justify-between px-4 md:hidden" style={{ background: "rgba(14,14,16,0.92)", borderColor: "var(--border-main)" }}>
+      <div className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-30 flex flex-col md:hidden" style={{ background: "rgba(14,14,16,0.92)", borderColor: "var(--border-main)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
+        <div className="h-14 flex items-center justify-between px-4">
         <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain" />
         <div className="flex items-center gap-1">
           {isAuthenticated && (
@@ -278,11 +279,11 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
+        </div>
       </div>
-
       {/* Main content */}
       {/* Mobile: pt-14 (56px) = height of mobile top bar. Desktop: pt-[100px] = height of TopNav */}
-      <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0 pt-14 md:pt-[100px]">
+      <main className="flex-1 md:ml-60 min-h-screen overflow-x-hidden min-w-0 md:pt-[100px]" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)" }}>
         <TopNav />
         <PageContainer className="pt-0 pb-2 md:py-2">
           {children}
