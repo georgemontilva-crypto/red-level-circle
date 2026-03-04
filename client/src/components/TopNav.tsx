@@ -277,9 +277,10 @@ export function TopNav() {
               <div
                 style={{
                   borderRadius: "50%",
-                  border: `2px solid ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}`,
+                  boxShadow: `0 0 0 2px ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}`,
                   overflow: "visible",
                   display: "inline-flex",
+                  position: "relative",
                 }}
               >
                 <UserAvatar
@@ -287,7 +288,7 @@ export function TopNav() {
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
                   size={40}
-                  containerSize={44}
+                  containerSize={40}
                 />
               </div>
               <span

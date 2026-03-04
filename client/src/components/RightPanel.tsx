@@ -396,9 +396,10 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
               <div
                 style={{
                   borderRadius: "50%",
-                  border: `2px solid ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}`,
+                  boxShadow: `0 0 0 2px ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}`,
                   overflow: "visible",
                   display: "inline-flex",
+                  position: "relative",
                 }}
               >
                 <UserAvatar
@@ -406,7 +407,7 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
                   size={64}
-                  containerSize={68}
+                  containerSize={64}
                 />
               </div>
               {/* Online dot */}

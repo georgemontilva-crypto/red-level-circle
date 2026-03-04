@@ -39,10 +39,10 @@ interface UserAvatarProps {
  *   out of 192px total → ratio = 0.8014
  * - To make the outer ring edge align with containerSize:
  *   framePx = containerSize / 0.8014 ≈ containerSize × 1.248
- * - The inner transparent hole sits at avg radius 111.1px → ratio 0.5788
- *   so the hole diameter = framePx × 0.5788 × 2 / framePx ... handled by scale
- * - The outer div keeps the avatar image size; the frame overflows via
- *   `overflow: visible` so the ring sits on the container circumference.
+ *
+ * The frame img is positioned absolutely relative to the OUTER wrapper,
+ * which is sized to containerSize (not just the image). This ensures the
+ * frame is centered on the full container including its border.
  */
 export function UserAvatar({
   avatar,
@@ -55,22 +55,33 @@ export function UserAvatar({
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
 
-  // Base diameter: use containerSize if provided (full outer circle incl. border)
-  const baseDiameter = containerSize ?? px;
+  // If containerSize provided, use it as the reference for frame positioning
+  const outerPx = containerSize ?? px;
 
   // The outer ring edge of the frame PNG sits at 80.14% of the total PNG radius.
-  // To make the outer ring edge = baseDiameter, scale = baseDiameter / 0.8014
-  const framePx = Math.round(baseDiameter / 0.8014);
+  // To make the outer ring edge = outerPx, scale = outerPx / 0.8014
+  const framePx = Math.round(outerPx / 0.8014);
+
+  // Offset to center the avatar image within the outer container
+  const offset = Math.round((outerPx - px) / 2);
 
   return (
+    // Outer wrapper sized to containerSize — frame is positioned relative to this
     <div
       className={`relative shrink-0 ${className}`}
-      style={{ width: px, height: px, overflow: "visible" }}
+      style={{ width: outerPx, height: outerPx, overflow: "visible" }}
     >
-      {/* Base avatar — always circular */}
+      {/* Avatar image — centered inside the outer wrapper */}
       <div
-        className="w-full h-full overflow-hidden bg-secondary flex items-center justify-center"
-        style={{ borderRadius: "50%", width: px, height: px }}
+        className="overflow-hidden bg-secondary flex items-center justify-center"
+        style={{
+          borderRadius: "50%",
+          width: px,
+          height: px,
+          position: "absolute",
+          top: offset,
+          left: offset,
+        }}
       >
         {avatar ? (
           <img
@@ -90,7 +101,7 @@ export function UserAvatar({
         )}
       </div>
 
-      {/* Cosmetic frame overlay — outer ring edge aligned to containerSize */}
+      {/* Cosmetic frame overlay — centered on the full outer container */}
       {activeFrameImage && (
         <img
           src={activeFrameImage}
@@ -103,7 +114,7 @@ export function UserAvatar({
             left: "50%",
             transform: "translate(-50%, -50%)",
             objectFit: "contain",
-            zIndex: 10,
+            zIndex: 20,
           }}
           draggable={false}
         />

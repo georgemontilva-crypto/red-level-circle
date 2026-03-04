@@ -101,10 +101,10 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
           <div
             style={{
               borderRadius: "50%",
-              border: "4px solid black",
-              boxShadow: "0 4px 24px rgba(0,0,0,0.5)",
+              boxShadow: "0 0 0 4px black, 0 4px 24px rgba(0,0,0,0.5)",
               overflow: "visible",
               display: "inline-flex",
+              position: "relative",
             }}
           >
             <UserAvatar
@@ -112,7 +112,7 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
               name={name}
               activeFrameImage={(c as any).activeFrameImage}
               size={128}
-              containerSize={136}
+              containerSize={128}
             />
           </div>
         </div>

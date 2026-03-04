@@ -147,7 +147,7 @@ export default function UserProfile() {
   const followLoading = followMutation.isPending || unfollowMutation.isPending;
 
   return (
-    <div className="w-full overflow-x-hidden">
+    <div className="w-full" style={{ overflowX: "clip" }}>
       {/* ── Banner + Info Card (Discord-style) ── */}
       {/* Single padded container so banner and card body share the same width */}
       <div
@@ -218,22 +218,23 @@ export default function UserProfile() {
           <div className="max-w-2xl">
           {/* Avatar row — pulled up to overlap the banner */}
           <div className="flex items-end justify-between mb-3" style={{ marginTop: "-52px" }}>
-            <div className="relative inline-block" style={{ zIndex: 10 }}>
+            <div className="relative inline-block" style={{ zIndex: 30, overflow: "visible" }}>
               {/* Aura glow effect (separate from frame) */}
               {equippedAura && (
                 <div
                   className="absolute inset-0 rounded-full blur-2xl opacity-60 scale-150 pointer-events-none"
-                  style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "var(--accent-red)"} 0%, transparent 70%)` }}
+                  style={{ background: `radial-gradient(circle, ${equippedAura.frameImage ?? "var(--accent-red)"} 0%, transparent 70%)`, zIndex: 0 }}
                 />
               )}
+              {/* Avatar with border rendered as box-shadow so overflow:visible works */}
               <div
-                className="relative z-0"
                 style={{
                   borderRadius: "50%",
-                  border: "4px solid oklch(0.10 0.005 0)",
-                  boxShadow: "0 0 0 2px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
+                  boxShadow: "0 0 0 4px oklch(0.10 0.005 0), 0 0 0 6px oklch(0.55 0.22 25 / 0.6), 0 4px 24px rgba(0,0,0,0.5)",
                   overflow: "visible",
                   display: "inline-flex",
+                  position: "relative",
+                  zIndex: 1,
                 }}
               >
                 <UserAvatar
@@ -241,7 +242,7 @@ export default function UserProfile() {
                   name={profile.name}
                   activeFrameImage={equippedFrame?.frameImage ?? null}
                   size={96}
-                  containerSize={104}
+                  containerSize={96}
                 />
               </div>
             </div>
