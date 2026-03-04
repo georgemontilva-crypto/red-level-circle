@@ -9,7 +9,7 @@ import {
   Calendar, Gamepad2, Crown, UserPlus, ArrowRight,
   Swords, Target, TrendingUp, Globe, Medal, Coins, Flame,
   Shield, Clock, CheckCircle2, BarChart3, RefreshCw,
-  GitBranch, User2, Hash, Handshake, Store, Facebook
+  GitBranch, User2, Hash, Handshake, Store, Facebook, Eye
 } from "lucide-react";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -512,25 +512,44 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
   );
 }
 
-// ─── News Card ────────────────────────────────────────────────────────────────
+// ─── News Card (horizontal, estilo sección de noticias) ──────────────────────
 function NewsCard({ n }: { n: any }) {
+  const imageUrl = n.imageUrl ?? n.coverImage;
   return (
     <Link href={`/news/${n.slug ?? n.id}`}>
-      <div className="shrink-0 w-64 rounded-xl overflow-hidden bg-card border border-border/50 hover:border-border transition-all cursor-pointer group" style={{ scrollSnapAlign: "start" }}>
-        <div className="h-36 bg-muted overflow-hidden">
-          {n.imageUrl ? (
-            <img src={n.imageUrl} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+      <div className="group flex gap-3 bg-card/80 border border-border hover:border-red-500/30 rounded-xl p-4 transition-all cursor-pointer h-full">
+        {/* Imagen */}
+        <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-zinc-800">
+          {imageUrl ? (
+            <img src={imageUrl} alt={n.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-              <Newspaper size={28} className="text-muted-foreground" />
+            <div className="w-full h-full flex items-center justify-center">
+              <Newspaper size={22} className="text-muted-foreground" />
             </div>
           )}
         </div>
-        <div className="p-3">
-          {n.category && <span className="text-xs font-mono text-red-400 uppercase tracking-wider">{n.category}</span>}
-          <p className="text-foreground font-semibold text-sm mt-1 line-clamp-2 leading-snug">{n.title}</p>
-          <p className="text-muted-foreground text-xs mt-1">{new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}</p>
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          {n.category && (
+            <span className="text-xs font-mono text-red-400 uppercase tracking-wider">{n.category}</span>
+          )}
+          {n.isFeatured && (
+            <span className="ml-1.5 text-xs font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 px-1.5 py-0.5 rounded uppercase">Destacado</span>
+          )}
+          <h3 className="font-bold text-sm text-white group-hover:text-red-400 transition-colors line-clamp-2 mt-1 leading-snug">{n.title}</h3>
+          <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1">
+              <Clock size={11} />
+              {new Date(n.publishedAt ?? n.createdAt).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+            </span>
+            {n.viewCount != null && (
+              <span className="flex items-center gap-1">
+                <Eye size={11} />{n.viewCount}
+              </span>
+            )}
+          </div>
         </div>
+        <ChevronRight size={16} className="text-muted-foreground group-hover:text-red-400 transition-colors flex-shrink-0 self-center" />
       </div>
     </Link>
   );
@@ -894,13 +913,19 @@ export default function Home() {
 
         {/* 8. Noticias */}
         {(news?.length ?? 0) > 0 && (
-          <HScrollSection
-            title="Últimas Noticias"
-            href="/news"
-            icon={<Newspaper size={18} className="text-muted-foreground" />}
-          >
-            {news!.map(n => <NewsCard key={n.id} n={n} />)}
-          </HScrollSection>
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
+                <Newspaper size={18} /> Últimas Noticias
+              </h2>
+              <Link href="/news" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver todas <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {news!.slice(0, 6).map(n => <NewsCard key={n.id} n={n} />)}
+            </div>
+          </section>
         )}
 
         {/* 9. Equipos + Personas (sección combinada con scroll interno y auto-refresh) */}
