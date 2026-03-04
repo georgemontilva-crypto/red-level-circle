@@ -285,30 +285,28 @@ export function AlliesPage() {
       </SectionBanner>
 
       <div className="py-2 sm:py-6 space-y-6">
-        {/* Filters bar */}
-        <div className="flex flex-col gap-3">
-          {/* Fila 1: Search + botón CTA en la misma fila */}
-          <div className="flex gap-2 items-stretch">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
-              <input
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                placeholder="Buscar aliado..."
-                className="w-full h-full bg-zinc-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
-              />
-            </div>
-            {/* CTA — outline rojo, misma altura que el search */}
-            <button
-              onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500/10 text-sm font-semibold transition-colors flex-shrink-0"
-            >
-              <Plus className="w-4 h-4" />
-              Ser Aliado
-            </button>
+        {/* Search + CTA */}
+        <div className="flex gap-2 items-stretch">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar aliado..."
+              className="w-full h-full bg-zinc-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
+            />
           </div>
-          {/* Fila 2: Filtros de país/ciudad */}
-          <div className="flex flex-wrap gap-2">
+          {/* CTA — outline rojo, misma altura que el search */}
+          <button
+            onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500/10 text-sm font-semibold transition-colors flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+            Ser Aliado
+          </button>
+        </div>
+        {/* Filtros de país/ciudad — centrados entre search y título */}
+        <div className="flex flex-wrap gap-2">
             {/* Country filter */}
             <Select value={country || "__all__"} onValueChange={v => { setCountry(v === "__all__" ? "" : v); setCity(""); }}>
               <SelectTrigger className="w-44">
@@ -347,7 +345,6 @@ export function AlliesPage() {
                 Limpiar
               </button>
             )}
-          </div>
         </div>
 
         {/* Loading skeleton */}
