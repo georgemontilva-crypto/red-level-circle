@@ -286,19 +286,29 @@ export function AlliesPage() {
 
       <div className="py-2 sm:py-6 space-y-6">
         {/* Filters bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div className="flex flex-wrap gap-2 flex-1">
-            {/* Search */}
-            <div className="relative flex-1 min-w-[180px] max-w-xs">
+        <div className="flex flex-col gap-3">
+          {/* Fila 1: Search + botón CTA en la misma fila */}
+          <div className="flex gap-2 items-stretch">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <input
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 placeholder="Buscar aliado..."
-                className="w-full bg-zinc-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
+                className="w-full h-full bg-zinc-900/80 border border-white/10 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors"
               />
             </div>
-
+            {/* CTA — outline rojo, misma altura que el search */}
+            <button
+              onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500/10 text-sm font-semibold transition-colors flex-shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              Ser Aliado
+            </button>
+          </div>
+          {/* Fila 2: Filtros de país/ciudad */}
+          <div className="flex flex-wrap gap-2">
             {/* Country filter */}
             <Select value={country || "__all__"} onValueChange={v => { setCountry(v === "__all__" ? "" : v); setCity(""); }}>
               <SelectTrigger className="w-44">
@@ -338,15 +348,6 @@ export function AlliesPage() {
               </button>
             )}
           </div>
-
-          {/* CTA */}
-          <Button
-            onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
-            className="hidden sm:flex bg-red-600 hover:bg-red-700 text-white font-semibold items-center gap-2 flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-            Ser Aliado
-          </Button>
         </div>
 
         {/* Loading skeleton */}
