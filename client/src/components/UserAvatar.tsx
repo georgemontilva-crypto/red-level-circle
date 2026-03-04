@@ -34,9 +34,9 @@ interface UserAvatarProps {
  * UserAvatar — Single source of truth for all profile pictures.
  *
  * The cosmetic frame is rendered via a React Portal directly into document.body
- * with `position: fixed`, so it is never clipped by any parent container,
- * overflow rule, or stacking context. It tracks the avatar's position using
- * a ResizeObserver + scroll listener.
+ * with `position: absolute` using document-absolute coordinates
+ * (getBoundingClientRect + scrollX/scrollY). This means the frame moves
+ * naturally with the page scroll — no lag, no jump.
  */
 export function UserAvatar({
   avatar,
@@ -49,7 +49,8 @@ export function UserAvatar({
   const px = typeof size === "number" ? size : AVATAR_SIZES[size];
   const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
   const outerPx = containerSize ?? px;
-  const framePx = Math.round(outerPx * 1.5017); // inner hole = avatar diameter
+  // Multiplier 1.5017x: inner hole of the PNG = avatar diameter
+  const framePx = Math.round(outerPx * 1.5017);
 
   const avatarRef = useRef<HTMLDivElement>(null);
   const [framePos, setFramePos] = useState<{ top: number; left: number } | null>(null);
@@ -60,23 +61,21 @@ export function UserAvatar({
     const updatePos = () => {
       if (!avatarRef.current) return;
       const rect = avatarRef.current.getBoundingClientRect();
+      // Convert viewport-relative coords to document-absolute coords
       setFramePos({
-        top: rect.top + rect.height / 2,
-        left: rect.left + rect.width / 2,
+        top: rect.top + rect.height / 2 + window.scrollY,
+        left: rect.left + rect.width / 2 + window.scrollX,
       });
     };
 
     updatePos();
 
-    // Update on scroll and resize
-    window.addEventListener("scroll", updatePos, { passive: true, capture: true });
     window.addEventListener("resize", updatePos, { passive: true });
 
     const ro = new ResizeObserver(updatePos);
     if (avatarRef.current) ro.observe(avatarRef.current);
 
     return () => {
-      window.removeEventListener("scroll", updatePos, { capture: true });
       window.removeEventListener("resize", updatePos);
       ro.disconnect();
     };
@@ -121,14 +120,15 @@ export function UserAvatar({
         </div>
       </div>
 
-      {/* Cosmetic frame — rendered via Portal into document.body, position fixed */}
+      {/* Cosmetic frame — rendered via Portal into document.body, position absolute
+          Uses document-absolute coordinates so it scrolls naturally with the page */}
       {activeFrameImage && framePos &&
         createPortal(
           <img
             src={activeFrameImage}
             alt="frame"
             style={{
-              position: "fixed",
+              position: "absolute",
               width: framePx,
               height: framePx,
               top: framePos.top,
