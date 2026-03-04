@@ -1,16 +1,15 @@
 /**
  * Automatic News Generator for Red Level Circle
  *
- * Uses GPT (via invokeLLM) to generate news articles automatically
+ * Uses OpenAI API directly (OPENAI_API_KEY) to generate news articles
  * based on platform events. Images are taken from existing entity assets.
  *
  * Triggered by:
  *  - tournament.status_changed  → "en_curso" or "finalizado"
- *  - tournament.match_finished  → match result (sampled)
+ *  - tournament.match_finished  → match result (sampled 1/4)
  *  - ally approved              → called directly from allies router
  */
 
-import { invokeLLM } from "./_core/llm";
 import { createNews, getTournamentById, getTeamById } from "./db";
 import { eventBus } from "./eventBus";
 import { getDb } from "./db";
@@ -48,45 +47,59 @@ async function newsAlreadyExists(referenceKey: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-// ─── Core GPT call ────────────────────────────────────────────────────────────
+// ─── Core GPT call via OpenAI API ────────────────────────────────────────────
 async function generateNewsContent(prompt: string): Promise<{
   title: string;
   excerpt: string;
   content: string;
 } | null> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    console.error("[NewsGenerator] OPENAI_API_KEY not set");
+    return null;
+  }
+
   try {
-    const result = await invokeLLM({
-      messages: [
-        {
-          role: "system",
-          content: `Eres el redactor oficial de Red Level Circle (RLC), una plataforma competitiva de esports en Latinoamérica.
-Escribe noticias breves, emocionantes y en español. Usa un tono profesional pero apasionado, propio del mundo competitivo.
-Responde ÚNICAMENTE con un JSON válido con las claves: title (máx 80 chars), excerpt (máx 160 chars), content (HTML simple con <p> y <strong>, máx 300 palabras).
-No incluyas markdown, bloques de código ni texto fuera del JSON.`,
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      outputSchema: {
-        name: "news_article",
-        schema: {
-          type: "object" as const,
-          properties: {
-            title: { type: "string" as const },
-            excerpt: { type: "string" as const },
-            content: { type: "string" as const },
-          },
-          required: ["title", "excerpt", "content"],
-          additionalProperties: false,
-        },
-        strict: true,
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
       },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content: `Eres el redactor oficial de Red Level Circle (RLC), una plataforma competitiva de esports en Latinoamérica.
+Escribe noticias breves, emocionantes y en español. Usa un tono profesional pero apasionado, propio del mundo competitivo.
+Responde ÚNICAMENTE con un JSON con las claves:
+- title: string (máx 80 caracteres)
+- excerpt: string (máx 160 caracteres, resumen de la noticia)
+- content: string (HTML simple usando solo <p> y <strong>, entre 100 y 300 palabras)`,
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        max_tokens: 1000,
+        temperature: 0.7,
+      }),
     });
 
-    const raw = result.choices?.[0]?.message?.content ?? "";
-    const parsed = typeof raw === "string" ? JSON.parse(raw) : raw;
+    if (!response.ok) {
+      const err = await response.text();
+      console.error("[NewsGenerator] OpenAI error:", response.status, err);
+      return null;
+    }
+
+    const data = await response.json() as {
+      choices: Array<{ message: { content: string } }>;
+    };
+    const raw = data.choices?.[0]?.message?.content ?? "";
+    const parsed = JSON.parse(raw);
     return parsed as { title: string; excerpt: string; content: string };
   } catch (err) {
     console.error("[NewsGenerator] GPT call failed:", err);
@@ -123,14 +136,12 @@ async function handleTournamentStatusChanged(payload: {
   const generated = await generateNewsContent(prompt);
   if (!generated) return;
 
-  const coverImage = tournament.banner ?? null;
-
   await createNews({
     title: generated.title,
     slug: toSlug(generated.title),
     excerpt: generated.excerpt,
     content: generated.content,
-    coverImage: coverImage ?? undefined,
+    coverImage: tournament.banner ?? undefined,
     category: "torneos",
     authorId: SYSTEM_AUTHOR_ID,
     isPublished: true,
@@ -139,7 +150,7 @@ async function handleTournamentStatusChanged(payload: {
     publishedAt: new Date(),
   });
 
-  console.log(`[NewsGenerator] Created news for tournament ${tournamentId} (${newStatus})`);
+  console.log(`[NewsGenerator] ✓ Created news for tournament ${tournamentId} (${newStatus})`);
 }
 
 async function handleMatchFinished(payload: {
@@ -171,14 +182,12 @@ async function handleMatchFinished(payload: {
   const generated = await generateNewsContent(prompt);
   if (!generated) return;
 
-  const coverImage = winner.banner ?? winner.logo ?? tournament.banner ?? null;
-
   await createNews({
     title: generated.title,
     slug: toSlug(generated.title),
     excerpt: generated.excerpt,
     content: generated.content,
-    coverImage: coverImage ?? undefined,
+    coverImage: winner.banner ?? winner.logo ?? tournament.banner ?? undefined,
     category: "torneos",
     authorId: SYSTEM_AUTHOR_ID,
     isPublished: true,
@@ -187,7 +196,7 @@ async function handleMatchFinished(payload: {
     publishedAt: new Date(),
   });
 
-  console.log(`[NewsGenerator] Created news for match ${matchId}`);
+  console.log(`[NewsGenerator] ✓ Created news for match ${matchId}`);
 }
 
 // ─── Exported helper for ally approval ───────────────────────────────────────
@@ -196,27 +205,36 @@ export async function handleAllyApproved(allyId: number): Promise<void> {
   if (await newsAlreadyExists(refKey)) return;
 
   const db = await getDb();
-  if (!db) return;
+  if (!db) {
+    console.error("[NewsGenerator] DB not available for ally news");
+    return;
+  }
 
   const [ally] = await db.select().from(allies).where(eq(allies.id, allyId)).limit(1);
-  if (!ally) return;
+  if (!ally) {
+    console.error("[NewsGenerator] Ally not found:", allyId);
+    return;
+  }
 
   const location = [ally.city, ally.country].filter(Boolean).join(", ");
-  const prompt = `La marca/empresa "${ally.name}"${location ? ` de ${location}` : ""} acaba de unirse como aliado oficial de Red Level Circle.
-  ${ally.description ? `Descripción: ${ally.description}` : ""}
-  Genera una noticia de bienvenida para la comunidad RLC.`;
+  const prompt = `La marca/empresa "${ally.name}"${location ? ` de ${location}` : ""} acaba de unirse como aliado oficial de Red Level Circle (RLC), una plataforma competitiva de esports en Latinoamérica.
+${ally.description ? `Descripción del aliado: ${ally.description}` : ""}
+Genera una noticia de bienvenida emocionante para la comunidad RLC.`;
+
+  console.log(`[NewsGenerator] Generating news for ally ${allyId} (${ally.name})...`);
 
   const generated = await generateNewsContent(prompt);
-  if (!generated) return;
-
-  const coverImage = ally.coverImage ?? ally.logo ?? null;
+  if (!generated) {
+    console.error("[NewsGenerator] Failed to generate content for ally", allyId);
+    return;
+  }
 
   await createNews({
     title: generated.title,
     slug: toSlug(generated.title),
     excerpt: generated.excerpt,
     content: generated.content,
-    coverImage: coverImage ?? undefined,
+    coverImage: ally.coverImage ?? ally.logo ?? undefined,
     category: "plataforma",
     authorId: SYSTEM_AUTHOR_ID,
     isPublished: true,
@@ -225,7 +243,7 @@ export async function handleAllyApproved(allyId: number): Promise<void> {
     publishedAt: new Date(),
   });
 
-  console.log(`[NewsGenerator] Created news for ally ${allyId}`);
+  console.log(`[NewsGenerator] ✓ Created news for ally ${allyId} (${ally.name})`);
 }
 
 // ─── Register all event listeners ────────────────────────────────────────────
