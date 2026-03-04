@@ -957,52 +957,57 @@ export default function Home() {
 
         {/* 10. Aliados Destacados */}
         {(featuredAllies?.length ?? 0) > 0 && (
-          <HScrollSection
-            title="Aliados Destacados"
-            href="/allies"
-            icon={<Handshake className="w-5 h-5" />}
-            viewAllLabel="Ver directorio"
-          >
-            {featuredAllies!.map((ally: any) => {
-              const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
-              return (
-                <Link key={ally.id} href="/allies">
-                  <div className="shrink-0 w-64 bg-black rounded-3xl shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
-                    {/* Banner */}
-                    <div className="relative h-48 w-full overflow-hidden rounded-3xl">
-                      {ally.coverImage ? (
-                        <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <DefaultBannerBg />
-                      )}
-                      {ally.isFeatured && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
-                          <Star className="w-2.5 h-2.5 fill-black" />
-                          Destacado
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
+                <Handshake className="w-5 h-5" /> Aliados Destacados
+              </h2>
+              <Link href="/allies" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+                Ver directorio <ArrowRight size={13} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {featuredAllies!.map((ally: any) => {
+                const subtitle = [ally.city, ally.country].filter(Boolean).join(", ");
+                return (
+                  <Link key={ally.id} href="/allies">
+                    <div className="w-full bg-black rounded-3xl shadow-xl cursor-pointer transition-all duration-300 hover:-translate-y-1">
+                      {/* Banner */}
+                      <div className="relative h-48 w-full overflow-hidden rounded-3xl">
+                        {ally.coverImage ? (
+                          <img src={ally.coverImage} alt={ally.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <DefaultBannerBg />
+                        )}
+                        {ally.isFeatured && (
+                          <div className="absolute top-3 right-3 flex items-center gap-1 bg-yellow-400 text-black text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg z-10">
+                            <Star className="w-2.5 h-2.5 fill-black" />
+                            Destacado
+                          </div>
+                        )}
+                      </div>
+                      {/* Logo superpuesto + info */}
+                      <div className="relative px-4 pb-4">
+                        <div className="flex justify-center -mt-12 mb-3">
+                          <div className="w-24 h-24 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
+                            {ally.logo ? (
+                              <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <Store className="w-9 h-9 text-gray-600" />
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                    {/* Logo superpuesto + info */}
-                    <div className="relative px-4 pb-4">
-                      <div className="flex justify-center -mt-12 mb-3">
-                        <div className="w-24 h-24 bg-gray-400 rounded-full border-4 border-black shadow-lg overflow-hidden flex items-center justify-center">
-                          {ally.logo ? (
-                            <img src={ally.logo} alt={ally.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Store className="w-9 h-9 text-gray-600" />
-                          )}
+                        <div className="text-center">
+                          <h3 className="text-base font-bold text-white truncate">{ally.name}</h3>
+                          {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
                         </div>
                       </div>
-                      <div className="text-center">
-                        <h3 className="text-base font-bold text-white truncate">{ally.name}</h3>
-                        {subtitle && <p className="text-xs text-gray-400 mt-0.5 truncate">{subtitle}</p>}
-                      </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </HScrollSection>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
         )}
 
         {/* 11. CTA Creadores */}
