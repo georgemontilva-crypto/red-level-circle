@@ -30,13 +30,11 @@ const STATUS_CONFIG = [
 // ─── RLC Dropdown ─────────────────────────────────────────────────────────────
 function RlcDropdown({
   label,
-  icon,
   active,
   options,
   onSelect,
 }: {
   label: string;
-  icon?: React.ReactNode;
   active: boolean;
   options: { value: string; label: string; icon?: React.ReactNode; img?: string }[];
   onSelect: (value: string) => void;
@@ -57,7 +55,7 @@ function RlcDropdown({
       {/* Trigger */}
       <button
         onClick={() => setOpen((p) => !p)}
-        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-mono text-xs font-semibold transition-all duration-200 select-none min-w-[160px]"
+        className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-mono text-xs font-semibold transition-all duration-200 select-none w-full"
         style={{
           background: active
             ? "linear-gradient(135deg, #1a0505 0%, #2d0a0a 100%)"
@@ -71,7 +69,6 @@ function RlcDropdown({
           boxShadow: active ? "0 0 14px rgba(220,38,38,0.25)" : "none",
         }}
       >
-        {icon && <span className="shrink-0">{icon}</span>}
         <span className="flex-1 text-left truncate">{label}</span>
         <ChevronDown
           size={13}
@@ -108,20 +105,7 @@ function RlcDropdown({
                 if (label !== opt.label) (e.currentTarget as HTMLButtonElement).style.background = "transparent";
               }}
             >
-              {opt.img && (
-                <img
-                  src={opt.img}
-                  alt={opt.label}
-                  className="w-5 h-5 object-contain rounded shrink-0"
-                  style={{ filter: label === opt.label ? "none" : "grayscale(50%) opacity(0.7)" }}
-                />
-              )}
-              {!opt.img && opt.icon && (
-                <span className="shrink-0" style={{ color: label === opt.label ? "#ef4444" : "oklch(0.45 0.01 0)" }}>
-                  {opt.icon}
-                </span>
-              )}
-              <span className="truncate">{opt.label}</span>
+                <span className="truncate">{opt.label}</span>
               {label === opt.label && (
                 <span className="ml-auto w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
               )}
@@ -280,21 +264,10 @@ export default function Tournaments() {
         </div>
 
         {/* ── Fila 2: Dropdowns de juego y estado ───────────────────────────── */}
-        <div className="flex flex-wrap gap-3 mb-5">
+        <div className="flex flex-col gap-2 mb-5">
           {/* Dropdown juego */}
           <RlcDropdown
             label={activeGameLabel}
-            icon={
-              activeGame?.logo || activeGame?.banner ? (
-                <img
-                  src={(activeGame.logo || activeGame.banner) as string}
-                  alt={activeGame.name}
-                  className="w-4 h-4 object-contain rounded"
-                />
-              ) : (
-                <Trophy size={13} />
-              )
-            }
             active={!!selectedGame}
             options={gameOptions}
             onSelect={(val) => setSelectedGame(val)}
@@ -303,7 +276,6 @@ export default function Tournaments() {
           {/* Dropdown estado */}
           <RlcDropdown
             label={activeStatusLabel}
-            icon={STATUS_CONFIG.find((s) => s.value === selectedStatus)?.icon ?? <Gamepad2 size={13} />}
             active={!!selectedStatus}
             options={STATUS_CONFIG}
             onSelect={(val) => setSelectedStatus(val)}
