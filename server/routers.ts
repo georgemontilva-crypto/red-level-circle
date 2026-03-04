@@ -1717,6 +1717,9 @@ export const appRouter = router({
 - COMÚN: 200-400 RLC | RARO: 1,200-2,000 RLC | ÉPICO: 4,000-6,000 RLC | LEGENDARIO: 12,000+ RLC
 
 # FÓRMULA FÍSICOS: P_RLC = ((Precio_USD * 1.20) / 0.001)
+# FÓRMULA ESFUERZO (OBLIGATORIA para TODOS los productos): effortHours = suggestedPriceRLC / 400
+Ejemplo: si suggestedPriceRLC = 7200, entonces effortHours = 7200 / 400 = 18.0
+NUNCA devuelvas effortHours = 0. Siempre calcula: effortHours = suggestedPriceRLC / 400.
 
 Responde SIEMPRE con JSON válido con exactamente estas claves:
 {
@@ -1761,6 +1764,10 @@ Genera el reporte de precio RLC para este producto.`;
         const raw = data.choices?.[0]?.message?.content ?? "{}";
         try {
           const parsed = JSON.parse(raw);
+          // Fallback server-side: si la IA devuelve effortHours = 0 o undefined, calcular manualmente
+          if (!parsed.effortHours || parsed.effortHours === 0) {
+            parsed.effortHours = Math.round((parsed.suggestedPriceRLC / 400) * 10) / 10;
+          }
           return parsed as {
             productName: string;
             type: string;
