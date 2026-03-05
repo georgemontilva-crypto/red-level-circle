@@ -401,20 +401,24 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
             }}
           >
             {/* Avatar */}
-            <div className="relative inline-block mb-3">
-              <div style={{ overflow: "visible", display: "inline-flex", position: "relative" }}>
-                <UserAvatar
-                  avatar={user.avatar}
-                  name={user.name}
-                  activeFrameImage={(user as any).activeFrameImage}
-                  size={80}
-                  ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}
-                />
-              </div>
-              {/* Online dot */}
+            <div className="relative inline-block mb-1.5">
+              <UserAvatar
+                avatar={user.avatar}
+                name={user.name}
+                activeFrameImage={(user as any).activeFrameImage}
+                size={80}
+                ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}
+              />
+              {/* Online dot — posicionado sobre el borde inferior-derecho del círculo de la foto (inset 16.7%) */}
               <span
-                className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 rounded-full border-2"
-                style={{ background: "#22c55e", borderColor: "#1a1a1f", zIndex: 20 }}
+                className="absolute w-3.5 h-3.5 rounded-full border-2"
+                style={{
+                  background: "#22c55e",
+                  borderColor: "#1a1a1f",
+                  zIndex: 20,
+                  bottom: "18%",
+                  right: "14%",
+                }}
               />
             </div>
 
