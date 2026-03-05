@@ -192,6 +192,7 @@ import {
   syncTournamentRankings,
 } from "./orchestrator";
 import { withCache, cache, CacheKey, TTL } from "./cache";
+import { sseBroadcast, sseNotifyUser } from "./sse";
 
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -377,6 +378,8 @@ export const appRouter = router({
         });
         // Invalidate tournament list cache so changes appear immediately
         cache.invalidatePrefix("tournaments:list:");
+        // Broadcast SSE so all clients update tournament lists immediately
+        sseBroadcast("tournament", { action: "created", id });
         // Generate news article for new tournament (non-blocking)
         const { handleTournamentCreated } = await import("./newsGenerator");
         handleTournamentCreated(id).catch((err: Error) =>
@@ -431,6 +434,7 @@ export const appRouter = router({
         // Invalidate caches so changes appear immediately
         cache.invalidatePrefix("tournaments:list:");
         cache.del(CacheKey.tournament(id));
+        sseBroadcast("tournament", { action: "updated", id });
         return { success: true };
       }),
 
@@ -457,6 +461,7 @@ export const appRouter = router({
             tournamentName: t.name,
           });
         } catch (e) { console.error("[StatusChange] Notification error:", e); }
+        sseBroadcast("tournament", { action: "status_changed", id: input.id, status: input.status });
         return { success: true };
       }),
 
@@ -481,6 +486,7 @@ export const appRouter = router({
         // Invalidate caches so changes appear immediately
         cache.invalidatePrefix("tournaments:list:");
         cache.del(CacheKey.tournament(input.id));
+        sseBroadcast("tournament", { action: "deleted", id: input.id });
         return { success: true };
       }),
 
@@ -1106,6 +1112,7 @@ export const appRouter = router({
           authorId: ctx.user.id,
           publishedAt: input.isPublished ? new Date() : undefined,
         });
+        sseBroadcast("news", { action: "created", id });
         return { id };
       }),
 
@@ -1133,6 +1140,7 @@ export const appRouter = router({
         } else {
           await updateNews(id, updateData);
         }
+        sseBroadcast("news", { action: "updated", id });
         return { success: true };
       }),
 
@@ -1140,6 +1148,7 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await adminDeleteNews(input.id);
+        sseBroadcast("news", { action: "deleted", id: input.id });
         return { success: true };
       }),
 
@@ -2025,6 +2034,7 @@ Genera el reporte de precio RLC para este producto.`;
           isFeatured: input.isFeatured,
           accentColor: input.accentColor,
         });
+        sseBroadcast("ad", { action: "created" });
         return { success: true };
       }),
     updateAd: adminProcedure
@@ -2054,12 +2064,14 @@ Genera el reporte de precio RLC para este producto.`;
           ...(mobileImageUrl !== undefined ? { mobileImage: mobileImageUrl } : {}),
           ...(logoImage !== undefined ? { logoImage } : {}),
         });
+        sseBroadcast("ad", { action: "updated", id });
         return { success: true };
       }),
     deleteAd: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await adminDeleteBrandAd(input.id);
+        sseBroadcast("ad", { action: "deleted", id: input.id });
         return { success: true };
       }),
     listRewards: adminProcedure
@@ -2259,6 +2271,7 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         // Invalidate caches so approved tournament appears immediately
         cache.invalidatePrefix("tournaments:list:");
         cache.del(CacheKey.tournament(input.id));
+        sseBroadcast("tournament", { action: "approved", id: input.id });
         return { success: true };
       }),
     rejectTournament: adminProcedure
@@ -2281,6 +2294,7 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         // Invalidate caches
         cache.invalidatePrefix("tournaments:list:");
         cache.del(CacheKey.tournament(input.id));
+        sseBroadcast("tournament", { action: "rejected", id: input.id });
         return { success: true };
       }),
     stats: adminProcedure
@@ -2918,12 +2932,18 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
             });
           } catch (e) { console.error("[Follow] Notification error:", e); }
         }
+        // Notify both users via SSE so their profiles update instantly
+        sseNotifyUser(input.userId, "follow", { followerId: ctx.user.id });
+        sseNotifyUser(ctx.user.id, "follow", { followingId: input.userId });
         return { success: true };
       }),
     unfollow: protectedProcedure
       .input(z.object({ userId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await unfollowUser(ctx.user.id, input.userId);
+        // Notify both users via SSE so their profiles update instantly
+        sseNotifyUser(input.userId, "unfollow", { followerId: ctx.user.id });
+        sseNotifyUser(ctx.user.id, "unfollow", { followingId: input.userId });
         return { success: true };
       }),
     isFollowing: publicProcedure
@@ -3145,6 +3165,7 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           await db.insert(sectionBanners).values({ sectionKey, ...rest, isActive: rest.isActive ?? true });
         }
         const rows = await db.select().from(sectionBanners).where(eq(sectionBanners.sectionKey, sectionKey)).limit(1);
+        sseBroadcast("banner", { action: "updated", sectionKey });
         return rows[0];
       }),
     // Admin: upload image for a section banner
@@ -3279,6 +3300,7 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           const { handleAllyApproved } = await import("./newsGenerator");
           handleAllyApproved(id).catch((err: Error) => console.error("[NewsGenerator] ally error:", err));
         }
+        sseBroadcast("ally", { action: "updated", id });
         return { success: true };
       }),
     // Admin: delete
@@ -3288,6 +3310,7 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         const db = await getDb();
         const { allies: alliesTable } = await import("../drizzle/schema");
         await db.delete(alliesTable).where(eq(alliesTable.id, input.id));
+        sseBroadcast("ally", { action: "deleted", id: input.id });
         return { success: true };
       }),
 

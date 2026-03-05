@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import { useAuth } from "./_core/hooks/useAuth";
 import { trpc } from "./lib/trpc";
 import SidebarLayout from "./components/SidebarLayout";
+import { useSSE } from "./hooks/useSSE";
 
 // ── Critical routes (loaded eagerly — needed on first paint) ──────────────────
 import Home from "./pages/Home";
@@ -68,6 +69,8 @@ function PageLoader() {
 function OnboardingWrapper({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
   const { data: me } = trpc.auth.me.useQuery();
+  // Connect to SSE stream for real-time updates (follows, banners, news, tournaments, allies)
+  useSSE({ userId: me?.id ?? null });
   const utils = trpc.useUtils();
   const [dismissed, setDismissed] = useState(false);
 
