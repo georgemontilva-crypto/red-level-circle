@@ -3,13 +3,15 @@ import { useLocation } from "wouter";
 import {
   Bell, Gift, Bookmark, X, ChevronRight, CheckCheck,
   Trophy, Zap, ShoppingBag, Users, Star, Info,
-  Coins, Settings, LogOut, Shield, Crown,
+  Coins, Settings, LogOut, Shield, Crown, Wallet,
+  ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { UserAvatar } from "./UserAvatar";
+import { RLCIcon } from "./RLCIcon";
 
-export type RightPanelTab = "notifications" | "rewards" | "wishlist";
+export type RightPanelTab = "notifications" | "rewards" | "wishlist" | "wallet";
 
 interface RightPanelProps {
   open: boolean;
@@ -279,6 +281,122 @@ function WishlistTab({ onClose }: { onClose: () => void }) {
   );
 }
 
+// ─── Wallet Tab ─────────────────────────────────────────────────────────────
+const TX_TYPE_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string; sign: string }> = {
+  deposit:     { label: "Depósito",    icon: <ArrowDownLeft className="w-4 h-4" />,  color: "#22c55e",  sign: "+" },
+  withdrawal:  { label: "Retiro",      icon: <ArrowUpRight  className="w-4 h-4" />,  color: "#ef4444",  sign: "-" },
+  bet_placed:  { label: "Apuesta",     icon: <TrendingDown  className="w-4 h-4" />,  color: "#f97316",  sign: "-" },
+  bet_won:     { label: "Apuesta ganada", icon: <TrendingUp className="w-4 h-4" />,  color: "#22c55e",  sign: "+" },
+  bet_lost:    { label: "Apuesta perdida", icon: <TrendingDown className="w-4 h-4" />, color: "#ef4444", sign: "-" },
+  reward:      { label: "Recompensa",  icon: <Star          className="w-4 h-4" />,  color: "#FACC15",  sign: "+" },
+  refund:      { label: "Reembolso",   icon: <ArrowDownLeft className="w-4 h-4" />,  color: "#60a5fa",  sign: "+" },
+};
+
+function WalletTab() {
+  const { data: wallet, isLoading } = trpc.auth.wallet.useQuery();
+  const balance = wallet?.balance ?? 0;
+  const transactions: any[] = wallet?.transactions ?? [];
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      {/* Balance card */}
+      <div
+        className="flex-shrink-0 mx-4 mt-4 mb-3 rounded-2xl p-5 relative overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(234,179,8,0.06) 60%, rgba(0,0,0,0) 100%)",
+          border: "1px solid rgba(234,179,8,0.25)",
+        }}
+      >
+        {/* Decorative glow */}
+        <div
+          className="absolute -top-6 -right-6 w-28 h-28 rounded-full pointer-events-none"
+          style={{ background: "rgba(234,179,8,0.12)", filter: "blur(24px)" }}
+        />
+        <p className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: "rgba(250,204,21,0.6)" }}>Saldo disponible</p>
+        <div className="flex items-center gap-3">
+          <RLCIcon size={40} />
+          <div>
+            {isLoading ? (
+              <div className="w-24 h-8 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
+            ) : (
+              <p className="text-4xl font-black font-mono leading-none" style={{ color: "#FACC15" }}>
+                {balance.toLocaleString()}
+              </p>
+            )}
+            <p className="text-xs font-mono mt-1" style={{ color: "rgba(250,204,21,0.5)" }}>RLC Coins</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Transactions */}
+      <div className="flex-shrink-0 px-4 mb-2 flex items-center justify-between">
+        <p className="text-xs font-mono uppercase tracking-widest" style={{ color: "var(--text-muted)" }}>Historial</p>
+        <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{transactions.length} movimientos</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+          ))
+        ) : transactions.length === 0 ? (
+          <div className="py-12 text-center">
+            <Wallet className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--text-muted)", opacity: 0.3 }} />
+            <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sin movimientos aún</p>
+          </div>
+        ) : (
+          transactions.map((tx: any) => {
+            const cfg = TX_TYPE_CONFIG[tx.type] ?? { label: tx.type, icon: <Coins className="w-4 h-4" />, color: "#FACC15", sign: "+" };
+            const isPositive = tx.amount > 0;
+            const amountColor = isPositive ? "#22c55e" : "#ef4444";
+            const date = new Date(tx.createdAt);
+            const dateStr = date.toLocaleDateString("es", { day: "2-digit", month: "short" });
+            const timeStr = date.toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+            return (
+              <div
+                key={tx.id}
+                className="flex items-center gap-3 rounded-xl px-3 py-3 transition-all"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                }}
+                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.07)"}
+                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
+              >
+                {/* Icon */}
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: `${cfg.color}18`, color: cfg.color, border: `1px solid ${cfg.color}30` }}
+                >
+                  {cfg.icon}
+                </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
+                    {tx.description || cfg.label}
+                  </p>
+                  <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+                    {dateStr} · {timeStr}
+                  </p>
+                </div>
+                {/* Amount */}
+                <div className="flex-shrink-0 text-right">
+                  <p className="text-sm font-black font-mono flex items-center gap-1 justify-end" style={{ color: amountColor }}>
+                    {isPositive ? "+" : ""}{tx.amount.toLocaleString()} <RLCIcon size={13} />
+                  </p>
+                  <p className="text-xs font-mono" style={{ color: "rgba(250,204,21,0.5)" }}>
+                    {tx.balanceAfter?.toLocaleString()} <span style={{ fontSize: 9 }}>RLC</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main RightPanel ──────────────────────────────────────────────────────────
 export default function RightPanel({ open, activeTab, onTabChange, onClose }: RightPanelProps) {
   const [, navigate] = useLocation();
@@ -328,6 +446,7 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
     { id: "notifications", icon: <Bell className="w-5 h-5" />, label: "Notificaciones", badge: unreadCount },
     { id: "rewards",       icon: <Gift className="w-5 h-5" />,      label: "Recompensas" },
     { id: "wishlist",      icon: <Bookmark className="w-5 h-5" />,  label: "Favoritos" },
+    { id: "wallet",        icon: <Wallet className="w-5 h-5" />,    label: "Billetera" },
   ];
 
   return (
@@ -501,6 +620,7 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
           {activeTab === "notifications" && <NotificationsTab onClose={onClose} />}
           {activeTab === "rewards"       && <RewardsTab onClose={onClose} />}
           {activeTab === "wishlist"      && <WishlistTab onClose={onClose} />}
+          {activeTab === "wallet"        && <WalletTab />}
         </div>
       </div>
 

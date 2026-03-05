@@ -6,7 +6,7 @@ import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
   Users, Plus, ClipboardList, Settings, LogOut, Menu, X, Bell,
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
-  Bookmark, ShoppingCart, Store, LayoutGrid,
+  Bookmark, ShoppingCart, Store, LayoutGrid, Wallet,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { TopNav } from "./TopNav";
@@ -443,6 +443,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 <Store className="w-5 h-5" />
               </button>
             </Link>
+
+            {/* Billetera */}
+            {isAuthenticated && (
+              <button
+                onClick={() => openPanel("wallet")}
+                className="relative p-2 transition-colors"
+                style={{ color: "var(--text-secondary)" }}
+                onTouchStart={e => (e.currentTarget as HTMLButtonElement).style.color = "#FACC15"}
+                onTouchEnd={e => (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"}
+                title="Billetera"
+              >
+                <Wallet className="w-5 h-5" />
+              </button>
+            )}
 
             {/* Campana */}
             {isAuthenticated && (

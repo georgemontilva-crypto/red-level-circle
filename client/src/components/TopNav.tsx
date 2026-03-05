@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X, Bell, Store, LayoutGrid } from "lucide-react";
+import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X, Bell, Store, LayoutGrid, Wallet } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -173,6 +173,31 @@ export function TopNav() {
           >
             <Store className="w-6 h-6" />
           </button>
+
+          {/* Wallet button */}
+          {isAuthenticated && (
+            <button
+              onClick={() => openPanel("wallet")}
+              className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
+              style={{
+                color: panelOpen && activeTab === "wallet" ? "#FACC15" : "var(--text-secondary)",
+                background: panelOpen && activeTab === "wallet" ? "rgba(234,179,8,0.12)" : "transparent",
+              }}
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(234,179,8,0.12)";
+                (e.currentTarget as HTMLButtonElement).style.color = "#FACC15";
+              }}
+              onMouseLeave={e => {
+                if (!(panelOpen && activeTab === "wallet")) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+                }
+              }}
+              title="Billetera"
+            >
+              <Wallet className="w-6 h-6" />
+            </button>
+          )}
 
           {/* Notifications bell */}
           {isAuthenticated && (
