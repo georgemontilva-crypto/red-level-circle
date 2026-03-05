@@ -125,6 +125,7 @@ const RARITY_COLORS = {
   rare:      { bg: "rgba(96,165,250,0.08)",  border: "rgba(96,165,250,0.25)",  text: "#60a5fa", label: "Raro" },
   epic:      { bg: "rgba(168,85,247,0.08)",  border: "rgba(168,85,247,0.25)",  text: "#a855f7", label: "Épico" },
   legendary: { bg: "rgba(250,204,21,0.08)",  border: "rgba(250,204,21,0.25)",  text: "#fbbf24", label: "Legendario" },
+  mythic:    { bg: "rgba(239,68,68,0.08)",   border: "rgba(239,68,68,0.35)",   text: "#f87171", label: "Mítico" },
 };
 
 const ACHIEVEMENT_DEFS: AchievementDef[] = [

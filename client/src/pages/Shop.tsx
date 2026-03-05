@@ -42,18 +42,21 @@ const RARITY_COLORS: Record<string, string> = {
   rare:      "text-blue-400 border-blue-500",
   epic:      "text-purple-400 border-purple-500",
   legendary: "text-yellow-400 border-yellow-500",
+  mythic:    "text-red-400 border-red-500",
 };
 const RARITY_GLOW: Record<string, string> = {
   common:    "",
   rare:      "shadow-[0_0_20px_rgba(59,130,246,0.3)]",
   epic:      "shadow-[0_0_20px_rgba(168,85,247,0.3)]",
   legendary: "shadow-[0_0_20px_rgba(234,179,8,0.5)]",
+  mythic:    "shadow-[0_0_24px_rgba(239,68,68,0.6)]",
 };
 const RARITY_LABELS: Record<string, string> = {
   common:    "Común",
   rare:      "Raro",
   epic:      "Épico",
   legendary: "Legendario",
+  mythic:    "Mítico",
 };
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   frame:      <Shield className="w-4 h-4" />,
