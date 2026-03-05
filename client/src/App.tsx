@@ -45,6 +45,7 @@ const NewsArticleLazy = lazy(() => import("./pages/News").then(m => ({ default: 
 const AlliesPageLazy  = lazy(() => import("./pages/Allies").then(m => ({ default: m.AlliesPage })));
 const Inventory       = lazy(() => import("./pages/Inventory"));
 const Store           = lazy(() => import("./pages/Store"));
+const MyGallery       = lazy(() => import("./pages/MyGallery"));
 
 // Legal pages (very rarely visited)
 const Terminos     = lazy(() => import("./pages/legal/terminos"));
@@ -158,6 +159,7 @@ function Router() {
               <Route path="/store/cosmetics" component={Store} />
               <Route path="/store" component={Store} />
               <Route path="/inventory" component={Inventory} />
+              <Route path="/gallery">{() => <Suspense fallback={<PageLoader />}><MyGallery /></Suspense>}</Route>
               <Route path="/settings" component={Settings} />
               <Route path="/404" component={NotFound} />
               <Route component={NotFound} />
