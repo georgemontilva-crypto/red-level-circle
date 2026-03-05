@@ -2384,13 +2384,35 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         await equipCosmetic(ctx.user.id, input.cosmeticId);
         return { success: true };
       }),
+    unequip: protectedProcedure
+      .input(z.object({ type: z.enum(["frame", "aura", "badge", "background", "decoration", "effect"]) }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "DB no disponible" });
+        const { cosmetics: cosmeticsTable, userCosmetics: userCosmeticsTable } = await import("../drizzle/schema");
+        const ownedOfType = await db
+          .select({ id: userCosmeticsTable.id })
+          .from(userCosmeticsTable)
+          .leftJoin(cosmeticsTable, eq(userCosmeticsTable.cosmeticId, cosmeticsTable.id))
+          .where(and(
+            eq(userCosmeticsTable.userId, ctx.user.id),
+            eq(cosmeticsTable.type, input.type as any),
+            eq(userCosmeticsTable.isEquipped, true)
+          ));
+        for (const uc of ownedOfType) {
+          await db.update(userCosmeticsTable).set({ isEquipped: false }).where(eq(userCosmeticsTable.id, uc.id));
+        }
+        return { success: true };
+      }),
     // ─── Admin ───────────────────────────────────────────────────────────────
     adminCreate: adminProcedure
       .input(z.object({
         name: z.string().min(1),
         description: z.string().optional(),
-        type: z.enum(["frame", "aura", "badge", "background"]).default("frame"),
-        rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
+        type: z.enum(["frame", "aura", "badge", "background", "decoration", "effect"]).default("frame"),
+        rarity: z.enum(["common", "rare", "epic", "legendary", "mythic"]).default("common"),
+        animationType: z.enum(["none", "gif", "webp", "webm", "lottie"]).default("none").optional(),
+        animationUrl: z.string().optional(),
         previewImage: z.string().optional(),
         frameImage: z.string().optional(),
         price: z.number().int().min(0),
@@ -2410,8 +2432,10 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         id: z.number(),
         name: z.string().optional(),
         description: z.string().optional(),
-        type: z.enum(["frame", "aura", "badge", "background"]).optional(),
-        rarity: z.enum(["common", "rare", "epic", "legendary"]).optional(),
+        type: z.enum(["frame", "aura", "badge", "background", "decoration", "effect"]).optional(),
+        rarity: z.enum(["common", "rare", "epic", "legendary", "mythic"]).optional(),
+        animationType: z.enum(["none", "gif", "webp", "webm", "lottie"]).optional(),
+        animationUrl: z.string().optional(),
         previewImage: z.string().optional(),
         frameImage: z.string().optional(),
         price: z.number().int().optional(),

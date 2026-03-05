@@ -6,40 +6,48 @@ import { Badge } from "@/components/ui/badge";
 import { SectionBanner } from "@/components/SectionBanner";
 import { toast } from "sonner";
 import {
-  Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock, X, AlertCircle, ShoppingCart,
+  Coins, ShoppingBag, Sparkles, Shield, Star, Zap, Check, Lock, X, AlertCircle, ShoppingCart, Layers, Wand2,
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
+import { CosmeticPreviewModal, type CosmeticItem } from "@/components/CosmeticPreviewModal";
 
 const RARITY_COLORS: Record<string, string> = {
   common: "text-muted-foreground border-gray-600",
   rare: "text-blue-400 border-blue-500",
   epic: "text-purple-400 border-purple-500",
   legendary: "text-yellow-400 border-yellow-500",
+  mythic: "text-red-400 border-red-500",
 };
 const RARITY_GLOW: Record<string, string> = {
   common: "",
   rare: "shadow-[0_0_20px_rgba(59,130,246,0.3)]",
   epic: "shadow-[0_0_20px_rgba(168,85,247,0.3)]",
   legendary: "shadow-[0_0_20px_rgba(234,179,8,0.5)]",
+  mythic: "shadow-[0_0_28px_rgba(220,38,38,0.7)]",
 };
 const RARITY_LABELS: Record<string, string> = {
   common: "Común",
   rare: "Raro",
   epic: "Épico",
   legendary: "Legendario",
+  mythic: "Mítico",
 };
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   frame: <Shield className="w-4 h-4" />,
   aura: <Sparkles className="w-4 h-4" />,
   badge: <Star className="w-4 h-4" />,
   background: <Zap className="w-4 h-4" />,
+  decoration: <Layers className="w-4 h-4" />,
+  effect: <Wand2 className="w-4 h-4" />,
 };
 const TYPE_LABELS: Record<string, string> = {
   frame: "Marcos",
   aura: "Auras",
   badge: "Insignias",
   background: "Fondos",
+  decoration: "Decoraciones",
+  effect: "Efectos",
 };
 
 const AVATAR_PLACEHOLDER = "https://api.dicebear.com/7.x/bottts/svg?seed=rlc&backgroundColor=1a1a1a";
@@ -209,6 +217,7 @@ export default function CosmeticsShop() {
   const [activeCollection, setActiveCollection] = useState<string | undefined>();
   const [confirmCosmetic, setConfirmCosmetic] = useState<any | null>(null);
   const [buyError, setBuyError] = useState<string | null>(null);
+  const [previewCosmetic, setPreviewCosmetic] = useState<CosmeticItem | null>(null);
   const [, navigate] = useLocation();
 
   const { data: cosmetics = [], refetch } = trpc.cosmetics.list.useQuery({
@@ -285,7 +294,7 @@ export default function CosmeticsShop() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
         {/* Type Filters */}
         <div className="flex flex-wrap gap-3 mb-8">
-          {["all", "frame", "aura", "badge", "background"].map((type) => (
+          {["all", "frame", "aura", "badge", "background", "decoration", "effect"].map((type) => (
             <button
               key={type}
               onClick={() => setActiveType(type)}
@@ -348,11 +357,14 @@ export default function CosmeticsShop() {
               return (
                 <div
                   key={cosmetic.id}
-                  className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}
+                  className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 cursor-pointer ${rarityClass} ${glowClass}`}
+                  onClick={() => setPreviewCosmetic(cosmetic as unknown as CosmeticItem)}
                 >
                   {/* Preview Image */}
                   <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
-                    {cosmetic.previewImage ? (
+                    {(cosmetic as any).animationType === "webm" && (cosmetic as any).animationUrl ? (
+                      <video src={(cosmetic as any).animationUrl} autoPlay loop muted playsInline className="w-full h-full object-cover" />
+                    ) : cosmetic.previewImage ? (
                       <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
                     ) : (
                       <div className="relative w-24 h-24">
@@ -495,6 +507,25 @@ export default function CosmeticsShop() {
           </div>
         )}
       </div>
+
+      {/* Preview Modal */}
+      {previewCosmetic && (
+        <CosmeticPreviewModal
+          cosmetic={previewCosmetic}
+          isOwned={ownedIds.has(previewCosmetic.id)}
+          isEquipped={equippedIds.has(previewCosmetic.id)}
+          onClose={() => setPreviewCosmetic(null)}
+          onEquipped={() => {
+            refetchOwned();
+            refetchMe();
+            setPreviewCosmetic(null);
+          }}
+          onBuy={() => {
+            setPreviewCosmetic(null);
+            handleBuyClick(previewCosmetic);
+          }}
+        />
+      )}
     </div>
   );
 }

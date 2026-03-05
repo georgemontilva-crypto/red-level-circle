@@ -389,10 +389,12 @@ export const cosmetics = mysqlTable("cosmetics", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 256 }).notNull(),
   description: text("description"),
-  type: mysqlEnum("type", ["frame", "aura", "badge", "background"]).default("frame").notNull(),
-  rarity: mysqlEnum("rarity", ["common", "rare", "epic", "legendary"]).default("common").notNull(),
-  previewImage: text("previewImage"), // full preview card image
-  frameImage: text("frameImage"),     // transparent PNG overlay
+  type: mysqlEnum("type", ["frame", "aura", "badge", "background", "decoration", "effect"]).default("frame").notNull(),
+  rarity: mysqlEnum("rarity", ["common", "rare", "epic", "legendary", "mythic"]).default("common").notNull(),
+  animationType: mysqlEnum("animationType", ["none", "gif", "webp", "webm", "lottie"]).default("none").notNull(),
+  animationUrl: text("animationUrl"),  // URL del asset animado (webm/gif/lottie JSON)
+  previewImage: text("previewImage"), // full preview card image (PNG estático)
+  frameImage: text("frameImage"),     // transparent PNG overlay (capa sobre el avatar)
   colors: json("colors"),             // array of hex colors for swatches
   price: int("price").notNull(),      // RLC Coins
   originalPrice: int("originalPrice"),
