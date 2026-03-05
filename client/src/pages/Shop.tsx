@@ -858,7 +858,7 @@ export default function Shop() {
                       {/* Scroll horizontal */}
                       <div
                         className="flex gap-3 overflow-x-auto pb-3"
-                        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(168,85,247,0.4) transparent" }}
+                        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(168,85,247,0.4) transparent", paddingLeft: "15px", paddingRight: "15px" }}
                       >
                         {items.map(renderCard)}
                       </div>
