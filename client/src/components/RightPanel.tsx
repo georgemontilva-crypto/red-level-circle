@@ -240,12 +240,12 @@ function WishlistTab({ onClose }: { onClose: () => void }) {
                 onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
                 onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
               >
-                {product?.imageUrl ? (
+                {(product?.image || product?.imageUrl) ? (
                   <img
-                    src={product.imageUrl}
+                    src={product.image ?? product.imageUrl}
                     alt={product?.name ?? "Artículo"}
                     className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
-                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; (e.currentTarget as HTMLImageElement).nextElementSibling?.removeAttribute("style"); }}
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
@@ -402,21 +402,13 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
           >
             {/* Avatar */}
             <div className="relative inline-block mb-3">
-              <div
-                style={{
-                  borderRadius: "50%",
-                  boxShadow: `0 0 0 2px ${isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}`,
-                  overflow: "visible",
-                  display: "inline-flex",
-                  position: "relative",
-                }}
-              >
+              <div style={{ overflow: "visible", display: "inline-flex", position: "relative" }}>
                 <UserAvatar
                   avatar={user.avatar}
                   name={user.name}
                   activeFrameImage={(user as any).activeFrameImage}
-                  size={64}
-                  containerSize={64}
+                  size={80}
+                  ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "rgba(255,255,255,0.15)"}
                 />
               </div>
               {/* Online dot */}
