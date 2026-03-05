@@ -314,13 +314,13 @@ function WalletTab() {
           aria-hidden="true"
           className="absolute pointer-events-none select-none"
           style={{
-            right: "-10px",
+            right: "-28px",
             top: "50%",
             transform: "translateY(-50%)",
-            width: "110px",
-            height: "110px",
+            width: "170px",
+            height: "170px",
             objectFit: "contain",
-            opacity: 0.13,
+            opacity: 0.15,
             filter: "grayscale(1) brightness(1.5)",
           }}
         />
