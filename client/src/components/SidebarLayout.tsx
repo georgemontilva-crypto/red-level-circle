@@ -133,7 +133,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // ─── Desktop sidebar (grid de cuadritos, igual que móvil) ───────────────────
   const DesktopSidebarContent = () => (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "visible" }}>
       {/* Header: logo */}
       <div className="px-4 pt-4 pb-3 flex-shrink-0">
         <Link href="/">
@@ -142,7 +142,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       </div>
 
       {/* Grid de secciones */}
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+      <nav className="flex-1 overflow-y-auto py-3 space-y-4" style={{ paddingLeft: "12px", paddingRight: "16px" }}>
         {sections.map((section) => {
           const visibleItems = section.items.filter(item => {
             if (item.requiresAuth && !isAuthenticated) return false;
