@@ -2,8 +2,9 @@ import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Play, CheckCircle2, Clock, X,
-  RefreshCw, Lock, MoreHorizontal, Coins
+  Play, Pause, CheckCircle2, Clock, X,
+  RefreshCw, Lock, MoreHorizontal, Coins,
+  Volume2, VolumeX, Maximize, RotateCcw, RotateCw,
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 
@@ -87,6 +88,96 @@ function formatTimeRemaining(endDate: string | null): string | null {
   return `${mins}m restantes`;
 }
 
+function formatTime(s: number) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+// ─── Custom Video Player Controls (Discord-style) ────────────────────────────
+// No native controls — custom play/pause, skip ±10s, mute, time, fullscreen.
+// The seekbar is completely absent so users cannot skip forward.
+function CustomVideoControls({
+  videoRef,
+  currentTime,
+  duration,
+  isPlaying,
+  isMuted,
+  onPlayPause,
+  onMute,
+  onSkip,
+  onFullscreen,
+}: {
+  videoRef: React.RefObject<HTMLVideoElement>;
+  currentTime: number;
+  duration: number;
+  isPlaying: boolean;
+  isMuted: boolean;
+  onPlayPause: () => void;
+  onMute: () => void;
+  onSkip: (delta: number) => void;
+  onFullscreen: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-2"
+      style={{ background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)" }}
+    >
+      {/* Play / Pause */}
+      <button
+        onClick={onPlayPause}
+        className="text-white/90 hover:text-white transition-colors flex-shrink-0"
+      >
+        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+      </button>
+
+      {/* Skip back 10s */}
+      <button
+        onClick={() => onSkip(-10)}
+        className="text-white/70 hover:text-white transition-colors flex-shrink-0 relative"
+        title="Retroceder 10s"
+      >
+        <RotateCcw size={16} />
+        <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold mt-0.5">10</span>
+      </button>
+
+      {/* Skip forward 10s — only allowed up to accumulated watch time */}
+      <button
+        onClick={() => onSkip(10)}
+        className="text-white/70 hover:text-white transition-colors flex-shrink-0 relative"
+        title="Avanzar 10s (solo hasta lo visto)"
+      >
+        <RotateCw size={16} />
+        <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold mt-0.5">10</span>
+      </button>
+
+      {/* Time display */}
+      <span className="text-white/70 text-xs font-mono flex-shrink-0">
+        {formatTime(currentTime)} / {formatTime(duration || 0)}
+      </span>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Mute */}
+      <button
+        onClick={onMute}
+        className="text-white/70 hover:text-white transition-colors flex-shrink-0"
+      >
+        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+      </button>
+
+      {/* Fullscreen */}
+      <button
+        onClick={onFullscreen}
+        className="text-white/70 hover:text-white transition-colors flex-shrink-0"
+      >
+        <Maximize size={16} />
+      </button>
+    </div>
+  );
+}
+
 // ─── Mission Video Player Modal (Discord-style) ───────────────────────────────
 function MissionVideoPlayer({
   mission,
@@ -102,18 +193,25 @@ function MissionVideoPlayer({
   onClaim: () => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Accumulated real watch time (anti-fraud: only counts while playing, not seeking)
+  const accumulatedRef = useRef(userMission?.watchedSeconds ?? 0);
+  const lastReportedRef = useRef(userMission?.watchedSeconds ?? 0);
+
   const [watchedSeconds, setWatchedSeconds] = useState(userMission?.watchedSeconds ?? 0);
   const [isCompleted, setIsCompleted] = useState(userMission?.completed ?? false);
   const [isClaimed, setIsClaimed] = useState(userMission?.claimed ?? false);
   const [tabWarning, setTabWarning] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  // Track the last server-confirmed seconds (used as anti-fraud ceiling)
-  const lastReportedRef = useRef(userMission?.watchedSeconds ?? 0);
-  // Track total accumulated watch time locally (not tied to video.currentTime)
-  const accumulatedRef = useRef(userMission?.watchedSeconds ?? 0);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Whether we are currently in a "seeking" block
-  const isSeeking = useRef(false);
+
+  // Player UI state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [showControls, setShowControls] = useState(true);
+  const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const updateProgress = trpc.missions.updateProgress.useMutation();
   const claimMutation = trpc.missions.claim.useMutation();
@@ -121,13 +219,14 @@ function MissionVideoPlayer({
   const required = mission.requiredWatchSeconds;
   const percent = Math.min((watchedSeconds / required) * 100, 100);
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m}:${sec.toString().padStart(2, "0")}`;
-  };
+  // ── Auto-hide controls after 3s of inactivity ──────────────────────────────
+  const resetControlsTimer = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimerRef.current) clearTimeout(controlsTimerRef.current);
+    controlsTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+  }, []);
 
-  // Tab visibility fraud detection
+  // ── Tab visibility fraud detection ─────────────────────────────────────────
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "hidden") {
@@ -139,26 +238,7 @@ function MissionVideoPlayer({
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
-  // ── Anti-cheat: block seeking forward ──────────────────────────────────────
-  // We allow the user to seek BACK but not forward beyond what they've watched.
-  const handleSeeking = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    // Maximum allowed position = accumulated seconds watched
-    const maxAllowed = accumulatedRef.current;
-    if (video.currentTime > maxAllowed + 1) {
-      isSeeking.current = true;
-      video.currentTime = maxAllowed;
-    }
-  }, []);
-
-  const handleSeeked = useCallback(() => {
-    isSeeking.current = false;
-  }, []);
-
-  // ── Progress tracking: count REAL watch time (not video.currentTime) ───────
-  // Every second the video is playing, we increment accumulatedRef.
-  // Every 5s we report to the server.
+  // ── Video event listeners ───────────────────────────────────────────────────
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -167,56 +247,103 @@ function MissionVideoPlayer({
     let reportInterval: ReturnType<typeof setInterval> | null = null;
 
     const startTracking = () => {
-      // Tick every 1s to count real watch time
+      setIsPlaying(true);
+      // Count 1 real second of watch time per tick
       tickInterval = setInterval(() => {
-        if (video.paused || video.ended || isSeeking.current) return;
         accumulatedRef.current = Math.min(accumulatedRef.current + 1, required);
         setWatchedSeconds(accumulatedRef.current);
-        if (accumulatedRef.current >= required && !isCompleted) {
+        if (accumulatedRef.current >= required) {
           setIsCompleted(true);
           video.pause();
         }
       }, 1000);
-
       // Report to server every 5s
       reportInterval = setInterval(async () => {
         const current = accumulatedRef.current;
         if (current <= lastReportedRef.current) return;
         lastReportedRef.current = current;
         try {
-          const result = await updateProgress.mutateAsync({
-            missionId: mission.id,
-            watchedSeconds: current,
-          });
-          if (result.completed) {
-            setIsCompleted(true);
-            video.pause();
-          }
+          const result = await updateProgress.mutateAsync({ missionId: mission.id, watchedSeconds: current });
+          if (result.completed) { setIsCompleted(true); video.pause(); }
           onProgressUpdate(current);
-        } catch (e) {
-          console.error("Progress update failed", e);
-        }
+        } catch (e) { console.error("Progress update failed", e); }
       }, 5000);
     };
 
     const stopTracking = () => {
-      if (tickInterval) clearInterval(tickInterval);
-      if (reportInterval) clearInterval(reportInterval);
-      tickInterval = null;
-      reportInterval = null;
+      setIsPlaying(false);
+      if (tickInterval) { clearInterval(tickInterval); tickInterval = null; }
+      if (reportInterval) { clearInterval(reportInterval); reportInterval = null; }
     };
+
+    const onTimeUpdate = () => setCurrentTime(video.currentTime);
+    const onLoadedMetadata = () => setDuration(video.duration);
 
     video.addEventListener("play", startTracking);
     video.addEventListener("pause", stopTracking);
     video.addEventListener("ended", stopTracking);
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
 
     return () => {
       stopTracking();
       video.removeEventListener("play", startTracking);
       video.removeEventListener("pause", stopTracking);
       video.removeEventListener("ended", stopTracking);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
     };
   }, [mission.id, required]);
+
+  // ── Anti-cheat: block seeking forward beyond accumulated time ───────────────
+  // We intercept the seeking event and snap back if user tries to go past what they've watched.
+  const handleSeeking = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    // Allow seeking backward freely, but cap forward seeks at accumulated seconds
+    if (video.currentTime > accumulatedRef.current + 0.5) {
+      video.currentTime = accumulatedRef.current;
+    }
+  }, []);
+
+  // ── Custom controls handlers ────────────────────────────────────────────────
+  const handlePlayPause = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) video.play();
+    else video.pause();
+    resetControlsTimer();
+  };
+
+  const handleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setIsMuted(video.muted);
+  };
+
+  const handleSkip = (delta: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const newTime = video.currentTime + delta;
+    // Forward skip: cap at accumulated watch time
+    if (delta > 0) {
+      video.currentTime = Math.min(newTime, accumulatedRef.current);
+    } else {
+      video.currentTime = Math.max(0, newTime);
+    }
+    resetControlsTimer();
+  };
+
+  const handleFullscreen = () => {
+    const container = containerRef.current;
+    if (!container) return;
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      container.requestFullscreen();
+    }
+  };
 
   const handleClaim = async () => {
     setClaiming(true);
@@ -249,24 +376,48 @@ function MissionVideoPlayer({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white/60 hover:text-white hover:bg-black/70 transition-all"
+          className="absolute top-3 right-3 z-20 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white/60 hover:text-white hover:bg-black/70 transition-all"
         >
           <X size={16} />
         </button>
 
-        {/* Video area */}
-        <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
+        {/* Video area — NO native controls */}
+        <div
+          ref={containerRef}
+          className="relative bg-black select-none"
+          style={{ aspectRatio: "16/9" }}
+          onMouseMove={resetControlsTimer}
+          onMouseEnter={resetControlsTimer}
+          onClick={handlePlayPause}
+        >
           <video
             ref={videoRef}
             src={mission.videoUrl}
             className="w-full h-full object-contain"
-            controlsList="nodownload nofullscreen noremoteplayback"
+            // NO controls prop — completely custom player
             disablePictureInPicture
             onSeeking={handleSeeking}
-            onSeeked={handleSeeked}
             onContextMenu={(e) => e.preventDefault()}
-            controls
+            playsInline
           />
+
+          {/* Center play/pause overlay on click */}
+          <AnimatePresence>
+            {!isPlaying && !tabWarning && (
+              <motion.div
+                key="play-overlay"
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                transition={{ duration: 0.15 }}
+                className="absolute inset-0 flex items-center justify-center pointer-events-none"
+              >
+                <div className="w-16 h-16 rounded-full flex items-center justify-center bg-black/60">
+                  <Play size={28} fill="white" className="text-white ml-1" />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Tab warning overlay */}
           <AnimatePresence>
@@ -275,7 +426,8 @@ function MissionVideoPlayer({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="absolute inset-0 flex items-center justify-center bg-black/60"
+                className="absolute inset-0 flex items-center justify-center bg-black/70 z-10"
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="bg-[#1e1f22]/95 rounded-2xl px-6 py-5 max-w-xs text-center shadow-xl border border-white/10">
                   <p className="text-white/90 text-sm leading-relaxed">
@@ -292,9 +444,35 @@ function MissionVideoPlayer({
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Custom controls bar — appears on hover/activity */}
+          <AnimatePresence>
+            {showControls && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="absolute bottom-0 left-0 right-0 z-10"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CustomVideoControls
+                  videoRef={videoRef}
+                  currentTime={currentTime}
+                  duration={duration}
+                  isPlaying={isPlaying}
+                  isMuted={isMuted}
+                  onPlayPause={handlePlayPause}
+                  onMute={handleMute}
+                  onSkip={handleSkip}
+                  onFullscreen={handleFullscreen}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Progress bar (thin, below video) */}
+        {/* Mission progress bar (the ONLY progress bar — red, below video, not interactive) */}
         <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.08)" }}>
           <motion.div
             className="h-full"
@@ -306,10 +484,8 @@ function MissionVideoPlayer({
 
         {/* Bottom info bar (Discord-style) */}
         <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#111214" }}>
-          {/* Reward icon */}
           <RewardIcon size={44} progress={percent} logoUrl={mission.sponsorLogo} />
 
-          {/* Mission info */}
           <div className="flex-1 min-w-0">
             <p className="text-white font-semibold text-sm truncate">{mission.title}</p>
             <div className="flex items-center gap-1.5 mt-0.5">
@@ -330,7 +506,6 @@ function MissionVideoPlayer({
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {isClaimed ? (
               <div className="flex items-center gap-1.5">
@@ -349,10 +524,7 @@ function MissionVideoPlayer({
                 {claiming ? (
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
-                  <>
-                    <Coins size={14} />
-                    Reclamar {mission.rewardRlc} RLC
-                  </>
+                  <><Coins size={14} /> Reclamar {mission.rewardRlc} RLC</>
                 )}
               </motion.button>
             ) : (
@@ -396,7 +568,6 @@ function MissionCard({
   const remainingSeconds = Math.max(0, required - watched);
   const remainingDisplay = `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, "0")}`;
 
-  // Hover state for video preview
   const [isHovered, setIsHovered] = useState(false);
   const hoverVideoRef = useRef<HTMLVideoElement>(null);
 
@@ -414,104 +585,64 @@ function MissionCard({
 
   return (
     <div
-      className="rounded-xl overflow-hidden flex flex-col cursor-pointer group"
+      className="rounded-xl overflow-hidden flex flex-col"
       style={{
         background: "#1e1f22",
         border: "1px solid rgba(255,255,255,0.06)",
-        transition: "transform 0.15s ease, box-shadow 0.15s ease",
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Banner / Video preview area */}
       <div className="relative overflow-hidden" style={{ height: 168 }}>
-        {/* Static banner image */}
         {mission.bannerUrl ? (
           <img
             src={mission.bannerUrl}
             alt={mission.title}
             className="absolute inset-0 w-full h-full object-cover"
-            style={{
-              transition: "opacity 0.3s ease",
-              opacity: isHovered ? 0 : 1,
-            }}
+            style={{ transition: "opacity 0.3s ease", opacity: isHovered ? 0 : 1 }}
           />
         ) : (
-          <div
-            className="absolute inset-0 w-full h-full"
-            style={{ background: "linear-gradient(135deg, #1a0505, #2d0a0a)" }}
-          />
+          <div className="absolute inset-0 w-full h-full" style={{ background: "linear-gradient(135deg, #1a0505, #2d0a0a)" }} />
         )}
 
-        {/* Video preview on hover (muted, no controls) */}
+        {/* Video preview on hover */}
         <video
           ref={hoverVideoRef}
           src={mission.videoUrl}
           className="absolute inset-0 w-full h-full object-cover"
-          muted
-          loop
-          playsInline
-          preload="none"
-          style={{
-            transition: "opacity 0.3s ease",
-            opacity: isHovered ? 1 : 0,
-          }}
+          muted loop playsInline preload="none"
+          style={{ transition: "opacity 0.3s ease", opacity: isHovered ? 1 : 0 }}
         />
 
-        {/* Discord-style gradient overlay: dark at bottom, transparent at top */}
+        {/* Gradient overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)",
-          }}
+          style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)" }}
         />
 
-        {/* Sponsor logo — bottom left, large (like Discord) */}
+        {/* Sponsor logo */}
         {mission.sponsorLogo && (
           <div className="absolute bottom-3 left-3 z-10">
-            <img
-              src={mission.sponsorLogo}
-              alt={mission.sponsorName ?? ""}
-              className="object-contain drop-shadow-lg"
-              style={{ height: 36, maxWidth: 140 }}
-            />
+            <img src={mission.sponsorLogo} alt={mission.sponsorName ?? ""} className="object-contain drop-shadow-lg" style={{ height: 36, maxWidth: 140 }} />
           </div>
         )}
-
-        {/* Sponsor name text — bottom left below logo */}
         {mission.sponsorName && !mission.sponsorLogo && (
           <div className="absolute bottom-3 left-3 z-10">
-            <span
-              className="text-white font-black text-xl tracking-tight drop-shadow-lg"
-              style={{ fontFamily: "Orbitron, sans-serif", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}
-            >
+            <span className="text-white font-black text-xl tracking-tight drop-shadow-lg" style={{ fontFamily: "Orbitron, sans-serif", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
               {mission.sponsorName.toUpperCase()}
             </span>
           </div>
         )}
 
-        {/* Play icon + more options top-right */}
+        {/* Top-right controls */}
         <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
           {!isClaimed && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onWatch(); }}
-              className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all"
-              style={{
-                opacity: isHovered ? 1 : 0.7,
-                transition: "opacity 0.2s ease",
-              }}
-            >
+            <button onClick={(e) => { e.stopPropagation(); onWatch(); }} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all">
               <Play size={13} fill="currentColor" />
             </button>
           )}
-          <button
-            onClick={(e) => e.stopPropagation()}
-            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/60 hover:bg-black/70 hover:text-white transition-all"
-            style={{
-              opacity: isHovered ? 1 : 0.7,
-              transition: "opacity 0.2s ease",
-            }}
-          >
+          <button onClick={(e) => e.stopPropagation()} className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/60 hover:bg-black/70 hover:text-white transition-all">
             <MoreHorizontal size={14} />
           </button>
         </div>
@@ -521,39 +652,25 @@ function MissionCard({
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <div className="flex items-center gap-1.5">
           <CheckCircle2 size={12} className="text-green-400 flex-shrink-0" />
-          <span className="text-white/60 text-xs font-medium">
-            Patrocinado por {mission.sponsorName ?? "RLC"}
-          </span>
+          <span className="text-white/60 text-xs font-medium">Patrocinado por {mission.sponsorName ?? "RLC"}</span>
         </div>
-        {timeRemaining && (
-          <span className="text-white/40 text-xs">{timeRemaining}</span>
-        )}
+        {timeRemaining && <span className="text-white/40 text-xs">{timeRemaining}</span>}
       </div>
 
       {/* Mission info row */}
       <div className="flex items-start gap-3 px-4 py-3">
-        {/* Reward icon with progress ring — larger (64px like Discord) */}
         <RewardIcon size={64} progress={isAccepted ? percent : 0} logoUrl={mission.sponsorLogo} />
-
-        {/* Text */}
         <div className="flex-1 min-w-0">
           <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
             MISIÓN {mission.sponsorName?.toUpperCase() ?? "RLC"}
           </p>
           <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">
             {isClaimed ? (
-              <span className="flex items-center gap-1.5">
-                <Coins size={13} className="text-yellow-400 flex-shrink-0" />
-                {mission.rewardRlc} RLC
-              </span>
-            ) : (
-              mission.title
-            )}
+              <span className="flex items-center gap-1.5"><Coins size={13} className="text-yellow-400 flex-shrink-0" />{mission.rewardRlc} RLC</span>
+            ) : mission.title}
           </h3>
           <p className="text-white/45 text-xs mt-0.5 line-clamp-2 leading-relaxed">
-            {isClaimed
-              ? `Reclamaste esta recompensa`
-              : mission.description ?? `Gana ${mission.rewardRlc} RLC completando esta misión`}
+            {isClaimed ? "Reclamaste esta recompensa" : mission.description ?? `Gana ${mission.rewardRlc} RLC completando esta misión`}
           </p>
         </div>
       </div>
@@ -565,57 +682,24 @@ function MissionCard({
       <div className="flex gap-2 px-4 py-3">
         {isClaimed ? (
           <>
-            <button
-              onClick={onWatch}
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
-            >
-              <RefreshCw size={13} />
-              Ver de nuevo
+            <button onClick={onWatch} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <RefreshCw size={13} /> Ver de nuevo
             </button>
-            <button
-              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-            >
+            <button className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
               Ver recompensa
             </button>
           </>
         ) : isCompleted ? (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onWatch}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-          >
-            <Coins size={14} />
-            Reclamar {mission.rewardRlc} RLC
+          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={onWatch} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+            <Coins size={14} /> Reclamar {mission.rewardRlc} RLC
           </motion.button>
         ) : isAccepted ? (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onWatch}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-          >
-            <Clock size={14} />
-            Mirar ({remainingDisplay} restantes)
+          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={onWatch} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+            <Clock size={14} /> Mirar ({remainingDisplay} restantes)
           </motion.button>
         ) : (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={onAccept}
-            disabled={accepting}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all"
-            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-          >
-            {accepting ? (
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            ) : (
-              "Aceptar misión"
-            )}
+          <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }} onClick={onAccept} disabled={accepting} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
+            {accepting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Aceptar misión"}
           </motion.button>
         )}
       </div>
@@ -636,8 +720,7 @@ export default function MissionsPage() {
 
   const [activePlayer, setActivePlayer] = useState<Mission | null>(null);
 
-  const getProgress = (missionId: number) =>
-    myProgress.find((p) => p.missionId === missionId);
+  const getProgress = (missionId: number) => myProgress.find((p) => p.missionId === missionId);
 
   const handleAccept = async (mission: Mission) => {
     setAcceptingId(mission.id);
@@ -659,30 +742,20 @@ export default function MissionsPage() {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "#0a0a0a" }}>
-      {/* Section Banner */}
       <SectionBanner section="missions" />
 
-      {/* Page header */}
       <div className="px-4 pt-6 pb-5">
-        <h1 className="text-white font-black text-2xl tracking-tight" style={{ fontFamily: "Orbitron, sans-serif" }}>
-          MISIONES
-        </h1>
+        <h1 className="text-white font-black text-2xl tracking-tight" style={{ fontFamily: "Orbitron, sans-serif" }}>MISIONES</h1>
         <p className="text-white/40 text-sm mt-1">Completa misiones patrocinadas y gana RLC</p>
       </div>
 
-      {/* Tabs */}
       <div className="px-4 mb-5">
         <div className="flex gap-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          <button className="px-4 pb-2.5 text-sm font-semibold text-white border-b-2 border-red-500 -mb-px">
-            Todas las misiones
-          </button>
-          <button className="px-4 pb-2.5 text-sm font-medium text-white/40 hover:text-white/70 transition-colors">
-            Misiones reclamadas
-          </button>
+          <button className="px-4 pb-2.5 text-sm font-semibold text-white border-b-2 border-red-500 -mb-px">Todas las misiones</button>
+          <button className="px-4 pb-2.5 text-sm font-medium text-white/40 hover:text-white/70 transition-colors">Misiones reclamadas</button>
         </div>
       </div>
 
-      {/* Missions grid */}
       <div className="px-4">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -692,10 +765,7 @@ export default function MissionsPage() {
           </div>
         ) : missions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-              style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}
-            >
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}>
               <Coins size={28} className="text-white/20" />
             </div>
             <h3 className="text-white/60 font-semibold text-lg mb-1">Sin misiones disponibles</h3>
@@ -704,12 +774,7 @@ export default function MissionsPage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {missions.map((mission, i) => (
-              <motion.div
-                key={mission.id}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-              >
+              <motion.div key={mission.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                 <MissionCard
                   mission={mission as Mission}
                   userMission={getProgress(mission.id)}
@@ -723,7 +788,6 @@ export default function MissionsPage() {
         )}
       </div>
 
-      {/* Video Player Modal */}
       <AnimatePresence>
         {activePlayer && (
           <MissionVideoPlayer
