@@ -132,41 +132,23 @@ function HeroSection() {
           }
         }}
       >
-        {/* Imagen con fade */}
+        {/* Imagen con fade — usa imagen móvil en teléfonos si existe */}
         <div className="absolute inset-0" style={{ opacity: transitioning ? 0 : 1, transition: "opacity 250ms ease" }}>
+          {/* Imagen móvil: visible solo en <768px */}
+          {current?.mobileImage && (
+            <img
+              src={current.mobileImage}
+              alt={current?.brandName ?? ""}
+              className="block md:hidden w-full h-full object-cover object-center"
+            />
+          )}
+          {/* Imagen desktop: visible en ≥768px, o siempre si no hay imagen móvil */}
           <img
             src={current?.bannerImage ?? ""}
             alt={current?.brandName ?? ""}
-            className="w-full h-full object-cover object-center"
+            className={current?.mobileImage ? "hidden md:block w-full h-full object-cover object-center" : "w-full h-full object-cover object-center"}
           />
-          {/* Gradient inferior */}
-          <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 45%, transparent 70%)" }} />
         </div>
-
-        {/* Contenido inferior */}
-        {current && (
-          <div
-            className="absolute bottom-0 left-0 right-0 p-5 sm:p-7"
-            style={{ opacity: transitioning ? 0 : 1, transition: "opacity 250ms ease" }}
-          >
-
-            {current.tagline && (
-              <p className="text-xs font-semibold uppercase tracking-widest mb-1 sm:mb-1.5" style={{ color: current.accentColor ?? "rgba(255,255,255,0.7)" }}>{current.tagline}</p>
-            )}
-            <h2 className="text-lg sm:text-2xl font-bold text-white mb-3 sm:mb-4 leading-tight" style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}>{current.title}</h2>
-            {/* UN Único botón minimalista */}
-            {current.destinationUrl && (
-              <button
-                className="px-4 py-1.5 sm:px-5 sm:py-2 rounded-lg text-sm font-semibold transition-all duration-150"
-                style={{ background: "rgba(255,255,255,0.92)", color: "#111", backdropFilter: "blur(4px)" }}
-                onMouseEnter={e => (e.currentTarget.style.background = "#fff")}
-                onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.92)")}
-              >
-                {current.ctaLabel ?? "Ver más"}
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Badge publicidad */}
         <div className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs" style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.45)" }}>Publicidad</div>

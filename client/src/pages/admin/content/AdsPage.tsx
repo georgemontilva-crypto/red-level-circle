@@ -1,20 +1,25 @@
 /**
  * AdsPage — Gestión de publicidades del carrusel principal de la home.
  * Permite crear, editar, activar/desactivar y eliminar anuncios.
+ *
+ * MEDIDAS EXACTAS DEL BANNER:
+ *   PC (≥1024px):     1200 × 480 px  (proporción 2.5:1)
+ *   Tablet (768–1023px): 1024 × 410 px  (proporción 2.5:1)
+ *   Móvil (<768px):   800 × 320 px   (proporción 2.5:1)
+ *
+ * El banner usa la misma proporción en todos los dispositivos (clamp 50vw).
+ * Se recomienda subir UNA imagen de 1200×480px para desktop/tablet,
+ * y una imagen de 800×320px para móvil (se carga la correcta según dispositivo).
  */
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Plus, Trash2, Upload, ToggleLeft, ToggleRight, Edit2, X, Check, ExternalLink, Megaphone } from "lucide-react";
+import { Plus, Trash2, Upload, ToggleLeft, ToggleRight, Edit2, X, Check, ExternalLink, Megaphone, Monitor, Smartphone, Image } from "lucide-react";
 import { PageHeader } from "../components/AdminUI";
 
 interface AdForm {
   brandName: string;
-  title: string;
-  tagline: string;
-  ctaLabel: string;
   destinationUrl: string;
-  accentColor: string;
   bannerImage: string;
   mobileImage: string;
   logoImage: string;
@@ -23,16 +28,43 @@ interface AdForm {
 
 const EMPTY_FORM: AdForm = {
   brandName: "",
-  title: "",
-  tagline: "",
-  ctaLabel: "Ver más",
   destinationUrl: "",
-  accentColor: "#dc2626",
   bannerImage: "",
   mobileImage: "",
   logoImage: "",
   isFeatured: true,
 };
+
+// Tarjeta informativa de medidas
+function SizeGuide() {
+  return (
+    <div className="rounded-xl border border-zinc-700/50 bg-zinc-900/40 p-4 mb-5">
+      <p className="text-xs font-bold text-zinc-300 font-mono mb-3 uppercase tracking-wider flex items-center gap-2">
+        <Image size={13} /> Guía de medidas exactas
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          { icon: Monitor, label: "PC / Desktop", size: "1200 × 480 px", ratio: "2.5 : 1", note: "≥ 1024px de pantalla" },
+          { icon: Monitor, label: "Tablet", size: "1024 × 410 px", ratio: "2.5 : 1", note: "768 – 1023px" },
+          { icon: Smartphone, label: "Móvil", size: "800 × 320 px", ratio: "2.5 : 1", note: "< 768px de pantalla" },
+        ].map(({ icon: Icon, label, size, ratio, note }) => (
+          <div key={label} className="flex items-start gap-3 bg-zinc-800/50 rounded-lg p-3">
+            <Icon size={16} className="text-zinc-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-xs font-semibold text-white">{label}</p>
+              <p className="text-sm font-bold text-red-400 font-mono mt-0.5">{size}</p>
+              <p className="text-xs text-zinc-500 mt-0.5">Proporción {ratio} · {note}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-zinc-500 mt-3 leading-relaxed">
+        El banner se adapta automáticamente al ancho de pantalla. Usa la imagen de PC para desktop y tablet, y la imagen móvil para teléfonos.
+        <strong className="text-zinc-400"> No se superpone ningún texto sobre la imagen</strong> — el diseño debe estar completamente incluido en la imagen.
+      </p>
+    </div>
+  );
+}
 
 export function AdsPage() {
   const { data: ads, refetch } = trpc.admin.listAds.useQuery();
@@ -60,7 +92,7 @@ export function AdsPage() {
 
   const handleUpload = async (field: "bannerImage" | "mobileImage" | "logoImage", file: File, isEdit = false) => {
     if (!file.type.startsWith("image/")) { toast.error("Solo imágenes"); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error("Máx 5MB"); return; }
+    if (file.size > 8 * 1024 * 1024) { toast.error("Máx 8MB"); return; }
     setUploading(field);
     const reader = new FileReader();
     reader.onload = async (e) => {
@@ -80,31 +112,26 @@ export function AdsPage() {
 
   const handleCreate = () => {
     if (!form.brandName.trim()) { toast.error("El nombre de la marca es requerido"); return; }
-    if (!form.title.trim()) { toast.error("El título es requerido"); return; }
-    if (!form.bannerImage) { toast.error("La imagen del banner es requerida"); return; }
+    if (!form.bannerImage) { toast.error("La imagen de PC/desktop es requerida"); return; }
     createAd.mutate({
       brand: form.brandName,
-      title: form.title,
-      tagline: form.tagline || undefined,
-      ctaLabel: form.ctaLabel || undefined,
+      title: form.brandName, // título interno = nombre de marca
+      tagline: undefined,
+      ctaLabel: undefined,
       linkUrl: form.destinationUrl || undefined,
-      accentColor: form.accentColor || undefined,
+      accentColor: undefined,
       imageUrl: form.bannerImage,
+      mobileImageUrl: form.mobileImage || undefined,
       logoImage: form.logoImage || undefined,
       adType: "featured",
       isFeatured: form.isFeatured,
     });
-
   };
 
   const handleSaveEdit = (id: number) => {
     updateAd.mutate({
       id,
-      title: editForm.title,
-      tagline: editForm.tagline,
-      ctaLabel: editForm.ctaLabel,
       linkUrl: editForm.destinationUrl,
-      accentColor: editForm.accentColor,
       imageUrl: editForm.bannerImage,
       mobileImageUrl: editForm.mobileImage || undefined,
       logoImage: editForm.logoImage || undefined,
@@ -116,16 +143,73 @@ export function AdsPage() {
     setEditingId(ad.id);
     setEditForm({
       brandName: ad.brandName ?? "",
-      title: ad.title ?? "",
-      tagline: ad.tagline ?? "",
-      ctaLabel: ad.ctaLabel ?? "Ver más",
       destinationUrl: ad.destinationUrl ?? "",
-      accentColor: ad.accentColor ?? "#dc2626",
       bannerImage: ad.bannerImage ?? "",
-      mobileImage: ad.logoImage ?? "",
+      mobileImage: ad.mobileImage ?? "",
       logoImage: ad.logoImage ?? "",
       isFeatured: ad.isFeatured ?? true,
     });
+  };
+
+  // Componente reutilizable para zona de subida de imagen
+  const ImageUploadZone = ({
+    field,
+    value,
+    label,
+    sublabel,
+    aspectLabel,
+    height = 160,
+    isEdit = false,
+  }: {
+    field: "bannerImage" | "mobileImage" | "logoImage";
+    value: string;
+    label: string;
+    sublabel: string;
+    aspectLabel: string;
+    height?: number;
+    isEdit?: boolean;
+  }) => {
+    const setter = isEdit
+      ? (url: string) => setEditForm(f => ({ ...f, [field]: url }))
+      : (url: string) => setForm(f => ({ ...f, [field]: url }));
+
+    return (
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs text-zinc-400 font-mono">{label}</label>
+          <span className="text-xs font-bold text-red-400 font-mono bg-red-950/30 border border-red-900/40 px-2 py-0.5 rounded">{aspectLabel}</span>
+        </div>
+        <p className="text-xs text-zinc-600 mb-2">{sublabel}</p>
+        <div
+          className="relative w-full rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-red-500 transition-colors"
+          style={{ height: `${height}px`, background: value ? `url(${value}) center/cover` : "#18181b" }}
+        >
+          {!value && (
+            <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
+              <Upload size={24} className="text-zinc-600" />
+              <span className="text-xs text-zinc-500 font-mono">Clic para subir imagen</span>
+              <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(field, e.target.files[0], isEdit)} />
+            </label>
+          )}
+          {value && (
+            <div className="absolute bottom-2 right-2 flex gap-2">
+              <label className="cursor-pointer bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
+                <Upload size={10} /> Cambiar
+                <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload(field, e.target.files[0], isEdit)} />
+              </label>
+              <button onClick={() => setter("")} className="bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
+                <X size={10} /> Quitar
+              </button>
+            </div>
+          )}
+          {uploading === field && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+              <span className="text-xs text-white font-mono animate-pulse">Subiendo...</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -154,45 +238,21 @@ export function AdsPage() {
             </button>
           </div>
 
+          <SizeGuide />
+
+          {/* Nombre de la marca y URL */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs text-zinc-400 font-mono mb-1 block">Nombre de la marca *</label>
               <input
                 value={form.brandName}
                 onChange={e => setForm(f => ({ ...f, brandName: e.target.value }))}
-                placeholder="Ej: Zona Game"
+                placeholder="Ej: AMD Ryzen"
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
               />
             </div>
             <div>
-              <label className="text-xs text-zinc-400 font-mono mb-1 block">Título del slide *</label>
-              <input
-                value={form.title}
-                onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-                placeholder="Ej: ¡Nuevo patrocinador oficial!"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 font-mono mb-1 block">Tagline (subtítulo)</label>
-              <input
-                value={form.tagline}
-                onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))}
-                placeholder="Ej: Aliado oficial de RLC"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 font-mono mb-1 block">Texto del botón CTA</label>
-              <input
-                value={form.ctaLabel}
-                onChange={e => setForm(f => ({ ...f, ctaLabel: e.target.value }))}
-                placeholder="Ver más"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
-              />
-            </div>
-            <div>
-              <label className="text-xs text-zinc-400 font-mono mb-1 block">URL de destino</label>
+              <label className="text-xs text-zinc-400 font-mono mb-1 block">URL de destino (opcional)</label>
               <input
                 value={form.destinationUrl}
                 onChange={e => setForm(f => ({ ...f, destinationUrl: e.target.value }))}
@@ -200,95 +260,29 @@ export function AdsPage() {
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
               />
             </div>
-            <div>
-              <label className="text-xs text-zinc-400 font-mono mb-1 block">Color de acento</label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.accentColor}
-                  onChange={e => setForm(f => ({ ...f, accentColor: e.target.value }))}
-                  className="w-10 h-10 rounded cursor-pointer bg-transparent border-0"
-                />
-                <input
-                  value={form.accentColor}
-                  onChange={e => setForm(f => ({ ...f, accentColor: e.target.value }))}
-                  placeholder="#dc2626"
-                  className="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
-                />
-              </div>
-            </div>
           </div>
 
-          {/* Imágenes — desktop y móvil en 2 columnas */}
+          {/* Imágenes — PC y Móvil */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {/* Imagen del banner desktop */}
-          <div>
-            <label className="text-xs text-zinc-400 font-mono mb-2 block">Imagen desktop * (recomendado: 1920×540px)</label>
-            <div
-              className="relative w-full rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-red-500 transition-colors"
-              style={{ height: "160px", background: form.bannerImage ? `url(${form.bannerImage}) center/cover` : "#18181b" }}
-            >
-              {!form.bannerImage && (
-                <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <Upload size={28} className="text-zinc-600" />
-                  <span className="text-xs text-zinc-500">Subir imagen del banner</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("bannerImage", e.target.files[0])} />
-                </label>
-              )}
-              {form.bannerImage && (
-                <div className="absolute bottom-2 right-2 flex gap-2">
-                  <label className="cursor-pointer bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                    <Upload size={10} /> Cambiar
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("bannerImage", e.target.files[0])} />
-                  </label>
-                  <button onClick={() => setForm(f => ({ ...f, bannerImage: "" }))} className="bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                    <X size={10} /> Quitar
-                  </button>
-                </div>
-              )}
-              {uploading === "bannerImage" && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <span className="text-xs text-white font-mono animate-pulse">Subiendo...</span>
-                </div>
-              )}
-            </div>
+            <ImageUploadZone
+              field="bannerImage"
+              value={form.bannerImage}
+              label="Imagen PC / Desktop *"
+              sublabel="También se usa en tablet"
+              aspectLabel="1200 × 480 px"
+              height={170}
+            />
+            <ImageUploadZone
+              field="mobileImage"
+              value={form.mobileImage}
+              label="Imagen Móvil (opcional)"
+              sublabel="Si no se sube, se usa la de PC"
+              aspectLabel="800 × 320 px"
+              height={170}
+            />
           </div>
 
-          {/* Imagen móvil */}
-          <div>
-            <label className="text-xs text-zinc-400 font-mono mb-2 block">Imagen móvil (recomendado: 640×360px)</label>
-            <div
-              className="relative w-full rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-red-500 transition-colors"
-              style={{ height: "160px", background: form.mobileImage ? `url(${form.mobileImage}) center/cover` : "#18181b" }}
-            >
-              {!form.mobileImage && (
-                <label className="absolute inset-0 flex flex-col items-center justify-center gap-2 cursor-pointer">
-                  <Upload size={22} className="text-zinc-600" />
-                  <span className="text-xs text-zinc-500">Subir imagen para teléfono</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("mobileImage", e.target.files[0])} />
-                </label>
-              )}
-              {form.mobileImage && (
-                <div className="absolute bottom-2 right-2 flex gap-2">
-                  <label className="cursor-pointer bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                    <Upload size={10} /> Cambiar
-                    <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("mobileImage", e.target.files[0])} />
-                  </label>
-                  <button onClick={() => setForm(f => ({ ...f, mobileImage: "" }))} className="bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                    <X size={10} /> Quitar
-                  </button>
-                </div>
-              )}
-              {uploading === "mobileImage" && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                  <span className="text-xs text-white font-mono animate-pulse">Subiendo...</span>
-                </div>
-              )}
-            </div>
-          </div>
-          </div>{/* end grid imágenes */}
-
-          {/* Logo de la marca */}
+          {/* Logo */}
           <div>
             <label className="text-xs text-zinc-400 font-mono mb-2 block">Logo de la marca (aparece en la miniatura lateral)</label>
             <div className="flex items-center gap-4">
@@ -355,71 +349,42 @@ export function AdsPage() {
                     <h4 className="font-orbitron text-white text-xs tracking-wider">EDITANDO: {ad.brandName}</h4>
                     <button onClick={() => setEditingId(null)} className="text-zinc-500 hover:text-white"><X size={16} /></button>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      { key: "title", label: "Título", placeholder: "Título del slide" },
-                      { key: "tagline", label: "Tagline", placeholder: "Subtítulo" },
-                      { key: "ctaLabel", label: "Botón CTA", placeholder: "Ver más" },
-                      { key: "destinationUrl", label: "URL destino", placeholder: "https://..." },
-                    ].map(({ key, label, placeholder }) => (
-                      <div key={key}>
-                        <label className="text-xs text-zinc-500 font-mono mb-1 block">{label}</label>
-                        <input
-                          value={(editForm as any)[key] ?? ""}
-                          onChange={e => setEditForm(f => ({ ...f, [key]: e.target.value }))}
-                          placeholder={placeholder}
-                          className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
-                        />
-                      </div>
-                    ))}
+
+                  <SizeGuide />
+
+                  {/* URL en edición */}
+                  <div>
+                    <label className="text-xs text-zinc-500 font-mono mb-1 block">URL de destino</label>
+                    <input
+                      value={editForm.destinationUrl ?? ""}
+                      onChange={e => setEditForm(f => ({ ...f, destinationUrl: e.target.value }))}
+                      placeholder="https://..."
+                      className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm outline-none focus:border-red-500"
+                    />
                   </div>
-                  {/* Imágenes en edición — desktop y móvil */}
+
+                  {/* Imágenes en edición */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-zinc-500 font-mono mb-2 block">Imagen desktop</label>
-                      <div
-                        className="relative w-full rounded-xl overflow-hidden border border-zinc-700"
-                        style={{ height: "110px", background: editForm.bannerImage ? `url(${editForm.bannerImage}) center/cover` : "#18181b" }}
-                      >
-                        {!editForm.bannerImage && <div className="absolute inset-0 flex items-center justify-center text-zinc-600 text-xs">Sin imagen</div>}
-                        <label className="absolute bottom-2 right-2 cursor-pointer bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                          <Upload size={10} /> {editForm.bannerImage ? "Cambiar" : "Subir"}
-                          <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("bannerImage", e.target.files[0], true)} />
-                        </label>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-xs text-zinc-500 font-mono mb-2 block">Imagen móvil</label>
-                      <div
-                        className="relative w-full rounded-xl overflow-hidden border border-zinc-700"
-                        style={{ height: "110px", background: editForm.mobileImage ? `url(${editForm.mobileImage}) center/cover` : "#18181b" }}
-                      >
-                        {!editForm.mobileImage && (
-                          <label className="absolute inset-0 flex flex-col items-center justify-center gap-1 cursor-pointer">
-                            <Upload size={16} className="text-zinc-600" />
-                            <span className="text-xs text-zinc-600">Subir móvil</span>
-                            <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("mobileImage", e.target.files[0], true)} />
-                          </label>
-                        )}
-                        {editForm.mobileImage && (
-                          <>
-                            <label className="absolute bottom-2 right-2 cursor-pointer bg-black/70 hover:bg-red-700/80 transition-colors rounded px-2 py-1 text-xs text-white flex items-center gap-1">
-                              <Upload size={10} /> Cambiar
-                              <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("mobileImage", e.target.files[0], true)} />
-                            </label>
-                            <button onClick={() => setEditForm(f => ({ ...f, mobileImage: "" }))} className="absolute top-2 right-2 bg-black/70 hover:bg-red-700/80 rounded p-0.5">
-                              <X size={10} className="text-white" />
-                            </button>
-                          </>
-                        )}
-                        {uploading === "mobileImage" && (
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/60">
-                            <span className="text-xs text-white font-mono animate-pulse">Subiendo...</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    <ImageUploadZone
+                      field="bannerImage"
+                      value={editForm.bannerImage ?? ""}
+                      label="Imagen PC / Desktop"
+                      sublabel="También se usa en tablet"
+                      aspectLabel="1200 × 480 px"
+                      height={130}
+                      isEdit
+                    />
+                    <ImageUploadZone
+                      field="mobileImage"
+                      value={editForm.mobileImage ?? ""}
+                      label="Imagen Móvil"
+                      sublabel="Si no se sube, se usa la de PC"
+                      aspectLabel="800 × 320 px"
+                      height={130}
+                      isEdit
+                    />
                   </div>
+
                   {/* Logo en edición */}
                   <div>
                     <label className="text-xs text-zinc-500 font-mono mb-2 block">Logo de la marca</label>
@@ -444,6 +409,7 @@ export function AdsPage() {
                       </div>
                     </div>
                   </div>
+
                   <div className="flex justify-end gap-2">
                     <button onClick={() => setEditingId(null)} className="px-4 py-2 rounded-lg text-xs font-mono text-zinc-400 hover:text-white border border-zinc-700 hover:border-zinc-500 transition-colors">
                       Cancelar
@@ -482,9 +448,12 @@ export function AdsPage() {
                       >
                         {ad.isActive ? "● Activo" : "○ Inactivo"}
                       </span>
+                      {ad.mobileImage && (
+                        <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-blue-950/30 text-blue-400 border border-blue-900/40 flex items-center gap-1">
+                          <Smartphone size={10} /> Móvil
+                        </span>
+                      )}
                     </div>
-                    <p className="text-zinc-300 text-xs truncate mb-0.5">{ad.title}</p>
-                    {ad.tagline && <p className="text-zinc-500 text-xs truncate">{ad.tagline}</p>}
                     {ad.destinationUrl && (
                       <a href={ad.destinationUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 mt-1 transition-colors">
                         <ExternalLink size={10} /> {ad.destinationUrl}
