@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Play, CheckCircle2, Clock, X, AlertTriangle,
+  Play, CheckCircle2, Clock, X,
   RefreshCw, Lock, MoreHorizontal, Coins
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
@@ -63,7 +63,7 @@ function RewardIcon({ size = 64, progress = 0, logoUrl }: { size?: number; progr
         style={{ background: "linear-gradient(135deg, #1a0a0a, #2d1010)" }}
       >
         {logoUrl ? (
-          <img src={logoUrl} alt="" className="w-full h-full object-contain p-1.5" />
+          <img src={logoUrl} alt="" className="w-full h-full object-contain p-1" />
         ) : (
           <Coins size={size * 0.38} className="text-red-400" />
         )}
@@ -107,8 +107,13 @@ function MissionVideoPlayer({
   const [isClaimed, setIsClaimed] = useState(userMission?.claimed ?? false);
   const [tabWarning, setTabWarning] = useState(false);
   const [claiming, setClaiming] = useState(false);
-  const lastReportedRef = useRef(watchedSeconds);
+  // Track the last server-confirmed seconds (used as anti-fraud ceiling)
+  const lastReportedRef = useRef(userMission?.watchedSeconds ?? 0);
+  // Track total accumulated watch time locally (not tied to video.currentTime)
+  const accumulatedRef = useRef(userMission?.watchedSeconds ?? 0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Whether we are currently in a "seeking" block
+  const isSeeking = useRef(false);
 
   const updateProgress = trpc.missions.updateProgress.useMutation();
   const claimMutation = trpc.missions.claim.useMutation();
@@ -116,7 +121,6 @@ function MissionVideoPlayer({
   const required = mission.requiredWatchSeconds;
   const percent = Math.min((watchedSeconds / required) * 100, 100);
 
-  // Format current time display
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -135,39 +139,84 @@ function MissionVideoPlayer({
     return () => document.removeEventListener("visibilitychange", handleVisibility);
   }, []);
 
-  // Track progress every 5 seconds
-  useEffect(() => {
-    intervalRef.current = setInterval(async () => {
-      const video = videoRef.current;
-      if (!video || video.paused || video.ended) return;
-      const current = Math.floor(video.currentTime);
-      if (current <= lastReportedRef.current) return;
-      const safe = Math.min(current, lastReportedRef.current + 10);
-      lastReportedRef.current = safe;
-      setWatchedSeconds(safe);
-      try {
-        const result = await updateProgress.mutateAsync({ missionId: mission.id, watchedSeconds: safe });
-        if (result.completed) {
-          setIsCompleted(true);
-          video.pause();
-        }
-        onProgressUpdate(safe);
-      } catch (e) {
-        console.error("Progress update failed", e);
-      }
-    }, 5000);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [mission.id]);
-
-  // Block seeking (anti-fraud)
+  // ── Anti-cheat: block seeking forward ──────────────────────────────────────
+  // We allow the user to seek BACK but not forward beyond what they've watched.
   const handleSeeking = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    const maxAllowed = (lastReportedRef.current / required) * video.duration;
-    if (video.currentTime > maxAllowed + 2) {
+    // Maximum allowed position = accumulated seconds watched
+    const maxAllowed = accumulatedRef.current;
+    if (video.currentTime > maxAllowed + 1) {
+      isSeeking.current = true;
       video.currentTime = maxAllowed;
     }
-  }, [required]);
+  }, []);
+
+  const handleSeeked = useCallback(() => {
+    isSeeking.current = false;
+  }, []);
+
+  // ── Progress tracking: count REAL watch time (not video.currentTime) ───────
+  // Every second the video is playing, we increment accumulatedRef.
+  // Every 5s we report to the server.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    let tickInterval: ReturnType<typeof setInterval> | null = null;
+    let reportInterval: ReturnType<typeof setInterval> | null = null;
+
+    const startTracking = () => {
+      // Tick every 1s to count real watch time
+      tickInterval = setInterval(() => {
+        if (video.paused || video.ended || isSeeking.current) return;
+        accumulatedRef.current = Math.min(accumulatedRef.current + 1, required);
+        setWatchedSeconds(accumulatedRef.current);
+        if (accumulatedRef.current >= required && !isCompleted) {
+          setIsCompleted(true);
+          video.pause();
+        }
+      }, 1000);
+
+      // Report to server every 5s
+      reportInterval = setInterval(async () => {
+        const current = accumulatedRef.current;
+        if (current <= lastReportedRef.current) return;
+        lastReportedRef.current = current;
+        try {
+          const result = await updateProgress.mutateAsync({
+            missionId: mission.id,
+            watchedSeconds: current,
+          });
+          if (result.completed) {
+            setIsCompleted(true);
+            video.pause();
+          }
+          onProgressUpdate(current);
+        } catch (e) {
+          console.error("Progress update failed", e);
+        }
+      }, 5000);
+    };
+
+    const stopTracking = () => {
+      if (tickInterval) clearInterval(tickInterval);
+      if (reportInterval) clearInterval(reportInterval);
+      tickInterval = null;
+      reportInterval = null;
+    };
+
+    video.addEventListener("play", startTracking);
+    video.addEventListener("pause", stopTracking);
+    video.addEventListener("ended", stopTracking);
+
+    return () => {
+      stopTracking();
+      video.removeEventListener("play", startTracking);
+      video.removeEventListener("pause", stopTracking);
+      video.removeEventListener("ended", stopTracking);
+    };
+  }, [mission.id, required]);
 
   const handleClaim = async () => {
     setClaiming(true);
@@ -211,9 +260,10 @@ function MissionVideoPlayer({
             ref={videoRef}
             src={mission.videoUrl}
             className="w-full h-full object-contain"
-            controlsList="nodownload"
+            controlsList="nodownload nofullscreen noremoteplayback"
             disablePictureInPicture
             onSeeking={handleSeeking}
+            onSeeked={handleSeeked}
             onContextMenu={(e) => e.preventDefault()}
             controls
           />
@@ -245,7 +295,7 @@ function MissionVideoPlayer({
         </div>
 
         {/* Progress bar (thin, below video) */}
-        <div className="h-1 bg-white/08 w-full">
+        <div className="h-1 w-full" style={{ background: "rgba(255,255,255,0.08)" }}>
           <motion.div
             className="h-full"
             style={{ background: percent >= 100 ? "#22c55e" : "#ef4444" }}
@@ -270,14 +320,20 @@ function MissionVideoPlayer({
                   <span className="text-white/20 text-xs">·</span>
                 </>
               )}
-              <span className="text-white/50 text-xs truncate">{mission.description ?? `Gana ${mission.rewardRlc} RLC`}</span>
+              <span className="text-white/50 text-xs truncate">
+                {isClaimed
+                  ? "Recompensa reclamada"
+                  : isCompleted
+                  ? `¡Completado! Reclama tus ${mission.rewardRlc} RLC`
+                  : `${formatTime(watchedSeconds)} / ${formatTime(required)}`}
+              </span>
             </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-shrink-0">
             {isClaimed ? (
-              <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-500/15 border border-green-500/20">
+              <div className="flex items-center gap-1.5">
                 <CheckCircle2 size={14} className="text-green-400" />
                 <span className="text-green-400 text-sm font-semibold">Reclamado</span>
               </div>
@@ -301,7 +357,8 @@ function MissionVideoPlayer({
               </motion.button>
             ) : (
               <button
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/08 border border-white/10 text-white/40 text-sm cursor-not-allowed"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl border text-white/40 text-sm cursor-not-allowed"
+                style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
               >
                 <Lock size={13} />
                 Reclamar recompensa
@@ -336,52 +393,125 @@ function MissionCard({
   const isClaimed = !!userMission?.claimed;
   const timeRemaining = formatTimeRemaining(mission.endDate);
 
-  // Remaining time for "Mirar" button
   const remainingSeconds = Math.max(0, required - watched);
   const remainingDisplay = `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, "0")}`;
 
+  // Hover state for video preview
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverVideoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = hoverVideoRef.current;
+    if (!video) return;
+    if (isHovered) {
+      video.currentTime = 0;
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+      video.currentTime = 0;
+    }
+  }, [isHovered]);
+
   return (
     <div
-      className="rounded-2xl overflow-hidden flex flex-col"
-      style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}
+      className="rounded-xl overflow-hidden flex flex-col cursor-pointer group"
+      style={{
+        background: "#1e1f22",
+        border: "1px solid rgba(255,255,255,0.06)",
+        transition: "transform 0.15s ease, box-shadow 0.15s ease",
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Banner image */}
-      <div className="relative overflow-hidden" style={{ height: 160 }}>
+      {/* Banner / Video preview area */}
+      <div className="relative overflow-hidden" style={{ height: 168 }}>
+        {/* Static banner image */}
         {mission.bannerUrl ? (
           <img
             src={mission.bannerUrl}
             alt={mission.title}
-            className="w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{
+              transition: "opacity 0.3s ease",
+              opacity: isHovered ? 0 : 1,
+            }}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1a0505, #2d0a0a)" }}>
-            <Coins size={40} className="text-red-500/30" />
-          </div>
+          <div
+            className="absolute inset-0 w-full h-full"
+            style={{ background: "linear-gradient(135deg, #1a0505, #2d0a0a)" }}
+          />
         )}
 
-        {/* Sponsor logo overlay bottom-left */}
+        {/* Video preview on hover (muted, no controls) */}
+        <video
+          ref={hoverVideoRef}
+          src={mission.videoUrl}
+          className="absolute inset-0 w-full h-full object-cover"
+          muted
+          loop
+          playsInline
+          preload="none"
+          style={{
+            transition: "opacity 0.3s ease",
+            opacity: isHovered ? 1 : 0,
+          }}
+        />
+
+        {/* Discord-style gradient overlay: dark at bottom, transparent at top */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: "linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.85) 100%)",
+          }}
+        />
+
+        {/* Sponsor logo — bottom left, large (like Discord) */}
         {mission.sponsorLogo && (
-          <div className="absolute bottom-3 left-3">
+          <div className="absolute bottom-3 left-3 z-10">
             <img
               src={mission.sponsorLogo}
               alt={mission.sponsorName ?? ""}
-              className="h-7 object-contain drop-shadow-lg"
-              style={{ maxWidth: 120 }}
+              className="object-contain drop-shadow-lg"
+              style={{ height: 36, maxWidth: 140 }}
             />
           </div>
         )}
 
+        {/* Sponsor name text — bottom left below logo */}
+        {mission.sponsorName && !mission.sponsorLogo && (
+          <div className="absolute bottom-3 left-3 z-10">
+            <span
+              className="text-white font-black text-xl tracking-tight drop-shadow-lg"
+              style={{ fontFamily: "Orbitron, sans-serif", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}
+            >
+              {mission.sponsorName.toUpperCase()}
+            </span>
+          </div>
+        )}
+
         {/* Play icon + more options top-right */}
-        <div className="absolute top-3 right-3 flex items-center gap-2">
+        <div className="absolute top-3 right-3 flex items-center gap-2 z-10">
           {!isClaimed && (
             <button
-              onClick={onWatch}
+              onClick={(e) => { e.stopPropagation(); onWatch(); }}
               className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all"
+              style={{
+                opacity: isHovered ? 1 : 0.7,
+                transition: "opacity 0.2s ease",
+              }}
             >
-              <Play size={14} fill="currentColor" />
+              <Play size={13} fill="currentColor" />
             </button>
           )}
-          <button className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/60 hover:bg-black/70 hover:text-white transition-all">
+          <button
+            onClick={(e) => e.stopPropagation()}
+            className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/60 hover:bg-black/70 hover:text-white transition-all"
+            style={{
+              opacity: isHovered ? 1 : 0.7,
+              transition: "opacity 0.2s ease",
+            }}
+          >
             <MoreHorizontal size={14} />
           </button>
         </div>
@@ -402,8 +532,8 @@ function MissionCard({
 
       {/* Mission info row */}
       <div className="flex items-start gap-3 px-4 py-3">
-        {/* Reward icon with progress ring */}
-        <RewardIcon size={56} progress={isAccepted ? percent : 0} logoUrl={mission.sponsorLogo} />
+        {/* Reward icon with progress ring — larger (64px like Discord) */}
+        <RewardIcon size={64} progress={isAccepted ? percent : 0} logoUrl={mission.sponsorLogo} />
 
         {/* Text */}
         <div className="flex-1 min-w-0">
@@ -429,7 +559,7 @@ function MissionCard({
       </div>
 
       {/* Divider */}
-      <div className="mx-4 border-t border-white/06" />
+      <div className="mx-4 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }} />
 
       {/* Action buttons */}
       <div className="flex gap-2 px-4 py-3">
@@ -470,7 +600,7 @@ function MissionCard({
             style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
           >
             <Clock size={14} />
-            Mirar (tiempo restante: {remainingDisplay})
+            Mirar ({remainingDisplay} restantes)
           </motion.button>
         ) : (
           <motion.button
@@ -520,9 +650,7 @@ export default function MissionsPage() {
   };
 
   const handleWatch = (mission: Mission) => setActivePlayer(mission);
-
   const handleProgressUpdate = () => utils.missions.myProgress.invalidate();
-
   const handleClaim = () => {
     utils.missions.myProgress.invalidate();
     utils.auth.me.invalidate();
@@ -542,9 +670,9 @@ export default function MissionsPage() {
         <p className="text-white/40 text-sm mt-1">Completa misiones patrocinadas y gana RLC</p>
       </div>
 
-      {/* Tabs (Todas / Reclamadas) */}
+      {/* Tabs */}
       <div className="px-4 mb-5">
-        <div className="flex gap-1 border-b border-white/08">
+        <div className="flex gap-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
           <button className="px-4 pb-2.5 text-sm font-semibold text-white border-b-2 border-red-500 -mb-px">
             Todas las misiones
           </button>
@@ -559,12 +687,15 @@ export default function MissionsPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-72 rounded-2xl animate-pulse" style={{ background: "#1e1f22" }} />
+              <div key={i} className="h-80 rounded-xl animate-pulse" style={{ background: "#1e1f22" }} />
             ))}
           </div>
         ) : missions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}
+            >
               <Coins size={28} className="text-white/20" />
             </div>
             <h3 className="text-white/60 font-semibold text-lg mb-1">Sin misiones disponibles</h3>
