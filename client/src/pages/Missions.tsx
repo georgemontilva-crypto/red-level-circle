@@ -855,6 +855,7 @@ export default function MissionsPage() {
   const { data: myProgress = [] } = trpc.missions.myProgress.useQuery();
   const utils = trpc.useUtils();
 
+  const [activeTab, setActiveTab] = useState<"all" | "claimed">("all");
   const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const acceptMutation = trpc.missions.accept.useMutation({
     onSuccess: () => utils.missions.myProgress.invalidate(),
@@ -896,26 +897,28 @@ export default function MissionsPage() {
 
       <div className="px-4 mb-5 flex justify-center">
         <div
-          className="flex rounded-xl p-1 w-full max-w-sm"
+          className="flex rounded-xl p-1 w-full"
           style={{
             background: "rgba(255,255,255,0.05)",
             border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
           <button
+            onClick={() => setActiveTab("all")}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200"
             style={{
-              background: "oklch(0.55 0.22 25)",
-              color: "#fff",
+              background: activeTab === "all" ? "oklch(0.55 0.22 25)" : "transparent",
+              color: activeTab === "all" ? "#fff" : "rgba(255,255,255,0.4)",
             }}
           >
             Todas
           </button>
           <button
+            onClick={() => setActiveTab("claimed")}
             className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200"
             style={{
-              background: "transparent",
-              color: "rgba(255,255,255,0.4)",
+              background: activeTab === "claimed" ? "oklch(0.55 0.22 25)" : "transparent",
+              color: activeTab === "claimed" ? "#fff" : "rgba(255,255,255,0.4)",
             }}
           >
             Reclamadas
@@ -939,21 +942,39 @@ export default function MissionsPage() {
             <h3 className="text-white/60 font-semibold text-lg mb-1">Sin misiones disponibles</h3>
             <p className="text-white/30 text-sm">Vuelve pronto para nuevas misiones patrocinadas</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 sm:gap-4">
-            {missions.map((mission, i) => (
-              <motion.div key={mission.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                <MissionCard
-                  mission={mission as Mission}
-                  userMission={getProgress(mission.id)}
-                  onAccept={() => handleAccept(mission as Mission)}
-                  onWatch={() => handleWatch(mission as Mission)}
-                  accepting={acceptingId === mission.id}
-                />
-              </motion.div>
-            ))}
-          </div>
-        )}
+        ) : (() => {
+          const filtered = activeTab === "claimed"
+            ? missions.filter((m) => getProgress(m.id)?.claimed)
+            : missions;
+          if (filtered.length === 0) return (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}>
+                <Coins size={28} className="text-white/20" />
+              </div>
+              <h3 className="text-white/60 font-semibold text-lg mb-1">
+                {activeTab === "claimed" ? "No has reclamado ninguna misión" : "Sin misiones disponibles"}
+              </h3>
+              <p className="text-white/30 text-sm">
+                {activeTab === "claimed" ? "Completa misiones para ver tus recompensas aquí" : "Vuelve pronto para nuevas misiones patrocinadas"}
+              </p>
+            </div>
+          );
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 sm:gap-4">
+              {filtered.map((mission, i) => (
+                <motion.div key={mission.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                  <MissionCard
+                    mission={mission as Mission}
+                    userMission={getProgress(mission.id)}
+                    onAccept={() => handleAccept(mission as Mission)}
+                    onWatch={() => handleWatch(mission as Mission)}
+                    accepting={acceptingId === mission.id}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       <AnimatePresence>
