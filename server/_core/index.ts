@@ -208,20 +208,26 @@ async function runCustomMigrations() {
     '  `id`          int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
     '  `missionId`   int          NOT NULL,' +
     '  `userId`      int          NOT NULL,' +
-    '  `status`      varchar(20)  NOT NULL DEFAULT \'pending\',' +
+    '  `status_cms`  ENUM(\'pending\',\'approved\',\'rejected\') NOT NULL DEFAULT \'pending\',' +
     '  `adminNote`   text         NULL,' +
     '  `rewardPaid`  tinyint(1)   NOT NULL DEFAULT 0,' +
     '  `submittedAt` timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
     '  `reviewedAt`  timestamp    NULL,' +
+    '  `reviewedBy`  int          NULL,' +
     '  UNIQUE KEY `cms_unique` (`missionId`, `userId`)' +
     ')',
+    // Fix: rename status column to status_cms if it exists as varchar
+    'ALTER TABLE `creator_mission_submissions` CHANGE COLUMN `status` `status_cms` ENUM(\'pending\',\'approved\',\'rejected\') NOT NULL DEFAULT \'pending\'',
+    'ALTER TABLE `creator_mission_submissions` ADD COLUMN `reviewedBy` int NULL',
     'CREATE TABLE IF NOT EXISTS `creator_mission_links` (' +
     '  `id`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
     '  `submissionId` int          NOT NULL,' +
-    '  `url`          varchar(500) NOT NULL,' +
-    '  `platform`     varchar(100) NULL,' +
-    '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
-    ')'
+    '  `url`          text         NOT NULL,' +
+    '  `platform`     varchar(64)  NULL,' +
+    '  `addedAt`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')',
+    // Fix: rename createdAt to addedAt if it exists
+    'ALTER TABLE `creator_mission_links` CHANGE COLUMN `createdAt` `addedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP'
   ];
   for (const sql of customMigrations) {
     try {
