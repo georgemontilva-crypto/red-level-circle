@@ -340,7 +340,7 @@ export function CreatorMissionsAdminPage() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [editData, setEditData] = useState<Partial<Mission> | null>(null);
 
-  const { data: missions = [], refetch } = trpc.creatorMissions.adminList.useQuery();
+  const { data: missions = [], refetch, error: listError } = trpc.creatorMissions.adminList.useQuery();
   const createMutation = trpc.creatorMissions.adminCreate.useMutation({
     onSuccess: () => { toast.success("Misión creada y creadores notificados"); refetch(); setView("list"); },
     onError: (e) => toast.error(e.message),
@@ -387,7 +387,7 @@ export function CreatorMissionsAdminPage() {
 
   // ── List view
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between gap-4">
         <PageHeader icon={Clapperboard} title="MISIONES CREADORES" subtitle="Gestiona misiones de contenido para creadores aprobados" />
         <button
@@ -397,6 +397,11 @@ export function CreatorMissionsAdminPage() {
         </button>
       </div>
 
+      {listError && (
+        <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
+          Error al cargar misiones: {listError.message}
+        </div>
+      )}
       {missions.length === 0 ? (
         <div className="bg-zinc-900 border border-white/10 rounded-xl p-12 text-center">
           <Clapperboard className="w-12 h-12 text-zinc-700 mx-auto mb-4" />
