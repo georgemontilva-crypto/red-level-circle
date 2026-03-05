@@ -401,6 +401,10 @@ export const cosmetics = mysqlTable("cosmetics", {
   isActive: boolean("isActive").default(true).notNull(),
   isFeatured: boolean("isFeatured").default(false).notNull(),
   isLimited: boolean("isLimited").default(false).notNull(),
+  maxSupply: int("maxSupply"),                          // null = ilimitado
+  currentSupply: int("currentSupply").default(0).notNull(), // unidades vendidas
+  dropStart: timestamp("dropStart"),                    // inicio del drop
+  dropEnd: timestamp("dropEnd"),                        // fin del drop
   collection: varchar("collection", { length: 128 }), // e.g. "Neon Series", "Red Level Pack"
   sortOrder: int("sortOrder").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -812,9 +816,35 @@ export const catalogItems = mysqlTable("catalog_items", {
   title: varchar("title", { length: 256 }).notNull(),
   isFeatured: boolean("isFeatured").default(false).notNull(),
   isVisible: boolean("isVisible").default(true).notNull(),
+  weeklyFeatured: boolean("weeklyFeatured").default(false).notNull(), // destacado semanal
+  featuredPriority: int("featuredPriority").default(0).notNull(),    // orden en sección Featured
+  visibleFrom: timestamp("visibleFrom"),   // activar automáticamente desde esta fecha
+  visibleUntil: timestamp("visibleUntil"), // desactivar automáticamente en esta fecha
+  publishDate: timestamp("publishDate"),   // fecha de publicación programada
   collectionId: int("collectionId"), // → collections.id
   sortOrder: int("sortOrder").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type CatalogItem = typeof catalogItems.$inferSelect;
 export type InsertCatalogItem = typeof catalogItems.$inferInsert;
+
+/**
+ * drops — Eventos de lanzamiento programados ("drops").
+ *
+ * Un drop puede agrupar cosméticos y productos físicos bajo un evento
+ * con fecha de inicio y fin. Ejemplos: "Friday Neon Drop", "Halloween Event".
+ */
+export const drops = mysqlTable("drops", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 128 }).notNull().unique(),
+  description: text("description"),
+  bannerImage: text("bannerImage"),
+  collectionId: int("collectionId"),   // → collections.id (opcional)
+  startDate: timestamp("startDate").notNull(),
+  endDate: timestamp("endDate").notNull(),
+  isActive: boolean("isActive").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Drop = typeof drops.$inferSelect;
+export type InsertDrop = typeof drops.$inferInsert;

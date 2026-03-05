@@ -61,7 +61,7 @@ function AIPriceCard({ report, onAccept }: { report: any; onAccept: (price: numb
 }
 
 export function ShopPage() {
-  const emptyForm = { name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null, catalogVisible: true, catalogFeatured: false, catalogCollectionId: undefined as number | undefined, catalogPublishDate: "" };
+  const emptyForm = { name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null, catalogVisible: true, catalogFeatured: false, catalogWeeklyFeatured: false, catalogFeaturedPriority: "0", catalogCollectionId: undefined as number | undefined, catalogPublishDate: "", catalogVisibleFrom: "", catalogVisibleUntil: "" };
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImg, setUploadingImg] = useState(false);
@@ -236,7 +236,7 @@ export function ShopPage() {
           <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
             <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">⚡ Configuración de Catálogo</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={form.catalogVisible} onChange={e => setForm(f => ({ ...f, catalogVisible: e.target.checked }))} className="w-4 h-4 accent-red-500" />
                   <span className="text-xs text-zinc-300 font-rajdhani">Visible en tienda</span>
@@ -245,16 +245,32 @@ export function ShopPage() {
                   <input type="checkbox" checked={form.catalogFeatured} onChange={e => setForm(f => ({ ...f, catalogFeatured: e.target.checked }))} className="w-4 h-4 accent-red-500" />
                   <span className="text-xs text-zinc-300 font-rajdhani">Destacado</span>
                 </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={form.catalogWeeklyFeatured} onChange={e => setForm(f => ({ ...f, catalogWeeklyFeatured: e.target.checked }))} className="w-4 h-4 accent-yellow-500" />
+                  <span className="text-xs text-zinc-300 font-rajdhani">⭐ Destacado semanal</span>
+                </label>
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Prioridad Featured (0 = mayor)</label>
+                <input type="number" value={form.catalogFeaturedPriority} onChange={e => setForm(f => ({ ...f, catalogFeaturedPriority: e.target.value }))} className={inputCls} min={0} placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Fecha de publicación</label>
                 <input type="datetime-local" value={form.catalogPublishDate} onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))} className={inputCls} />
               </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible desde</label>
+                <input type="datetime-local" value={form.catalogVisibleFrom} onChange={e => setForm(f => ({ ...f, catalogVisibleFrom: e.target.value }))} className={inputCls} />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible hasta</label>
+                <input type="datetime-local" value={form.catalogVisibleUntil} onChange={e => setForm(f => ({ ...f, catalogVisibleUntil: e.target.value }))} className={inputCls} />
+              </div>
             </div>
           </div>
 
           <div className="flex gap-3 pt-1">
-            <Button onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null, catalogVisible: form.catalogVisible, catalogFeatured: form.catalogFeatured, catalogCollectionId: form.catalogCollectionId, catalogPublishDate: form.catalogPublishDate || undefined })}
+            <Button onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null, catalogVisible: form.catalogVisible, catalogFeatured: form.catalogFeatured, catalogWeeklyFeatured: form.catalogWeeklyFeatured, catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0, catalogCollectionId: form.catalogCollectionId, catalogPublishDate: form.catalogPublishDate || undefined, catalogVisibleFrom: form.catalogVisibleFrom || undefined, catalogVisibleUntil: form.catalogVisibleUntil || undefined })}
               disabled={!form.name || !form.price || createItem.isPending || uploadingImg} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
               {createItem.isPending ? "CREANDO..." : "CREAR PRODUCTO"}
             </Button>

@@ -5,20 +5,27 @@
  * cosméticos sin modificar shop.* ni cosmetics.*
  *
  * Endpoints:
- *   commerce.catalog        — Catálogo unificado (físicos + cosméticos visibles)
- *   commerce.featured       — Ítems destacados del catálogo
- *   commerce.collections    — Lista de colecciones activas
- *   commerce.collection     — Detalle de una colección con sus ítems
- *   commerce.transactions   — Historial de transacciones del usuario
- *   commerce.wallet         — Balance RLC del usuario autenticado
- *   commerce.recordTransaction — Registrar una transacción (uso interno)
- *   commerce.adminCreateCollection — Admin: crear colección
- *   commerce.adminUpdateCollection — Admin: actualizar colección
- *   commerce.adminSyncCatalog      — Admin: sincronizar catálogo desde shopItems y cosmetics
+ *   commerce.catalog              — Catálogo unificado (físicos + cosméticos visibles)
+ *   commerce.featured             — Ítems destacados del catálogo
+ *   commerce.weeklyFeatured       — Ítems destacados de la semana
+ *   commerce.collections          — Lista de colecciones activas
+ *   commerce.collection           — Detalle de una colección con sus ítems
+ *   commerce.drops                — Lista de drops activos
+ *   commerce.drop                 — Detalle de un drop por slug
+ *   commerce.transactions         — Historial de transacciones del usuario
+ *   commerce.wallet               — Balance RLC del usuario autenticado
+ *   commerce.recordTransaction    — Registrar una transacción (uso interno)
+ *   commerce.adminCreateCollection    — Admin: crear colección
+ *   commerce.adminUpdateCollection    — Admin: actualizar colección
+ *   commerce.adminSyncCatalog         — Admin: sincronizar catálogo desde shopItems y cosmetics
+ *   commerce.adminUpdateCatalogItem   — Admin: actualizar item del catálogo
+ *   commerce.adminCreateDrop          — Admin: crear drop
+ *   commerce.adminUpdateDrop          — Admin: actualizar drop
+ *   commerce.adminDeleteDrop          — Admin: eliminar drop
  */
 
 import { z } from "zod";
-import { eq, and, desc, isNull, or, gte, lte } from "drizzle-orm";
+import { eq, and, desc, lte, gte, or, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
@@ -30,6 +37,7 @@ import {
   shopItems,
   cosmetics,
   users,
+  drops,
 } from "../drizzle/schema";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -46,7 +54,6 @@ async function getOrCreateWallet(userId: number) {
   const db = await getDb();
   if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-  // Buscar wallet existente
   const [existing] = await db
     .select()
     .from(wallets)
@@ -55,14 +62,12 @@ async function getOrCreateWallet(userId: number) {
 
   if (existing) return existing;
 
-  // Obtener balance actual del usuario
   const [user] = await db
     .select({ rlcBalance: users.rlcBalance })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);
 
-  // Crear wallet sincronizado
   await db.insert(wallets).values({
     userId,
     balanceRlc: user?.rlcBalance ?? 0,
@@ -101,15 +106,15 @@ export const commerceRouter = router({
   /**
    * catalog — Catálogo unificado de productos visibles.
    *
-   * Devuelve una lista de { type, item } mezclando físicos y cosméticos.
-   * Respeta los filtros de visibilidad y colección.
-   * Los datos reales vienen de shopItems y cosmetics (sin duplicar).
+   * Respeta visibleFrom/visibleUntil y publishDate para mostrar solo
+   * ítems que deben estar visibles en este momento.
    */
   catalog: publicProcedure
     .input(z.object({
       type: z.enum(["all", "physical", "cosmetic"]).default("all"),
       collectionId: z.number().optional(),
       featured: z.boolean().optional(),
+      weeklyFeatured: z.boolean().optional(),
       limit: z.number().min(1).max(100).default(50),
     }))
     .query(async ({ input }) => {
@@ -118,10 +123,16 @@ export const commerceRouter = router({
 
       const now = new Date();
 
-      // Construir filtros base para catalogItems
       const filters: Parameters<typeof and> = [
         eq(catalogItems.isVisible, true),
+        // publishDate: null o ya pasó
+        or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+        // visibleFrom: null o ya pasó
+        or(isNull(catalogItems.visibleFrom), lte(catalogItems.visibleFrom, now)),
+        // visibleUntil: null o aún no llegó
+        or(isNull(catalogItems.visibleUntil), gte(catalogItems.visibleUntil, now)),
       ];
+
       if (input.type !== "all") {
         filters.push(eq(catalogItems.type, input.type));
       }
@@ -131,52 +142,60 @@ export const commerceRouter = router({
       if (input.featured) {
         filters.push(eq(catalogItems.isFeatured, true));
       }
+      if (input.weeklyFeatured) {
+        filters.push(eq(catalogItems.weeklyFeatured, true));
+      }
 
       const catalog = await db
         .select()
         .from(catalogItems)
         .where(and(...filters))
-        .orderBy(desc(catalogItems.isFeatured), catalogItems.sortOrder)
+        .orderBy(desc(catalogItems.isFeatured), desc(catalogItems.weeklyFeatured), catalogItems.featuredPriority, catalogItems.sortOrder)
         .limit(input.limit);
 
       if (catalog.length === 0) return [];
 
-      // Separar IDs por tipo
-      const physicalIds = catalog
-        .filter(c => c.type === "physical")
-        .map(c => c.referenceId);
-      const cosmeticIds = catalog
-        .filter(c => c.type === "cosmetic")
-        .map(c => c.referenceId);
+      const physicalIds = catalog.filter(c => c.type === "physical").map(c => c.referenceId);
+      const cosmeticIds = catalog.filter(c => c.type === "cosmetic").map(c => c.referenceId);
 
-      // Fetch datos reales en paralelo
       const [physicalItems, cosmeticItems] = await Promise.all([
         physicalIds.length > 0
-          ? db.select().from(shopItems).where(
-              and(eq(shopItems.isActive, true))
-            )
+          ? db.select().from(shopItems).where(eq(shopItems.isActive, true))
           : Promise.resolve([]),
         cosmeticIds.length > 0
-          ? db.select().from(cosmetics).where(
-              eq(cosmetics.isActive, true)
-            )
+          ? db.select().from(cosmetics).where(eq(cosmetics.isActive, true))
           : Promise.resolve([]),
       ]);
 
       const physicalMap = new Map(physicalItems.map(i => [i.id, i]));
       const cosmeticMap = new Map(cosmeticItems.map(i => [i.id, i]));
 
-      // Unificar respuesta
       return catalog
         .map(entry => {
           if (entry.type === "physical") {
             const item = physicalMap.get(entry.referenceId);
             if (!item) return null;
-            return { type: "physical" as const, catalogId: entry.id, isFeatured: entry.isFeatured, collectionId: entry.collectionId, item };
+            return {
+              type: "physical" as const,
+              catalogId: entry.id,
+              isFeatured: entry.isFeatured,
+              weeklyFeatured: entry.weeklyFeatured,
+              featuredPriority: entry.featuredPriority,
+              collectionId: entry.collectionId,
+              item,
+            };
           } else {
             const item = cosmeticMap.get(entry.referenceId);
             if (!item) return null;
-            return { type: "cosmetic" as const, catalogId: entry.id, isFeatured: entry.isFeatured, collectionId: entry.collectionId, item };
+            return {
+              type: "cosmetic" as const,
+              catalogId: entry.id,
+              isFeatured: entry.isFeatured,
+              weeklyFeatured: entry.weeklyFeatured,
+              featuredPriority: entry.featuredPriority,
+              collectionId: entry.collectionId,
+              item,
+            };
           }
         })
         .filter(Boolean);
@@ -189,11 +208,19 @@ export const commerceRouter = router({
     const db = await getDb();
     if (!db) return [];
 
+    const now = new Date();
+
     const featured = await db
       .select()
       .from(catalogItems)
-      .where(and(eq(catalogItems.isFeatured, true), eq(catalogItems.isVisible, true)))
-      .orderBy(catalogItems.sortOrder)
+      .where(and(
+        eq(catalogItems.isFeatured, true),
+        eq(catalogItems.isVisible, true),
+        or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+        or(isNull(catalogItems.visibleFrom), lte(catalogItems.visibleFrom, now)),
+        or(isNull(catalogItems.visibleUntil), gte(catalogItems.visibleUntil, now)),
+      ))
+      .orderBy(catalogItems.featuredPriority, catalogItems.sortOrder)
       .limit(8);
 
     if (featured.length === 0) return [];
@@ -210,6 +237,54 @@ export const commerceRouter = router({
     const cosmeticMap = new Map(cosmeticItems.map(i => [i.id, i]));
 
     return featured
+      .map(entry => {
+        if (entry.type === "physical") {
+          const item = physicalMap.get(entry.referenceId);
+          return item ? { type: "physical" as const, item, catalogId: entry.id, featuredPriority: entry.featuredPriority } : null;
+        } else {
+          const item = cosmeticMap.get(entry.referenceId);
+          return item ? { type: "cosmetic" as const, item, catalogId: entry.id, featuredPriority: entry.featuredPriority } : null;
+        }
+      })
+      .filter(Boolean);
+  }),
+
+  /**
+   * weeklyFeatured — Ítems destacados de la semana (máx 12).
+   */
+  weeklyFeatured: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    const now = new Date();
+
+    const weekly = await db
+      .select()
+      .from(catalogItems)
+      .where(and(
+        eq(catalogItems.weeklyFeatured, true),
+        eq(catalogItems.isVisible, true),
+        or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+        or(isNull(catalogItems.visibleFrom), lte(catalogItems.visibleFrom, now)),
+        or(isNull(catalogItems.visibleUntil), gte(catalogItems.visibleUntil, now)),
+      ))
+      .orderBy(catalogItems.featuredPriority, catalogItems.sortOrder)
+      .limit(12);
+
+    if (weekly.length === 0) return [];
+
+    const physicalIds = weekly.filter(f => f.type === "physical").map(f => f.referenceId);
+    const cosmeticIds = weekly.filter(f => f.type === "cosmetic").map(f => f.referenceId);
+
+    const [physicalItems, cosmeticItems] = await Promise.all([
+      physicalIds.length > 0 ? db.select().from(shopItems) : Promise.resolve([]),
+      cosmeticIds.length > 0 ? db.select().from(cosmetics) : Promise.resolve([]),
+    ]);
+
+    const physicalMap = new Map(physicalItems.map(i => [i.id, i]));
+    const cosmeticMap = new Map(cosmeticItems.map(i => [i.id, i]));
+
+    return weekly
       .map(entry => {
         if (entry.type === "physical") {
           const item = physicalMap.get(entry.referenceId);
@@ -233,9 +308,7 @@ export const commerceRouter = router({
       const db = await getDb();
       if (!db) return [];
 
-      const now = new Date();
       const filters: Parameters<typeof and> = [eq(collections.isActive, true)];
-
       if (input?.featuredOnly) {
         filters.push(eq(collections.isFeatured, true));
       }
@@ -264,17 +337,146 @@ export const commerceRouter = router({
 
       if (!collection) throw new TRPCError({ code: "NOT_FOUND" });
 
+      const now = new Date();
       const items = await db
         .select()
         .from(catalogItems)
         .where(and(
           eq(catalogItems.collectionId, collection.id),
-          eq(catalogItems.isVisible, true)
+          eq(catalogItems.isVisible, true),
+          or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+          or(isNull(catalogItems.visibleFrom), lte(catalogItems.visibleFrom, now)),
+          or(isNull(catalogItems.visibleUntil), gte(catalogItems.visibleUntil, now)),
         ))
         .orderBy(catalogItems.sortOrder);
 
       return { collection, items };
     }),
+
+  // ─── Drops ─────────────────────────────────────────────────────────────────
+
+  /**
+   * drops — Lista de drops activos en este momento.
+   */
+  drops: publicProcedure
+    .input(z.object({
+      activeOnly: z.boolean().default(true),
+      limit: z.number().min(1).max(50).default(10),
+    }).optional())
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+
+      const now = new Date();
+      const activeOnly = input?.activeOnly ?? true;
+
+      const filters: Parameters<typeof and> = [];
+      if (activeOnly) {
+        filters.push(
+          lte(drops.startDate, now),
+          gte(drops.endDate, now),
+        );
+      }
+
+      return db
+        .select()
+        .from(drops)
+        .where(filters.length > 0 ? and(...filters) : undefined)
+        .orderBy(desc(drops.startDate))
+        .limit(input?.limit ?? 10);
+    }),
+
+  /**
+   * drop — Detalle de un drop por slug, incluyendo los ítems del catálogo asociados.
+   */
+  drop: publicProcedure
+    .input(z.object({ slug: z.string() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "NOT_FOUND" });
+
+      const [drop] = await db
+        .select()
+        .from(drops)
+        .where(eq(drops.slug, input.slug))
+        .limit(1);
+
+      if (!drop) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // Si el drop tiene collectionId, traer los ítems de esa colección
+      let items: (typeof catalogItems.$inferSelect)[] = [];
+      if (drop.collectionId) {
+        const now = new Date();
+        items = await db
+          .select()
+          .from(catalogItems)
+          .where(and(
+            eq(catalogItems.collectionId, drop.collectionId),
+            eq(catalogItems.isVisible, true),
+            or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+          ))
+          .orderBy(catalogItems.sortOrder);
+      }
+
+      return { drop, items };
+    }),
+
+  /**
+   * activeDrops — Ítems del catálogo con drop window activo en este momento.
+   * Busca cosméticos cuyo dropStart <= now <= dropEnd.
+   */
+  activeDrops: publicProcedure.query(async () => {
+    const db = await getDb();
+    if (!db) return [];
+
+    const now = new Date();
+
+    // Buscar cosméticos con drop activo
+    const activeCosmeticDrops = await db
+      .select()
+      .from(cosmetics)
+      .where(and(
+        eq(cosmetics.isActive, true),
+        lte(cosmetics.dropStart, now),
+        gte(cosmetics.dropEnd, now),
+      ))
+      .limit(20);
+
+    if (activeCosmeticDrops.length === 0) return [];
+
+    // Buscar sus entradas en el catálogo
+    const cosmeticIds = activeCosmeticDrops.map(c => c.id);
+    const catalogEntries = await db
+      .select()
+      .from(catalogItems)
+      .where(and(
+        eq(catalogItems.type, "cosmetic"),
+        eq(catalogItems.isVisible, true),
+      ))
+      .limit(100);
+
+    const catalogMap = new Map(catalogEntries.map(e => [e.referenceId, e]));
+    const cosmeticMap = new Map(activeCosmeticDrops.map(c => [c.id, c]));
+
+    return cosmeticIds
+      .map(id => {
+        const catalogEntry = catalogMap.get(id);
+        const item = cosmeticMap.get(id);
+        if (!item) return null;
+        return {
+          type: "cosmetic" as const,
+          catalogId: catalogEntry?.id ?? id,
+          isFeatured: catalogEntry?.isFeatured ?? false,
+          weeklyFeatured: catalogEntry?.weeklyFeatured ?? false,
+          collectionId: catalogEntry?.collectionId ?? null,
+          dropEnd: item.dropEnd,
+          item,
+        };
+      })
+      .filter(Boolean);
+  }),
+
+  // ─── Wallet & Transactions ─────────────────────────────────────────────────
 
   /**
    * wallet — Balance RLC del usuario autenticado.
@@ -401,7 +603,6 @@ export const commerceRouter = router({
     const db = await getDb();
     if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-    // Obtener IDs ya registrados en el catálogo
     const existing = await db.select().from(catalogItems);
     const existingPhysical = new Set(
       existing.filter(e => e.type === "physical").map(e => e.referenceId)
@@ -410,13 +611,11 @@ export const commerceRouter = router({
       existing.filter(e => e.type === "cosmetic").map(e => e.referenceId)
     );
 
-    // Obtener todos los ítems activos
     const [allPhysical, allCosmetic] = await Promise.all([
       db.select().from(shopItems).where(eq(shopItems.isActive, true)),
       db.select().from(cosmetics).where(eq(cosmetics.isActive, true)),
     ]);
 
-    // Insertar los que faltan
     const toInsert: (typeof catalogItems.$inferInsert)[] = [];
 
     for (const item of allPhysical) {
@@ -427,6 +626,8 @@ export const commerceRouter = router({
           title: item.name,
           isFeatured: false,
           isVisible: true,
+          weeklyFeatured: false,
+          featuredPriority: 0,
           sortOrder: 0,
         });
       }
@@ -440,6 +641,8 @@ export const commerceRouter = router({
           title: item.name,
           isFeatured: false,
           isVisible: true,
+          weeklyFeatured: false,
+          featuredPriority: 0,
           sortOrder: 0,
         });
       }
@@ -458,13 +661,18 @@ export const commerceRouter = router({
   }),
 
   /**
-   * adminUpdateCatalogItem — Actualizar visibilidad, featured y colección de un ítem.
+   * adminUpdateCatalogItem — Actualizar visibilidad, featured, rotación y colección de un ítem.
    */
   adminUpdateCatalogItem: protectedProcedure
     .input(z.object({
       id: z.number(),
       isFeatured: z.boolean().optional(),
       isVisible: z.boolean().optional(),
+      weeklyFeatured: z.boolean().optional(),
+      featuredPriority: z.number().optional(),
+      visibleFrom: z.string().nullable().optional(),
+      visibleUntil: z.string().nullable().optional(),
+      publishDate: z.string().nullable().optional(),
       collectionId: z.number().nullable().optional(),
       sortOrder: z.number().optional(),
     }))
@@ -473,10 +681,101 @@ export const commerceRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
-      const { id, ...rest } = input;
-      await db.update(catalogItems).set(rest).where(eq(catalogItems.id, id));
+      const { id, visibleFrom, visibleUntil, publishDate, ...rest } = input;
+      await db.update(catalogItems).set({
+        ...rest,
+        ...(visibleFrom !== undefined ? { visibleFrom: visibleFrom ? new Date(visibleFrom) : null } : {}),
+        ...(visibleUntil !== undefined ? { visibleUntil: visibleUntil ? new Date(visibleUntil) : null } : {}),
+        ...(publishDate !== undefined ? { publishDate: publishDate ? new Date(publishDate) : null } : {}),
+      }).where(eq(catalogItems.id, id));
       return { ok: true };
     }),
+
+  // ─── Admin Drops ───────────────────────────────────────────────────────────
+
+  /**
+   * adminCreateDrop — Crear un evento de drop.
+   */
+  adminCreateDrop: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1).max(128),
+      slug: z.string().min(1).max(128).regex(/^[a-z0-9-]+$/),
+      description: z.string().optional(),
+      bannerImage: z.string().optional(),
+      collectionId: z.number().optional(),
+      startDate: z.string(),
+      endDate: z.string(),
+      isActive: z.boolean().default(true),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      await db.insert(drops).values({
+        ...input,
+        startDate: new Date(input.startDate),
+        endDate: new Date(input.endDate),
+      });
+      return { ok: true };
+    }),
+
+  /**
+   * adminUpdateDrop — Actualizar un drop existente.
+   */
+  adminUpdateDrop: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1).max(128).optional(),
+      slug: z.string().min(1).max(128).optional(),
+      description: z.string().optional(),
+      bannerImage: z.string().optional(),
+      collectionId: z.number().nullable().optional(),
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      const { id, startDate, endDate, ...rest } = input;
+      await db.update(drops).set({
+        ...rest,
+        ...(startDate ? { startDate: new Date(startDate) } : {}),
+        ...(endDate ? { endDate: new Date(endDate) } : {}),
+      }).where(eq(drops.id, id));
+      return { ok: true };
+    }),
+
+  /**
+   * adminDeleteDrop — Eliminar un drop (soft: solo desactivar).
+   */
+  adminDeleteDrop: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+      await db.update(drops).set({ isActive: false }).where(eq(drops.id, input.id));
+      return { ok: true };
+    }),
+
+  /**
+   * adminListDrops — Listar todos los drops (admin).
+   */
+  adminListDrops: protectedProcedure.query(async ({ ctx }) => {
+    if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
+    const db = await getDb();
+    if (!db) return [];
+
+    return db
+      .select()
+      .from(drops)
+      .orderBy(desc(drops.startDate));
+  }),
 });
 
 export { recordTx };

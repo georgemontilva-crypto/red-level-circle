@@ -2,25 +2,23 @@
  * Store — Catálogo unificado de Commerce Core
  *
  * Rutas:
- *   /store              → Vista principal (Featured + Collections + todos los ítems)
+ *   /store              → Vista principal (Drops + Weekly + Featured + Collections + todos los ítems)
  *   /store/physical     → Solo productos físicos
  *   /store/cosmetics    → Solo cosméticos
  *   /store/collections  → Lista de colecciones
  *   /store/collections/:slug → Detalle de colección
- *
- * Sistemas existentes NO modificados:
- *   /shop        → Tienda física (shop.*)
- *   /cosmetics   → Tienda de cosméticos (cosmetics.*)
- *   /inventory   → Inventario personal
  */
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Link, useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { motion, AnimatePresence } from "framer-motion";
 import PageContainer from "@/components/PageContainer";
 import { SectionBanner } from "@/components/SectionBanner";
-import { ShoppingBag, Sparkles, Package, Layers, ChevronRight, Star, Tag, Clock, ArrowRight } from "lucide-react";
+import {
+  ShoppingBag, Sparkles, Package, Layers, ChevronRight, Star,
+  Tag, Clock, ArrowRight, Zap, CalendarDays, Timer,
+} from "lucide-react";
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
 
@@ -51,9 +49,20 @@ function formatPrice(price: number, currency = "RLC") {
   return `${price.toLocaleString()} RLC`;
 }
 
+/** Formatea tiempo restante de un drop */
+function formatTimeLeft(endDate: string | Date): string {
+  const diff = new Date(endDate).getTime() - Date.now();
+  if (diff <= 0) return "Finalizado";
+  const h = Math.floor(diff / 3_600_000);
+  const m = Math.floor((diff % 3_600_000) / 60_000);
+  if (h >= 48) return `${Math.floor(h / 24)}d restantes`;
+  if (h > 0) return `${h}h ${m}m restantes`;
+  return `${m}m restantes`;
+}
+
 // ─── Componentes ─────────────────────────────────────────────────────────────
 
-function CatalogCard({ entry }: { entry: CatalogEntry }) {
+function CatalogCard({ entry, showDropBadge = false }: { entry: CatalogEntry; showDropBadge?: boolean }) {
   const isPhysical = entry.type === "physical";
   const item = entry.item;
 
@@ -61,14 +70,18 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
     ? (item.image || item.imageUrl || item.thumbnail)
     : (item.previewImage || item.frameImage || item.image);
 
-  const price = isPhysical
-    ? formatPrice(item.price ?? 0, "RLC")
-    : formatPrice(item.price ?? 0, "RLC");
+  const price = formatPrice(item.price ?? 0, "RLC");
+  const originalPrice = item.originalPrice ? formatPrice(item.originalPrice, "RLC") : null;
 
   const rarityClass = !isPhysical && item.rarity ? RARITY_COLORS[item.rarity] ?? "" : "";
   const rarityLabel = !isPhysical && item.rarity ? RARITY_LABELS[item.rarity] : null;
 
   const href = isPhysical ? `/shop` : `/shop?tab=cosmetics`;
+
+  // Supply info
+  const hasSupply = item.maxSupply != null;
+  const supplyPct = hasSupply ? Math.min(100, Math.round(((item.currentSupply ?? 0) / item.maxSupply) * 100)) : 0;
+  const supplyLeft = hasSupply ? item.maxSupply - (item.currentSupply ?? 0) : null;
 
   return (
     <motion.div
@@ -105,8 +118,16 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
             {isPhysical ? "Físico" : "Digital"}
           </div>
 
-          {/* Badge featured */}
-          {entry.isFeatured && (
+          {/* Badge DROP */}
+          {showDropBadge && (
+            <div className="absolute top-2 right-2 bg-red-500/30 border border-red-500/60 text-red-300 px-2 py-0.5 rounded-full text-xs font-bold backdrop-blur-sm flex items-center gap-1 animate-pulse">
+              <Zap className="w-3 h-3" />
+              DROP
+            </div>
+          )}
+
+          {/* Badge featured (si no es drop) */}
+          {!showDropBadge && entry.isFeatured && (
             <div className="absolute top-2 right-2 bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 px-2 py-0.5 rounded-full text-xs font-bold backdrop-blur-sm flex items-center gap-1">
               <Star className="w-3 h-3" />
               Destacado
@@ -119,6 +140,16 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
               {rarityLabel}
             </div>
           )}
+
+          {/* Supply bar */}
+          {hasSupply && (
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/40">
+              <div
+                className="h-full bg-gradient-to-r from-red-600 to-orange-500 transition-all"
+                style={{ width: `${supplyPct}%` }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Info */}
@@ -128,9 +159,19 @@ function CatalogCard({ entry }: { entry: CatalogEntry }) {
             <p className="text-white/50 text-xs mt-0.5 line-clamp-2">{item.description}</p>
           )}
           <div className="flex items-center justify-between mt-2">
-            <span className="text-[#e63946] font-bold text-sm">{price}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[#e63946] font-bold text-sm">{price}</span>
+              {originalPrice && (
+                <span className="text-white/30 text-xs line-through">{originalPrice}</span>
+              )}
+            </div>
             <ChevronRight className="w-4 h-4 text-white/30 group-hover:text-white/70 transition-colors" />
           </div>
+          {hasSupply && supplyLeft !== null && (
+            <p className="text-orange-400 text-xs mt-1 font-medium">
+              {supplyLeft} restantes de {item.maxSupply}
+            </p>
+          )}
         </div>
       </Link>
     </motion.div>
@@ -198,7 +239,121 @@ function CollectionCard({ collection }: { collection: any }) {
   );
 }
 
-// ─── Secciones ────────────────────────────────────────────────────────────────
+// ─── Sección: Drops activos ───────────────────────────────────────────────────
+
+function DropsSection() {
+  const { data: drops, isLoading } = trpc.commerce.activeDrops.useQuery();
+
+  if (isLoading) return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="aspect-square bg-red-900/10 rounded-xl animate-pulse border border-red-900/20" />
+      ))}
+    </div>
+  );
+
+  if (!drops?.length) return null;
+
+  return (
+    <section>
+      {/* Header con countdown visual */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-white font-bold text-lg flex items-center gap-2">
+          <Zap className="w-5 h-5 text-red-400" />
+          <span className="text-red-400">Drops Activos</span>
+          <span className="bg-red-500/20 border border-red-500/40 text-red-300 text-xs px-2 py-0.5 rounded-full animate-pulse">
+            LIVE
+          </span>
+        </h2>
+      </div>
+
+      {/* Banner de drop con tiempo restante */}
+      <div className="bg-gradient-to-r from-red-950/60 to-zinc-900/80 border border-red-800/40 rounded-xl p-3 mb-4 flex items-center gap-3">
+        <Timer className="w-5 h-5 text-red-400 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-red-300 text-xs font-medium">
+            {drops.length} ítem{drops.length !== 1 ? "s" : ""} disponible{drops.length !== 1 ? "s" : ""} por tiempo limitado
+          </p>
+          {drops[0]?.dropEnd && (
+            <p className="text-zinc-400 text-xs mt-0.5">
+              Próximo cierre: <span className="text-orange-400 font-medium">{formatTimeLeft(drops[0].dropEnd)}</span>
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {drops.map((entry: any) => (
+          <CatalogCard
+            key={`${entry.type}-${entry.catalogId}`}
+            entry={entry}
+            showDropBadge
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Sección: Rotación semanal ────────────────────────────────────────────────
+
+function WeeklyFeaturedSection() {
+  const { data: weekly, isLoading } = trpc.commerce.weeklyFeatured.useQuery();
+
+  if (isLoading) return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="aspect-square bg-yellow-900/10 rounded-xl animate-pulse border border-yellow-900/20" />
+      ))}
+    </div>
+  );
+
+  if (!weekly?.length) return null;
+
+  // Calcular días hasta el próximo lunes
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0=Dom, 1=Lun...
+  const daysUntilMonday = dayOfWeek === 1 ? 7 : (8 - dayOfWeek) % 7;
+  const nextMonday = new Date(now);
+  nextMonday.setDate(now.getDate() + daysUntilMonday);
+  nextMonday.setHours(0, 0, 0, 0);
+  const msLeft = nextMonday.getTime() - now.getTime();
+  const daysLeft = Math.floor(msLeft / 86_400_000);
+  const hoursLeft = Math.floor((msLeft % 86_400_000) / 3_600_000);
+
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-white font-bold text-lg flex items-center gap-2">
+          <CalendarDays className="w-5 h-5 text-yellow-400" />
+          <span>Rotación Semanal</span>
+        </h2>
+        <span className="text-yellow-400/70 text-xs flex items-center gap-1">
+          <Clock className="w-3.5 h-3.5" />
+          Rota en {daysLeft}d {hoursLeft}h
+        </span>
+      </div>
+
+      <div className="bg-gradient-to-r from-yellow-950/40 to-zinc-900/80 border border-yellow-800/30 rounded-xl p-3 mb-4 flex items-center gap-3">
+        <Star className="w-5 h-5 text-yellow-400 flex-shrink-0" />
+        <p className="text-yellow-200/70 text-xs">
+          Selección especial que rota cada semana. ¡No te los pierdas!
+        </p>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {weekly.map((entry: any) => (
+          <CatalogCard
+            key={`${entry.type}-${entry.catalogId}`}
+            entry={entry}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── Sección: Destacados ──────────────────────────────────────────────────────
 
 function FeaturedSection() {
   const { data: featured, isLoading } = trpc.commerce.featured.useQuery();
@@ -403,6 +558,8 @@ function AllCollections() {
 
 const TABS = [
   { id: "all", label: "Todo", icon: <ShoppingBag className="w-4 h-4" /> },
+  { id: "drops", label: "Drops", icon: <Zap className="w-4 h-4" /> },
+  { id: "weekly", label: "Semanal", icon: <CalendarDays className="w-4 h-4" /> },
   { id: "physical", label: "Físicos", icon: <Package className="w-4 h-4" /> },
   { id: "cosmetic", label: "Digitales", icon: <Sparkles className="w-4 h-4" /> },
   { id: "collections", label: "Colecciones", icon: <Layers className="w-4 h-4" /> },
@@ -432,7 +589,7 @@ export default function Store() {
           Tienda
         </h1>
         <p className="text-white/50 text-sm mt-1">
-          Productos físicos y cosméticos digitales en un solo lugar
+          Productos físicos, cosméticos digitales, drops y rotación semanal
         </p>
       </div>
 
@@ -475,12 +632,20 @@ export default function Store() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   activeTab === tab.id
-                    ? "bg-[#e63946] text-white"
+                    ? tab.id === "drops"
+                      ? "bg-red-600 text-white"
+                      : tab.id === "weekly"
+                        ? "bg-yellow-600 text-white"
+                        : "bg-[#e63946] text-white"
                     : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                 }`}
               >
                 {tab.icon}
                 {tab.label}
+                {/* Indicador live en drops */}
+                {tab.id === "drops" && activeTab !== "drops" && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+                )}
               </button>
             ))}
           </div>
@@ -496,6 +661,8 @@ export default function Store() {
             >
               {activeTab === "all" && (
                 <>
+                  <DropsSection />
+                  <WeeklyFeaturedSection />
                   <FeaturedSection />
                   <CollectionsSection />
                   <CatalogSection
@@ -511,6 +678,18 @@ export default function Store() {
                     limit={8}
                   />
                 </>
+              )}
+
+              {activeTab === "drops" && (
+                <div className="space-y-4">
+                  <DropsSection />
+                </div>
+              )}
+
+              {activeTab === "weekly" && (
+                <div className="space-y-4">
+                  <WeeklyFeaturedSection />
+                </div>
               )}
 
               {activeTab === "physical" && (

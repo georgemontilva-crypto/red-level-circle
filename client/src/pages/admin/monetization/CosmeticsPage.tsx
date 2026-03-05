@@ -1,13 +1,39 @@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles } from "lucide-react";
+import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles, Package, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "../components/AdminUI";
 
 export function CosmeticsPage() {
-  const emptyForm = { name: "", description: "", type: "frame" as any, rarity: "common" as any, previewImage: "", frameImage: "", price: "", originalPrice: "", isActive: true, isFeatured: false, isLimited: false, collection: "", sortOrder: "0", catalogVisible: true, catalogFeatured: false, catalogCollectionId: undefined as number | undefined, catalogPublishDate: "" };
+  const emptyForm = {
+    name: "",
+    description: "",
+    type: "frame" as any,
+    rarity: "common" as any,
+    previewImage: "",
+    frameImage: "",
+    price: "",
+    originalPrice: "",
+    isActive: true,
+    isFeatured: false,
+    isLimited: false,
+    maxSupply: "",
+    dropStart: "",
+    dropEnd: "",
+    collection: "",
+    sortOrder: "0",
+    // Catálogo
+    catalogVisible: true,
+    catalogFeatured: false,
+    catalogWeeklyFeatured: false,
+    catalogFeaturedPriority: "0",
+    catalogCollectionId: undefined as number | undefined,
+    catalogPublishDate: "",
+    catalogVisibleFrom: "",
+    catalogVisibleUntil: "",
+  };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<number | null>(null);
   const [uploadingPreview, setUploadingPreview] = useState(false);
@@ -48,17 +74,75 @@ export function CosmeticsPage() {
 
   const startEdit = (c: any) => {
     setEditing(c.id);
-    setForm({ name: c.name, description: c.description ?? "", type: c.type, rarity: c.rarity, previewImage: c.previewImage ?? "", frameImage: c.frameImage ?? "", price: String(c.price), originalPrice: c.originalPrice ? String(c.originalPrice) : "", isActive: c.isActive, isFeatured: c.isFeatured, isLimited: c.isLimited, collection: c.collection ?? "", sortOrder: String(c.sortOrder) });
+    setForm({
+      name: c.name,
+      description: c.description ?? "",
+      type: c.type,
+      rarity: c.rarity,
+      previewImage: c.previewImage ?? "",
+      frameImage: c.frameImage ?? "",
+      price: String(c.price),
+      originalPrice: c.originalPrice ? String(c.originalPrice) : "",
+      isActive: c.isActive,
+      isFeatured: c.isFeatured,
+      isLimited: c.isLimited,
+      maxSupply: c.maxSupply ? String(c.maxSupply) : "",
+      dropStart: c.dropStart ? new Date(c.dropStart).toISOString().slice(0, 16) : "",
+      dropEnd: c.dropEnd ? new Date(c.dropEnd).toISOString().slice(0, 16) : "",
+      collection: c.collection ?? "",
+      sortOrder: String(c.sortOrder),
+      catalogVisible: true,
+      catalogFeatured: false,
+      catalogWeeklyFeatured: false,
+      catalogFeaturedPriority: "0",
+      catalogCollectionId: undefined,
+      catalogPublishDate: "",
+      catalogVisibleFrom: "",
+      catalogVisibleUntil: "",
+    });
   };
 
   const handleSubmit = () => {
-    const catalogFields = { catalogVisible: form.catalogVisible, catalogFeatured: form.catalogFeatured, catalogCollectionId: form.catalogCollectionId, catalogPublishDate: form.catalogPublishDate || undefined };
-    const data = { name: form.name, description: form.description || undefined, type: form.type, rarity: form.rarity, previewImage: form.previewImage || undefined, frameImage: form.frameImage || undefined, price: parseInt(form.price) || 0, originalPrice: form.originalPrice ? parseInt(form.originalPrice) : undefined, isActive: form.isActive, isFeatured: form.isFeatured, isLimited: form.isLimited, collection: form.collection || undefined, sortOrder: parseInt(form.sortOrder) || 0, ...catalogFields };
+    const catalogFields = {
+      catalogVisible: form.catalogVisible,
+      catalogFeatured: form.catalogFeatured,
+      catalogWeeklyFeatured: form.catalogWeeklyFeatured,
+      catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0,
+      catalogCollectionId: form.catalogCollectionId,
+      catalogPublishDate: form.catalogPublishDate || undefined,
+      catalogVisibleFrom: form.catalogVisibleFrom || undefined,
+      catalogVisibleUntil: form.catalogVisibleUntil || undefined,
+    };
+    const data = {
+      name: form.name,
+      description: form.description || undefined,
+      type: form.type,
+      rarity: form.rarity,
+      previewImage: form.previewImage || undefined,
+      frameImage: form.frameImage || undefined,
+      price: parseInt(form.price) || 0,
+      originalPrice: form.originalPrice ? parseInt(form.originalPrice) : undefined,
+      isActive: form.isActive,
+      isFeatured: form.isFeatured,
+      isLimited: form.isLimited,
+      maxSupply: form.maxSupply ? parseInt(form.maxSupply) : undefined,
+      dropStart: form.dropStart || undefined,
+      dropEnd: form.dropEnd || undefined,
+      collection: form.collection || undefined,
+      sortOrder: parseInt(form.sortOrder) || 0,
+      ...catalogFields,
+    };
     if (editing !== null) update.mutate({ id: editing, ...data });
     else create.mutate(data);
   };
 
-  const rarityColors: Record<string, string> = { common: "text-zinc-400", rare: "text-blue-400", epic: "text-purple-400", legendary: "text-yellow-400" };
+  const rarityColors: Record<string, string> = {
+    common: "text-zinc-400",
+    rare: "text-blue-400",
+    epic: "text-purple-400",
+    legendary: "text-yellow-400",
+    mythic: "text-red-400",
+  };
   const inputCls = "w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none";
 
   return (
@@ -86,6 +170,8 @@ export function CosmeticsPage() {
                 <SelectItem value="aura">Aura</SelectItem>
                 <SelectItem value="badge">Insignia</SelectItem>
                 <SelectItem value="background">Fondo</SelectItem>
+                <SelectItem value="decoration">Decoración</SelectItem>
+                <SelectItem value="effect">Efecto</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -98,6 +184,7 @@ export function CosmeticsPage() {
                 <SelectItem value="rare">Raro</SelectItem>
                 <SelectItem value="epic">Épico</SelectItem>
                 <SelectItem value="legendary">Legendario</SelectItem>
+                <SelectItem value="mythic">Mítico</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -185,7 +272,11 @@ export function CosmeticsPage() {
 
         {/* Toggles */}
         <div className="flex gap-6 flex-wrap">
-          {[{ key: "isActive", label: "Activo" }, { key: "isFeatured", label: "Destacado" }, { key: "isLimited", label: "Edición Limitada" }].map(({ key, label }) => (
+          {[
+            { key: "isActive", label: "Activo" },
+            { key: "isFeatured", label: "Destacado" },
+            { key: "isLimited", label: "Edición Limitada" },
+          ].map(({ key, label }) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-red-500" />
               <span className="text-zinc-400 text-xs font-rajdhani">{label}</span>
@@ -193,11 +284,53 @@ export function CosmeticsPage() {
           ))}
         </div>
 
+        {/* Supply & Drop Window */}
+        <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
+          <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+            <Package className="w-3.5 h-3.5" /> Supply & Drop Window
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">SUPPLY MÁXIMO</label>
+              <input
+                type="number"
+                value={form.maxSupply}
+                onChange={e => setForm(f => ({ ...f, maxSupply: e.target.value }))}
+                className={inputCls}
+                placeholder="Vacío = ilimitado"
+                min={1}
+              />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">INICIO DEL DROP</label>
+              <input
+                type="datetime-local"
+                value={form.dropStart}
+                onChange={e => setForm(f => ({ ...f, dropStart: e.target.value }))}
+                className={inputCls}
+              />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">FIN DEL DROP</label>
+              <input
+                type="datetime-local"
+                value={form.dropEnd}
+                onChange={e => setForm(f => ({ ...f, dropEnd: e.target.value }))}
+                className={inputCls}
+              />
+            </div>
+          </div>
+          <p className="text-zinc-600 text-xs font-rajdhani">Si defines un drop window, el cosmético solo estará disponible durante ese período.</p>
+        </div>
+
         {/* Commerce Core — Catálogo */}
         <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
-          <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">⚡ Configuración de Catálogo</p>
+          <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+            <Clock className="w-3.5 h-3.5" /> Configuración de Catálogo
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-center gap-4">
+            {/* Toggles de catálogo */}
+            <div className="flex flex-wrap gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.catalogVisible} onChange={e => setForm(f => ({ ...f, catalogVisible: e.target.checked }))} className="w-4 h-4 accent-red-500" />
                 <span className="text-xs text-zinc-300 font-rajdhani">Visible en /store</span>
@@ -206,10 +339,33 @@ export function CosmeticsPage() {
                 <input type="checkbox" checked={form.catalogFeatured} onChange={e => setForm(f => ({ ...f, catalogFeatured: e.target.checked }))} className="w-4 h-4 accent-red-500" />
                 <span className="text-xs text-zinc-300 font-rajdhani">Destacado en portada</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.catalogWeeklyFeatured} onChange={e => setForm(f => ({ ...f, catalogWeeklyFeatured: e.target.checked }))} className="w-4 h-4 accent-yellow-500" />
+                <span className="text-xs text-zinc-300 font-rajdhani">⭐ Destacado semanal</span>
+              </label>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Prioridad Featured (0 = mayor)</label>
+              <input
+                type="number"
+                value={form.catalogFeaturedPriority}
+                onChange={e => setForm(f => ({ ...f, catalogFeaturedPriority: e.target.value }))}
+                className={inputCls}
+                min={0}
+                placeholder="0"
+              />
             </div>
             <div>
               <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Fecha de publicación</label>
               <input type="datetime-local" value={form.catalogPublishDate} onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible desde</label>
+              <input type="datetime-local" value={form.catalogVisibleFrom} onChange={e => setForm(f => ({ ...f, catalogVisibleFrom: e.target.value }))} className={inputCls} />
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible hasta</label>
+              <input type="datetime-local" value={form.catalogVisibleUntil} onChange={e => setForm(f => ({ ...f, catalogVisibleUntil: e.target.value }))} className={inputCls} />
             </div>
           </div>
         </div>
@@ -236,6 +392,16 @@ export function CosmeticsPage() {
                 <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
               </div>
               {c.frameImage && <p className="text-green-500 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5"><CheckCircle2 size={11} /> PNG cargado</p>}
+              {c.maxSupply && (
+                <p className="text-orange-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
+                  <Package size={10} /> {c.currentSupply ?? 0}/{c.maxSupply} vendidos
+                </p>
+              )}
+              {c.dropStart && (
+                <p className="text-blue-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
+                  <Clock size={10} /> Drop activo
+                </p>
+              )}
             </div>
             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button onClick={() => startEdit(c)} className="bg-black/60 hover:bg-zinc-800 rounded p-1"><Edit3 className="w-3 h-3 text-white" /></button>

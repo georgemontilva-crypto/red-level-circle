@@ -1674,8 +1674,12 @@ export const appRouter = router({
         // Commerce Core fields
         catalogVisible: z.boolean().optional().default(true),
         catalogFeatured: z.boolean().optional().default(false),
+        catalogWeeklyFeatured: z.boolean().optional().default(false),
+        catalogFeaturedPriority: z.number().int().optional().default(0),
         catalogCollectionId: z.number().int().optional(),
-        catalogPublishDate: z.string().optional(), // ISO date string
+        catalogPublishDate: z.string().optional(),
+        catalogVisibleFrom: z.string().optional(),
+        catalogVisibleUntil: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         const newId = await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category, maxPerUser: input.maxPerUser ?? null });
@@ -1689,7 +1693,12 @@ export const appRouter = router({
             title: input.name,
             isFeatured: input.catalogFeatured ?? false,
             isVisible: input.catalogVisible ?? true,
+            weeklyFeatured: input.catalogWeeklyFeatured ?? false,
+            featuredPriority: input.catalogFeaturedPriority ?? 0,
             collectionId: input.catalogCollectionId ?? null,
+            publishDate: input.catalogPublishDate ? new Date(input.catalogPublishDate) : null,
+            visibleFrom: input.catalogVisibleFrom ? new Date(input.catalogVisibleFrom) : null,
+            visibleUntil: input.catalogVisibleUntil ? new Date(input.catalogVisibleUntil) : null,
           } as any);
         }
         return { success: true };
@@ -1709,15 +1718,19 @@ export const appRouter = router({
         // Commerce Core fields
         catalogVisible: z.boolean().optional(),
         catalogFeatured: z.boolean().optional(),
+        catalogWeeklyFeatured: z.boolean().optional(),
+        catalogFeaturedPriority: z.number().int().optional(),
         catalogCollectionId: z.number().int().nullable().optional(),
         catalogPublishDate: z.string().nullable().optional(),
+        catalogVisibleFrom: z.string().nullable().optional(),
+        catalogVisibleUntil: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, imageUrl, catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...rest } = input;
+        const { id, imageUrl, catalogVisible, catalogFeatured, catalogWeeklyFeatured, catalogFeaturedPriority, catalogCollectionId, catalogPublishDate, catalogVisibleFrom, catalogVisibleUntil, ...rest } = input;
         await adminUpdateShopItem(id, { ...rest, ...(imageUrl !== undefined ? { image: imageUrl } : {}) });
         // Sync catalog entry
         const db = await getDb();
-        if (db && (catalogVisible !== undefined || catalogFeatured !== undefined || catalogCollectionId !== undefined || catalogPublishDate !== undefined)) {
+        if (db) {
           const { catalogItems } = await import("../drizzle/schema");
           const { eq, and } = await import("drizzle-orm");
           const existing = await db.select({ id: catalogItems.id }).from(catalogItems)
@@ -1726,8 +1739,12 @@ export const appRouter = router({
           const catalogUpdate: Record<string, unknown> = {};
           if (catalogVisible !== undefined) catalogUpdate.isVisible = catalogVisible;
           if (catalogFeatured !== undefined) catalogUpdate.isFeatured = catalogFeatured;
+          if (catalogWeeklyFeatured !== undefined) catalogUpdate.weeklyFeatured = catalogWeeklyFeatured;
+          if (catalogFeaturedPriority !== undefined) catalogUpdate.featuredPriority = catalogFeaturedPriority;
           if (catalogCollectionId !== undefined) catalogUpdate.collectionId = catalogCollectionId;
           if (catalogPublishDate !== undefined) catalogUpdate.publishDate = catalogPublishDate ? new Date(catalogPublishDate) : null;
+          if (catalogVisibleFrom !== undefined) catalogUpdate.visibleFrom = catalogVisibleFrom ? new Date(catalogVisibleFrom) : null;
+          if (catalogVisibleUntil !== undefined) catalogUpdate.visibleUntil = catalogVisibleUntil ? new Date(catalogVisibleUntil) : null;
           if (input.name) catalogUpdate.title = input.name;
           if (existing.length > 0) {
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
@@ -2465,14 +2482,22 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         isLimited: z.boolean().default(false),
         collection: z.string().optional(),
         sortOrder: z.number().int().default(0),
+        // Supply & Drop Window
+        maxSupply: z.number().int().optional(),
+        dropStart: z.string().optional(),
+        dropEnd: z.string().optional(),
         // Commerce Core fields
         catalogVisible: z.boolean().optional().default(true),
         catalogFeatured: z.boolean().optional().default(false),
+        catalogWeeklyFeatured: z.boolean().optional().default(false),
+        catalogFeaturedPriority: z.number().int().optional().default(0),
         catalogCollectionId: z.number().int().optional(),
         catalogPublishDate: z.string().optional(),
+        catalogVisibleFrom: z.string().optional(),
+        catalogVisibleUntil: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...cosmeticData } = input;
+        const { catalogVisible, catalogFeatured, catalogWeeklyFeatured, catalogFeaturedPriority, catalogCollectionId, catalogPublishDate, catalogVisibleFrom, catalogVisibleUntil, ...cosmeticData } = input;
         const newId = await adminCreateCosmetic(cosmeticData as any);
         // Auto-register in commerce_catalog
         const db = await getDb();
@@ -2484,7 +2509,12 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
             title: input.name,
             isFeatured: catalogFeatured ?? false,
             isVisible: catalogVisible ?? true,
+            weeklyFeatured: catalogWeeklyFeatured ?? false,
+            featuredPriority: catalogFeaturedPriority ?? 0,
             collectionId: catalogCollectionId ?? null,
+            publishDate: catalogPublishDate ? new Date(catalogPublishDate) : null,
+            visibleFrom: catalogVisibleFrom ? new Date(catalogVisibleFrom) : null,
+            visibleUntil: catalogVisibleUntil ? new Date(catalogVisibleUntil) : null,
           } as any);
         }
         return { success: true };
@@ -2507,18 +2537,26 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         isLimited: z.boolean().optional(),
         collection: z.string().optional(),
         sortOrder: z.number().int().optional(),
+        // Supply & Drop Window
+        maxSupply: z.number().int().nullable().optional(),
+        dropStart: z.string().nullable().optional(),
+        dropEnd: z.string().nullable().optional(),
         // Commerce Core fields
         catalogVisible: z.boolean().optional(),
         catalogFeatured: z.boolean().optional(),
+        catalogWeeklyFeatured: z.boolean().optional(),
+        catalogFeaturedPriority: z.number().int().optional(),
         catalogCollectionId: z.number().int().nullable().optional(),
         catalogPublishDate: z.string().nullable().optional(),
+        catalogVisibleFrom: z.string().nullable().optional(),
+        catalogVisibleUntil: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...data } = input;
+        const { id, catalogVisible, catalogFeatured, catalogWeeklyFeatured, catalogFeaturedPriority, catalogCollectionId, catalogPublishDate, catalogVisibleFrom, catalogVisibleUntil, ...data } = input;
         await adminUpdateCosmetic(id, data as any);
         // Sync catalog entry
         const db = await getDb();
-        if (db && (catalogVisible !== undefined || catalogFeatured !== undefined || catalogCollectionId !== undefined || catalogPublishDate !== undefined)) {
+        if (db) {
           const { catalogItems } = await import("../drizzle/schema");
           const { eq, and } = await import("drizzle-orm");
           const existing = await db.select({ id: catalogItems.id }).from(catalogItems)
@@ -2527,8 +2565,12 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           const catalogUpdate: Record<string, unknown> = {};
           if (catalogVisible !== undefined) catalogUpdate.isVisible = catalogVisible;
           if (catalogFeatured !== undefined) catalogUpdate.isFeatured = catalogFeatured;
+          if (catalogWeeklyFeatured !== undefined) catalogUpdate.weeklyFeatured = catalogWeeklyFeatured;
+          if (catalogFeaturedPriority !== undefined) catalogUpdate.featuredPriority = catalogFeaturedPriority;
           if (catalogCollectionId !== undefined) catalogUpdate.collectionId = catalogCollectionId;
           if (catalogPublishDate !== undefined) catalogUpdate.publishDate = catalogPublishDate ? new Date(catalogPublishDate) : null;
+          if (catalogVisibleFrom !== undefined) catalogUpdate.visibleFrom = catalogVisibleFrom ? new Date(catalogVisibleFrom) : null;
+          if (catalogVisibleUntil !== undefined) catalogUpdate.visibleUntil = catalogVisibleUntil ? new Date(catalogVisibleUntil) : null;
           if (input.name) catalogUpdate.title = input.name;
           if (existing.length > 0) {
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
