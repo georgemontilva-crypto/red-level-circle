@@ -473,20 +473,13 @@ export default function Shop() {
       <div className="py-8">
         {/* ── Switcher principal estilo login: Productos / Cosméticos ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          {/* Switcher pill */}
-          <div
-            className="flex rounded-md p-1"
-            style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.07)",
-              width: "fit-content",
-            }}
-          >
+          {/* Switcher botones independientes */}
+          <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
             {SWITCHER_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setMainTab(tab.id as any)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200 whitespace-nowrap"
+                className="flex items-center gap-1.5 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap rounded-md"
                 style={{
                   background: mainTab === tab.id ? "oklch(0.55 0.22 25)" : "rgba(255,255,255,0.04)",
                   color: mainTab === tab.id ? "#fff" : "rgba(255,255,255,0.4)",
