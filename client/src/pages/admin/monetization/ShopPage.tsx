@@ -191,6 +191,8 @@ export function ShopPage() {
   });
   const utils = trpc.useUtils();
   const invalidateStore = () => {
+    utils.shop.list.invalidate();
+    utils.cosmetics.list.invalidate();
     utils.commerce.catalog.invalidate();
     utils.commerce.featured.invalidate();
     utils.commerce.weeklyFeatured.invalidate();
