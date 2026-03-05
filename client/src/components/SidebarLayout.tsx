@@ -200,31 +200,23 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
   // ─── Mobile sidebar (grid de tarjetas cuadradas estilo Facebook) ─────────────
   const MobileSidebarContent = () => {
-    // Aplanar todos los items visibles en una lista única para el grid
-    const allItems = sections.flatMap(s => s.items).filter(item => {
-      if (item.requiresAuth && !isAuthenticated) return false;
-      if (item.requiresPremium && !isPremium) return false;
-      if (item.requiresAdmin && !isAdmin) return false;
-      return true;
-    });
-
     return (
       <div className="flex flex-col h-full overflow-hidden">
         {/* Header del sidebar móvil: avatar + nombre */}
         {isAuthenticated && user ? (
           <div
-            className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
+            className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
           >
             <UserAvatar
               avatar={(user as any).avatar ?? null}
               name={(user as any).nickname ?? (user as any).name ?? null}
-              size={44}
-              containerSize={44}
+              size={40}
+              containerSize={40}
               ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}
             />
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-base truncate" style={{ color: "var(--text-primary)" }}>
+              <p className="font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>
                 {(user as any).nickname ?? user.name ?? "Usuario"}
               </p>
               {wallet && (
@@ -250,91 +242,112 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         )}
 
-        {/* Grid de tarjetas */}
-        <div className="flex-1 overflow-y-auto px-3 py-4">
-          <div className="grid grid-cols-2 gap-3">
-            {allItems.map((item) => {
-              const active = isActive(item.href);
-              return (
-                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
-                  <div
-                    className="relative flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200 select-none"
-                    style={{
-                      background: active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
-                      border: active ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
-                      minHeight: "100px",
-                      aspectRatio: "1 / 0.9",
-                    }}
-                    onTouchStart={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.1)"; }}
-                    onTouchEnd={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)"; }}
-                  >
-                    {/* Badge */}
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span className="absolute top-3 right-3 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                        {item.badge > 99 ? "99+" : item.badge}
-                      </span>
-                    )}
-                    {/* Icono */}
-                    <item.icon
-                      className="w-8 h-8 mb-2"
-                      style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
-                    />
-                    {/* Label */}
-                    <span
-                      className="font-semibold text-sm leading-tight"
-                      style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
-                    >
-                      {item.label}
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+        {/* Grid de tarjetas por sección */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+          {sections.map((section) => {
+            const visibleItems = section.items.filter(item => {
+              if (item.requiresAuth && !isAuthenticated) return false;
+              if (item.requiresPremium && !isPremium) return false;
+              if (item.requiresAdmin && !isAdmin) return false;
+              return true;
+            });
+            if (visibleItems.length === 0) return null;
+            return (
+              <div key={section.title}>
+                {/* Título de sección */}
+                <p className="text-[10px] font-mono tracking-widest px-1 mb-2" style={{ color: "var(--text-muted)" }}>{section.title}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {visibleItems.map((item) => {
+                    const active = isActive(item.href);
+                    return (
+                      <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+                        <div
+                          className="relative flex flex-col items-start justify-end px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 select-none"
+                          style={{
+                            background: active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
+                            border: active ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                            minHeight: "76px",
+                          }}
+                          onTouchStart={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.1)"; }}
+                          onTouchEnd={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)"; }}
+                        >
+                          {/* Badge */}
+                          {item.badge !== undefined && item.badge > 0 && (
+                            <span className="absolute top-2 right-2 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          )}
+                          {/* Icono */}
+                          <item.icon
+                            className="w-6 h-6 mb-1.5"
+                            style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                          />
+                          {/* Label */}
+                          <span
+                            className="font-semibold text-xs leading-tight"
+                            style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                          >
+                            {item.label}
+                          </span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
 
-            {/* Tarjeta de login si no está autenticado */}
-            {!isAuthenticated && !loading && (
+          {/* Tarjeta de login si no está autenticado */}
+          {!isAuthenticated && !loading && (
+            <div>
+              <p className="text-[10px] font-mono tracking-widest px-1 mb-2" style={{ color: "var(--text-muted)" }}>CUENTA</p>
               <a href={getLoginUrl()} onClick={() => setMobileOpen(false)}>
                 <div
-                  className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200"
+                  className="flex flex-col items-start justify-end px-3 py-3 rounded-xl cursor-pointer transition-all duration-200"
                   style={{
                     background: "rgba(220,38,38,0.12)",
                     border: "1px solid rgba(220,38,38,0.25)",
-                    minHeight: "100px",
-                    aspectRatio: "1 / 0.9",
+                    minHeight: "76px",
                   }}
                 >
-                  <Shield className="w-8 h-8 mb-2" style={{ color: "var(--accent-red)" }} />
-                  <span className="font-semibold text-sm" style={{ color: "var(--accent-red)" }}>Iniciar Sesión</span>
+                  <Shield className="w-6 h-6 mb-1.5" style={{ color: "var(--accent-red)" }} />
+                  <span className="font-semibold text-xs" style={{ color: "var(--accent-red)" }}>Iniciar Sesión</span>
                 </div>
               </a>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
-        {/* Footer: configuración + cerrar sesión */}
+        {/* Footer: configuración + cerrar sesión — fila horizontal compacta */}
         {isAuthenticated && (
-          <div className="px-3 pb-6 pt-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <Link href="/settings" onClick={() => setMobileOpen(false)}>
+          <div
+            className="px-3 pb-safe pt-2 flex-shrink-0"
+            style={{
+              borderTop: "1px solid rgba(255,255,255,0.07)",
+              paddingBottom: "max(env(safe-area-inset-bottom, 0px), 12px)",
+            }}
+          >
+            <div className="flex gap-2 mt-2">
+              <Link href="/settings" onClick={() => setMobileOpen(false)} className="flex-1">
                 <div
-                  className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200"
                   style={{
                     background: location === "/settings" ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
                     border: location === "/settings" ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
-                    minHeight: "90px",
                   }}
                 >
-                  <Settings className="w-7 h-7 mb-2" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }} />
-                  <span className="font-semibold text-sm" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }}>Configuración</span>
+                  <Settings className="w-4 h-4 flex-shrink-0" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-muted)" }} />
+                  <span className="font-semibold text-xs" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }}>Configuración</span>
                 </div>
               </Link>
               <button
                 onClick={() => { logout(); setMobileOpen(false); }}
-                className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left"
-                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)", minHeight: "90px" }}
+                className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-left"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)" }}
               >
-                <LogOut className="w-7 h-7 mb-2" style={{ color: "var(--text-muted)" }} />
-                <span className="font-semibold text-sm" style={{ color: "var(--text-muted)" }}>Cerrar sesión</span>
+                <LogOut className="w-4 h-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+                <span className="font-semibold text-xs" style={{ color: "var(--text-muted)" }}>Cerrar sesión</span>
               </button>
             </div>
           </div>
