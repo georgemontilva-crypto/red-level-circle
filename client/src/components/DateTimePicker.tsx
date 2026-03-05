@@ -161,7 +161,7 @@ export function DateTimePicker({ label, value, onChange, placeholder }: DateTime
         <div
           className="absolute z-50 mt-2 rounded-xl shadow-2xl overflow-hidden"
           style={{
-            background: "#0e1014",
+            background: "#0a0a0a",
             border: "1.5px solid #22262e",
             minWidth: "300px",
           }}

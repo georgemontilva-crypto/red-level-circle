@@ -442,7 +442,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
       <div
         className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-[100001] flex flex-col md:hidden"
         style={{
-          background: "rgba(14,14,16,0.92)",
+          background: "rgba(10,10,10,0.92)",
           borderColor: "var(--border-main)",
           paddingTop: "env(safe-area-inset-top, 0px)",
           WebkitBackdropFilter: "blur(12px)",
