@@ -189,16 +189,23 @@ export function ShopPage() {
     onSuccess: (data) => { setAiEditReport(data); toast.success("Precio sugerido por IA"); },
     onError: e => toast.error("Error IA: " + e.message),
   });
+  const utils = trpc.useUtils();
+  const invalidateStore = () => {
+    utils.commerce.catalog.invalidate();
+    utils.commerce.featured.invalidate();
+    utils.commerce.weeklyFeatured.invalidate();
+    utils.commerce.collections.invalidate();
+  };
   const createItem = trpc.admin.createShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm(emptyForm); setAiReport(null); refetchItems(); },
+    onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm(emptyForm); setAiReport(null); refetchItems(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
   const updateItem = trpc.admin.updateShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto actualizado"); setEditingItem(null); setAiEditReport(null); refetchItems(); },
+    onSuccess: () => { toast.success("Producto actualizado"); setEditingItem(null); setAiEditReport(null); refetchItems(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
   const deleteItem = trpc.admin.deleteShopItem.useMutation({
-    onSuccess: () => { toast.success("Producto eliminado"); refetchItems(); },
+    onSuccess: () => { toast.success("Producto eliminado"); refetchItems(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
   const updateOrder = trpc.admin.updateOrderStatus.useMutation({

@@ -75,16 +75,24 @@ export function CosmeticsPage() {
     onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
     onError: e => toast.error("Error IA: " + e.message),
   });
+  const utils = trpc.useUtils();
+  const invalidateStore = () => {
+    utils.cosmetics.list.invalidate();
+    utils.commerce.catalog.invalidate();
+    utils.commerce.featured.invalidate();
+    utils.commerce.weeklyFeatured.invalidate();
+    utils.commerce.collections.invalidate();
+  };
   const create = trpc.cosmetics.adminCreate.useMutation({
-    onSuccess: () => { toast.success("Cosmético creado"); setForm(emptyForm); refetch(); },
+    onSuccess: () => { toast.success("Cosmético creado"); setForm(emptyForm); refetch(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
   const update = trpc.cosmetics.adminUpdate.useMutation({
-    onSuccess: () => { toast.success("Cosmético actualizado"); setEditing(null); setForm(emptyForm); refetch(); },
+    onSuccess: () => { toast.success("Cosmético actualizado"); setEditing(null); setForm(emptyForm); refetch(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
   const del = trpc.cosmetics.adminDelete.useMutation({
-    onSuccess: () => { toast.success("Cosmético eliminado"); refetch(); },
+    onSuccess: () => { toast.success("Cosmético eliminado"); refetch(); invalidateStore(); },
     onError: e => toast.error(e.message),
   });
 
