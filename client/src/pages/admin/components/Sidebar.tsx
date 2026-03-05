@@ -40,6 +40,7 @@ const nav: NavItem[] = [
       { href: "/admin/competitive/tournaments", label: "Torneos", icon: Trophy },
       { href: "/admin/competitive/teams", label: "Equipos", icon: Shield },
       { href: "/admin/competitive/rankings", label: "Rankings", icon: BarChart2 },
+      { href: "/admin/competitive/missions", label: "Misiones", icon: Swords },
     ],
   },
   {

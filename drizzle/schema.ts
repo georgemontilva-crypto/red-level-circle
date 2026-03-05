@@ -849,3 +849,57 @@ export const drops = mysqlTable("drops", {
 });
 export type Drop = typeof drops.$inferSelect;
 export type InsertDrop = typeof drops.$inferInsert;
+
+// ─── Missions (Discord Quests-style) ─────────────────────────────────────────
+/**
+ * missions — Misiones patrocinadas con video.
+ * Los usuarios ven un video durante un tiempo requerido y reciben RLC.
+ */
+export const missions = mysqlTable("missions", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description"),
+  bannerUrl: text("bannerUrl"),
+  videoUrl: text("videoUrl").notNull(),
+  sponsorName: varchar("sponsorName", { length: 128 }),
+  sponsorLogo: text("sponsorLogo"),
+  rewardRlc: int("rewardRlc").notNull().default(0),
+  requiredWatchSeconds: int("requiredWatchSeconds").notNull().default(30),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Mission = typeof missions.$inferSelect;
+export type InsertMission = typeof missions.$inferInsert;
+
+/**
+ * userMissions — Progreso de cada usuario en cada misión.
+ * Unique(userId, missionId) — una entrada por usuario por misión.
+ */
+export const userMissions = mysqlTable("userMissions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  missionId: int("missionId").notNull(),
+  accepted: boolean("accepted").default(false).notNull(),
+  watchedSeconds: int("watchedSeconds").default(0).notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  claimed: boolean("claimed").default(false).notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type UserMission = typeof userMissions.$inferSelect;
+export type InsertUserMission = typeof userMissions.$inferInsert;
+
+/**
+ * missionClaims — Registro de recompensas reclamadas.
+ */
+export const missionClaims = mysqlTable("missionClaims", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  missionId: int("missionId").notNull(),
+  rewardRlc: int("rewardRlc").notNull(),
+  claimedAt: timestamp("claimedAt").defaultNow().notNull(),
+});
+export type MissionClaim = typeof missionClaims.$inferSelect;
+export type InsertMissionClaim = typeof missionClaims.$inferInsert;

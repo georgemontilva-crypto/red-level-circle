@@ -3541,6 +3541,255 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           );
       }),
   }),
+
+  // ─── Missions ──────────────────────────────────────────────────────────────
+  missions: router({
+    /** Lista misiones activas (público) */
+    list: publicProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) return [];
+      const { missions } = await import("../drizzle/schema");
+      const now = new Date();
+      return db.select().from(missions).where(
+        and(
+          eq(missions.isActive, true),
+          or(
+            sql`${missions.startDate} IS NULL`,
+            sql`${missions.startDate} <= ${now}`
+          ),
+          or(
+            sql`${missions.endDate} IS NULL`,
+            sql`${missions.endDate} >= ${now}`
+          )
+        )
+      ).orderBy(desc(missions.createdAt));
+    }),
+
+    /** Obtiene el progreso del usuario en todas las misiones */
+    myProgress: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) return [];
+      const { userMissions } = await import("../drizzle/schema");
+      return db.select().from(userMissions).where(eq(userMissions.userId, ctx.user.id));
+    }),
+
+    /** Aceptar una misión */
+    accept: protectedProcedure
+      .input(z.object({ missionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { missions, userMissions } = await import("../drizzle/schema");
+        // Check mission exists and is active
+        const [mission] = await db.select().from(missions).where(eq(missions.id, input.missionId)).limit(1);
+        if (!mission || !mission.isActive) throw new TRPCError({ code: "NOT_FOUND", message: "Misión no encontrada" });
+        // Check not already accepted
+        const [existing] = await db.select().from(userMissions)
+          .where(and(eq(userMissions.userId, ctx.user.id), eq(userMissions.missionId, input.missionId)))
+          .limit(1);
+        if (existing) return { ok: true, alreadyAccepted: true };
+        await db.insert(userMissions).values({
+          userId: ctx.user.id,
+          missionId: input.missionId,
+          accepted: true,
+          watchedSeconds: 0,
+          completed: false,
+          claimed: false,
+        });
+        return { ok: true, alreadyAccepted: false };
+      }),
+
+    /** Actualizar progreso de visualización (llamado cada 5s desde el player) */
+    updateProgress: protectedProcedure
+      .input(z.object({
+        missionId: z.number(),
+        watchedSeconds: z.number().int().min(0),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { missions, userMissions } = await import("../drizzle/schema");
+        const [mission] = await db.select().from(missions).where(eq(missions.id, input.missionId)).limit(1);
+        if (!mission) throw new TRPCError({ code: "NOT_FOUND" });
+        const [um] = await db.select().from(userMissions)
+          .where(and(eq(userMissions.userId, ctx.user.id), eq(userMissions.missionId, input.missionId)))
+          .limit(1);
+        if (!um) throw new TRPCError({ code: "BAD_REQUEST", message: "Debes aceptar la misión primero" });
+        if (um.claimed) return { completed: true, claimed: true, watchedSeconds: um.watchedSeconds };
+        // Anti-fraud: only allow incremental updates, max 10s jump per call
+        const maxAllowed = um.watchedSeconds + 10;
+        const safeSeconds = Math.min(input.watchedSeconds, maxAllowed);
+        const isCompleted = safeSeconds >= mission.requiredWatchSeconds;
+        await db.update(userMissions)
+          .set({
+            watchedSeconds: safeSeconds,
+            completed: isCompleted,
+            completedAt: isCompleted && !um.completed ? new Date() : um.completedAt,
+          })
+          .where(eq(userMissions.id, um.id));
+        return { completed: isCompleted, claimed: false, watchedSeconds: safeSeconds };
+      }),
+
+    /** Reclamar recompensa */
+    claim: protectedProcedure
+      .input(z.object({ missionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { missions, userMissions, missionClaims } = await import("../drizzle/schema");
+        const [mission] = await db.select().from(missions).where(eq(missions.id, input.missionId)).limit(1);
+        if (!mission) throw new TRPCError({ code: "NOT_FOUND" });
+        const [um] = await db.select().from(userMissions)
+          .where(and(eq(userMissions.userId, ctx.user.id), eq(userMissions.missionId, input.missionId)))
+          .limit(1);
+        if (!um) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no aceptada" });
+        if (!um.completed) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no completada" });
+        if (um.claimed) throw new TRPCError({ code: "BAD_REQUEST", message: "Recompensa ya reclamada" });
+        // Grant RLC
+        await addRlcTransaction({
+          userId: ctx.user.id,
+          type: "reward",
+          amount: mission.rewardRlc,
+          description: `Misión completada: ${mission.title}`,
+        });
+        // Mark as claimed
+        await db.update(userMissions).set({ claimed: true }).where(eq(userMissions.id, um.id));
+        // Record claim
+        await db.insert(missionClaims).values({
+          userId: ctx.user.id,
+          missionId: input.missionId,
+          rewardRlc: mission.rewardRlc,
+        });
+        return { ok: true, rewardRlc: mission.rewardRlc };
+      }),
+
+    // ── Admin procedures ────────────────────────────────────────────────────
+    admin: router({
+      /** Listar todas las misiones (admin) */
+      list: adminProcedure.query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        const { missions } = await import("../drizzle/schema");
+        return db.select().from(missions).orderBy(desc(missions.createdAt));
+      }),
+
+      /** Crear misión */
+      create: adminProcedure
+        .input(z.object({
+          title: z.string().min(3).max(256),
+          description: z.string().optional(),
+          videoUrl: z.string().url(),
+          bannerBase64: z.string().optional(),
+          bannerMime: z.string().optional(),
+          sponsorName: z.string().max(128).optional(),
+          sponsorLogoBase64: z.string().optional(),
+          sponsorLogoMime: z.string().optional(),
+          rewardRlc: z.number().int().min(1),
+          requiredWatchSeconds: z.number().int().min(5),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          isActive: z.boolean().default(true),
+        }))
+        .mutation(async ({ input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const { missions } = await import("../drizzle/schema");
+          let bannerUrl: string | undefined;
+          let sponsorLogo: string | undefined;
+          if (input.bannerBase64 && input.bannerMime) {
+            const ext = input.bannerMime.split("/")[1];
+            const key = `missions/banners/banner-${Date.now()}.${ext}`;
+            const buf = Buffer.from(input.bannerBase64, "base64");
+            const { url } = await storagePut(key, buf, input.bannerMime);
+            bannerUrl = url;
+          }
+          if (input.sponsorLogoBase64 && input.sponsorLogoMime) {
+            const ext = input.sponsorLogoMime.split("/")[1];
+            const key = `missions/sponsors/logo-${Date.now()}.${ext}`;
+            const buf = Buffer.from(input.sponsorLogoBase64, "base64");
+            const { url } = await storagePut(key, buf, input.sponsorLogoMime);
+            sponsorLogo = url;
+          }
+          const [result] = await db.insert(missions).values({
+            title: input.title,
+            description: input.description,
+            videoUrl: input.videoUrl,
+            bannerUrl,
+            sponsorName: input.sponsorName,
+            sponsorLogo,
+            rewardRlc: input.rewardRlc,
+            requiredWatchSeconds: input.requiredWatchSeconds,
+            startDate: input.startDate ? new Date(input.startDate) : undefined,
+            endDate: input.endDate ? new Date(input.endDate) : undefined,
+            isActive: input.isActive,
+          }).$returningId();
+          return { id: result.id };
+        }),
+
+      /** Actualizar misión */
+      update: adminProcedure
+        .input(z.object({
+          id: z.number(),
+          title: z.string().min(3).max(256).optional(),
+          description: z.string().optional(),
+          videoUrl: z.string().url().optional(),
+          bannerBase64: z.string().optional(),
+          bannerMime: z.string().optional(),
+          sponsorName: z.string().max(128).optional(),
+          sponsorLogoBase64: z.string().optional(),
+          sponsorLogoMime: z.string().optional(),
+          rewardRlc: z.number().int().min(1).optional(),
+          requiredWatchSeconds: z.number().int().min(5).optional(),
+          startDate: z.string().optional().nullable(),
+          endDate: z.string().optional().nullable(),
+          isActive: z.boolean().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const { missions } = await import("../drizzle/schema");
+          const updates: Record<string, unknown> = {};
+          if (input.title !== undefined) updates.title = input.title;
+          if (input.description !== undefined) updates.description = input.description;
+          if (input.videoUrl !== undefined) updates.videoUrl = input.videoUrl;
+          if (input.sponsorName !== undefined) updates.sponsorName = input.sponsorName;
+          if (input.rewardRlc !== undefined) updates.rewardRlc = input.rewardRlc;
+          if (input.requiredWatchSeconds !== undefined) updates.requiredWatchSeconds = input.requiredWatchSeconds;
+          if (input.startDate !== undefined) updates.startDate = input.startDate ? new Date(input.startDate) : null;
+          if (input.endDate !== undefined) updates.endDate = input.endDate ? new Date(input.endDate) : null;
+          if (input.isActive !== undefined) updates.isActive = input.isActive;
+          if (input.bannerBase64 && input.bannerMime) {
+            const ext = input.bannerMime.split("/")[1];
+            const key = `missions/banners/banner-${Date.now()}.${ext}`;
+            const buf = Buffer.from(input.bannerBase64, "base64");
+            const { url } = await storagePut(key, buf, input.bannerMime);
+            updates.bannerUrl = url;
+          }
+          if (input.sponsorLogoBase64 && input.sponsorLogoMime) {
+            const ext = input.sponsorLogoMime.split("/")[1];
+            const key = `missions/sponsors/logo-${Date.now()}.${ext}`;
+            const buf = Buffer.from(input.sponsorLogoBase64, "base64");
+            const { url } = await storagePut(key, buf, input.sponsorLogoMime);
+            updates.sponsorLogo = url;
+          }
+          await db.update(missions).set(updates).where(eq(missions.id, input.id));
+          return { ok: true };
+        }),
+
+      /** Eliminar misión */
+      delete: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+          const { missions, userMissions, missionClaims } = await import("../drizzle/schema");
+          await db.delete(missionClaims).where(eq(missionClaims.missionId, input.id));
+          await db.delete(userMissions).where(eq(userMissions.missionId, input.id));
+          await db.delete(missions).where(eq(missions.id, input.id));
+          return { ok: true };
+        }),
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
 
