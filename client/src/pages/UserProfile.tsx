@@ -62,6 +62,9 @@ export default function UserProfile() {
   const followMutation = trpc.follows.follow.useMutation({
     onSuccess: () => {
       utils.profile.getWithStats.invalidate({ userId });
+      utils.follows.getCounts.invalidate({ userId });
+      utils.follows.getFollowers.invalidate({ userId });
+      utils.follows.isFollowing.invalidate();
       toast.success("¡Ahora sigues a este usuario!");
     },
     onError: (e) => toast.error(e.message),
@@ -70,6 +73,9 @@ export default function UserProfile() {
   const unfollowMutation = trpc.follows.unfollow.useMutation({
     onSuccess: () => {
       utils.profile.getWithStats.invalidate({ userId });
+      utils.follows.getCounts.invalidate({ userId });
+      utils.follows.getFollowers.invalidate({ userId });
+      utils.follows.isFollowing.invalidate();
       toast.success("Dejaste de seguir a este usuario");
     },
     onError: (e) => toast.error(e.message),

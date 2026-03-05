@@ -2374,8 +2374,9 @@ export async function followUser(followerId: number, followingId: number) {
     .from(userFollows)
     .where(and(eq(userFollows.followerId, followerId), eq(userFollows.followingId, followingId)))
     .limit(1);
-  if (existing.length > 0) return; // already following
+  if (existing.length > 0) return { isNew: false }; // already following
   await db.insert(userFollows).values({ followerId, followingId });
+  return { isNew: true };
 }
 
 export async function unfollowUser(followerId: number, followingId: number) {
