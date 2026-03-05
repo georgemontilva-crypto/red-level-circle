@@ -201,7 +201,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   // ─── Mobile sidebar (grid de tarjetas cuadradas estilo Facebook) ─────────────
   const MobileSidebarContent = () => {
     return (
-      <div className="flex flex-col h-full overflow-hidden">
+      <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
         {/* Header del sidebar móvil: avatar + nombre */}
         {isAuthenticated && user ? (
           <div
@@ -370,25 +370,27 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           className="fixed inset-0 bg-black/60 z-[99999] md:hidden backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
-      )}
-
-      {/* ── Mobile sidebar (grid de tarjetas) ───────────────────────────────── */}
+      )}      {/* ── Mobile sidebar (grid de tarjetas) ────────────────────────────────────── */}
       <aside
-        className={`fixed top-0 left-0 h-full md:hidden transition-transform duration-300 ease-in-out`}
+        className={`fixed top-0 left-0 md:hidden transition-transform duration-300 ease-in-out`}
         style={{
           zIndex: 100000,
           width: "min(85vw, 340px)",
+          height: "100dvh",
           background: "var(--bg-main)",
           borderRight: "1px solid rgba(255,255,255,0.08)",
           transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         {/* Spacer para la status bar */}
-        <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
-        <MobileSidebarContent />
-      </aside>
-
-      {/* ── Mobile top bar ──────────────────────────────────────────────────── */}
+        <div style={{ height: "env(safe-area-inset-top, 0px)", flexShrink: 0 }} />
+        {/* MobileSidebarContent ocupa el resto — flex:1 + minHeight:0 es clave para que el scroll funcione */}
+        <div style={{ flex: "1 1 0", minHeight: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <MobileSidebarContent />
+        </div>
+      </aside>     {/* ── Mobile top bar ──────────────────────────────────────────────────── */}
       <div
         className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-[100001] flex flex-col md:hidden"
         style={{
