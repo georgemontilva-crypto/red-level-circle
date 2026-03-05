@@ -1,12 +1,28 @@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { ShoppingBag, Plus, Package, Zap, MapPin, Key, AlertCircle, CheckCircle, XCircle, ChevronRight, Phone, Sparkles } from "lucide-react";
+import { ShoppingBag, Plus, Package, Zap, MapPin, Key, AlertCircle, CheckCircle, XCircle, ChevronRight, Phone, Sparkles, Eye, EyeOff, CalendarClock, Clock, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "../components/AdminUI";
 
 const isPhysicalCat = (cat?: string | null) => cat === "physical" || cat === "bundle";
+
+// Convierte datetime-local (hora local) a ISO UTC
+function localToISO(val: string): string | undefined {
+  if (!val) return undefined;
+  return new Date(val).toISOString();
+}
+// Convierte ISO/DB a string para datetime-local (hora local del navegador)
+function isoToLocal(val: string | Date | null | undefined): string {
+  if (!val) return "";
+  const d = typeof val === "string" ? new Date(val) : val;
+  if (isNaN(d.getTime())) return "";
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+}
+
+type PublishMode = "visible" | "hidden" | "scheduled" | "limited";
 
 // ─── AI Price Report Card ─────────────────────────────────────────────────────
 function AIPriceCard({ report, onAccept }: { report: any; onAccept: (price: number) => void }) {
@@ -51,17 +67,98 @@ function AIPriceCard({ report, onAccept }: { report: any; onAccept: (price: numb
           <p className="text-xs text-zinc-500 font-mono">PRECIO SUGERIDO</p>
           <p className="text-2xl font-orbitron font-bold text-red-400">{report.suggestedPriceRLC.toLocaleString()} <span className="text-sm text-zinc-500">RLC</span></p>
         </div>
-        <Button onClick={() => onAccept(report.suggestedPriceRLC)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">
-          APLICAR
-        </Button>
+        <Button onClick={() => onAccept(report.suggestedPriceRLC)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">APLICAR</Button>
       </div>
       <p className="text-xs text-zinc-500 font-rajdhani leading-relaxed">{report.justification}</p>
     </div>
   );
 }
 
+// ─── Panel de publicación unificado ──────────────────────────────────────────
+function PublishPanel({
+  publishMode, setPublishMode,
+  catalogPublishDate, setCatalogPublishDate,
+  catalogVisibleFrom, setCatalogVisibleFrom,
+  catalogVisibleUntil, setCatalogVisibleUntil,
+  inputCls,
+}: {
+  publishMode: PublishMode;
+  setPublishMode: (m: PublishMode) => void;
+  catalogPublishDate: string;
+  setCatalogPublishDate: (v: string) => void;
+  catalogVisibleFrom: string;
+  setCatalogVisibleFrom: (v: string) => void;
+  catalogVisibleUntil: string;
+  setCatalogVisibleUntil: (v: string) => void;
+  inputCls: string;
+}) {
+  const modes: { id: PublishMode; icon: React.ReactNode; label: string; desc: string; color: string }[] = [
+    { id: "visible", icon: <Globe className="w-4 h-4" />, label: "Publicado", desc: "Visible ahora mismo en la tienda", color: "green" },
+    { id: "hidden", icon: <EyeOff className="w-4 h-4" />, label: "Oculto", desc: "No aparece en la tienda", color: "zinc" },
+    { id: "scheduled", icon: <CalendarClock className="w-4 h-4" />, label: "Programado", desc: "Se publica en una fecha y hora específica", color: "blue" },
+    { id: "limited", icon: <Clock className="w-4 h-4" />, label: "Ventana de tiempo", desc: "Visible solo entre dos fechas", color: "orange" },
+  ];
+  const colorMap: Record<string, string> = {
+    green: "border-green-500/50 bg-green-500/10 text-green-400",
+    zinc: "border-zinc-500/50 bg-zinc-500/10 text-zinc-400",
+    blue: "border-blue-500/50 bg-blue-500/10 text-blue-400",
+    orange: "border-orange-500/50 bg-orange-500/10 text-orange-400",
+  };
+  return (
+    <div className="border border-white/5 rounded-xl p-4 space-y-4 bg-zinc-800/20">
+      <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+        <Eye className="w-3.5 h-3.5" /> Publicación en la tienda
+      </p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {modes.map(mode => (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => setPublishMode(mode.id)}
+            className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-150 ${publishMode === mode.id ? colorMap[mode.color] : "border-white/8 bg-transparent text-zinc-500"}`}
+          >
+            <span className="flex items-center gap-1.5 font-semibold text-xs">{mode.icon} {mode.label}</span>
+            <span className="text-[10px] leading-tight opacity-70">{mode.desc}</span>
+          </button>
+        ))}
+      </div>
+      {publishMode === "scheduled" && (
+        <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-3 space-y-2">
+          <p className="text-xs text-blue-300 font-rajdhani">El producto aparecerá en la tienda automáticamente en la fecha y hora indicada.</p>
+          <div>
+            <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">FECHA Y HORA DE PUBLICACIÓN *</label>
+            <input type="datetime-local" value={catalogPublishDate} onChange={e => setCatalogPublishDate(e.target.value)} className={inputCls} />
+          </div>
+        </div>
+      )}
+      {publishMode === "limited" && (
+        <div className="bg-orange-950/20 border border-orange-500/20 rounded-xl p-3 space-y-3">
+          <p className="text-xs text-orange-300 font-rajdhani">El producto solo será visible en la tienda durante el período indicado. Fuera de ese rango quedará oculto automáticamente.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">VISIBLE DESDE</label>
+              <input type="datetime-local" value={catalogVisibleFrom} onChange={e => setCatalogVisibleFrom(e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">VISIBLE HASTA</label>
+              <input type="datetime-local" value={catalogVisibleUntil} onChange={e => setCatalogVisibleUntil(e.target.value)} className={inputCls} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ShopPage() {
-  const emptyForm = { name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any, maxPerUser: null as number | null, catalogVisible: true, catalogFeatured: false, catalogWeeklyFeatured: false, catalogFeaturedPriority: "0", catalogCollectionId: undefined as number | undefined, catalogPublishDate: "", catalogVisibleFrom: "", catalogVisibleUntil: "" };
+  const emptyForm = {
+    name: "", description: "", imageUrl: "", price: "", stock: "", category: "digital" as any,
+    maxPerUser: null as number | null,
+    catalogFeatured: false, catalogWeeklyFeatured: false, catalogFeaturedPriority: "0",
+    catalogCollectionId: undefined as number | undefined,
+    publishMode: "visible" as PublishMode,
+    catalogPublishDate: "", catalogVisibleFrom: "", catalogVisibleUntil: "",
+  };
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [uploadingImg, setUploadingImg] = useState(false);
@@ -69,7 +166,14 @@ export function ShopPage() {
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
   const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "delivered" | "cancelled" | "all">("all");
-  const [editingItem, setEditingItem] = useState<null | { id: number; name: string; description: string; imageUrl: string; price: string; stock: string; category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean }>(null);
+
+  // Estado del modal de edición (incluye campos de catálogo)
+  const [editingItem, setEditingItem] = useState<null | {
+    id: number; name: string; description: string; imageUrl: string; price: string; stock: string;
+    category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean;
+    publishMode: PublishMode; catalogPublishDate: string; catalogVisibleFrom: string; catalogVisibleUntil: string;
+    catalogFeatured: boolean; catalogWeeklyFeatured: boolean;
+  }>(null);
   const [uploadingEditImg, setUploadingEditImg] = useState(false);
   const [aiEditReport, setAiEditReport] = useState<any>(null);
 
@@ -85,7 +189,6 @@ export function ShopPage() {
     onSuccess: (data) => { setAiEditReport(data); toast.success("Precio sugerido por IA"); },
     onError: e => toast.error("Error IA: " + e.message),
   });
-
   const createItem = trpc.admin.createShopItem.useMutation({
     onSuccess: () => { toast.success("Producto creado"); setShowForm(false); setForm(emptyForm); setAiReport(null); refetchItems(); },
     onError: e => toast.error(e.message),
@@ -116,13 +219,29 @@ export function ShopPage() {
     reader.readAsDataURL(file);
   };
 
+  // Inferir publishMode desde datos del catálogo
+  function inferPublishMode(cat: any): PublishMode {
+    if (!cat) return "visible";
+    if (!cat.isVisible) return "hidden";
+    if (cat.publishDate) return "scheduled";
+    if (cat.visibleFrom || cat.visibleUntil) return "limited";
+    return "visible";
+  }
+
+  // Calcular catalogVisible + fechas desde publishMode
+  function resolvePublishFields(mode: PublishMode, publishDate: string, visibleFrom: string, visibleUntil: string) {
+    if (mode === "hidden") return { catalogVisible: false, catalogPublishDate: undefined, catalogVisibleFrom: undefined, catalogVisibleUntil: undefined };
+    if (mode === "scheduled") return { catalogVisible: true, catalogPublishDate: localToISO(publishDate), catalogVisibleFrom: undefined, catalogVisibleUntil: undefined };
+    if (mode === "limited") return { catalogVisible: true, catalogPublishDate: undefined, catalogVisibleFrom: localToISO(visibleFrom), catalogVisibleUntil: localToISO(visibleUntil) };
+    return { catalogVisible: true, catalogPublishDate: undefined, catalogVisibleFrom: undefined, catalogVisibleUntil: undefined };
+  }
+
   const inputCls = "w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500";
 
   return (
     <div className="space-y-6 w-full">
       <PageHeader icon={ShoppingBag} title="TIENDA" subtitle="Gestiona productos y pedidos" />
 
-      {/* Create product */}
       <Button onClick={() => { setShowForm(!showForm); setAiReport(null); }} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
         <Plus className="w-3.5 h-3.5 mr-1.5" /> NUEVO PRODUCTO
       </Button>
@@ -132,8 +251,6 @@ export function ShopPage() {
           <h3 className="text-sm font-orbitron text-white flex items-center gap-2">
             <ShoppingBag className="w-4 h-4 text-red-400" /> NUEVO PRODUCTO
           </h3>
-
-          {/* Name + Category */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Nombre *</label>
@@ -152,14 +269,10 @@ export function ShopPage() {
               </Select>
             </div>
           </div>
-
-          {/* Description */}
           <div>
             <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Descripción</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Describe el producto..." rows={2} className={`${inputCls} resize-none`} />
           </div>
-
-          {/* Image upload */}
           <div>
             <label className="block text-xs text-zinc-400 mb-2 font-rajdhani uppercase">Imagen del producto</label>
             <div className="flex items-start gap-4">
@@ -173,14 +286,12 @@ export function ShopPage() {
               ) : (
                 <label className="cursor-pointer flex-shrink-0">
                   <div className="w-24 h-24 bg-zinc-800 hover:bg-zinc-700 border-2 border-dashed border-white/10 hover:border-red-500 rounded-xl flex flex-col items-center justify-center gap-1.5 transition-colors">
-                    {uploadingImg
-                      ? <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
-                      : <><Plus className="w-5 h-5 text-zinc-500" /><span className="text-xs text-zinc-500 font-rajdhani">Imagen</span></>}
+                    {uploadingImg ? <div className="w-5 h-5 border-2 border-red-400 border-t-transparent rounded-full animate-spin" /> : <><Plus className="w-5 h-5 text-zinc-500" /><span className="text-xs text-zinc-500 font-rajdhani">Imagen</span></>}
                   </div>
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingImg} onChange={e => e.target.files?.[0] && handleImageUpload(e.target.files[0])} />
                 </label>
               )}
-              <div className="flex-1 text-xs text-zinc-500 font-rajdhani leading-relaxed pt-1">
+              <div className="text-xs text-zinc-500 font-rajdhani">
                 <p className="text-white font-semibold mb-1">Imagen de portada</p>
                 <p>Se mostrará en la tienda y en el carrito. Recomendado: 800×800px, JPG o PNG.</p>
                 {form.imageUrl && (
@@ -192,31 +303,16 @@ export function ShopPage() {
               </div>
             </div>
           </div>
-
-          {/* RLC Economy Architect - AI Price Suggestion */}
           <div className="flex items-center justify-between bg-red-950/30 border border-red-800/40 rounded-xl px-4 py-3">
             <div>
               <p className="text-xs font-orbitron text-red-400 uppercase tracking-wider">✦ RLC Economy Architect</p>
               <p className="text-xs text-zinc-500 font-rajdhani mt-0.5">Escribe el nombre del producto y presiona para obtener un precio sugerido por IA</p>
             </div>
-            <Button
-              type="button"
-              disabled={!form.name || suggestPrice.isPending}
-              onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: form.category })}
-              className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron text-xs px-4 py-2 h-auto"
-            >
-              {suggestPrice.isPending
-                ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</>
-                : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
+            <Button type="button" disabled={!form.name || suggestPrice.isPending} onClick={() => suggestPrice.mutate({ name: form.name, description: form.description || undefined, category: form.category })} className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron text-xs px-4 py-2 h-auto">
+              {suggestPrice.isPending ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</> : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
             </Button>
           </div>
-
-          {/* AI Report */}
-          {aiReport && (
-            <AIPriceCard report={aiReport} onAccept={(price) => { setForm(f => ({ ...f, price: String(price) })); setAiReport(null); }} />
-          )}
-
-          {/* Price + Stock + MaxPerUser */}
+          {aiReport && <AIPriceCard report={aiReport} onAccept={(price) => { setForm(f => ({ ...f, price: String(price) })); setAiReport(null); }} />}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Precio (RLC) *</label>
@@ -231,47 +327,37 @@ export function ShopPage() {
               <input type="number" value={form.maxPerUser ?? ""} onChange={e => setForm(f => ({ ...f, maxPerUser: e.target.value ? parseInt(e.target.value) : null }))} placeholder="Sin límite" min={1} className={inputCls} />
             </div>
           </div>
-
-          {/* Commerce Core — Catálogo */}
-          <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
-            <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">⚡ Configuración de Catálogo</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.catalogVisible} onChange={e => setForm(f => ({ ...f, catalogVisible: e.target.checked }))} className="w-4 h-4 accent-red-500" />
-                  <span className="text-xs text-zinc-300 font-rajdhani">Visible en tienda</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.catalogFeatured} onChange={e => setForm(f => ({ ...f, catalogFeatured: e.target.checked }))} className="w-4 h-4 accent-red-500" />
-                  <span className="text-xs text-zinc-300 font-rajdhani">Destacado</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={form.catalogWeeklyFeatured} onChange={e => setForm(f => ({ ...f, catalogWeeklyFeatured: e.target.checked }))} className="w-4 h-4 accent-yellow-500" />
-                  <span className="text-xs text-zinc-300 font-rajdhani">⭐ Destacado semanal</span>
-                </label>
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Prioridad Featured (0 = mayor)</label>
-                <input type="number" value={form.catalogFeaturedPriority} onChange={e => setForm(f => ({ ...f, catalogFeaturedPriority: e.target.value }))} className={inputCls} min={0} placeholder="0" />
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Fecha de publicación</label>
-                <input type="datetime-local" value={form.catalogPublishDate} onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible desde</label>
-                <input type="datetime-local" value={form.catalogVisibleFrom} onChange={e => setForm(f => ({ ...f, catalogVisibleFrom: e.target.value }))} className={inputCls} />
-              </div>
-              <div>
-                <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible hasta</label>
-                <input type="datetime-local" value={form.catalogVisibleUntil} onChange={e => setForm(f => ({ ...f, catalogVisibleUntil: e.target.value }))} className={inputCls} />
-              </div>
-            </div>
+          {/* Toggles */}
+          <div className="flex gap-4 flex-wrap">
+            {[
+              { key: "catalogFeatured", label: "Featured en portada" },
+              { key: "catalogWeeklyFeatured", label: "⭐ Destacado semanal" },
+            ].map(({ key, label }) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-red-500" />
+                <span className="text-zinc-400 text-xs font-rajdhani">{label}</span>
+              </label>
+            ))}
           </div>
-
+          <PublishPanel
+            publishMode={form.publishMode}
+            setPublishMode={v => setForm(f => ({ ...f, publishMode: v }))}
+            catalogPublishDate={form.catalogPublishDate}
+            setCatalogPublishDate={v => setForm(f => ({ ...f, catalogPublishDate: v }))}
+            catalogVisibleFrom={form.catalogVisibleFrom}
+            setCatalogVisibleFrom={v => setForm(f => ({ ...f, catalogVisibleFrom: v }))}
+            catalogVisibleUntil={form.catalogVisibleUntil}
+            setCatalogVisibleUntil={v => setForm(f => ({ ...f, catalogVisibleUntil: v }))}
+            inputCls={inputCls}
+          />
           <div className="flex gap-3 pt-1">
-            <Button onClick={() => createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null, catalogVisible: form.catalogVisible, catalogFeatured: form.catalogFeatured, catalogWeeklyFeatured: form.catalogWeeklyFeatured, catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0, catalogCollectionId: form.catalogCollectionId, catalogPublishDate: form.catalogPublishDate || undefined, catalogVisibleFrom: form.catalogVisibleFrom || undefined, catalogVisibleUntil: form.catalogVisibleUntil || undefined })}
-              disabled={!form.name || !form.price || createItem.isPending || uploadingImg} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
+            <Button
+              onClick={() => {
+                const pub = resolvePublishFields(form.publishMode, form.catalogPublishDate, form.catalogVisibleFrom, form.catalogVisibleUntil);
+                createItem.mutate({ ...form, price: parseInt(form.price), stock: parseInt(form.stock) || -1, maxPerUser: form.maxPerUser ?? null, catalogFeatured: form.catalogFeatured, catalogWeeklyFeatured: form.catalogWeeklyFeatured, catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0, catalogCollectionId: form.catalogCollectionId, ...pub });
+              }}
+              disabled={!form.name || !form.price || createItem.isPending || uploadingImg}
+              className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
               {createItem.isPending ? "CREANDO..." : "CREAR PRODUCTO"}
             </Button>
             <Button onClick={() => { setShowForm(false); setAiReport(null); }} variant="outline" className="border-white/10 text-zinc-400 font-orbitron text-xs">CANCELAR</Button>
@@ -387,26 +473,57 @@ export function ShopPage() {
           <span className="text-xs text-zinc-500 font-mono">({shopItemsList.length})</span>
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {shopItemsList.map(item => (
-            <div key={item.id} className={`bg-zinc-900/60 border rounded-xl overflow-hidden ${item.isActive ? "border-white/10" : "border-white/5 opacity-60"}`}>
-              {item.image && <img src={item.image} alt={item.name} className="w-full h-32 object-cover" />}
-              <div className="p-3">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <p className="text-white font-rajdhani font-bold text-sm leading-tight">{item.name}</p>
-                  <span className={`text-xs px-1.5 py-0.5 rounded font-mono border flex-shrink-0 ${isPhysicalCat(item.category) ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"}`}>
-                    {isPhysicalCat(item.category) ? "FÍSICO" : "DIGITAL"}
-                  </span>
-                </div>
-                <p className="text-zinc-500 text-xs">{item.price} RLC · Stock: {item.stock === -1 ? "∞" : item.stock}{item.maxPerUser ? ` · Límite: ${item.maxPerUser}/usuario` : ""}</p>
-                <div className="flex gap-2 mt-3">
-                  <Button size="sm" onClick={() => setEditingItem({ id: item.id, name: item.name, description: item.description ?? "", imageUrl: item.image ?? "", price: String(item.price), stock: String(item.stock), category: item.category ?? "digital", maxPerUser: item.maxPerUser ?? null, isActive: item.isActive ?? true, isFeatured: item.isFeatured ?? false })}
-                    className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-orbitron text-xs h-7">EDITAR</Button>
-                  <Button size="sm" variant="outline" onClick={() => deleteItem.mutate({ id: item.id })} disabled={deleteItem.isPending}
-                    className="border-red-900/40 text-red-400 hover:bg-red-900/20 font-orbitron text-xs h-7">BORRAR</Button>
+          {shopItemsList.map((item: any) => {
+            const cat = item.catalog;
+            const now = new Date();
+            const isScheduled = cat?.publishDate && new Date(cat.publishDate) > now;
+            const isLimited = cat?.visibleFrom || cat?.visibleUntil;
+            const isHidden = cat && !cat.isVisible;
+            return (
+              <div key={item.id} className={`bg-zinc-900/60 border rounded-xl overflow-hidden ${item.isActive ? "border-white/10" : "border-white/5 opacity-60"}`}>
+                {item.image && <img src={item.image} alt={item.name} className="w-full h-32 object-cover" />}
+                <div className="p-3">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-white font-rajdhani font-bold text-sm leading-tight">{item.name}</p>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-mono border flex-shrink-0 ${isPhysicalCat(item.category) ? "text-orange-400 border-orange-500/30 bg-orange-500/10" : "text-blue-400 border-blue-500/30 bg-blue-500/10"}`}>
+                        {isPhysicalCat(item.category) ? "FÍSICO" : "DIGITAL"}
+                      </span>
+                      {isHidden && <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-800/90 text-zinc-400 flex items-center gap-0.5"><EyeOff className="w-2.5 h-2.5" /> Oculto</span>}
+                      {isScheduled && <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-900/90 text-blue-300 flex items-center gap-0.5"><CalendarClock className="w-2.5 h-2.5" /> Programado</span>}
+                      {!isHidden && !isScheduled && isLimited && <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-orange-900/90 text-orange-300 flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /> Limitado</span>}
+                    </div>
+                  </div>
+                  <p className="text-zinc-500 text-xs">{item.price} RLC · Stock: {item.stock === -1 ? "∞" : item.stock}{item.maxPerUser ? ` · Límite: ${item.maxPerUser}/usuario` : ""}</p>
+                  {isScheduled && cat?.publishDate && (
+                    <p className="text-blue-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
+                      <CalendarClock size={10} /> {new Date(cat.publishDate).toLocaleString("es", { dateStyle: "short", timeStyle: "short" })}
+                    </p>
+                  )}
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm"
+                      onClick={() => {
+                        const mode = inferPublishMode(item.catalog);
+                        setEditingItem({
+                          id: item.id, name: item.name, description: item.description ?? "", imageUrl: item.image ?? "",
+                          price: String(item.price), stock: String(item.stock), category: item.category ?? "digital",
+                          maxPerUser: item.maxPerUser ?? null, isActive: item.isActive ?? true, isFeatured: item.isFeatured ?? false,
+                          publishMode: mode,
+                          catalogPublishDate: isoToLocal(item.catalog?.publishDate),
+                          catalogVisibleFrom: isoToLocal(item.catalog?.visibleFrom),
+                          catalogVisibleUntil: isoToLocal(item.catalog?.visibleUntil),
+                          catalogFeatured: item.catalog?.isFeatured ?? false,
+                          catalogWeeklyFeatured: item.catalog?.weeklyFeatured ?? false,
+                        });
+                      }}
+                      className="flex-1 bg-zinc-700 hover:bg-zinc-600 text-white font-orbitron text-xs h-7">EDITAR</Button>
+                    <Button size="sm" variant="outline" onClick={() => deleteItem.mutate({ id: item.id })} disabled={deleteItem.isPending}
+                      className="border-red-900/40 text-red-400 hover:bg-red-900/20 font-orbitron text-xs h-7">BORRAR</Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {shopItemsList.length === 0 && (
             <div className="col-span-full text-center py-8 text-zinc-600 font-rajdhani">Sin productos en el catálogo</div>
           )}
@@ -421,7 +538,6 @@ export function ShopPage() {
               <h3 className="text-sm font-orbitron text-white">EDITAR PRODUCTO</h3>
               <button onClick={() => { setEditingItem(null); setAiEditReport(null); }} className="text-zinc-500 hover:text-white"><XCircle className="w-5 h-5" /></button>
             </div>
-
             <div className="grid grid-cols-2 gap-3">
               <div className="col-span-2">
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Nombre</label>
@@ -429,8 +545,7 @@ export function ShopPage() {
               </div>
               <div className="col-span-2">
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Descripción</label>
-                <textarea value={editingItem.description} onChange={e => setEditingItem(ei => ei ? { ...ei, description: e.target.value } : ei)}
-                  rows={2} className={`${inputCls} resize-none`} />
+                <textarea value={editingItem.description} onChange={e => setEditingItem(ei => ei ? { ...ei, description: e.target.value } : ei)} rows={2} className={`${inputCls} resize-none`} />
               </div>
               <div className="col-span-2">
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Imagen</label>
@@ -457,29 +572,16 @@ export function ShopPage() {
                 </Select>
               </div>
             </div>
-
-            {/* AI Suggest Price - Edit */}
             <div className="flex items-center justify-between bg-red-950/30 border border-red-800/40 rounded-xl px-4 py-3">
               <div>
                 <p className="text-xs font-orbitron text-red-400 uppercase tracking-wider">✦ RLC Economy Architect</p>
                 <p className="text-xs text-zinc-500 font-rajdhani mt-0.5">Obtén un precio sugerido por IA</p>
               </div>
-              <Button
-                type="button"
-                disabled={!editingItem.name || suggestPriceEdit.isPending}
-                onClick={() => suggestPriceEdit.mutate({ name: editingItem.name, description: editingItem.description || undefined, category: editingItem.category as any })}
-                className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron text-xs px-4 py-2 h-auto"
-              >
-                {suggestPriceEdit.isPending
-                  ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</>
-                  : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
+              <Button type="button" disabled={!editingItem.name || suggestPriceEdit.isPending} onClick={() => suggestPriceEdit.mutate({ name: editingItem.name, description: editingItem.description || undefined, category: editingItem.category as any })} className="flex-shrink-0 ml-4 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron text-xs px-4 py-2 h-auto">
+                {suggestPriceEdit.isPending ? <><div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />Analizando...</> : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
               </Button>
             </div>
-
-            {aiEditReport && (
-              <AIPriceCard report={aiEditReport} onAccept={(price) => { setEditingItem(ei => ei ? { ...ei, price: String(price) } : ei); setAiEditReport(null); }} />
-            )}
-
+            {aiEditReport && <AIPriceCard report={aiEditReport} onAccept={(price) => { setEditingItem(ei => ei ? { ...ei, price: String(price) } : ei); setAiEditReport(null); }} />}
             <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Precio (RLC)</label>
@@ -491,13 +593,10 @@ export function ShopPage() {
               </div>
               <div>
                 <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Límite/usuario</label>
-                <input type="number" value={editingItem.maxPerUser ?? ""} min={1}
-                  onChange={e => setEditingItem(ei => ei ? { ...ei, maxPerUser: e.target.value ? parseInt(e.target.value) : null } : ei)}
-                  placeholder="Sin límite" className={inputCls} />
+                <input type="number" value={editingItem.maxPerUser ?? ""} min={1} onChange={e => setEditingItem(ei => ei ? { ...ei, maxPerUser: e.target.value ? parseInt(e.target.value) : null } : ei)} placeholder="Sin límite" className={inputCls} />
               </div>
             </div>
-
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-6 flex-wrap">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={editingItem.isActive} onChange={e => setEditingItem(ei => ei ? { ...ei, isActive: e.target.checked } : ei)} className="w-4 h-4 accent-red-500" />
                 <span className="text-xs text-zinc-400 font-rajdhani">Activo</span>
@@ -506,11 +605,40 @@ export function ShopPage() {
                 <input type="checkbox" checked={editingItem.isFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, isFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-yellow-500" />
                 <span className="text-xs text-zinc-400 font-rajdhani">Destacado</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={editingItem.catalogFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, catalogFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-red-500" />
+                <span className="text-xs text-zinc-400 font-rajdhani">Featured portada</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={editingItem.catalogWeeklyFeatured} onChange={e => setEditingItem(ei => ei ? { ...ei, catalogWeeklyFeatured: e.target.checked } : ei)} className="w-4 h-4 accent-yellow-500" />
+                <span className="text-xs text-zinc-400 font-rajdhani">⭐ Semanal</span>
+              </label>
             </div>
-
+            <PublishPanel
+              publishMode={editingItem.publishMode}
+              setPublishMode={v => setEditingItem(ei => ei ? { ...ei, publishMode: v } : ei)}
+              catalogPublishDate={editingItem.catalogPublishDate}
+              setCatalogPublishDate={v => setEditingItem(ei => ei ? { ...ei, catalogPublishDate: v } : ei)}
+              catalogVisibleFrom={editingItem.catalogVisibleFrom}
+              setCatalogVisibleFrom={v => setEditingItem(ei => ei ? { ...ei, catalogVisibleFrom: v } : ei)}
+              catalogVisibleUntil={editingItem.catalogVisibleUntil}
+              setCatalogVisibleUntil={v => setEditingItem(ei => ei ? { ...ei, catalogVisibleUntil: v } : ei)}
+              inputCls={inputCls}
+            />
             <div className="flex gap-3">
               <Button
-                onClick={() => updateItem.mutate({ id: editingItem.id, name: editingItem.name, description: editingItem.description || undefined, imageUrl: editingItem.imageUrl || undefined, price: parseInt(editingItem.price) || undefined, stock: parseInt(editingItem.stock) !== undefined ? parseInt(editingItem.stock) : undefined, category: editingItem.category as any, isActive: editingItem.isActive, isFeatured: editingItem.isFeatured, maxPerUser: editingItem.maxPerUser })}
+                onClick={() => {
+                  const pub = resolvePublishFields(editingItem.publishMode, editingItem.catalogPublishDate, editingItem.catalogVisibleFrom, editingItem.catalogVisibleUntil);
+                  updateItem.mutate({
+                    id: editingItem.id, name: editingItem.name, description: editingItem.description || undefined,
+                    imageUrl: editingItem.imageUrl || undefined, price: parseInt(editingItem.price) || undefined,
+                    stock: parseInt(editingItem.stock) !== undefined ? parseInt(editingItem.stock) : undefined,
+                    category: editingItem.category as any, isActive: editingItem.isActive, isFeatured: editingItem.isFeatured,
+                    maxPerUser: editingItem.maxPerUser,
+                    catalogFeatured: editingItem.catalogFeatured, catalogWeeklyFeatured: editingItem.catalogWeeklyFeatured,
+                    ...pub,
+                  });
+                }}
                 disabled={updateItem.isPending} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
                 {updateItem.isPending ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
               </Button>

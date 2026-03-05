@@ -1,10 +1,28 @@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles, Package, Clock } from "lucide-react";
+import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles, Package, Clock, Eye, EyeOff, CalendarClock, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "../components/AdminUI";
+
+// Convierte un datetime-local string (hora local) a ISO string UTC
+function localToISO(val: string): string | undefined {
+  if (!val) return undefined;
+  return new Date(val).toISOString();
+}
+
+// Convierte una fecha ISO/DB a string para datetime-local (hora local del navegador)
+function isoToLocal(val: string | Date | null | undefined): string {
+  if (!val) return "";
+  const d = typeof val === "string" ? new Date(val) : val;
+  if (isNaN(d.getTime())) return "";
+  // Ajustar a hora local
+  const offset = d.getTimezoneOffset() * 60000;
+  return new Date(d.getTime() - offset).toISOString().slice(0, 16);
+}
+
+type PublishMode = "visible" | "hidden" | "scheduled" | "limited";
 
 export function CosmeticsPage() {
   const emptyForm = {
@@ -24,15 +42,16 @@ export function CosmeticsPage() {
     dropEnd: "",
     collection: "",
     sortOrder: "0",
-    // Catálogo
+    // Publicación unificada
+    publishMode: "visible" as PublishMode,
     catalogVisible: true,
     catalogFeatured: false,
     catalogWeeklyFeatured: false,
     catalogFeaturedPriority: "0",
     catalogCollectionId: undefined as number | undefined,
-    catalogPublishDate: "",
-    catalogVisibleFrom: "",
-    catalogVisibleUntil: "",
+    catalogPublishDate: "",   // para modo "scheduled"
+    catalogVisibleFrom: "",   // para modo "limited" (inicio)
+    catalogVisibleUntil: "",  // para modo "limited" (fin)
   };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<number | null>(null);
@@ -40,7 +59,8 @@ export function CosmeticsPage() {
   const [uploadingFrame, setUploadingFrame] = useState(false);
   const [aiReport, setAiReport] = useState<any>(null);
 
-  const { data: cosmetics, refetch } = trpc.cosmetics.list.useQuery({});
+  // Usar el nuevo endpoint que incluye datos del catálogo
+  const { data: cosmetics, refetch } = trpc.cosmetics.adminListWithCatalog.useQuery();
   const uploadImage = trpc.admin.uploadImage.useMutation();
   const suggestPrice = trpc.admin.suggestPrice.useMutation({
     onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
@@ -72,8 +92,19 @@ export function CosmeticsPage() {
     reader.readAsDataURL(file);
   };
 
+  // Determinar el publishMode a partir de los datos del catálogo
+  function inferPublishMode(cat: any): PublishMode {
+    if (!cat) return "visible";
+    if (!cat.isVisible) return "hidden";
+    if (cat.publishDate) return "scheduled";
+    if (cat.visibleFrom || cat.visibleUntil) return "limited";
+    return "visible";
+  }
+
   const startEdit = (c: any) => {
     setEditing(c.id);
+    const cat = c.catalog;
+    const mode = inferPublishMode(cat);
     setForm({
       name: c.name,
       description: c.description ?? "",
@@ -87,32 +118,41 @@ export function CosmeticsPage() {
       isFeatured: c.isFeatured,
       isLimited: c.isLimited,
       maxSupply: c.maxSupply ? String(c.maxSupply) : "",
-      dropStart: c.dropStart ? new Date(c.dropStart).toISOString().slice(0, 16) : "",
-      dropEnd: c.dropEnd ? new Date(c.dropEnd).toISOString().slice(0, 16) : "",
+      dropStart: isoToLocal(c.dropStart),
+      dropEnd: isoToLocal(c.dropEnd),
       collection: c.collection ?? "",
       sortOrder: String(c.sortOrder),
-      catalogVisible: true,
-      catalogFeatured: false,
-      catalogWeeklyFeatured: false,
-      catalogFeaturedPriority: "0",
-      catalogCollectionId: undefined,
-      catalogPublishDate: "",
-      catalogVisibleFrom: "",
-      catalogVisibleUntil: "",
+      publishMode: mode,
+      catalogVisible: cat?.isVisible ?? true,
+      catalogFeatured: cat?.isFeatured ?? false,
+      catalogWeeklyFeatured: cat?.weeklyFeatured ?? false,
+      catalogFeaturedPriority: String(cat?.featuredPriority ?? 0),
+      catalogCollectionId: cat?.collectionId ?? undefined,
+      catalogPublishDate: isoToLocal(cat?.publishDate),
+      catalogVisibleFrom: isoToLocal(cat?.visibleFrom),
+      catalogVisibleUntil: isoToLocal(cat?.visibleUntil),
     });
   };
 
   const handleSubmit = () => {
-    const catalogFields = {
-      catalogVisible: form.catalogVisible,
-      catalogFeatured: form.catalogFeatured,
-      catalogWeeklyFeatured: form.catalogWeeklyFeatured,
-      catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0,
-      catalogCollectionId: form.catalogCollectionId,
-      catalogPublishDate: form.catalogPublishDate || undefined,
-      catalogVisibleFrom: form.catalogVisibleFrom || undefined,
-      catalogVisibleUntil: form.catalogVisibleUntil || undefined,
-    };
+    // Calcular campos del catálogo según el modo de publicación
+    let catalogVisible = true;
+    let catalogPublishDate: string | undefined;
+    let catalogVisibleFrom: string | undefined;
+    let catalogVisibleUntil: string | undefined;
+
+    if (form.publishMode === "hidden") {
+      catalogVisible = false;
+    } else if (form.publishMode === "scheduled") {
+      catalogVisible = true;
+      catalogPublishDate = localToISO(form.catalogPublishDate);
+    } else if (form.publishMode === "limited") {
+      catalogVisible = true;
+      catalogVisibleFrom = localToISO(form.catalogVisibleFrom) || undefined;
+      catalogVisibleUntil = localToISO(form.catalogVisibleUntil) || undefined;
+    }
+    // modo "visible": todo null, visible = true
+
     const data = {
       name: form.name,
       description: form.description || undefined,
@@ -126,11 +166,18 @@ export function CosmeticsPage() {
       isFeatured: form.isFeatured,
       isLimited: form.isLimited,
       maxSupply: form.maxSupply ? parseInt(form.maxSupply) : undefined,
-      dropStart: form.dropStart || undefined,
-      dropEnd: form.dropEnd || undefined,
+      dropStart: localToISO(form.dropStart),
+      dropEnd: localToISO(form.dropEnd),
       collection: form.collection || undefined,
       sortOrder: parseInt(form.sortOrder) || 0,
-      ...catalogFields,
+      catalogVisible,
+      catalogFeatured: form.catalogFeatured,
+      catalogWeeklyFeatured: form.catalogWeeklyFeatured,
+      catalogFeaturedPriority: parseInt(form.catalogFeaturedPriority) || 0,
+      catalogCollectionId: form.catalogCollectionId,
+      catalogPublishDate,
+      catalogVisibleFrom,
+      catalogVisibleUntil,
     };
     if (editing !== null) update.mutate({ id: editing, ...data });
     else create.mutate(data);
@@ -145,13 +192,31 @@ export function CosmeticsPage() {
   };
   const inputCls = "w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-red-500 outline-none";
 
+  // Opciones del modo de publicación
+  const publishModes: { id: PublishMode; icon: React.ReactNode; label: string; desc: string; color: string }[] = [
+    { id: "visible", icon: <Globe className="w-4 h-4" />, label: "Publicado", desc: "Visible ahora mismo en la tienda", color: "green" },
+    { id: "hidden", icon: <EyeOff className="w-4 h-4" />, label: "Oculto", desc: "No aparece en la tienda", color: "zinc" },
+    { id: "scheduled", icon: <CalendarClock className="w-4 h-4" />, label: "Programado", desc: "Se publica en una fecha y hora específica", color: "blue" },
+    { id: "limited", icon: <Clock className="w-4 h-4" />, label: "Ventana de tiempo", desc: "Visible solo entre dos fechas", color: "orange" },
+  ];
+
+  const colorMap: Record<string, string> = {
+    green: "border-green-500/50 bg-green-500/10 text-green-400",
+    zinc: "border-zinc-500/50 bg-zinc-500/10 text-zinc-400",
+    blue: "border-blue-500/50 bg-blue-500/10 text-blue-400",
+    orange: "border-orange-500/50 bg-orange-500/10 text-orange-400",
+  };
+  const colorMapInactive = "border-white/8 bg-transparent text-zinc-500";
+
   return (
     <div className="space-y-6 w-full">
       <PageHeader icon={Star} title="COSMÉTICOS" subtitle="Crea y administra marcos, auras y badges de perfil" />
 
       {/* Form */}
-      <div className="bg-zinc-900/60 border border-white/10 rounded-xl p-5 space-y-4">
+      <div className="bg-zinc-900/60 border border-white/10 rounded-xl p-5 space-y-5">
         <p className="text-white font-orbitron text-sm">{editing !== null ? "EDITAR COSMÉTICO" : "NUEVO COSMÉTICO"}</p>
+
+        {/* Campos básicos */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">NOMBRE *</label>
@@ -202,7 +267,7 @@ export function CosmeticsPage() {
           </div>
         </div>
 
-        {/* Image uploads */}
+        {/* Imágenes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">IMAGEN DE PREVIEW (tarjeta en la tienda)</label>
@@ -248,8 +313,6 @@ export function CosmeticsPage() {
               : <><Sparkles className="w-3.5 h-3.5 mr-2" />SUGERIR PRECIO IA</>}
           </Button>
         </div>
-
-        {/* AI Report */}
         {aiReport && (
           <div className="bg-gradient-to-br from-red-950/40 to-zinc-900/80 border border-red-700/40 rounded-xl p-4 space-y-3">
             <div className="flex items-center gap-2">
@@ -262,20 +325,20 @@ export function CosmeticsPage() {
                 <p className="text-2xl font-orbitron font-bold text-red-400">{aiReport.suggestedPriceRLC?.toLocaleString()} <span className="text-sm text-zinc-500">RLC</span></p>
                 <p className="text-xs text-zinc-500 font-rajdhani mt-1">{aiReport.effortHours?.toFixed(1)}h de actividad · {aiReport.rarity}</p>
               </div>
-              <Button onClick={() => { setForm(f => ({ ...f, price: String(aiReport.suggestedPriceRLC) })); setAiReport(null); }} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">
-                APLICAR
-              </Button>
+              <Button onClick={() => { setForm(f => ({ ...f, price: String(aiReport.suggestedPriceRLC) })); setAiReport(null); }} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs flex-shrink-0">APLICAR</Button>
             </div>
             <p className="text-xs text-zinc-500 font-rajdhani leading-relaxed">{aiReport.justification}</p>
           </div>
         )}
 
-        {/* Toggles */}
+        {/* Toggles básicos */}
         <div className="flex gap-6 flex-wrap">
           {[
             { key: "isActive", label: "Activo" },
             { key: "isFeatured", label: "Destacado" },
             { key: "isLimited", label: "Edición Limitada" },
+            { key: "catalogFeatured", label: "Featured en portada" },
+            { key: "catalogWeeklyFeatured", label: "⭐ Destacado semanal" },
           ].map(({ key, label }) => (
             <label key={key} className="flex items-center gap-2 cursor-pointer">
               <input type="checkbox" checked={form[key as keyof typeof form] as boolean} onChange={e => setForm(f => ({ ...f, [key]: e.target.checked }))} className="w-4 h-4 accent-red-500" />
@@ -292,82 +355,82 @@ export function CosmeticsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">SUPPLY MÁXIMO</label>
-              <input
-                type="number"
-                value={form.maxSupply}
-                onChange={e => setForm(f => ({ ...f, maxSupply: e.target.value }))}
-                className={inputCls}
-                placeholder="Vacío = ilimitado"
-                min={1}
-              />
+              <input type="number" value={form.maxSupply} onChange={e => setForm(f => ({ ...f, maxSupply: e.target.value }))} className={inputCls} placeholder="Vacío = ilimitado" min={1} />
             </div>
             <div>
               <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">INICIO DEL DROP</label>
-              <input
-                type="datetime-local"
-                value={form.dropStart}
-                onChange={e => setForm(f => ({ ...f, dropStart: e.target.value }))}
-                className={inputCls}
-              />
+              <input type="datetime-local" value={form.dropStart} onChange={e => setForm(f => ({ ...f, dropStart: e.target.value }))} className={inputCls} />
             </div>
             <div>
               <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">FIN DEL DROP</label>
-              <input
-                type="datetime-local"
-                value={form.dropEnd}
-                onChange={e => setForm(f => ({ ...f, dropEnd: e.target.value }))}
-                className={inputCls}
-              />
+              <input type="datetime-local" value={form.dropEnd} onChange={e => setForm(f => ({ ...f, dropEnd: e.target.value }))} className={inputCls} />
             </div>
           </div>
           <p className="text-zinc-600 text-xs font-rajdhani">Si defines un drop window, el cosmético solo estará disponible durante ese período.</p>
         </div>
 
-        {/* Commerce Core — Catálogo */}
-        <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
+        {/* ── Panel de publicación unificado ────────────────────────────────── */}
+        <div className="border border-white/5 rounded-xl p-4 space-y-4 bg-zinc-800/20">
           <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">
-            <Clock className="w-3.5 h-3.5" /> Configuración de Catálogo
+            <Eye className="w-3.5 h-3.5" /> Publicación en la tienda
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Toggles de catálogo */}
-            <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.catalogVisible} onChange={e => setForm(f => ({ ...f, catalogVisible: e.target.checked }))} className="w-4 h-4 accent-red-500" />
-                <span className="text-xs text-zinc-300 font-rajdhani">Visible en /store</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.catalogFeatured} onChange={e => setForm(f => ({ ...f, catalogFeatured: e.target.checked }))} className="w-4 h-4 accent-red-500" />
-                <span className="text-xs text-zinc-300 font-rajdhani">Destacado en portada</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.catalogWeeklyFeatured} onChange={e => setForm(f => ({ ...f, catalogWeeklyFeatured: e.target.checked }))} className="w-4 h-4 accent-yellow-500" />
-                <span className="text-xs text-zinc-300 font-rajdhani">⭐ Destacado semanal</span>
-              </label>
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Prioridad Featured (0 = mayor)</label>
-              <input
-                type="number"
-                value={form.catalogFeaturedPriority}
-                onChange={e => setForm(f => ({ ...f, catalogFeaturedPriority: e.target.value }))}
-                className={inputCls}
-                min={0}
-                placeholder="0"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Fecha de publicación</label>
-              <input type="datetime-local" value={form.catalogPublishDate} onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))} className={inputCls} />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible desde</label>
-              <input type="datetime-local" value={form.catalogVisibleFrom} onChange={e => setForm(f => ({ ...f, catalogVisibleFrom: e.target.value }))} className={inputCls} />
-            </div>
-            <div>
-              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Visible hasta</label>
-              <input type="datetime-local" value={form.catalogVisibleUntil} onChange={e => setForm(f => ({ ...f, catalogVisibleUntil: e.target.value }))} className={inputCls} />
-            </div>
+
+          {/* Selector de modo */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {publishModes.map(mode => (
+              <button
+                key={mode.id}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, publishMode: mode.id }))}
+                className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all duration-150 ${form.publishMode === mode.id ? colorMap[mode.color] : colorMapInactive}`}
+              >
+                <span className="flex items-center gap-1.5 font-semibold text-xs">{mode.icon} {mode.label}</span>
+                <span className="text-[10px] leading-tight opacity-70">{mode.desc}</span>
+              </button>
+            ))}
           </div>
+
+          {/* Campos condicionales según el modo */}
+          {form.publishMode === "scheduled" && (
+            <div className="bg-blue-950/20 border border-blue-500/20 rounded-xl p-3 space-y-2">
+              <p className="text-xs text-blue-300 font-rajdhani">El cosmético aparecerá en la tienda automáticamente en la fecha y hora indicada.</p>
+              <div>
+                <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">FECHA Y HORA DE PUBLICACIÓN *</label>
+                <input
+                  type="datetime-local"
+                  value={form.catalogPublishDate}
+                  onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))}
+                  className={inputCls}
+                />
+              </div>
+            </div>
+          )}
+
+          {form.publishMode === "limited" && (
+            <div className="bg-orange-950/20 border border-orange-500/20 rounded-xl p-3 space-y-3">
+              <p className="text-xs text-orange-300 font-rajdhani">El cosmético solo será visible en la tienda durante el período indicado. Fuera de ese rango quedará oculto automáticamente.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">VISIBLE DESDE</label>
+                  <input
+                    type="datetime-local"
+                    value={form.catalogVisibleFrom}
+                    onChange={e => setForm(f => ({ ...f, catalogVisibleFrom: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">VISIBLE HASTA</label>
+                  <input
+                    type="datetime-local"
+                    value={form.catalogVisibleUntil}
+                    onChange={e => setForm(f => ({ ...f, catalogVisibleUntil: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -378,37 +441,51 @@ export function CosmeticsPage() {
         </div>
       </div>
 
-      {/* Cosmetics list */}
+      {/* Lista de cosméticos */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {!cosmetics || cosmetics.length === 0 ? (
           <p className="text-zinc-500 text-sm col-span-4 text-center py-8 font-rajdhani">Sin cosméticos registrados</p>
-        ) : cosmetics.map((c: any) => (
-          <div key={c.id} className="relative group rounded-xl overflow-hidden border border-white/8 bg-zinc-900/60">
-            {c.previewImage ? <img src={c.previewImage} alt={c.name} className="w-full h-32 object-cover" /> : <div className="w-full h-32 bg-zinc-800 flex items-center justify-center"><Star className="w-8 h-8 text-zinc-600" /></div>}
-            <div className="p-3">
-              <p className="text-white font-rajdhani font-semibold text-sm truncate">{c.name}</p>
-              <div className="flex items-center gap-2 mt-1">
-                <span className={`text-xs font-orbitron ${rarityColors[c.rarity] ?? "text-zinc-400"}`}>{c.rarity?.toUpperCase()}</span>
-                <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
+        ) : cosmetics.map((c: any) => {
+          const cat = c.catalog;
+          const now = new Date();
+          const isScheduled = cat?.publishDate && new Date(cat.publishDate) > now;
+          const isLimited = cat?.visibleFrom || cat?.visibleUntil;
+          const isHidden = cat && !cat.isVisible;
+          return (
+            <div key={c.id} className="relative group rounded-xl overflow-hidden border border-white/8 bg-zinc-900/60">
+              {c.previewImage ? <img src={c.previewImage} alt={c.name} className="w-full h-32 object-cover" /> : <div className="w-full h-32 bg-zinc-800 flex items-center justify-center"><Star className="w-8 h-8 text-zinc-600" /></div>}
+              {/* Badge de estado */}
+              <div className="absolute top-2 left-2">
+                {isHidden && <span className="bg-zinc-800/90 text-zinc-400 text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-0.5"><EyeOff className="w-2.5 h-2.5" /> Oculto</span>}
+                {isScheduled && <span className="bg-blue-900/90 text-blue-300 text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-0.5"><CalendarClock className="w-2.5 h-2.5" /> Programado</span>}
+                {!isHidden && !isScheduled && isLimited && <span className="bg-orange-900/90 text-orange-300 text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-0.5"><Clock className="w-2.5 h-2.5" /> Limitado</span>}
+                {!isHidden && !isScheduled && !isLimited && cat?.isVisible && <span className="bg-green-900/90 text-green-300 text-[9px] font-mono px-1.5 py-0.5 rounded flex items-center gap-0.5"><Globe className="w-2.5 h-2.5" /> Publicado</span>}
               </div>
-              {c.frameImage && <p className="text-green-500 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5"><CheckCircle2 size={11} /> PNG cargado</p>}
-              {c.maxSupply && (
-                <p className="text-orange-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
-                  <Package size={10} /> {c.currentSupply ?? 0}/{c.maxSupply} vendidos
-                </p>
-              )}
-              {c.dropStart && (
-                <p className="text-blue-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
-                  <Clock size={10} /> Drop activo
-                </p>
-              )}
+              <div className="p-3">
+                <p className="text-white font-rajdhani font-semibold text-sm truncate">{c.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`text-xs font-orbitron ${rarityColors[c.rarity] ?? "text-zinc-400"}`}>{c.rarity?.toUpperCase()}</span>
+                  <span className="text-yellow-400 text-xs font-orbitron">{c.price} RLC</span>
+                </div>
+                {c.frameImage && <p className="text-green-500 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5"><CheckCircle2 size={11} /> PNG cargado</p>}
+                {c.maxSupply && (
+                  <p className="text-orange-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
+                    <Package size={10} /> {c.currentSupply ?? 0}/{c.maxSupply} vendidos
+                  </p>
+                )}
+                {isScheduled && cat?.publishDate && (
+                  <p className="text-blue-400 text-xs font-rajdhani mt-0.5 flex items-center gap-0.5">
+                    <CalendarClock size={10} /> {new Date(cat.publishDate).toLocaleString("es", { dateStyle: "short", timeStyle: "short" })}
+                  </p>
+                )}
+              </div>
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => startEdit(c)} className="bg-black/60 hover:bg-zinc-800 rounded p-1"><Edit3 className="w-3 h-3 text-white" /></button>
+                <button onClick={() => { if (confirm(`¿Eliminar ${c.name}?`)) del.mutate({ id: c.id }); }} className="bg-black/60 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
+              </div>
             </div>
-            <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={() => startEdit(c)} className="bg-black/60 hover:bg-zinc-800 rounded p-1"><Edit3 className="w-3 h-3 text-white" /></button>
-              <button onClick={() => { if (confirm(`¿Eliminar ${c.name}?`)) del.mutate({ id: c.id }); }} className="bg-black/60 hover:bg-red-900/80 rounded p-1"><Trash2 className="w-3 h-3 text-red-400" /></button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -1658,9 +1658,27 @@ export const appRouter = router({
       .query(async () => {
         const db = await getDb();
         if (!db) return [];
-        const { shopItems } = await import("../drizzle/schema");
-        const { desc } = await import("drizzle-orm");
-        return db.select().from(shopItems).orderBy(shopItems.sortOrder, desc(shopItems.createdAt));
+        const { shopItems, catalogItems } = await import("../drizzle/schema");
+        const { desc, eq, and } = await import("drizzle-orm");
+        const rows = await db
+          .select({
+            item: shopItems,
+            catalog: {
+              id: catalogItems.id,
+              isVisible: catalogItems.isVisible,
+              isFeatured: catalogItems.isFeatured,
+              weeklyFeatured: catalogItems.weeklyFeatured,
+              featuredPriority: catalogItems.featuredPriority,
+              publishDate: catalogItems.publishDate,
+              visibleFrom: catalogItems.visibleFrom,
+              visibleUntil: catalogItems.visibleUntil,
+              collectionId: catalogItems.collectionId,
+            },
+          })
+          .from(shopItems)
+          .leftJoin(catalogItems, and(eq(catalogItems.type, "physical"), eq(catalogItems.referenceId, shopItems.id)))
+          .orderBy(shopItems.sortOrder, desc(shopItems.createdAt));
+        return rows.map(r => ({ ...r.item, catalog: r.catalog }));
       }),
     createShopItem: adminProcedure
       .input(z.object({
@@ -2465,6 +2483,32 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         return { success: true };
       }),
     // ─── Admin ───────────────────────────────────────────────────────────────
+    adminListWithCatalog: adminProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return [];
+        const { cosmetics: cosmeticsTable, catalogItems } = await import("../drizzle/schema");
+        const { desc, eq, and } = await import("drizzle-orm");
+        const rows = await db
+          .select({
+            cosmetic: cosmeticsTable,
+            catalog: {
+              id: catalogItems.id,
+              isVisible: catalogItems.isVisible,
+              isFeatured: catalogItems.isFeatured,
+              weeklyFeatured: catalogItems.weeklyFeatured,
+              featuredPriority: catalogItems.featuredPriority,
+              publishDate: catalogItems.publishDate,
+              visibleFrom: catalogItems.visibleFrom,
+              visibleUntil: catalogItems.visibleUntil,
+              collectionId: catalogItems.collectionId,
+            },
+          })
+          .from(cosmeticsTable)
+          .leftJoin(catalogItems, and(eq(catalogItems.type, "cosmetic"), eq(catalogItems.referenceId, cosmeticsTable.id)))
+          .orderBy(cosmeticsTable.sortOrder, desc(cosmeticsTable.createdAt));
+        return rows.map(r => ({ ...r.cosmetic, catalog: r.catalog }));
+      }),
     adminCreate: adminProcedure
       .input(z.object({
         name: z.string().min(1),
