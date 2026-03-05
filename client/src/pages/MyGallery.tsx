@@ -116,7 +116,7 @@ export default function MyGallery() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
+    <div className="min-h-screen bg-background text-white px-4 sm:px-6 py-6 space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
         {user && (
