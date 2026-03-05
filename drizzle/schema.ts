@@ -465,6 +465,7 @@ export const brandAds = mysqlTable("brand_ads", {
   tagline: varchar("tagline", { length: 256 }),
   description: text("description"),
   bannerImage: text("bannerImage").notNull(), // main large banner
+  mobileImage: text("mobileImage"),             // optional mobile-specific banner
   logoImage: text("logoImage"),
   accentColor: varchar("accentColor", { length: 32 }).default("#ff0000"),
   destinationUrl: text("destinationUrl"),

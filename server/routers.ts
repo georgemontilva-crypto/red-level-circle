@@ -1989,6 +1989,7 @@ Genera el reporte de precio RLC para este producto.`;
         isFeatured: z.boolean().default(false),
         accentColor: z.string().optional(),
         logoImage: z.string().optional(),
+        mobileImageUrl: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         await createBrandAd({
@@ -1997,6 +1998,7 @@ Genera el reporte de precio RLC para este producto.`;
           tagline: input.tagline,
           description: input.description,
           bannerImage: input.imageUrl,
+          mobileImage: input.mobileImageUrl,
           logoImage: input.logoImage,
           destinationUrl: input.linkUrl,
           ctaLabel: input.ctaLabel,
@@ -2032,7 +2034,7 @@ Genera el reporte de precio RLC para este producto.`;
           ...rest,
           ...(imageUrl !== undefined ? { bannerImage: imageUrl } : {}),
           ...(linkUrl !== undefined ? { destinationUrl: linkUrl } : {}),
-          ...(mobileImageUrl !== undefined ? { logoImage: mobileImageUrl } : {}),
+          ...(mobileImageUrl !== undefined ? { mobileImage: mobileImageUrl } : {}),
           ...(logoImage !== undefined ? { logoImage } : {}),
         });
         return { success: true };
