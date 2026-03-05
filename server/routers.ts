@@ -2904,6 +2904,18 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
       .mutation(async ({ ctx, input }) => {
         if (ctx.user.id === input.userId) throw new TRPCError({ code: "BAD_REQUEST", message: "No puedes seguirte a ti mismo" });
         await followUser(ctx.user.id, input.userId);
+        // Notify the followed user
+        try {
+          const follower = await getUserById(ctx.user.id);
+          const followerName = follower?.nickname || follower?.name || "Alguien";
+          await createNotification({
+            userId: input.userId,
+            type: "general",
+            title: "Nuevo seguidor",
+            message: `${followerName} ha comenzado a seguirte.`,
+            link: `/profile/${ctx.user.id}`,
+          });
+        } catch (e) { console.error("[Follow] Notification error:", e); }
         return { success: true };
       }),
     unfollow: protectedProcedure
