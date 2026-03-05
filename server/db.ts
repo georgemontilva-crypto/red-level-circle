@@ -2350,12 +2350,17 @@ export async function listPublicUsers(opts: { search?: string; limit?: number; o
       country: users.country,
       role: users.role,
       createdAt: users.createdAt,
-      activeFrameImage: cosmetics.frameImage,
+      activeFrameImage: sql<string | null>`MAX(${cosmetics.frameImage})`,
       isVerified: users.isVerified,
     })
     .from(users)
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
+    .groupBy(
+      users.id, users.name, users.nickname, users.avatar, users.bannerUrl,
+      users.bio, users.profileType, users.mainGame, users.country, users.role,
+      users.createdAt, users.isVerified
+    )
     .orderBy(desc(users.createdAt))
     .limit(limit)
     .offset(offset);
