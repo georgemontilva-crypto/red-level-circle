@@ -2618,6 +2618,25 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           if (input.name) catalogUpdate.title = input.name;
           if (existing.length > 0) {
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
+          } else {
+            // El catalog_item no existe — crearlo ahora (cosmetics creados antes de la tabla catalog_items)
+            const { cosmetics } = await import('../drizzle/schema');
+            const cosm = await db.select({ name: cosmetics.name }).from(cosmetics)
+              .where(eq(cosmetics.id, id)).limit(1);
+            await db.insert(catalogItems).values({
+              type: 'cosmetic' as const,
+              referenceId: id,
+              title: input.name ?? cosm[0]?.name ?? '',
+              isVisible: (catalogUpdate.isVisible as boolean) ?? true,
+              isFeatured: (catalogUpdate.isFeatured as boolean) ?? false,
+              weeklyFeatured: (catalogUpdate.weeklyFeatured as boolean) ?? false,
+              featuredPriority: (catalogUpdate.featuredPriority as number) ?? 0,
+              collectionId: (catalogUpdate.collectionId as number | null) ?? null,
+              publishDate: (catalogUpdate.publishDate as Date | null) ?? null,
+              visibleFrom: (catalogUpdate.visibleFrom as Date | null) ?? null,
+              visibleUntil: (catalogUpdate.visibleUntil as Date | null) ?? null,
+              sortOrder: 0,
+            });
           }
         }
         return { success: true };
