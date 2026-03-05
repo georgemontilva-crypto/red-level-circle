@@ -166,7 +166,7 @@ import {
 import { storagePut } from "./storage";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
-import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
+import { eq, inArray, sql, and, or, desc, isNotNull } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification, notifyRlcReceived } from "./notifications";
 import { eventBus } from "./eventBus";
