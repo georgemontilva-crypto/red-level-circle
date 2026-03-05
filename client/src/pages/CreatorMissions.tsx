@@ -378,7 +378,7 @@ export default function CreatorMissionsPage() {
     // Get fresh data from list
     const fresh = missions.find(m => m.id === selectedMission.id) ?? selectedMission;
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6">
+      <div className="w-full px-4 py-6">
         <MissionDetail
           mission={fresh}
           onBack={() => setSelectedMission(null)}
@@ -389,7 +389,7 @@ export default function CreatorMissionsPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div className="w-full px-4 py-6 space-y-6">
       {/* Header */}
       <div className="space-y-1">
         <div className="flex items-center gap-3">
