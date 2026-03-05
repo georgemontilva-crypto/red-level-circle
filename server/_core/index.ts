@@ -141,7 +141,9 @@ async function runCustomMigrations() {
     '  `endDate`      timestamp    NOT NULL,' +
     '  `isActive`     tinyint(1)   NOT NULL DEFAULT 0,' +
     '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
-    ')'
+    ')',
+    // 0037: brand_ads — imagen móvil específica para el carrusel
+    'ALTER TABLE `brand_ads` ADD COLUMN `mobileImage` text NULL AFTER `bannerImage`'
   ];
   for (const sql of customMigrations) {
     try {
