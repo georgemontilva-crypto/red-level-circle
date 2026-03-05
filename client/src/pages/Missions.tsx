@@ -6,8 +6,121 @@ import {
   RefreshCw, Lock, MoreHorizontal, Coins,
   Volume2, VolumeX, Maximize, RotateCcw, RotateCw,
 } from "lucide-react";
-import { SectionBanner } from "@/components/SectionBanner";
 import { toast } from "sonner";
+
+// ─── Ad Hero Banner (same as Home) ───────────────────────────────────────────
+const SLIDE_DURATION = 8000;
+function MissionsHeroBanner() {
+  const { data: adsData } = trpc.ads.list.useQuery();
+  const trackClick = trpc.ads.trackClick.useMutation();
+  const trackImpression = trpc.ads.trackImpression.useMutation();
+  const slides = (adsData ?? []).filter((a: any) => a.isActive && a.bannerImage);
+  const [activeIdx, setActiveIdx] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [transitioning, setTransitioning] = useState(false);
+  const progressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startTimeRef = useRef<number>(Date.now());
+
+  const goTo = useCallback((idx: number) => {
+    if (idx === activeIdx) return;
+    if (progressRef.current) clearTimeout(progressRef.current);
+    setTransitioning(true);
+    setTimeout(() => {
+      setActiveIdx(idx);
+      setProgress(0);
+      startTimeRef.current = Date.now();
+      setTransitioning(false);
+    }, 250);
+  }, [activeIdx]);
+
+  useEffect(() => {
+    if (slides.length === 0) return;
+    startTimeRef.current = Date.now();
+    const tick = () => {
+      const elapsed = Date.now() - startTimeRef.current;
+      const pct = Math.min((elapsed / SLIDE_DURATION) * 100, 100);
+      setProgress(pct);
+      if (pct >= 100) {
+        const next = (activeIdx + 1) % slides.length;
+        setTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(next);
+          setProgress(0);
+          startTimeRef.current = Date.now();
+          setTransitioning(false);
+        }, 250);
+        return;
+      }
+      progressRef.current = setTimeout(tick, 30);
+    };
+    progressRef.current = setTimeout(tick, 30);
+    return () => { if (progressRef.current) clearTimeout(progressRef.current); };
+  }, [activeIdx, slides.length]);
+
+  useEffect(() => {
+    if (slides.length > 0 && slides[activeIdx]) {
+      trackImpression.mutate({ adId: slides[activeIdx].id });
+    }
+  }, [activeIdx, slides.length]);
+
+  const current = slides[activeIdx];
+  if (slides.length === 0) return null;
+
+  return (
+    <div
+      className="lg:grid max-lg:block w-full"
+      style={{ gridTemplateColumns: "3fr 1fr", gap: "24px" }}
+    >
+      {/* Banner principal */}
+      <div
+        className="relative overflow-hidden cursor-pointer w-full"
+        style={{ height: "clamp(240px, 50vw, 480px)", borderRadius: "12px" }}
+        onClick={() => {
+          if (current?.destinationUrl) {
+            trackClick.mutate({ adId: current.id });
+            window.open(current.destinationUrl, "_blank");
+          }
+        }}
+      >
+        <div className="absolute inset-0" style={{ opacity: transitioning ? 0 : 1, transition: "opacity 250ms ease" }}>
+          {current?.mobileImage && (
+            <img src={current.mobileImage} alt={current?.brandName ?? ""} className="block md:hidden w-full h-full object-cover object-center" />
+          )}
+          <img
+            src={current?.bannerImage ?? ""}
+            alt={current?.brandName ?? ""}
+            className={current?.mobileImage ? "hidden md:block w-full h-full object-cover object-center" : "w-full h-full object-cover object-center"}
+          />
+        </div>
+        <div className="absolute top-3 left-3 px-2 py-0.5 rounded text-xs" style={{ background: "rgba(0,0,0,0.55)", color: "rgba(255,255,255,0.45)" }}>Publicidad</div>
+      </div>
+      {/* Tarjetas laterales — solo desktop */}
+      <div className="hidden lg:flex flex-col" style={{ gap: "4px" }}>
+        {slides.map((ad: any, i: number) => {
+          const isActive = i === activeIdx;
+          return (
+            <div
+              key={ad.id}
+              className="relative cursor-pointer overflow-hidden"
+              style={{ display: "flex", alignItems: "center", gap: "14px", padding: "10px 12px", borderRadius: "8px", background: "rgba(255,255,255,0.04)", isolation: "isolate" }}
+              onClick={() => goTo(i)}
+            >
+              {isActive && (
+                <div className="absolute inset-0 pointer-events-none" style={{ background: "rgba(255,255,255,0.07)", width: `${progress}%`, transition: "width 30ms linear", borderRadius: "8px", zIndex: 0 }} />
+              )}
+              <div className="shrink-0 overflow-hidden relative z-10 flex items-center justify-center" style={{ width: "56px", height: "56px", borderRadius: "8px", background: "#1a1a1f" }}>
+                <img src={ad.logoImage ?? ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0 relative z-10">
+                <p className="text-sm font-semibold leading-snug" style={{ color: isActive ? "#fff" : "rgba(255,255,255,0.65)", wordBreak: "break-word", whiteSpace: "normal" }}>{ad.brandName}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Mission = {
@@ -771,7 +884,10 @@ export default function MissionsPage() {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "#0a0a0a" }}>
-      <SectionBanner section="missions" />
+      {/* Hero banner de publicidades — igual al del Home */}
+      <div className="px-0 sm:px-4 pt-2">
+        <MissionsHeroBanner />
+      </div>
 
       <div className="px-4 pt-6 pb-5">
         <h1 className="text-white font-black text-2xl tracking-tight" style={{ fontFamily: "Orbitron, sans-serif" }}>MISIONES</h1>
@@ -785,11 +901,12 @@ export default function MissionsPage() {
         </div>
       </div>
 
-      <div className="px-4">
+      {/* Grid de misiones — sin padding lateral en móvil para ir a pantalla completa */}
+      <div className="px-0 sm:px-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 sm:gap-4">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-80 rounded-xl animate-pulse" style={{ background: "#1e1f22" }} />
+              <div key={i} className="h-80 sm:rounded-xl animate-pulse" style={{ background: "#1e1f22" }} />
             ))}
           </div>
         ) : missions.length === 0 ? (
@@ -801,7 +918,7 @@ export default function MissionsPage() {
             <p className="text-white/30 text-sm">Vuelve pronto para nuevas misiones patrocinadas</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 sm:gap-4">
             {missions.map((mission, i) => (
               <motion.div key={mission.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                 <MissionCard
