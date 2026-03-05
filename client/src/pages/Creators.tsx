@@ -248,7 +248,7 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
       {/* Category */}
       <div>
         <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Categoría *</label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {CATEGORIES.map(cat => (
             <button
               key={cat.value}
@@ -299,15 +299,14 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
                   <span className="text-[9px] font-bold text-zinc-400 font-mono">{label}</span>
                 )}
               </div>
-              <div className="flex-1 relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 text-xs font-mono pointer-events-none">{prefix}</span>
+              <div className="flex-1 flex flex-col">
+                <span className="text-[10px] text-zinc-500 font-mono px-1 mb-0.5 truncate">{prefix}</span>
                 <input
                   type="text"
                   value={(form as any)[key]}
                   onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
                   placeholder={placeholder}
-                  className="w-full bg-zinc-800/60 border border-white/10 rounded-lg py-2 pr-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-red-500/60 transition-colors"
-                  style={{ paddingLeft: `${prefix.length * 7 + 12}px` }}
+                  className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-red-500/60 transition-colors"
                 />
               </div>
             </div>
@@ -466,11 +465,11 @@ export default function Creators() {
         {/* Modal */}
         {showForm && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
             style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
             onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
           >
-            <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl">
+            <div className="w-full sm:max-w-lg bg-zinc-900 border border-white/10 sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[95vh] shadow-2xl">
               <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
             </div>
           </div>
