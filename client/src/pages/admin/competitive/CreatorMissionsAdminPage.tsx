@@ -409,30 +409,51 @@ export function CreatorMissionsAdminPage() {
           <p className="text-zinc-600 text-sm mt-1">Crea la primera misión para notificar a los creadores</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
           {missions.map((m) => (
-            <div key={m.id} className="bg-zinc-900 border border-white/10 rounded-xl p-5 hover:border-white/20 transition-colors">
-              <div className="flex items-start gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-white truncate">{m.title}</h3>
-                    <span className={`shrink-0 text-xs font-bold px-2 py-0.5 rounded-full ${m.isActive ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-500"}`}>
-                      {m.isActive ? "Activa" : "Inactiva"}
-                    </span>
-                  </div>
-                  <p className="text-zinc-500 text-sm line-clamp-2">{m.description}</p>
-
-                  <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5 text-red-400" />
-                      <span className="text-red-400 font-bold">{m.rewardRlc} RLC</span>
-                    </span>
-                    {m.bonusRlc > 0 && (
-                      <span className="flex items-center gap-1">
-                        <Award className="w-3.5 h-3.5 text-yellow-400" />
-                        <span className="text-yellow-400 font-bold">+{m.bonusRlc} RLC bonus</span>
-                      </span>
-                    )}
+            <div key={m.id}
+              className="aspect-square bg-zinc-900 border border-white/10 rounded-xl p-3 hover:border-white/25 transition-colors flex flex-col justify-between cursor-pointer group"
+              onClick={() => { setSelectedId(m.id); setView("detail"); }}>
+              {/* Header */}
+              <div className="flex items-start justify-between gap-1">
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${m.isActive ? "bg-green-500/20 text-green-400" : "bg-zinc-700 text-zinc-500"}`}>
+                  {m.isActive ? "Activa" : "Inactiva"}
+                </span>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={() => { setEditData(m); setView("edit"); }} className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-700 rounded transition-colors" title="Editar">
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => { if (confirm(`¿Eliminar "${m.title}"?`)) deleteMutation.mutate({ id: m.id }); }} className="p-1 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded transition-colors" title="Eliminar">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+              {/* Title */}
+              <div className="flex-1 flex items-center justify-center py-2">
+                <p className="text-white text-xs font-semibold text-center line-clamp-3 leading-tight">{m.title}</p>
+              </div>
+              {/* Footer stats */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-[10px]">
+                  <span className="text-red-400 font-bold">{m.rewardRlc} RLC</span>
+                  {m.bonusRlc > 0 && <span className="text-yellow-400 font-bold">+{m.bonusRlc}</span>}
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-zinc-500">
+                  <span className="flex items-center gap-0.5"><Users className="w-2.5 h-2.5" />{m.acceptCount}</span>
+                  {m.pendingCount > 0 && <span className="text-orange-400 font-bold flex items-center gap-0.5"><AlertCircle className="w-2.5 h-2.5" />{m.pendingCount}</span>}
+                  {m.approvedCount > 0 && <span className="text-green-400 flex items-center gap-0.5"><Check className="w-2.5 h-2.5" />{m.approvedCount}</span>}
+                </div>
+                {m.endDate && (
+                  <p className="text-[10px] text-zinc-600 truncate flex items-center gap-0.5">
+                    <Clock className="w-2.5 h-2.5 shrink-0" />
+                    {new Date(m.endDate).toLocaleDateString("es", { day: "numeric", month: "short" })}
+                  </p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
                     <span className="flex items-center gap-1">
                       <Users className="w-3.5 h-3.5" /> {m.acceptCount} tomaron
                     </span>
