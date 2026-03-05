@@ -144,7 +144,42 @@ async function runCustomMigrations() {
     '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
     ')',
     // 0037: brand_ads — imagen móvil específica para el carrusel
-    'ALTER TABLE `brand_ads` ADD COLUMN `mobileImage` text NULL AFTER `bannerImage`'
+    'ALTER TABLE `brand_ads` ADD COLUMN `mobileImage` text NULL AFTER `bannerImage`',
+    // 0038: missions system — misiones patrocinadas con video
+    'CREATE TABLE IF NOT EXISTS `missions` (' +
+    '  `id`                   int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `title`                varchar(256) NOT NULL,' +
+    '  `description`          text,' +
+    '  `bannerUrl`             text,' +
+    '  `videoUrl`              text         NOT NULL,' +
+    '  `sponsorName`           varchar(128),' +
+    '  `sponsorLogo`           text,' +
+    '  `rewardRlc`             int          NOT NULL DEFAULT 0,' +
+    '  `requiredWatchSeconds`  int          NOT NULL DEFAULT 30,' +
+    '  `startDate`             timestamp    NULL,' +
+    '  `endDate`               timestamp    NULL,' +
+    '  `isActive`              tinyint(1)   NOT NULL DEFAULT 1,' +
+    '  `createdAt`             timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')',
+    'CREATE TABLE IF NOT EXISTS `userMissions` (' +
+    '  `id`             int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `userId`         int          NOT NULL,' +
+    '  `missionId`      int          NOT NULL,' +
+    '  `accepted`       tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `watchedSeconds` int          NOT NULL DEFAULT 0,' +
+    '  `completed`      tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `claimed`        tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `completedAt`    timestamp    NULL,' +
+    '  `createdAt`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  UNIQUE KEY `userMissions_userId_missionId_unique` (`userId`, `missionId`)' +
+    ')',
+    'CREATE TABLE IF NOT EXISTS `missionClaims` (' +
+    '  `id`         int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `userId`     int          NOT NULL,' +
+    '  `missionId`  int          NOT NULL,' +
+    '  `rewardRlc`  int          NOT NULL,' +
+    '  `claimedAt`  timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')'
   ];
   for (const sql of customMigrations) {
     try {
