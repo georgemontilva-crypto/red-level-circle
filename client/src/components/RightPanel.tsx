@@ -228,31 +228,40 @@ function WishlistTab({ onClose }: { onClose: () => void }) {
         </div>
       ) : (
         <>
-          {items.map((item: any) => (
-            <div
-              key={item.id}
-              onClick={() => { onClose(); navigate("/shop"); }}
-              className="flex gap-3 px-4 py-3.5 cursor-pointer transition-all"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
-              onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
-              onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
-            >
-              {item.shopItem?.imageUrl ? (
-                <img src={item.shopItem.imageUrl} alt={item.shopItem?.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
-              ) : (
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
-                  <ShoppingBag className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+          {items.map((item: any) => {
+            // El endpoint getWishlist devuelve { wishlistItem, product }
+            const product = item.product ?? item.shopItem;
+            return (
+              <div
+                key={item.wishlistItem?.id ?? item.id}
+                onClick={() => { onClose(); navigate("/shop"); }}
+                className="flex gap-3 px-4 py-3.5 cursor-pointer transition-all"
+                style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
+                onMouseLeave={e => (e.currentTarget as HTMLDivElement).style.background = "transparent"}
+              >
+                {product?.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product?.name ?? "Artículo"}
+                    className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "rgba(255,255,255,0.06)" }}>
+                    <ShoppingBag className="w-5 h-5" style={{ color: "var(--text-muted)" }} />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{product?.name ?? "Artículo"}</p>
+                  <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
+                    {product?.price ? `${Number(product.price).toLocaleString()} RLC` : ""}
+                  </p>
                 </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>{item.shopItem?.name ?? "Artículo"}</p>
-                <p className="text-xs mt-0.5 font-mono" style={{ color: "var(--text-muted)" }}>
-                  {item.shopItem?.price ? `${item.shopItem.price.toLocaleString()} RLC` : ""}
-                </p>
+                <ChevronRight className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
               </div>
-              <ChevronRight className="w-4 h-4 mt-1 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
-            </div>
-          ))}
+            );
+          })}
           <div className="px-4 py-3">
             <button
               onClick={() => { onClose(); navigate("/shop?tab=wishlist"); }}
