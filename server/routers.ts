@@ -3525,9 +3525,16 @@ Genera el reporte de precio RLC para este producto.`;
       /** Listar todas las misiones (admin) */
       list: adminProcedure.query(async () => {
         const db = await getDb();
-        if (!db) return [];
+        if (!db) { console.log("[missions.admin.list] db is null"); return []; }
         const { missions } = await import("../drizzle/schema");
-        return db.select().from(missions).orderBy(desc(missions.createdAt));
+        try {
+          const result = await db.select().from(missions).orderBy(desc(missions.createdAt));
+          console.log(`[missions.admin.list] found ${result.length} missions`);
+          return result;
+        } catch (err: any) {
+          console.error("[missions.admin.list] error:", err.message);
+          throw err;
+        }
       }),
 
       /** Crear misión */
