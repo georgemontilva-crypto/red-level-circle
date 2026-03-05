@@ -7,6 +7,7 @@ import {
   Volume2, VolumeX, Maximize, RotateCcw, RotateCw,
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Mission = {
@@ -346,12 +347,26 @@ function MissionVideoPlayer({
   };
 
   const handleClaim = async () => {
+    if (claiming || isClaimed) return;
     setClaiming(true);
     try {
+      // Flush final progress to server before claiming
+      const current = accumulatedRef.current;
+      if (current > lastReportedRef.current) {
+        try {
+          await updateProgress.mutateAsync({ missionId: mission.id, watchedSeconds: current });
+          lastReportedRef.current = current;
+        } catch (e) {
+          console.error("Final flush failed", e);
+        }
+      }
       await claimMutation.mutateAsync({ missionId: mission.id });
       setIsClaimed(true);
+      toast.success(`¡Reclamaste ${mission.rewardRlc} RLC! 🎉`);
       onClaim();
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e?.message ?? "Error al reclamar la recompensa";
+      toast.error(msg);
       console.error("Claim failed", e);
     } finally {
       setClaiming(false);
@@ -508,27 +523,33 @@ function MissionVideoPlayer({
 
           <div className="flex items-center gap-2 flex-shrink-0">
             {isClaimed ? (
-              <div className="flex items-center gap-1.5">
+              // Estado gris permanente — ya reclamado, no se puede volver a reclamar
+              <button
+                disabled
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold cursor-not-allowed"
+                style={{ background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", border: "1px solid rgba(255,255,255,0.08)" }}
+              >
                 <CheckCircle2 size={14} className="text-green-400" />
-                <span className="text-green-400 text-sm font-semibold">Reclamado</span>
-              </div>
+                Recompensa reclamada
+              </button>
             ) : isCompleted ? (
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                whileHover={claiming ? {} : { scale: 1.02 }}
+                whileTap={claiming ? {} : { scale: 0.98 }}
                 onClick={handleClaim}
                 disabled={claiming}
                 className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-60 flex items-center gap-1.5"
-                style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+                style={{ background: claiming ? "rgba(255,255,255,0.15)" : "linear-gradient(135deg, #ef4444, #dc2626)" }}
               >
                 {claiming ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Reclamando...</>
                 ) : (
                   <><Coins size={14} /> Reclamar {mission.rewardRlc} RLC</>
                 )}
               </motion.button>
             ) : (
               <button
+                disabled
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl border text-white/40 text-sm cursor-not-allowed"
                 style={{ background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.1)" }}
               >
