@@ -31,7 +31,6 @@ const Betting            = lazy(() => import("./pages/Betting"));
 const TeamProfile        = lazy(() => import("./pages/TeamProfile"));
 const Teams              = lazy(() => import("./pages/Teams"));
 const Shop               = lazy(() => import("./pages/Shop"));
-const Rewards            = lazy(() => import("./pages/Rewards"));
 const BrandAds           = lazy(() => import("./pages/BrandAds"));
 const AdminRouter        = lazy(() => import("./pages/admin"));
 const UserProfile        = lazy(() => import("./pages/UserProfile"));
@@ -144,7 +143,6 @@ function Router() {
               <Route path="/teams/:id" component={TeamProfile} />
               <Route path="/shop/cosmetics">{() => { window.location.replace("/shop?tab=cosmetics"); return null; }}</Route>
               <Route path="/shop" component={Shop} />
-              <Route path="/rewards" component={Rewards} />
               <Route path="/ads" component={BrandAds} />
               <Route path="/dashboard" component={Dashboard} />
               <Route path="/dashboard/create-tournament" component={CreateTournament} />

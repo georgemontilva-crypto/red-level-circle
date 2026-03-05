@@ -80,8 +80,6 @@ import {
   getUserCosmetics,
   buyCosmetic,
   equipCosmetic,
-  getRewardTasks,
-  claimReward,
   getBrandAds,
   trackAdClick,
   trackAdImpression,
@@ -111,10 +109,6 @@ import {
   adminListBrandAds,
   adminUpdateBrandAd,
   adminDeleteBrandAd,
-  adminListRewardTasks,
-  adminCreateRewardTask,
-  adminUpdateRewardTask,
-  adminDeleteRewardTask,
   adminCreateNews,
   adminUpdateNews,
   adminDeleteNews,
@@ -2081,145 +2075,6 @@ Genera el reporte de precio RLC para este producto.`;
         sseBroadcast("ad", { action: "deleted", id: input.id });
         return { success: true };
       }),
-    listRewards: adminProcedure
-      .query(async () => adminListRewardTasks()),
-    createReward: adminProcedure
-      .input(z.object({
-        title: z.string(),
-        description: z.string().optional(),
-        type: z.enum(["video", "ad", "daily_login", "share", "follow"]),
-        rewardAmount: z.number().int().min(1),
-        contentUrl: z.string().optional(),
-        thumbnailUrl: z.string().optional(),
-        sponsorName: z.string().optional(),
-        sponsorLogoUrl: z.string().optional(),
-        expiresAt: z.string().optional(), // ISO date string
-        durationSeconds: z.number().int().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        await adminCreateRewardTask({
-          title: input.title,
-          description: input.description,
-          type: input.type,
-          reward: input.rewardAmount,
-          contentUrl: input.contentUrl,
-          thumbnailUrl: input.thumbnailUrl,
-          sponsorName: input.sponsorName,
-          sponsorLogoUrl: input.sponsorLogoUrl,
-          expiresAt: input.expiresAt ? new Date(input.expiresAt) : undefined,
-          durationSeconds: input.durationSeconds,
-        });
-        return { success: true };
-      }),
-    updateReward: adminProcedure
-      .input(z.object({ id: z.number(), isActive: z.boolean().optional() }))
-      .mutation(async ({ input }) => {
-        await adminUpdateRewardTask(input.id, { isActive: input.isActive });
-        return { success: true };
-      }),
-    deleteReward: adminProcedure
-      .input(z.object({ id: z.number() }))
-      .mutation(async ({ input }) => {
-        await adminDeleteRewardTask(input.id);
-        return { success: true };
-      }),
-
-    // ─── Suggest reward with AI (RLC Economy Architect) ──────────────────────────────────────────────
-    suggestReward: adminProcedure
-      .input(z.object({
-        title: z.string(),
-        type: z.enum(["video", "ad", "daily_login", "share", "follow"]),
-        description: z.string().optional(),
-        sponsorName: z.string().optional(),
-        durationSeconds: z.number().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const apiKey = process.env.OPENAI_API_KEY;
-        if (!apiKey) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "OpenAI API key no configurada" });
-
-        const typeLabels: Record<string, string> = {
-          video: "Ver video",
-          ad: "Ver anuncio",
-          daily_login: "Login diario",
-          share: "Compartir contenido",
-          follow: "Seguir a alguien",
-        };
-
-        const systemPrompt = `Eres el "RLC Economy Architect", experto en diseño de sistemas de recompensas para plataformas de esports.
-
-# ECONOMÍA RLC CALIBRADA
-- Tasa de ganancia: 800 RLC/hora de actividad activa.
-- Ganancia diaria estimada (2h/día): 1,600 RLC/día.
-- Ganancia mensual (30 días): 48,000 RLC/mes.
-- Tasa de cambio: 1,000 RLC = $1.00 USD.
-- Bono de bienvenida: 500 RLC.
-
-# PRINCIPIOS DE RECOMPENSAS
-Las recompensas deben ser proporcionales al esfuerzo y tiempo requerido:
-- Login diario (30 seg): 50-100 RLC (micro-recompensa, fomenta hábito)
-- Ver anuncio corto (15-30 seg): 80-150 RLC
-- Ver video completo (1-3 min): 200-400 RLC
-- Ver video largo (5-10 min): 500-800 RLC
-- Compartir contenido: 300-600 RLC (acción de valor para la plataforma)
-- Seguir a alguien: 100-200 RLC
-
-# REGLA DE ORO
-Ninguna recompensa debe ser tan alta que permita conseguir un producto de $40 (48,000 RLC) en menos de 30 días solo con recompensas pasivas. Las recompensas complementan la actividad activa, no la reemplazan.
-
-Responde SIEMPRE con JSON válido con exactamente estas claves:
-{
-  "suggestedReward": number,
-  "minReward": number,
-  "maxReward": number,
-  "rationale": string,
-  "engagementTip": string
-}`;
-
-        const userMessage = `Tarea de recompensa:
-- Título: "${input.title}"
-- Tipo: ${typeLabels[input.type] ?? input.type}
-- Descripción: ${input.description ?? "Sin descripción"}
-${input.sponsorName ? `- Patrocinador: ${input.sponsorName}` : ""}
-${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segundos` : ""}
-
-¿Cuántos RLC debería otorgar esta tarea? Sugéreme el valor óptimo con justificación.`;
-
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            response_format: { type: "json_object" },
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-            ],
-            max_tokens: 400,
-            temperature: 0.3,
-          }),
-        });
-
-        if (!response.ok) {
-          const err = await response.text();
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `OpenAI error: ${err}` });
-        }
-
-        const data = await response.json() as any;
-        const raw = data.choices?.[0]?.message?.content ?? "{}";
-        try {
-          const parsed = JSON.parse(raw);
-          return parsed as {
-            suggestedReward: number;
-            minReward: number;
-            maxReward: number;
-            rationale: string;
-            engagementTip: string;
-          };
-        } catch {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error al parsear respuesta de IA" });
-        }
-      }),
-
     listNews: adminProcedure
       .query(async () => adminListNews()),
     createNews: adminProcedure
@@ -2721,15 +2576,6 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
   }),
 
   // ─── Rewards ───────────────────────────────────────────────────────────────
-  rewards: router({
-    list: publicProcedure
-      .query(async () => getRewardTasks()),
-
-    claim: protectedProcedure
-      .input(z.object({ taskId: z.number() }))
-      .mutation(async ({ ctx, input }) => {
-        return claimReward(ctx.user.id, input.taskId);
-      }),
   }),
 
   // ─── Brand Ads ─────────────────────────────────────────────────────────────
@@ -3097,7 +2943,6 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
       return all.slice(0, 4);
     }),
     // Available missions (public preview)
-    availableMissions: publicProcedure.query(() => getRewardTasks()),
     // Featured ads for home (featured type only)
     featuredAds: publicProcedure.query(async () => {
       const all = await getBrandAds(true);

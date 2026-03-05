@@ -3,7 +3,6 @@ import { BetsPage } from "./BetsPage";
 import { ShopPage } from "./ShopPage";
 import { CosmeticsPage } from "./CosmeticsPage";
 import { RLCPage } from "./RLCPage";
-import { RewardsPage } from "./RewardsPage";
 import { Coins } from "lucide-react";
 import { PageHeader } from "../components/AdminUI";
 
@@ -17,6 +16,5 @@ export function MonetizationModule() {
   if (location.startsWith("/admin/monetization/shop")) return <ShopPage />;
   if (location.startsWith("/admin/monetization/cosmetics")) return <CosmeticsPage />;
   if (location.startsWith("/admin/monetization/rlc")) return <RLCPage />;
-  if (location.startsWith("/admin/monetization/rewards")) return <RewardsPage />;
   return <MonetizationOverview />;
 }

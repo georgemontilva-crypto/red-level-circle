@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import {
   BarChart3, Layout, Trophy, Users, Coins, Shield,
   Newspaper, MapPin, Gamepad2, Star, Crown, Megaphone,
-  Gift, Database, BadgeCheck, ChevronDown, ChevronRight,
+  Database, BadgeCheck, ChevronDown, ChevronRight,
   ShoppingBag, Swords, BarChart2, Flag, MessageSquareWarning
 } from "lucide-react";
 import { useState } from "react";
@@ -63,7 +63,6 @@ const nav: NavItem[] = [
       { href: "/admin/monetization/shop", label: "Tienda", icon: ShoppingBag },
       { href: "/admin/monetization/cosmetics", label: "Cosméticos", icon: Star },
       { href: "/admin/monetization/rlc", label: "RLC Coins", icon: Coins },
-      { href: "/admin/monetization/rewards", label: "Recompensas", icon: Gift },
     ],
   },
   {
