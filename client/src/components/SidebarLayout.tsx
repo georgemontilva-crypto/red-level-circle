@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -95,7 +95,6 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
   return sections;
 }
 
-
 interface SidebarLayoutProps {
   children: React.ReactNode;
 }
@@ -115,58 +114,27 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
-  const { data: pendingCount } = trpc.registrations.pendingCount.useQuery(undefined, {
-    enabled: isPremium,
-  });
-  const { data: liveData } = trpc.streams.liveCount.useQuery(undefined, {
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-  });
-
-  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchInterval: 5_000,
-  });
+  const { data: pendingCount } = trpc.registrations.pendingCount.useQuery(undefined, { enabled: isPremium });
+  const { data: liveData } = trpc.streams.liveCount.useQuery(undefined, { refetchInterval: 60_000, staleTime: 30_000 });
+  const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 5_000 });
   const unreadCount = unreadData?.count ?? 0;
-
-  const { data: wallet } = trpc.auth.wallet.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-
-  const { data: activeCosmetics } = trpc.cosmetics.myCosmetics.useQuery(undefined, {
-    enabled: isAuthenticated,
-  });
-  const activeFrame = activeCosmetics?.find((c) => c.isEquipped && c.type === "frame");
-  const { data: cartData } = trpc.shop.getCart.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchInterval: 10000,
-  });
+  const { data: wallet } = trpc.auth.wallet.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: activeCosmetics } = trpc.cosmetics.myCosmetics.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: cartData } = trpc.shop.getCart.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 10000 });
   const cartCount = cartData?.items?.length ?? 0;
-  const { data: wishlistData } = trpc.shop.getWishlist.useQuery(undefined, {
-    enabled: isAuthenticated,
-    refetchInterval: 10000,
-  });
+  const { data: wishlistData } = trpc.shop.getWishlist.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 10000 });
   const wishlistCount = wishlistData?.items?.length ?? 0;
   const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0, liveData?.count ?? 0);
-
   const isActive = (href: string) => location === href;
 
-  const SidebarContent = () => (
+  // ─── Desktop sidebar (lista vertical compacta, sin cambios) ──────────────────
+  const DesktopSidebarContent = () => (
     <div className="flex flex-col h-full">
-      {/* Logo */}
       <div className="px-5 pt-5 pb-4">
-        <Link href="/" onClick={() => setMobileOpen(false)}>
-          <img
-            src="/logocompleto.webp"
-            alt="Red Level Circle"
-            className="h-9 w-auto object-contain cursor-pointer select-none"
-          />
+        <Link href="/">
+          <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain cursor-pointer select-none" />
         </Link>
       </div>
-
-
-
-      {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-3 space-y-5 pb-4">
         {sections.map((section) => (
           <div key={section.title}>
@@ -176,28 +144,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
                 if (item.requiresAuth && !isAuthenticated) return null;
                 if (item.requiresPremium && !isPremium) return null;
                 if (item.requiresAdmin && !isAdmin) return null;
-
                 const active = isActive(item.href);
                 return (
-                  <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+                  <Link key={item.href} href={item.href}>
                     <div
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 group relative"
-                      style={{
-                        background: active ? "var(--bg-hover)" : "transparent",
-                        color: active ? "var(--text-primary)" : "var(--text-secondary)",
-                      }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 relative"
+                      style={{ background: active ? "var(--bg-hover)" : "transparent" }}
                       onMouseEnter={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)"; }}
                       onMouseLeave={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
                     >
-                      {active && (
-                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />
-                      )}
-                      <item.icon className={`w-4 h-4 flex-shrink-0 transition-colors`} style={{ color: active ? "var(--accent-red)" : "var(--text-muted)" }} />
+                      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />}
+                      <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: active ? "var(--accent-red)" : "var(--text-muted)" }} />
                       <span className="font-semibold text-sm flex-1" style={{ color: active ? "var(--text-primary)" : "var(--text-secondary)" }}>{item.label}</span>
                       {item.badge !== undefined && item.badge > 0 && (
-                        <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">
-                          {item.badge}
-                        </span>
+                        <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">{item.badge}</span>
                       )}
                     </div>
                   </Link>
@@ -206,36 +166,29 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             </div>
           </div>
         ))}
-
         {!isAuthenticated && !loading && (
           <div className="mt-2">
             <p className="text-xs font-mono tracking-widest px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>CUENTA</p>
-            <a href={getLoginUrl()} onClick={() => setMobileOpen(false)}>
+            <a href={getLoginUrl()}>
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150" style={{ color: "var(--text-secondary)" }}>
                 <Shield className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
-                <span className="font-rajdhani font-semibold text-sm">Iniciar Sesión</span>
+                <span className="font-semibold text-sm">Iniciar Sesión</span>
               </div>
             </a>
           </div>
         )}
       </nav>
-
-      {/* Bottom: logout + version */}
       <div className="px-3 pb-5 pt-2 mt-auto">
         {isAuthenticated && (
           <>
-            <Link href="/settings" onClick={() => setMobileOpen(false)}>
-              <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 group mb-1`} style={{ color: location === "/settings" ? "var(--text-primary)" : "var(--text-secondary)" }}>
-                <Settings className="w-4 h-4 flex-shrink-0 transition-colors" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-muted)" }} />
+            <Link href="/settings">
+              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 mb-1" style={{ color: location === "/settings" ? "var(--text-primary)" : "var(--text-secondary)" }}>
+                <Settings className="w-4 h-4 flex-shrink-0" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-muted)" }} />
                 <span className="font-semibold text-sm">Configuración</span>
               </div>
             </Link>
-            <button
-              onClick={() => { logout(); setMobileOpen(false); }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group"
-              style={{ color: "var(--text-muted)" }}
-            >
-              <LogOut className="w-4 h-4 transition-colors" />
+            <button onClick={() => logout()} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150" style={{ color: "var(--text-muted)" }}>
+              <LogOut className="w-4 h-4" />
               <span className="font-semibold text-sm">Cerrar sesión</span>
             </button>
           </>
@@ -245,34 +198,190 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     </div>
   );
 
+  // ─── Mobile sidebar (grid de tarjetas cuadradas estilo Facebook) ─────────────
+  const MobileSidebarContent = () => {
+    // Aplanar todos los items visibles en una lista única para el grid
+    const allItems = sections.flatMap(s => s.items).filter(item => {
+      if (item.requiresAuth && !isAuthenticated) return false;
+      if (item.requiresPremium && !isPremium) return false;
+      if (item.requiresAdmin && !isAdmin) return false;
+      return true;
+    });
+
+    return (
+      <div className="flex flex-col h-full overflow-hidden">
+        {/* Header del sidebar móvil: avatar + nombre */}
+        {isAuthenticated && user ? (
+          <div
+            className="flex items-center gap-3 px-4 py-4 flex-shrink-0"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
+          >
+            <UserAvatar
+              avatar={(user as any).avatar ?? null}
+              name={(user as any).nickname ?? (user as any).name ?? null}
+              size={44}
+              containerSize={44}
+              ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}
+            />
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-base truncate" style={{ color: "var(--text-primary)" }}>
+                {(user as any).nickname ?? user.name ?? "Usuario"}
+              </p>
+              {wallet && (
+                <p className="text-xs font-mono" style={{ color: "var(--accent-gold, #f59e0b)" }}>
+                  ⬡ {wallet.balanceRlc ?? 0} RLC
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="p-2 rounded-full transition-colors flex-shrink-0"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-4 py-4 flex-shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+            <img src="/logocompleto.webp" alt="RLC" className="h-8 w-auto object-contain" />
+            <button onClick={() => setMobileOpen(false)} className="p-2 rounded-full" style={{ color: "var(--text-muted)" }}>
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Grid de tarjetas */}
+        <div className="flex-1 overflow-y-auto px-3 py-4">
+          <div className="grid grid-cols-2 gap-3">
+            {allItems.map((item) => {
+              const active = isActive(item.href);
+              return (
+                <Link key={item.href} href={item.href} onClick={() => setMobileOpen(false)}>
+                  <div
+                    className="relative flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200 select-none"
+                    style={{
+                      background: active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
+                      border: active ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                      minHeight: "100px",
+                      aspectRatio: "1 / 0.9",
+                    }}
+                    onTouchStart={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.25)" : "rgba(255,255,255,0.1)"; }}
+                    onTouchEnd={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)"; }}
+                  >
+                    {/* Badge */}
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className="absolute top-3 right-3 min-w-[20px] h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    )}
+                    {/* Icono */}
+                    <item.icon
+                      className="w-8 h-8 mb-2"
+                      style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                    />
+                    {/* Label */}
+                    <span
+                      className="font-semibold text-sm leading-tight"
+                      style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                    >
+                      {item.label}
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
+
+            {/* Tarjeta de login si no está autenticado */}
+            {!isAuthenticated && !loading && (
+              <a href={getLoginUrl()} onClick={() => setMobileOpen(false)}>
+                <div
+                  className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200"
+                  style={{
+                    background: "rgba(220,38,38,0.12)",
+                    border: "1px solid rgba(220,38,38,0.25)",
+                    minHeight: "100px",
+                    aspectRatio: "1 / 0.9",
+                  }}
+                >
+                  <Shield className="w-8 h-8 mb-2" style={{ color: "var(--accent-red)" }} />
+                  <span className="font-semibold text-sm" style={{ color: "var(--accent-red)" }}>Iniciar Sesión</span>
+                </div>
+              </a>
+            )}
+          </div>
+        </div>
+
+        {/* Footer: configuración + cerrar sesión */}
+        {isAuthenticated && (
+          <div className="px-3 pb-6 pt-2 flex-shrink-0" style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="grid grid-cols-2 gap-3 mt-3">
+              <Link href="/settings" onClick={() => setMobileOpen(false)}>
+                <div
+                  className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200"
+                  style={{
+                    background: location === "/settings" ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
+                    border: location === "/settings" ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                    minHeight: "90px",
+                  }}
+                >
+                  <Settings className="w-7 h-7 mb-2" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }} />
+                  <span className="font-semibold text-sm" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }}>Configuración</span>
+                </div>
+              </Link>
+              <button
+                onClick={() => { logout(); setMobileOpen(false); }}
+                className="flex flex-col items-start justify-end p-4 rounded-2xl cursor-pointer transition-all duration-200 w-full text-left"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)", minHeight: "90px" }}
+              >
+                <LogOut className="w-7 h-7 mb-2" style={{ color: "var(--text-muted)" }} />
+                <span className="font-semibold text-sm" style={{ color: "var(--text-muted)" }}>Cerrar sesión</span>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen flex overflow-x-clip" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
-      {/* Desktop sidebar */}
+
+      {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
       <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible" style={{ background: "transparent" }}>
-        <SidebarContent />
+        <DesktopSidebarContent />
       </aside>
 
-      {/* Mobile overlay */}
+      {/* ── Mobile overlay ──────────────────────────────────────────────────── */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-background/70 z-40 md:hidden backdrop-blur-sm"
+          className="fixed inset-0 bg-black/60 z-[99999] md:hidden backdrop-blur-sm"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* Mobile sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 z-50 md:hidden transition-transform duration-300 ease-in-out border-r ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`} style={{ background: "var(--bg-main)", borderColor: "var(--border-main)" }}>
-        <SidebarContent />
+      {/* ── Mobile sidebar (grid de tarjetas) ───────────────────────────────── */}
+      <aside
+        className={`fixed top-0 left-0 h-full md:hidden transition-transform duration-300 ease-in-out`}
+        style={{
+          zIndex: 100000,
+          width: "min(85vw, 340px)",
+          background: "var(--bg-main)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
+          transform: mobileOpen ? "translateX(0)" : "translateX(-100%)",
+        }}
+      >
+        {/* Spacer para la status bar */}
+        <div style={{ height: "env(safe-area-inset-top, 0px)" }} />
+        <MobileSidebarContent />
       </aside>
 
-      {/* Mobile top bar — extends behind the status bar via paddingTop: safe-area-inset-top */}
+      {/* ── Mobile top bar ──────────────────────────────────────────────────── */}
       <div
         className="fixed top-0 left-0 right-0 backdrop-blur-md border-b z-[100001] flex flex-col md:hidden"
         style={{
           background: "rgba(14,14,16,0.92)",
           borderColor: "var(--border-main)",
           paddingTop: "env(safe-area-inset-top, 0px)",
-          /* Ensure the blur covers the full area including safe-zone */
           WebkitBackdropFilter: "blur(12px)",
           backdropFilter: "blur(12px)",
         }}
@@ -293,10 +402,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           {/* Right: wishlist, gifts, bell, cart, avatar */}
           <div className="flex items-center gap-0.5 flex-shrink-0">
             {isAuthenticated && (
-              <button
-                onClick={() => openPanel("wishlist")}
-                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
-              >
+              <button onClick={() => openPanel("wishlist")} className="relative p-2 text-muted-foreground hover:text-white transition-colors">
                 <Bookmark className="w-5 h-5" />
                 {wishlistCount > 0 && (
                   <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
@@ -306,18 +412,12 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               </button>
             )}
             {isAuthenticated && (
-              <button
-                onClick={() => openPanel("rewards")}
-                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
-              >
+              <button onClick={() => openPanel("rewards")} className="relative p-2 text-muted-foreground hover:text-white transition-colors">
                 <Gift className="w-5 h-5" />
               </button>
             )}
             {isAuthenticated && (
-              <button
-                onClick={() => openPanel("notifications")}
-                className="relative p-2 text-muted-foreground hover:text-white transition-colors"
-              >
+              <button onClick={() => openPanel("notifications")} className="relative p-2 text-muted-foreground hover:text-white transition-colors">
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
                   <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
@@ -330,10 +430,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               <button className="relative p-2 text-muted-foreground hover:text-white transition-colors">
                 <ShoppingCart className="w-5 h-5" />
                 {cartCount > 0 && (
-                  <span
-                    className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full text-[8px] font-bold flex items-center justify-center px-0.5"
-                    style={{ background: "var(--accent-blue)", color: "#fff" }}
-                  >
+                  <span className="absolute top-1 right-1 min-w-[14px] h-[14px] rounded-full text-[8px] font-bold flex items-center justify-center px-0.5" style={{ background: "var(--accent-blue)", color: "#fff" }}>
                     {cartCount > 9 ? "9+" : cartCount}
                   </span>
                 )}
@@ -354,30 +451,20 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
           </div>
         </div>
       </div>
-      {/* Main content */}
-      {/* Mobile: calc(safe-area + 56px). Desktop: 100px (TopNav height). */}
-      {/* NOTE: inline style overrides Tailwind, so we use a CSS custom property trick:
-           on md+ the padding is set to 100px via the md:pt-[100px] class;
-           on mobile the inline style applies safe-area + 56px.
-           We achieve this by NOT using inline style on desktop. */}
+
+      {/* ── Main content ────────────────────────────────────────────────────── */}
       <main
         className="flex-1 md:ml-60 min-h-screen overflow-x-clip min-w-0"
-        style={{
-          /* Mobile: safe-area-inset-top + 56px header height */
-          paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)",
-        }}
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)" }}
         ref={(el) => {
           if (el) {
-            // On desktop (md = 768px+), override to 100px to match TopNav height
-            const applyDesktopPadding = () => {
-              if (window.innerWidth >= 768) {
-                el.style.paddingTop = "100px";
-              } else {
-                el.style.paddingTop = `calc(env(safe-area-inset-top, 0px) + 56px)`;
-              }
+            const applyPadding = () => {
+              el.style.paddingTop = window.innerWidth >= 768
+                ? "100px"
+                : `calc(env(safe-area-inset-top, 0px) + 56px)`;
             };
-            applyDesktopPadding();
-            window.addEventListener("resize", applyDesktopPadding);
+            applyPadding();
+            window.addEventListener("resize", applyPadding);
           }
         }}
       >
@@ -387,7 +474,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </PageContainer>
       </main>
 
-      {/* Right panel — shared across mobile and desktop */}
+      {/* ── Right panel ─────────────────────────────────────────────────────── */}
       {isAuthenticated && (
         <RightPanel
           open={panelOpen}
