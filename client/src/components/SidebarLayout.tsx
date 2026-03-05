@@ -61,7 +61,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       title: "TIENDA",
       items: [
         { label: "Tienda", href: "/shop", icon: ShoppingBag },
-        { label: "Recompensas", href: "/rewards", icon: Gift },
+        { label: "Misiones", href: "/missions", icon: Gift },
         { label: "Mi Galería", href: "/gallery", icon: Sparkles, requiresAuth: true },
       ],
     },

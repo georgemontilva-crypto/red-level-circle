@@ -388,7 +388,7 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
 // ─── Mission Card (full visible, horizontal scroll) ───────────────────────────
 function MissionCard({ m }: { m: any }) {
   return (
-    <Link href="/rewards">
+    <Link href="/missions">
       <div
         className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
         style={{ scrollSnapAlign: "start", background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
@@ -1029,7 +1029,7 @@ export default function Home() {
         {(missions?.length ?? 0) > 0 && (
           <HScrollSection
             title="Misiones Disponibles"
-            href="/rewards"
+            href="/missions"
             icon={<Target size={18} className="text-green-400" />}
             viewAllLabel="Ver todas"
           >

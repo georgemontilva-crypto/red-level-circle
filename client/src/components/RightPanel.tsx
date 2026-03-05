@@ -173,7 +173,7 @@ function RewardsTab({ onClose }: { onClose: () => void }) {
         rewards.slice(0, 10).map((r: any) => (
           <div
             key={r.id}
-            onClick={() => { onClose(); navigate("/rewards"); }}
+            onClick={() => { onClose(); navigate("/missions"); }}
             className="flex gap-3 px-4 py-3.5 cursor-pointer transition-all"
             style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
             onMouseEnter={e => (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.04)"}
@@ -194,7 +194,7 @@ function RewardsTab({ onClose }: { onClose: () => void }) {
       )}
       <div className="px-4 py-3">
         <button
-          onClick={() => { onClose(); navigate("/rewards"); }}
+          onClick={() => { onClose(); navigate("/missions"); }}
           className="w-full py-2.5 rounded-xl text-sm font-semibold font-mono tracking-wide transition-all"
           style={{ background: "rgba(220,38,38,0.12)", color: "var(--accent-red)", border: "1px solid rgba(220,38,38,0.2)" }}
           onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(220,38,38,0.2)"}
