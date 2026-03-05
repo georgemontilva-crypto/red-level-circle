@@ -54,8 +54,8 @@
   /* Aligned with Epic Games Store palette */
   --radius: 0.75rem;
 
-  /* bg-main: #0f1115 — Epic Games Store exact */
-  --background:          #0f1115;
+  /* bg-main: #0a0a0a — RLC dark background */
+  --background:          #0a0a0a;
   --foreground:          #FFFFFF;
 
   /* bg-card: rgba semi-transparente sobre fondo oscuro */
@@ -92,7 +92,7 @@
   --ring:                #2F6BFF;
 
   /* Sidebar: same as body */
-  --sidebar:             #0f1115;
+  --sidebar:             #0a0a0a;
   --sidebar-foreground:  #9A9A9A;
   --sidebar-primary:     #2F6BFF;
   --sidebar-primary-foreground: #FFFFFF;
@@ -109,7 +109,7 @@
   --chart-5: oklch(0.55 0.18 300);
 
   /* ── Custom design tokens (used directly in components) ── */
-  --bg-main:           #0f1115;
+  --bg-main:           #0a0a0a;
   --bg-card:           rgba(255,255,255,0.03);
   --bg-dropdown:       #1a1d24;  /* fondo sólido para dropdowns y paneles flotantes */
   --bg-hover:          rgba(255,255,255,0.06);
@@ -165,7 +165,7 @@
   }
   html {
     /* Ensures the safe-area (status bar zone) has the same dark background as the mobile header */
-    background-color: #0e0e10;
+    background-color: #0a0a0a;
   }
   html, body {
     @apply bg-background text-foreground;

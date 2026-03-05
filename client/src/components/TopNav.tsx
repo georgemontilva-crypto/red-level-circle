@@ -65,7 +65,7 @@ export function TopNav() {
     <>
       <div
         className="hidden md:flex items-center px-6 gap-5 fixed top-0 z-40"
-        style={{ height: "100px", background: "#0f1115", border: "none", left: "18rem", right: 0 }}
+        style={{ height: "100px", background: "#0a0a0a", border: "none", left: "18rem", right: 0 }}
       >
         {/* Back button */}
         <button
