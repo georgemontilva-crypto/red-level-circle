@@ -9,7 +9,9 @@ import {
   ShoppingBag, Coins, Package, Zap, Star, Clock, CheckCircle,
   AlertCircle, Lock, MapPin, Mail, Phone, User, Globe, Hash, Key,
   Sparkles, Shield, X, Check, ShoppingCart, Heart, Trash2, Plus, Minus, Bookmark,
+  Wallet,
 } from "lucide-react";
+import { RLCIcon } from "@/components/RLCIcon";
 import { getLoginUrl } from "@/const";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -162,11 +164,11 @@ function CosmeticPurchaseModal({
 
               <div className="flex items-center gap-3 mt-4 mb-5">
                 {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && (
-                  <span className="text-muted-foreground text-sm line-through font-mono">{cosmetic.originalPrice} RLC</span>
+                  <span className="text-muted-foreground text-sm line-through font-mono flex items-center gap-1">{cosmetic.originalPrice} <RLCIcon size={13} /></span>
                 )}
                 <div className="flex items-center gap-1.5">
-                  <Coins className="w-4 h-4 text-yellow-400" />
-                  <span className="text-yellow-400 font-black text-xl font-mono">{cosmetic.price} RLC</span>
+                  <RLCIcon size={20} />
+                  <span className="text-yellow-400 font-black text-xl font-mono">{cosmetic.price}</span>
                 </div>
               </div>
 
@@ -212,21 +214,20 @@ function CosmeticPurchaseModal({
                   <p className="text-white font-semibold text-sm truncate">{cosmetic.name}</p>
                   <p className={`text-xs font-mono ${rarityColor}`}>{RARITY_LABELS[cosmetic.rarity]} · {TYPE_LABELS[cosmetic.type]}</p>
                 </div>
-                <div className="flex items-center gap-1 flex-shrink-0">
-                  <Coins className="w-4 h-4 text-yellow-400" />
+                 <div className="flex items-center gap-1 flex-shrink-0">
+                  <RLCIcon size={16} />
                   <span className="text-yellow-400 font-bold font-mono">{cosmetic.price}</span>
                 </div>
               </div>
-
               {/* Balance */}
               <div className="flex items-center gap-3 bg-zinc-900 border border-white/10 rounded-xl px-4 py-3">
                 <div className="w-8 h-8 rounded-full bg-yellow-500/15 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
-                  <Coins className="w-4 h-4 text-yellow-400" />
+                  <RLCIcon size={18} />
                 </div>
                 <div className="flex-1">
                   <p className="text-white text-sm font-semibold">Pagar con RLC Coins</p>
                   <p className={`text-xs font-mono ${canAfford ? "text-green-400" : "text-red-400"}`}>
-                    Saldo: {userBalance} RLC {canAfford ? `→ ${userBalance - cosmetic.price} RLC` : `(faltan ${cosmetic.price - userBalance} RLC)`}
+                    Saldo: {userBalance} <RLCIcon size={11} /> {canAfford ? `→ ${userBalance - cosmetic.price}` : `(faltan ${cosmetic.price - userBalance})`} <RLCIcon size={11} />
                   </p>
                 </div>
                 {canAfford ? <Check className="w-4 h-4 text-green-400 flex-shrink-0" /> : <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />}
@@ -256,7 +257,7 @@ function CosmeticPurchaseModal({
                 >
                   {isPending
                     ? <><div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin mr-2" />Procesando...</>
-                    : <><Check className="w-4 h-4 mr-2" />Confirmar — {cosmetic.price} RLC</>}
+                    : <><Check className="w-4 h-4 mr-2" />Confirmar — {cosmetic.price} <RLCIcon size={14} /></>}
                 </Button>
               </div>
             </div>
@@ -496,6 +497,20 @@ export default function Shop() {
                 {tab.label}
               </button>
             ))}
+            {/* Separador + Wallet */}
+            {isAuthenticated && (
+              <>
+                <div className="w-px mx-1 self-stretch" style={{ background: "rgba(255,255,255,0.1)" }} />
+                <div
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-md whitespace-nowrap"
+                  style={{ color: "#FACC15" }}
+                >
+                  <Wallet className="w-4 h-4 flex-shrink-0" style={{ color: "#FACC15" }} />
+                  <RLCIcon size={16} />
+                  <span className="text-sm font-bold font-mono">{userBalance.toLocaleString()}</span>
+                </div>
+              </>
+            )}
           </div>
           {/* Tabs secundarios: Pedidos, Carrito, Favoritos */}
           {SECONDARY_TABS.length > 0 && (
@@ -553,8 +568,8 @@ export default function Shop() {
                         <div className="flex-1 min-w-0">
                           <p className="font-bold text-white truncate">{product.name}</p>
                           <div className="flex items-center gap-1 mt-1">
-                            <Coins className="w-3.5 h-3.5 text-yellow-400" />
-                            <span className="text-yellow-400 font-mono text-sm">{product.price * cartItem.quantity} RLC</span>
+                            <RLCIcon size={14} />
+                            <span className="text-yellow-400 font-mono text-sm">{product.price * cartItem.quantity}</span>
                             <span className="text-muted-foreground text-xs ml-1">({product.price} × {cartItem.quantity})</span>
                           </div>
                         </div>
@@ -571,10 +586,10 @@ export default function Shop() {
                 <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
                   <div>
                     <p className="text-muted-foreground text-sm">Total</p>
-                    <div className="flex items-center gap-1">
-                      <Coins className="w-4 h-4 text-yellow-400" />
+                    <div className="flex items-center gap-1.5">
+                      <RLCIcon size={18} />
                       <span className="text-yellow-400 font-bold font-mono text-xl">
-                        {cartItems.reduce((sum: number, ci: any) => sum + (ci.product?.price ?? 0) * (ci.cartItem?.quantity ?? 1), 0)} RLC
+                        {cartItems.reduce((sum: number, ci: any) => sum + (ci.product?.price ?? 0) * (ci.cartItem?.quantity ?? 1), 0)}
                       </span>
                     </div>
                   </div>
@@ -614,9 +629,9 @@ export default function Shop() {
                       <div className="p-4">
                         <p className="font-bold text-white truncate mb-2">{product.name}</p>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Coins className="w-4 h-4 text-yellow-400" />
-                            <span className="text-yellow-400 font-bold font-mono">{product.price} RLC</span>
+                          <div className="flex items-center gap-1.5">
+                            <RLCIcon size={16} />
+                            <span className="text-yellow-400 font-bold font-mono">{product.price}</span>
                           </div>
                           <button onClick={() => { addToCartMutation.mutate({ itemId: product.id, quantity: 1 }); setMainTab("cart"); }} className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-mono rounded-lg transition-colors flex items-center gap-1"><ShoppingCart className="w-3 h-3" />Carrito</button>
                         </div>
@@ -661,7 +676,7 @@ export default function Shop() {
                         </span>
                       )}
                     </div>
-                    <p className="text-muted-foreground text-sm">x{order.quantity} · {order.totalPrice} RLC · #{order.id} · {new Date(order.createdAt).toLocaleDateString("es")}</p>
+                    <p className="text-muted-foreground text-sm flex items-center gap-1 flex-wrap">x{order.quantity} · {order.totalPrice} <RLCIcon size={12} /> · #{order.id} · {new Date(order.createdAt).toLocaleDateString("es")}</p>
                   </div>
                   <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-mono ${statusCfg.color}`}>
                     {statusCfg.icon}{statusCfg.label}
@@ -847,11 +862,10 @@ export default function Shop() {
                         {item.description && <p className="text-muted-foreground text-sm line-clamp-2 mb-3">{item.description}</p>}
                         <div className="flex items-center justify-between">
                           <div>
-                            {item.originalPrice && item.originalPrice > item.price && <p className="text-muted-foreground text-xs line-through font-mono">{item.originalPrice} RLC</p>}
-                            <div className="flex items-center gap-1">
-                              <Coins className="w-4 h-4 text-yellow-400" />
+                            {item.originalPrice && item.originalPrice > item.price && <p className="text-muted-foreground text-xs line-through font-mono flex items-center gap-1">{item.originalPrice} <RLCIcon size={11} /></p>}
+                            <div className="flex items-center gap-1.5">
+                              <RLCIcon size={18} />
                               <span className="text-yellow-400 font-bold font-mono text-lg">{item.price}</span>
-                              <span className="text-muted-foreground text-sm">RLC</span>
                             </div>
                           </div>
                           {!isAuthenticated ? (
@@ -965,8 +979,8 @@ export default function Shop() {
                       })()}
                       <div className="flex items-center justify-between mt-2">
                         <div>
-                          {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-muted-foreground text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>}
-                          <div className="flex items-center gap-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-bold text-sm font-mono">{cosmetic.price}</span></div>
+                          {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-muted-foreground text-xs line-through font-mono flex items-center gap-1">{cosmetic.originalPrice} <RLCIcon size={11} /></p>}
+                          <div className="flex items-center gap-1"><RLCIcon size={14} /><span className="text-yellow-400 font-bold text-sm font-mono">{cosmetic.price}</span></div>
                         </div>
                         {owned ? (
                           <button onClick={(e) => { e.stopPropagation(); equipMutation.mutate({ cosmeticId: cosmetic.id }); }} className={`px-2 py-1 rounded text-xs font-mono font-bold transition-all ${equipped ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"}`}>{equipped ? "Equipado" : "Equipar"}</button>
@@ -1055,7 +1069,7 @@ export default function Shop() {
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-white truncate">{itemToBuy.name}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">{CATEGORY_ICONS[itemToBuy.category]}<span className="text-muted-foreground text-xs font-mono">{CATEGORY_LABELS[itemToBuy.category]}</span></div>
-                  <div className="flex items-center gap-1 mt-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-mono font-bold">{itemToBuy.price} RLC / ud.</span></div>
+                  <div className="flex items-center gap-1 mt-1"><RLCIcon size={13} /><span className="text-yellow-400 font-mono font-bold">{itemToBuy.price} / ud.</span></div>
                 </div>
               </div>
               {itemToBuy.stock !== 1 && (
@@ -1131,9 +1145,9 @@ export default function Shop() {
                 <textarea value={userNote} onChange={(e) => setUserNote(e.target.value)} placeholder={isPhysical ? "Ej: Talla M, color azul..." : "Ej: Nombre de usuario, plataforma preferida..."} rows={2} className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none resize-none" />
               </div>
               <div className="p-3 rounded-lg bg-zinc-900 border border-white/10 space-y-2">
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({quantity}x)</span><span className="font-mono">{totalCost} RLC</span></div>
-                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tu balance</span><span className={`font-mono ${userBalance < totalCost ? "text-red-400" : "text-green-400"}`}>{userBalance} RLC</span></div>
-                <div className="border-t border-white/10 pt-2 flex justify-between font-bold"><span>Balance restante</span><span className={`font-mono ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>{userBalance - totalCost} RLC</span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Subtotal ({quantity}x)</span><span className="font-mono flex items-center gap-1">{totalCost} <RLCIcon size={12} /></span></div>
+                <div className="flex justify-between text-sm"><span className="text-muted-foreground">Tu balance</span><span className={`font-mono flex items-center gap-1 ${userBalance < totalCost ? "text-red-400" : "text-green-400"}`}>{userBalance} <RLCIcon size={12} /></span></div>
+                <div className="border-t border-white/10 pt-2 flex justify-between font-bold"><span>Balance restante</span><span className={`font-mono flex items-center gap-1 ${userBalance - totalCost < 0 ? "text-red-400" : "text-yellow-400"}`}>{userBalance - totalCost} <RLCIcon size={12} /></span></div>
               </div>
               {userBalance < totalCost && <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />Saldo insuficiente. Gana más RLC en la sección de Recompensas.</div>}
               {isPhysical && !shippingValid && <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />Completa todos los campos obligatorios de envío (*) para continuar.</div>}
@@ -1143,7 +1157,7 @@ export default function Shop() {
           {itemToBuy && (
             <div className="flex-shrink-0 px-4 pb-4 pt-3 sm:px-6 border-t border-white/10 bg-[#141416]">
               <Button onClick={handleBuyItem} disabled={buyItemMutation.isPending || userBalance < totalCost || !shippingValid} className="w-full bg-red-500 hover:bg-red-600 text-white font-mono font-bold py-3 text-base">
-                {buyItemMutation.isPending ? "Procesando..." : `Confirmar — ${totalCost} RLC`}
+                {buyItemMutation.isPending ? "Procesando..." : <span className="flex items-center justify-center gap-1.5">Confirmar — {totalCost} <RLCIcon size={16} /></span>}
               </Button>
             </div>
           )}
