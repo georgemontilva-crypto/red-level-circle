@@ -265,7 +265,7 @@ export function TournamentCard({
     return onClick ? inner : <Link href={defaultHref}>{inner}</Link>;
   }
 
-  // ── Variante default — nueva estructura de referencia con colores RLC ──────
+  // ── Variante default (tarjeta vertical) ──────────────────────────────────
   const inner = (
     <div
       className={`shrink-0 overflow-hidden cursor-pointer group transition-all duration-300 ${className}`}
@@ -400,42 +400,57 @@ export function TournamentCard({
               </span>
             </div>
           )}
-
-          {/* Premio */}
-          {(t.prizeAmount ?? 0) > 0 && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Coins size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
-                <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.50 0.005 0)" }}>
-                  Premio
-                </span>
-              </div>
-              <span className="text-xs font-display font-bold tracking-wider" style={{ color: "oklch(0.70 0.18 80)" }}>
-                {t.prizeAmount} RLC
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* Organizer */}
-        {t.creatorName && (
-          <div className="mb-4">
-            <p
-              className="text-xs font-display tracking-widest uppercase mb-0.5"
-              style={{ color: "oklch(0.38 0.005 0)" }}
-            >
-              Organizador
-            </p>
-            <p className="text-sm font-display font-semibold truncate" style={{ color: "oklch(0.65 0.005 0)" }}>
-              {t.creatorName}
-            </p>
+        {/* Bottom row: organizer + date (left) / prize badge (right) */}
+        <div className="flex items-end justify-between gap-3">
+          {/* Left: organizer + date */}
+          <div className="min-w-0">
+            {t.creatorName && (
+              <div className="mb-2">
+                <p
+                  className="text-xs font-display tracking-widest uppercase mb-0.5"
+                  style={{ color: "oklch(0.38 0.005 0)" }}
+                >
+                  Organizador
+                </p>
+                <p className="text-sm font-display font-semibold truncate" style={{ color: "oklch(0.65 0.005 0)" }}>
+                  {t.creatorName}
+                </p>
+              </div>
+            )}
+            <div className="flex items-center gap-2" style={{ color: "oklch(0.45 0.005 0)" }}>
+              <Calendar size={14} />
+              <span className="text-xs font-display tracking-wider">{formatTournamentDate(t.startDate)}</span>
+            </div>
           </div>
-        )}
 
-        {/* Date */}
-        <div className="flex items-center gap-2" style={{ color: "oklch(0.45 0.005 0)" }}>
-          <Calendar size={14} />
-          <span className="text-xs font-display tracking-wider">{formatTournamentDate(t.startDate)}</span>
+          {/* Right: prize badge */}
+          {(t.prizeAmount ?? 0) > 0 && (
+            <div className="flex-shrink-0 flex flex-col items-end">
+              <p
+                className="text-xs font-display tracking-widest uppercase mb-1"
+                style={{ color: "oklch(0.38 0.005 0)" }}
+              >
+                Premio
+              </p>
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                style={{
+                  background: "oklch(0.22 0.08 80 / 0.25)",
+                  border: "1px solid oklch(0.50 0.18 80 / 0.40)",
+                }}
+              >
+                <Trophy size={12} style={{ color: "oklch(0.72 0.18 80)" }} />
+                <span
+                  className="text-xs font-display font-bold tracking-wider"
+                  style={{ color: "oklch(0.72 0.18 80)" }}
+                >
+                  {t.prizeAmount} RLC
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
