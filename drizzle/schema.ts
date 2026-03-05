@@ -721,3 +721,100 @@ export const tournamentRankings = mysqlTable("tournament_rankings", {
 });
 export type TournamentRanking = typeof tournamentRankings.$inferSelect;
 export type InsertTournamentRanking = typeof tournamentRankings.$inferInsert;
+
+// ─── Commerce Core ────────────────────────────────────────────────────────────
+// Capa superior de comercio que unifica transacciones, wallet RLC, catálogo y
+// colecciones. No reemplaza shop.* ni cosmetics.* — los extiende.
+
+/**
+ * transactions — Registro global de todas las operaciones económicas.
+ *
+ * Complementa a rlcTransactions (que cubre RLC de apuestas/rewards).
+ * Esta tabla cubre compras físicas, cosméticos, regalos y recompensas
+ * en ambas monedas (RLC y USD).
+ */
+export const transactions = mysqlTable("transactions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  type: mysqlEnum("type", [
+    "physical_purchase",
+    "cosmetic_purchase",
+    "reward",
+    "gift",
+    "refund",
+    "deposit",
+  ]).notNull(),
+  amount: int("amount").notNull(), // positivo = crédito, negativo = débito
+  currency: mysqlEnum("currency", ["RLC", "USD"]).notNull().default("RLC"),
+  referenceId: int("referenceId"), // id del shopItem, cosmetic u order
+  referenceType: mysqlEnum("referenceType", [
+    "shop_item",
+    "cosmetic",
+    "order",
+    "bet",
+    "reward",
+  ]),
+  description: varchar("description", { length: 256 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Transaction = typeof transactions.$inferSelect;
+export type InsertTransaction = typeof transactions.$inferInsert;
+
+/**
+ * wallets — Balance RLC normalizado por usuario.
+ *
+ * El balance real sigue en users.rlcBalance para compatibilidad.
+ * Esta tabla provee una vista de wallet con timestamp de última actualización,
+ * útil para el panel de Commerce Core y futuras funciones de wallet.
+ */
+export const wallets = mysqlTable("wallets", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  balanceRlc: int("balanceRlc").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type Wallet = typeof wallets.$inferSelect;
+export type InsertWallet = typeof wallets.$inferInsert;
+
+/**
+ * collections — Colecciones temáticas de productos y cosméticos.
+ *
+ * Ejemplos: "Halloween Drop", "Cyberpunk Collection", "Winter Event".
+ * Cada catalogItem puede pertenecer a una colección.
+ * Las colecciones tienen fechas de inicio/fin para drops programados.
+ */
+export const collections = mysqlTable("collections", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 128 }).notNull(),
+  slug: varchar("slug", { length: 128 }).notNull().unique(),
+  description: text("description"),
+  bannerImage: text("bannerImage"),
+  isActive: boolean("isActive").default(true).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Collection = typeof collections.$inferSelect;
+export type InsertCollection = typeof collections.$inferInsert;
+
+/**
+ * catalogItems — Vista unificada del catálogo de productos y cosméticos.
+ *
+ * Actúa como capa de presentación: no almacena datos del producto,
+ * solo apunta a shopItems.id o cosmetics.id según el tipo.
+ * Permite construir /store sin fusionar las tablas subyacentes.
+ */
+export const catalogItems = mysqlTable("catalog_items", {
+  id: int("id").autoincrement().primaryKey(),
+  type: mysqlEnum("type", ["physical", "cosmetic"]).notNull(),
+  referenceId: int("referenceId").notNull(), // shopItems.id o cosmetics.id
+  title: varchar("title", { length: 256 }).notNull(),
+  isFeatured: boolean("isFeatured").default(false).notNull(),
+  isVisible: boolean("isVisible").default(true).notNull(),
+  collectionId: int("collectionId"), // → collections.id
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type CatalogItem = typeof catalogItems.$inferSelect;
+export type InsertCatalogItem = typeof catalogItems.$inferInsert;

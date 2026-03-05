@@ -161,6 +161,7 @@ import {
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { commerceRouter } from "./commerceRouter";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import {
   requestVerification,
@@ -228,6 +229,7 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
+  commerce: commerceRouter,
 
   // ─── Auth ──────────────────────────────────────────────────────────────────
   auth: router({
