@@ -386,14 +386,14 @@ function MissionVideoPlayer({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-2 sm:p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
         initial={{ scale: 0.96, y: 16 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.96, y: 16 }}
-        className="relative w-full max-w-[760px] rounded-2xl overflow-hidden shadow-2xl"
+        className="relative w-full max-w-[1100px] rounded-2xl overflow-hidden shadow-2xl"
         style={{ background: "#111214" }}
       >
         {/* Close button */}
