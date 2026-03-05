@@ -2,8 +2,8 @@ import { trpc } from "@/lib/trpc";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Trophy, Play, CheckCircle2, Lock, Clock, Coins,
-  X, AlertTriangle, ChevronRight, Zap, Star
+  Play, CheckCircle2, Clock, X, AlertTriangle,
+  RefreshCw, Lock, MoreHorizontal, Coins
 } from "lucide-react";
 import { SectionBanner } from "@/components/SectionBanner";
 
@@ -35,28 +35,59 @@ type UserMission = {
   completedAt: string | null;
 };
 
-// ─── Circular Progress ────────────────────────────────────────────────────────
-function CircularProgress({ percent, size = 56 }: { percent: number; size?: number }) {
-  const r = (size - 8) / 2;
+// ─── Circular reward icon (Discord-style) ────────────────────────────────────
+function RewardIcon({ size = 64, progress = 0, logoUrl }: { size?: number; progress?: number; logoUrl?: string | null }) {
+  const r = (size - 6) / 2;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (percent / 100) * circ;
+  const offset = circ - (progress / 100) * circ;
+  const isComplete = progress >= 100;
+
   return (
-    <svg width={size} height={size} className="rotate-[-90deg]">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={4} />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke={percent >= 100 ? "#22c55e" : "#ef4444"}
-        strokeWidth={4}
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        strokeLinecap="round"
-        style={{ transition: "stroke-dashoffset 0.4s ease" }}
-      />
-    </svg>
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="absolute inset-0 rotate-[-90deg]">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth={3} />
+        {progress > 0 && (
+          <circle
+            cx={size / 2} cy={size / 2} r={r} fill="none"
+            stroke={isComplete ? "#22c55e" : "#ef4444"}
+            strokeWidth={3}
+            strokeDasharray={circ}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 0.4s ease" }}
+          />
+        )}
+      </svg>
+      <div
+        className="absolute inset-[4px] rounded-full overflow-hidden flex items-center justify-center"
+        style={{ background: "linear-gradient(135deg, #1a0a0a, #2d1010)" }}
+      >
+        {logoUrl ? (
+          <img src={logoUrl} alt="" className="w-full h-full object-contain p-1.5" />
+        ) : (
+          <Coins size={size * 0.38} className="text-red-400" />
+        )}
+      </div>
+    </div>
   );
 }
 
-// ─── Mission Video Player ─────────────────────────────────────────────────────
+// ─── Format time remaining ────────────────────────────────────────────────────
+function formatTimeRemaining(endDate: string | null): string | null {
+  if (!endDate) return null;
+  const end = new Date(endDate);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (days > 0) return `Termina el ${end.getDate()}/${end.getMonth() + 1}`;
+  if (hours > 0) return `${hours}h ${mins}m restantes`;
+  return `${mins}m restantes`;
+}
+
+// ─── Mission Video Player Modal (Discord-style) ───────────────────────────────
 function MissionVideoPlayer({
   mission,
   userMission,
@@ -85,6 +116,13 @@ function MissionVideoPlayer({
   const required = mission.requiredWatchSeconds;
   const percent = Math.min((watchedSeconds / required) * 100, 100);
 
+  // Format current time display
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+
   // Tab visibility fraud detection
   useEffect(() => {
     const handleVisibility = () => {
@@ -103,16 +141,12 @@ function MissionVideoPlayer({
       const video = videoRef.current;
       if (!video || video.paused || video.ended) return;
       const current = Math.floor(video.currentTime);
-      if (current <= lastReportedRef.current) return; // no backward jumps
-      // Anti-fraud: max 10s jump
+      if (current <= lastReportedRef.current) return;
       const safe = Math.min(current, lastReportedRef.current + 10);
       lastReportedRef.current = safe;
       setWatchedSeconds(safe);
       try {
-        const result = await updateProgress.mutateAsync({
-          missionId: mission.id,
-          watchedSeconds: safe,
-        });
+        const result = await updateProgress.mutateAsync({ missionId: mission.id, watchedSeconds: safe });
         if (result.completed) {
           setIsCompleted(true);
           video.pause();
@@ -153,148 +187,146 @@ function MissionVideoPlayer({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <motion.div
-        initial={{ scale: 0.95, y: 20 }}
+        initial={{ scale: 0.96, y: 16 }}
         animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.95, y: 20 }}
-        className="relative w-full max-w-2xl bg-[#111115] rounded-2xl overflow-hidden border border-white/10 shadow-2xl"
+        exit={{ scale: 0.96, y: 16 }}
+        className="relative w-full max-w-[760px] rounded-2xl overflow-hidden shadow-2xl"
+        style={{ background: "#111214" }}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-white/08">
-          <div>
-            <h2 className="text-white font-bold text-lg">{mission.title}</h2>
-            {mission.sponsorName && (
-              <p className="text-white/40 text-xs mt-0.5">Patrocinado por {mission.sponsorName}</p>
-            )}
-          </div>
-          <button onClick={onClose} className="text-white/40 hover:text-white transition-colors p-1">
-            <X size={20} />
-          </button>
-        </div>
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 text-white/60 hover:text-white hover:bg-black/70 transition-all"
+        >
+          <X size={16} />
+        </button>
 
-        {/* Video */}
-        <div className="relative bg-black">
+        {/* Video area */}
+        <div className="relative bg-black" style={{ aspectRatio: "16/9" }}>
           <video
             ref={videoRef}
             src={mission.videoUrl}
-            className="w-full max-h-[360px] object-contain"
-            controlsList="nodownload nofullscreen"
+            className="w-full h-full object-contain"
+            controlsList="nodownload"
             disablePictureInPicture
             onSeeking={handleSeeking}
             onContextMenu={(e) => e.preventDefault()}
+            controls
           />
-          {(isCompleted || isClaimed) && (
-            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-              <div className="text-center">
-                <CheckCircle2 className="text-green-400 mx-auto mb-2" size={48} />
-                <p className="text-white font-bold text-lg">
-                  {isClaimed ? "¡Recompensa reclamada!" : "¡Misión completada!"}
-                </p>
-              </div>
-            </div>
-          )}
+
+          {/* Tab warning overlay */}
+          <AnimatePresence>
+            {tabWarning && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center bg-black/60"
+              >
+                <div className="bg-[#1e1f22]/95 rounded-2xl px-6 py-5 max-w-xs text-center shadow-xl border border-white/10">
+                  <p className="text-white/90 text-sm leading-relaxed">
+                    Pausamos el video mientras no estabas. Reanúdalo para seguir progresando en tu misión.
+                  </p>
+                  <button
+                    onClick={() => { setTabWarning(false); videoRef.current?.play(); }}
+                    className="mt-4 px-5 py-2 rounded-xl text-sm font-semibold text-white transition-all"
+                    style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+                  >
+                    Reanudar
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Tab warning */}
-        <AnimatePresence>
-          {tabWarning && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mx-4 mt-3 flex items-center gap-2 bg-amber-500/15 border border-amber-500/30 rounded-xl px-4 py-2.5"
-            >
-              <AlertTriangle size={16} className="text-amber-400 shrink-0" />
-              <p className="text-amber-300 text-xs">El video se pausó porque cambiaste de pestaña. El progreso solo cuenta mientras ves el video.</p>
-              <button onClick={() => setTabWarning(false)} className="ml-auto text-amber-400/60 hover:text-amber-400">
-                <X size={14} />
-              </button>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Progress */}
-        <div className="px-5 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Clock size={14} className="text-white/40" />
-              <span className="text-white/60 text-xs">
-                {watchedSeconds}s / {required}s
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Coins size={14} className="text-yellow-400" />
-              <span className="text-yellow-400 font-bold text-sm">{mission.rewardRlc} RLC</span>
-            </div>
-          </div>
-          {/* Progress bar */}
-          <div className="h-2 bg-white/08 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: percent >= 100 ? "#22c55e" : "linear-gradient(90deg, #ef4444, #ff6b6b)" }}
-              initial={{ width: 0 }}
-              animate={{ width: `${percent}%` }}
-              transition={{ duration: 0.4 }}
-            />
-          </div>
-          <div className="flex justify-between mt-1">
-            <span className="text-white/30 text-xs">0%</span>
-            <span className={`text-xs font-semibold ${percent >= 100 ? "text-green-400" : "text-white/50"}`}>
-              {Math.round(percent)}%
-            </span>
-          </div>
+        {/* Progress bar (thin, below video) */}
+        <div className="h-1 bg-white/08 w-full">
+          <motion.div
+            className="h-full"
+            style={{ background: percent >= 100 ? "#22c55e" : "#ef4444" }}
+            animate={{ width: `${percent}%` }}
+            transition={{ duration: 0.4 }}
+          />
         </div>
 
-        {/* Claim button */}
-        <div className="px-5 pb-5">
-          {isClaimed ? (
-            <div className="flex items-center justify-center gap-2 py-3 bg-green-500/10 border border-green-500/20 rounded-xl">
-              <CheckCircle2 size={18} className="text-green-400" />
-              <span className="text-green-400 font-semibold">Recompensa reclamada</span>
-            </div>
-          ) : isCompleted ? (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleClaim}
-              disabled={claiming}
-              className="w-full py-3.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
-            >
-              {claiming ? (
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
+        {/* Bottom info bar (Discord-style) */}
+        <div className="flex items-center gap-3 px-4 py-3" style={{ background: "#111214" }}>
+          {/* Reward icon */}
+          <RewardIcon size={44} progress={percent} logoUrl={mission.sponsorLogo} />
+
+          {/* Mission info */}
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-semibold text-sm truncate">{mission.title}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              {mission.sponsorName && (
                 <>
-                  <Zap size={16} />
-                  Reclamar {mission.rewardRlc} RLC
+                  <CheckCircle2 size={11} className="text-green-400 flex-shrink-0" />
+                  <span className="text-white/50 text-xs">{mission.sponsorName}</span>
+                  <span className="text-white/20 text-xs">·</span>
                 </>
               )}
-            </motion.button>
-          ) : (
-            <div className="flex items-center justify-center gap-2 py-3 bg-white/04 border border-white/08 rounded-xl">
-              <Lock size={16} className="text-white/30" />
-              <span className="text-white/40 text-sm">Completa el video para reclamar</span>
+              <span className="text-white/50 text-xs truncate">{mission.description ?? `Gana ${mission.rewardRlc} RLC`}</span>
             </div>
-          )}
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isClaimed ? (
+              <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-green-500/15 border border-green-500/20">
+                <CheckCircle2 size={14} className="text-green-400" />
+                <span className="text-green-400 text-sm font-semibold">Reclamado</span>
+              </div>
+            ) : isCompleted ? (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleClaim}
+                disabled={claiming}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-60 flex items-center gap-1.5"
+                style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+              >
+                {claiming ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Coins size={14} />
+                    Reclamar {mission.rewardRlc} RLC
+                  </>
+                )}
+              </motion.button>
+            ) : (
+              <button
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/08 border border-white/10 text-white/40 text-sm cursor-not-allowed"
+              >
+                <Lock size={13} />
+                Reclamar recompensa
+              </button>
+            )}
+          </div>
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
-// ─── Mission Card ─────────────────────────────────────────────────────────────
+// ─── Mission Card (Discord Quests style) ─────────────────────────────────────
 function MissionCard({
   mission,
   userMission,
   onAccept,
   onWatch,
+  accepting,
 }: {
   mission: Mission;
   userMission: UserMission | undefined;
   onAccept: () => void;
   onWatch: () => void;
+  accepting: boolean;
 }) {
   const required = mission.requiredWatchSeconds;
   const watched = userMission?.watchedSeconds ?? 0;
@@ -302,149 +334,162 @@ function MissionCard({
   const isAccepted = !!userMission?.accepted;
   const isCompleted = !!userMission?.completed;
   const isClaimed = !!userMission?.claimed;
+  const timeRemaining = formatTimeRemaining(mission.endDate);
+
+  // Remaining time for "Mirar" button
+  const remainingSeconds = Math.max(0, required - watched);
+  const remainingDisplay = `${Math.floor(remainingSeconds / 60)}:${(remainingSeconds % 60).toString().padStart(2, "0")}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, transition: { duration: 0.2 } }}
-      className="group relative rounded-2xl overflow-hidden border border-white/08 bg-[#111115] flex flex-col"
-      style={{ boxShadow: "0 4px 32px rgba(0,0,0,0.4)" }}
+    <div
+      className="rounded-2xl overflow-hidden flex flex-col"
+      style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}
     >
-      {/* Banner */}
-      <div className="relative h-40 overflow-hidden bg-gradient-to-br from-[#1a0505] to-[#2d0a0a]">
+      {/* Banner image */}
+      <div className="relative overflow-hidden" style={{ height: 160 }}>
         {mission.bannerUrl ? (
           <img
             src={mission.bannerUrl}
             alt={mission.title}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Trophy size={48} className="text-red-500/30" />
+          <div className="w-full h-full flex items-center justify-center" style={{ background: "linear-gradient(135deg, #1a0505, #2d0a0a)" }}>
+            <Coins size={40} className="text-red-500/30" />
           </div>
         )}
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#111115] via-transparent to-transparent" />
 
-        {/* Sponsor logo */}
+        {/* Sponsor logo overlay bottom-left */}
         {mission.sponsorLogo && (
-          <div className="absolute top-3 left-3 w-8 h-8 rounded-lg overflow-hidden bg-black/50 backdrop-blur-sm border border-white/10">
-            <img src={mission.sponsorLogo} alt={mission.sponsorName ?? ""} className="w-full h-full object-contain p-1" />
-          </div>
-        )}
-
-        {/* Status badge */}
-        <div className="absolute top-3 right-3">
-          {isClaimed ? (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 border border-green-500/30 text-green-400">
-              <CheckCircle2 size={11} /> Completada
-            </span>
-          ) : isCompleted ? (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 border border-yellow-500/30 text-yellow-400">
-              <Star size={11} /> Lista para reclamar
-            </span>
-          ) : isAccepted ? (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 border border-blue-500/30 text-blue-400">
-              <Play size={11} /> En progreso
-            </span>
-          ) : null}
-        </div>
-
-        {/* Circular progress overlay */}
-        {isAccepted && !isClaimed && (
-          <div className="absolute bottom-3 right-3">
-            <div className="relative">
-              <CircularProgress percent={percent} size={44} />
-              <span className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
-                {Math.round(percent)}%
-              </span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="flex flex-col flex-1 p-4 gap-3">
-        {/* Sponsor name */}
-        {mission.sponsorName && (
-          <p className="text-white/40 text-xs font-medium uppercase tracking-wider">{mission.sponsorName}</p>
-        )}
-
-        {/* Title */}
-        <h3 className="text-white font-bold text-base leading-tight line-clamp-2">{mission.title}</h3>
-
-        {/* Description */}
-        {mission.description && (
-          <p className="text-white/50 text-xs leading-relaxed line-clamp-2">{mission.description}</p>
-        )}
-
-        {/* Stats row */}
-        <div className="flex items-center gap-3 mt-auto pt-2 border-t border-white/06">
-          <div className="flex items-center gap-1.5">
-            <Coins size={13} className="text-yellow-400" />
-            <span className="text-yellow-400 font-bold text-sm">{mission.rewardRlc} RLC</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Clock size={13} className="text-white/30" />
-            <span className="text-white/40 text-xs">{Math.ceil(required / 60)} min</span>
-          </div>
-        </div>
-
-        {/* Progress bar (if accepted) */}
-        {isAccepted && !isClaimed && (
-          <div className="h-1.5 bg-white/08 rounded-full overflow-hidden">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ background: percent >= 100 ? "#22c55e" : "linear-gradient(90deg, #ef4444, #ff6b6b)" }}
-              animate={{ width: `${percent}%` }}
-              transition={{ duration: 0.4 }}
+          <div className="absolute bottom-3 left-3">
+            <img
+              src={mission.sponsorLogo}
+              alt={mission.sponsorName ?? ""}
+              className="h-7 object-contain drop-shadow-lg"
+              style={{ maxWidth: 120 }}
             />
           </div>
         )}
 
-        {/* CTA Button */}
+        {/* Play icon + more options top-right */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {!isClaimed && (
+            <button
+              onClick={onWatch}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/80 hover:bg-black/70 hover:text-white transition-all"
+            >
+              <Play size={14} fill="currentColor" />
+            </button>
+          )}
+          <button className="w-8 h-8 rounded-full flex items-center justify-center bg-black/50 text-white/60 hover:bg-black/70 hover:text-white transition-all">
+            <MoreHorizontal size={14} />
+          </button>
+        </div>
+      </div>
+
+      {/* Sponsor row */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <div className="flex items-center gap-1.5">
+          <CheckCircle2 size={12} className="text-green-400 flex-shrink-0" />
+          <span className="text-white/60 text-xs font-medium">
+            Patrocinado por {mission.sponsorName ?? "RLC"}
+          </span>
+        </div>
+        {timeRemaining && (
+          <span className="text-white/40 text-xs">{timeRemaining}</span>
+        )}
+      </div>
+
+      {/* Mission info row */}
+      <div className="flex items-start gap-3 px-4 py-3">
+        {/* Reward icon with progress ring */}
+        <RewardIcon size={56} progress={isAccepted ? percent : 0} logoUrl={mission.sponsorLogo} />
+
+        {/* Text */}
+        <div className="flex-1 min-w-0">
+          <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest mb-0.5">
+            MISIÓN {mission.sponsorName?.toUpperCase() ?? "RLC"}
+          </p>
+          <h3 className="text-white font-bold text-sm leading-snug line-clamp-2">
+            {isClaimed ? (
+              <span className="flex items-center gap-1.5">
+                <Coins size={13} className="text-yellow-400 flex-shrink-0" />
+                {mission.rewardRlc} RLC
+              </span>
+            ) : (
+              mission.title
+            )}
+          </h3>
+          <p className="text-white/45 text-xs mt-0.5 line-clamp-2 leading-relaxed">
+            {isClaimed
+              ? `Reclamaste esta recompensa`
+              : mission.description ?? `Gana ${mission.rewardRlc} RLC completando esta misión`}
+          </p>
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="mx-4 border-t border-white/06" />
+
+      {/* Action buttons */}
+      <div className="flex gap-2 px-4 py-3">
         {isClaimed ? (
-          <div className="flex items-center justify-center gap-2 py-2.5 bg-green-500/08 border border-green-500/15 rounded-xl">
-            <CheckCircle2 size={15} className="text-green-400" />
-            <span className="text-green-400 text-sm font-semibold">Recompensa reclamada</span>
-          </div>
+          <>
+            <button
+              onClick={onWatch}
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold text-white/70 hover:text-white transition-colors"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              <RefreshCw size={13} />
+              Ver de nuevo
+            </button>
+            <button
+              className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+              style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
+            >
+              Ver recompensa
+            </button>
+          </>
         ) : isCompleted ? (
           <motion.button
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={onWatch}
-            className="w-full py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
             style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
           >
-            <Zap size={15} />
+            <Coins size={14} />
             Reclamar {mission.rewardRlc} RLC
           </motion.button>
         ) : isAccepted ? (
           <motion.button
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={onWatch}
-            className="w-full py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2 bg-white/08 border border-white/10 hover:bg-white/12 transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+            style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
           >
-            <Play size={15} />
-            Continuar misión
-            <ChevronRight size={14} className="ml-auto" />
+            <Clock size={14} />
+            Mirar (tiempo restante: {remainingDisplay})
           </motion.button>
         ) : (
           <motion.button
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
             onClick={onAccept}
-            className="w-full py-2.5 rounded-xl font-bold text-white text-sm flex items-center justify-center gap-2"
+            disabled={accepting}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-all"
             style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}
           >
-            <Trophy size={15} />
-            Aceptar misión
+            {accepting ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              "Aceptar misión"
+            )}
           </motion.button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -454,6 +499,7 @@ export default function MissionsPage() {
   const { data: myProgress = [] } = trpc.missions.myProgress.useQuery();
   const utils = trpc.useUtils();
 
+  const [acceptingId, setAcceptingId] = useState<number | null>(null);
   const acceptMutation = trpc.missions.accept.useMutation({
     onSuccess: () => utils.missions.myProgress.invalidate(),
   });
@@ -464,17 +510,18 @@ export default function MissionsPage() {
     myProgress.find((p) => p.missionId === missionId);
 
   const handleAccept = async (mission: Mission) => {
-    await acceptMutation.mutateAsync({ missionId: mission.id });
-    setActivePlayer(mission);
+    setAcceptingId(mission.id);
+    try {
+      await acceptMutation.mutateAsync({ missionId: mission.id });
+      setActivePlayer(mission);
+    } finally {
+      setAcceptingId(null);
+    }
   };
 
-  const handleWatch = (mission: Mission) => {
-    setActivePlayer(mission);
-  };
+  const handleWatch = (mission: Mission) => setActivePlayer(mission);
 
-  const handleProgressUpdate = () => {
-    utils.missions.myProgress.invalidate();
-  };
+  const handleProgressUpdate = () => utils.missions.myProgress.invalidate();
 
   const handleClaim = () => {
     utils.missions.myProgress.invalidate();
@@ -482,76 +529,62 @@ export default function MissionsPage() {
     setActivePlayer(null);
   };
 
-  // Stats
-  const completedCount = myProgress.filter((p) => p.claimed).length;
-  const inProgressCount = myProgress.filter((p) => p.accepted && !p.claimed).length;
-
   return (
-    <div className="min-h-screen bg-[#0a0a0a] pb-20">
+    <div className="min-h-screen pb-20" style={{ background: "#0a0a0a" }}>
       {/* Section Banner */}
       <SectionBanner section="missions" />
 
-      {/* Header */}
-      <div className="px-4 pt-6 pb-4">
-        <div className="flex items-center gap-3 mb-1">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg, #ef4444, #dc2626)" }}>
-            <Trophy size={16} className="text-white" />
-          </div>
-          <h1 className="text-white font-black text-2xl tracking-tight" style={{ fontFamily: "Orbitron, sans-serif" }}>
-            MISIONES
-          </h1>
-        </div>
-        <p className="text-white/40 text-sm ml-11">Completa misiones y gana RLC</p>
-
-        {/* Stats */}
-        {myProgress.length > 0 && (
-          <div className="flex gap-3 mt-4">
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/04 border border-white/08 rounded-xl">
-              <CheckCircle2 size={14} className="text-green-400" />
-              <span className="text-white/60 text-xs">{completedCount} completadas</span>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 bg-white/04 border border-white/08 rounded-xl">
-              <Play size={14} className="text-blue-400" />
-              <span className="text-white/60 text-xs">{inProgressCount} en progreso</span>
-            </div>
-          </div>
-        )}
+      {/* Page header */}
+      <div className="px-4 pt-6 pb-5">
+        <h1 className="text-white font-black text-2xl tracking-tight" style={{ fontFamily: "Orbitron, sans-serif" }}>
+          MISIONES
+        </h1>
+        <p className="text-white/40 text-sm mt-1">Completa misiones patrocinadas y gana RLC</p>
       </div>
 
-      {/* Mission Grid */}
+      {/* Tabs (Todas / Reclamadas) */}
+      <div className="px-4 mb-5">
+        <div className="flex gap-1 border-b border-white/08">
+          <button className="px-4 pb-2.5 text-sm font-semibold text-white border-b-2 border-red-500 -mb-px">
+            Todas las misiones
+          </button>
+          <button className="px-4 pb-2.5 text-sm font-medium text-white/40 hover:text-white/70 transition-colors">
+            Misiones reclamadas
+          </button>
+        </div>
+      </div>
+
+      {/* Missions grid */}
       <div className="px-4">
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-72 rounded-2xl bg-white/04 animate-pulse" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-72 rounded-2xl animate-pulse" style={{ background: "#1e1f22" }} />
             ))}
           </div>
         ) : missions.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4 bg-white/04 border border-white/08">
-              <Trophy size={28} className="text-white/20" />
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4" style={{ background: "#1e1f22", border: "1px solid rgba(255,255,255,0.06)" }}>
+              <Coins size={28} className="text-white/20" />
             </div>
             <h3 className="text-white/60 font-semibold text-lg mb-1">Sin misiones disponibles</h3>
             <p className="text-white/30 text-sm">Vuelve pronto para nuevas misiones patrocinadas</p>
-          </motion.div>
+          </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {missions.map((mission, i) => (
               <motion.div
                 key={mission.id}
-                initial={{ opacity: 0, y: 24 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.08 }}
+                transition={{ delay: i * 0.06 }}
               >
                 <MissionCard
                   mission={mission as Mission}
                   userMission={getProgress(mission.id)}
                   onAccept={() => handleAccept(mission as Mission)}
                   onWatch={() => handleWatch(mission as Mission)}
+                  accepting={acceptingId === mission.id}
                 />
               </motion.div>
             ))}
