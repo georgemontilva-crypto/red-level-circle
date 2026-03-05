@@ -543,12 +543,12 @@ export const commerceRouter = router({
     .input(z.object({
       name: z.string().min(1).max(128),
       slug: z.string().min(1).max(128).regex(/^[a-z0-9-]+$/),
-      description: z.string().optional(),
-      bannerImage: z.string().optional(),
+      description: z.string().optional().transform(v => v === "" ? undefined : v),
+      bannerImage: z.string().optional().transform(v => v === "" ? undefined : v),
       isActive: z.boolean().default(true),
       isFeatured: z.boolean().default(false),
-      startDate: z.string().optional(),
-      endDate: z.string().optional(),
+      startDate: z.string().optional().transform(v => v === "" ? undefined : v),
+      endDate: z.string().optional().transform(v => v === "" ? undefined : v),
     }))
     .mutation(async ({ ctx, input }) => {
       if (!isAdmin(ctx.user.role)) throw new TRPCError({ code: "FORBIDDEN" });
