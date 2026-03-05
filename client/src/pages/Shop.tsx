@@ -475,7 +475,7 @@ export default function Shop() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           {/* Switcher pill */}
           <div
-            className="flex rounded-xl p-1"
+            className="flex rounded-md p-1"
             style={{
               background: "rgba(255,255,255,0.05)",
               border: "1px solid rgba(255,255,255,0.07)",
