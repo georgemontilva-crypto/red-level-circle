@@ -3,7 +3,7 @@ import {
   BarChart3, Layout, Trophy, Users, Coins, Shield,
   Newspaper, MapPin, Gamepad2, Star, Crown, Megaphone,
   Database, BadgeCheck, ChevronDown, ChevronRight,
-  ShoppingBag, Swords, BarChart2, Flag, MessageSquareWarning
+  ShoppingBag, Swords, BarChart2, Flag, MessageSquareWarning, Clapperboard
 } from "lucide-react";
 import { useState } from "react";
 
@@ -41,6 +41,7 @@ const nav: NavItem[] = [
       { href: "/admin/competitive/teams", label: "Equipos", icon: Shield },
       { href: "/admin/competitive/rankings", label: "Rankings", icon: BarChart2 },
       { href: "/admin/competitive/missions", label: "Misiones", icon: Swords },
+      { href: "/admin/competitive/creator-missions", label: "Misiones Creadores", icon: Clapperboard },
     ],
   },
   {

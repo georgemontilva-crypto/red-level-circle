@@ -903,3 +903,53 @@ export const missionClaims = mysqlTable("missionClaims", {
 });
 export type MissionClaim = typeof missionClaims.$inferSelect;
 export type InsertMissionClaim = typeof missionClaims.$inferInsert;
+
+// ─── Creator Missions System ──────────────────────────────────────────────────
+export const creatorMissions = mysqlTable("creator_missions", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  description: text("description").notNull(),
+  requirements: text("requirements"),
+  resourcesUrl: text("resourcesUrl"),
+  platforms: varchar("platforms", { length: 512 }),
+  rewardRlc: int("rewardRlc").notNull().default(100),
+  bonusRlc: int("bonusRlc").notNull().default(50),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  isActive: boolean("isActive").notNull().default(true),
+  createdBy: int("createdBy").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type CreatorMission = typeof creatorMissions.$inferSelect;
+export type InsertCreatorMission = typeof creatorMissions.$inferInsert;
+
+export const creatorMissionAccepts = mysqlTable("creator_mission_accepts", {
+  id: int("id").autoincrement().primaryKey(),
+  missionId: int("missionId").notNull(),
+  userId: int("userId").notNull(),
+  acceptedAt: timestamp("acceptedAt").defaultNow().notNull(),
+});
+export type CreatorMissionAccept = typeof creatorMissionAccepts.$inferSelect;
+
+export const creatorMissionSubmissions = mysqlTable("creator_mission_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  missionId: int("missionId").notNull(),
+  userId: int("userId").notNull(),
+  status: mysqlEnum("status_cms", ["pending", "approved", "rejected"]).notNull().default("pending"),
+  adminNote: text("adminNote"),
+  rewardPaid: boolean("rewardPaid").notNull().default(false),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewedBy: int("reviewedBy"),
+});
+export type CreatorMissionSubmission = typeof creatorMissionSubmissions.$inferSelect;
+
+export const creatorMissionLinks = mysqlTable("creator_mission_links", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submissionId").notNull(),
+  url: text("url").notNull(),
+  platform: varchar("platform", { length: 64 }),
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+});
+export type CreatorMissionLink = typeof creatorMissionLinks.$inferSelect;

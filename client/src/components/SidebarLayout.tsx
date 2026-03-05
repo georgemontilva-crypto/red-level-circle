@@ -6,7 +6,7 @@ import {
   Home, Trophy, TrendingUp, Newspaper, Radio, Coins,
   Users, Plus, ClipboardList, Settings, LogOut, Menu, X, Bell,
   Shield, Crown, Swords, Star, ShoppingBag, Sparkles, Gift, Megaphone, Handshake,
-  Bookmark, ShoppingCart, Store, LayoutGrid, Wallet,
+  Bookmark, ShoppingCart, Store, LayoutGrid, Wallet, Clapperboard,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { TopNav } from "./TopNav";
@@ -29,7 +29,7 @@ interface NavSection {
   items: NavItem[];
 }
 
-function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: number, liveCount?: number): NavSection[] {
+function buildSections(isPremium: boolean, isAdmin: boolean, isApprovedCreator: boolean, pendingCount?: number, liveCount?: number): NavSection[] {
   const sections: NavSection[] = [
     {
       title: "GENERAL",
@@ -67,9 +67,18 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
     },
   ];
 
-  if (isPremium) {
+  if (isApprovedCreator) {
     sections.push({
       title: "CREADOR",
+      items: [
+        { label: "Misiones Creadores", href: "/creator-missions", icon: Clapperboard, requiresAuth: true },
+      ],
+    });
+  }
+
+  if (isPremium) {
+    sections.push({
+      title: "MIS TORNEOS",
       items: [
         { label: "Mis Torneos", href: "/dashboard/tournaments", icon: Swords },
         { label: "Crear Torneo", href: "/dashboard/create-tournament", icon: Plus },
@@ -128,7 +137,9 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const cartCount = cartData?.items?.length ?? 0;
   const { data: wishlistData } = trpc.shop.getWishlist.useQuery(undefined, { enabled: isAuthenticated, refetchInterval: 10000 });
   const wishlistCount = wishlistData?.items?.length ?? 0;
-  const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0, liveData?.count ?? 0);
+  const { data: creatorApp } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
+  const isApprovedCreator = creatorApp?.status === "approved";
+  const sections = buildSections(isPremium, isAdmin, isApprovedCreator, pendingCount ?? 0, liveData?.count ?? 0);
   const isActive = (href: string) => location === href;
 
   // ─── Desktop sidebar (grid de cuadritos, igual que móvil) ───────────────────

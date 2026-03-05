@@ -3654,6 +3654,219 @@ Genera el reporte de precio RLC para este producto.`;
         }),
     }),
   }),
+  // ─── Creator Missions ──────────────────────────────────────────────────────
+  creatorMissions: router({
+    /** [CREATOR] List active missions */
+    list: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { creatorMissions, creatorMissionAccepts, creatorMissionSubmissions, contentCreators } = await import("../drizzle/schema");
+      const [creator] = await db.select().from(contentCreators).where(and(eq(contentCreators.userId, ctx.user.id), eq(contentCreators.status, "approved"))).limit(1);
+      if (!creator) throw new TRPCError({ code: "FORBIDDEN", message: "Solo los creadores de contenido aprobados pueden ver estas misiones" });
+      const allMissions = await db.select().from(creatorMissions).where(eq(creatorMissions.isActive, true)).orderBy(desc(creatorMissions.createdAt));
+      const accepts = await db.select().from(creatorMissionAccepts).where(eq(creatorMissionAccepts.userId, ctx.user.id));
+      const submissions = await db.select().from(creatorMissionSubmissions).where(eq(creatorMissionSubmissions.userId, ctx.user.id));
+      return allMissions.map((m) => ({
+        ...m,
+        accepted: accepts.some((a) => a.missionId === m.id),
+        submission: submissions.find((s) => s.missionId === m.id) ?? null,
+      }));
+    }),
+    /** [CREATOR] Accept a mission */
+    accept: protectedProcedure
+      .input(z.object({ missionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissions, creatorMissionAccepts, contentCreators } = await import("../drizzle/schema");
+        const [creator] = await db.select().from(contentCreators).where(and(eq(contentCreators.userId, ctx.user.id), eq(contentCreators.status, "approved"))).limit(1);
+        if (!creator) throw new TRPCError({ code: "FORBIDDEN" });
+        const [mission] = await db.select().from(creatorMissions).where(and(eq(creatorMissions.id, input.missionId), eq(creatorMissions.isActive, true))).limit(1);
+        if (!mission) throw new TRPCError({ code: "NOT_FOUND", message: "Misión no encontrada" });
+        const [existing] = await db.select().from(creatorMissionAccepts).where(and(eq(creatorMissionAccepts.missionId, input.missionId), eq(creatorMissionAccepts.userId, ctx.user.id))).limit(1);
+        if (existing) throw new TRPCError({ code: "BAD_REQUEST", message: "Ya aceptaste esta misión" });
+        await db.insert(creatorMissionAccepts).values({ missionId: input.missionId, userId: ctx.user.id });
+        return { ok: true };
+      }),
+    /** [CREATOR] Submit links */
+    submit: protectedProcedure
+      .input(z.object({
+        missionId: z.number(),
+        links: z.array(z.object({ url: z.string().url(), platform: z.string().optional() })).min(1),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissionAccepts, creatorMissionSubmissions, creatorMissionLinks, contentCreators } = await import("../drizzle/schema");
+        const [creator] = await db.select().from(contentCreators).where(and(eq(contentCreators.userId, ctx.user.id), eq(contentCreators.status, "approved"))).limit(1);
+        if (!creator) throw new TRPCError({ code: "FORBIDDEN" });
+        const [accepted] = await db.select().from(creatorMissionAccepts).where(and(eq(creatorMissionAccepts.missionId, input.missionId), eq(creatorMissionAccepts.userId, ctx.user.id))).limit(1);
+        if (!accepted) throw new TRPCError({ code: "BAD_REQUEST", message: "Debes aceptar la misión antes de enviar" });
+        const [existingSub] = await db.select().from(creatorMissionSubmissions).where(and(eq(creatorMissionSubmissions.missionId, input.missionId), eq(creatorMissionSubmissions.userId, ctx.user.id))).limit(1);
+        let submissionId: number;
+        if (existingSub) {
+          await db.update(creatorMissionSubmissions).set({ status: "pending", submittedAt: new Date() }).where(eq(creatorMissionSubmissions.id, existingSub.id));
+          submissionId = existingSub.id;
+          await db.delete(creatorMissionLinks).where(eq(creatorMissionLinks.submissionId, submissionId));
+        } else {
+          const [res] = await db.insert(creatorMissionSubmissions).values({ missionId: input.missionId, userId: ctx.user.id }).$returningId();
+          submissionId = res.id;
+        }
+        await db.insert(creatorMissionLinks).values(input.links.map((l) => ({ submissionId, url: l.url, platform: l.platform ?? null })));
+        // Notify admins
+        const adminUsers = await db.select({ id: users.id }).from(users).where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
+        for (const admin of adminUsers) {
+          await createNotification({ userId: admin.id, type: "general", title: "Nueva entrega de misión creador", message: `Un creador ha enviado sus links para revisión.`, link: `/admin/competitive/creator-missions`, referenceId: input.missionId, referenceType: "creator_mission" });
+          sseNotifyUser(admin.id, "notification");
+        }
+        return { ok: true, submissionId };
+      }),
+    /** [ADMIN] List all creator missions */
+    adminList: adminProcedure.query(async () => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+      const { creatorMissions, creatorMissionAccepts, creatorMissionSubmissions } = await import("../drizzle/schema");
+      const allMissions = await db.select().from(creatorMissions).orderBy(desc(creatorMissions.createdAt));
+      const allAccepts = await db.select().from(creatorMissionAccepts);
+      const allSubs = await db.select().from(creatorMissionSubmissions);
+      return allMissions.map((m) => ({
+        ...m,
+        acceptCount: allAccepts.filter((a) => a.missionId === m.id).length,
+        pendingCount: allSubs.filter((s) => s.missionId === m.id && s.status === "pending").length,
+        approvedCount: allSubs.filter((s) => s.missionId === m.id && s.status === "approved").length,
+      }));
+    }),
+    /** [ADMIN] Get mission detail with submissions */
+    adminDetail: adminProcedure
+      .input(z.object({ missionId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissions, creatorMissionAccepts, creatorMissionSubmissions, creatorMissionLinks } = await import("../drizzle/schema");
+        const [mission] = await db.select().from(creatorMissions).where(eq(creatorMissions.id, input.missionId)).limit(1);
+        if (!mission) throw new TRPCError({ code: "NOT_FOUND" });
+        const accepts = await db.select({ userId: creatorMissionAccepts.userId, acceptedAt: creatorMissionAccepts.acceptedAt, name: users.name, avatar: users.avatar, nickname: users.nickname }).from(creatorMissionAccepts).leftJoin(users, eq(users.id, creatorMissionAccepts.userId)).where(eq(creatorMissionAccepts.missionId, input.missionId));
+        const submissions = await db.select({ id: creatorMissionSubmissions.id, userId: creatorMissionSubmissions.userId, status: creatorMissionSubmissions.status, adminNote: creatorMissionSubmissions.adminNote, rewardPaid: creatorMissionSubmissions.rewardPaid, submittedAt: creatorMissionSubmissions.submittedAt, reviewedAt: creatorMissionSubmissions.reviewedAt, name: users.name, avatar: users.avatar, nickname: users.nickname }).from(creatorMissionSubmissions).leftJoin(users, eq(users.id, creatorMissionSubmissions.userId)).where(eq(creatorMissionSubmissions.missionId, input.missionId));
+        const links = await db.select().from(creatorMissionLinks).where(sql`${creatorMissionLinks.submissionId} IN (SELECT id FROM creator_mission_submissions WHERE missionId = ${input.missionId})`);
+        return { mission, accepts, submissions: submissions.map((s) => ({ ...s, links: links.filter((l) => l.submissionId === s.id) })) };
+      }),
+    /** [ADMIN] Create a creator mission */
+    adminCreate: adminProcedure
+      .input(z.object({
+        title: z.string().min(3),
+        description: z.string().min(10),
+        requirements: z.string().optional(),
+        resourcesUrl: z.string().optional(),
+        platforms: z.string().optional(),
+        rewardRlc: z.number().min(1),
+        bonusRlc: z.number().min(0).default(0),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissions, contentCreators } = await import("../drizzle/schema");
+        const [res] = await db.insert(creatorMissions).values({
+          title: input.title,
+          description: input.description,
+          requirements: input.requirements ?? null,
+          resourcesUrl: input.resourcesUrl || null,
+          platforms: input.platforms ?? null,
+          rewardRlc: input.rewardRlc,
+          bonusRlc: input.bonusRlc,
+          startDate: input.startDate ? new Date(input.startDate) : null,
+          endDate: input.endDate ? new Date(input.endDate) : null,
+          isActive: input.isActive,
+          createdBy: ctx.user.id,
+        }).$returningId();
+        // Notify all approved creators
+        const approvedCreators = await db.select({ userId: contentCreators.userId }).from(contentCreators).where(eq(contentCreators.status, "approved"));
+        for (const c of approvedCreators) {
+          await createNotification({ userId: c.userId, type: "general", title: "Nueva misión para creadores", message: `Hay una nueva misión disponible: "${input.title}". ¡Entra a Misiones Creadores para verla!`, link: `/creator-missions`, referenceId: res.id, referenceType: "creator_mission" });
+          sseNotifyUser(c.userId, "notification");
+        }
+        return { ok: true, id: res.id };
+      }),
+    /** [ADMIN] Update a creator mission */
+    adminUpdate: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        title: z.string().min(3).optional(),
+        description: z.string().min(10).optional(),
+        requirements: z.string().optional(),
+        resourcesUrl: z.string().optional(),
+        platforms: z.string().optional(),
+        rewardRlc: z.number().min(1).optional(),
+        bonusRlc: z.number().min(0).optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissions } = await import("../drizzle/schema");
+        const updates: Record<string, unknown> = {};
+        if (input.title !== undefined) updates.title = input.title;
+        if (input.description !== undefined) updates.description = input.description;
+        if (input.requirements !== undefined) updates.requirements = input.requirements;
+        if (input.resourcesUrl !== undefined) updates.resourcesUrl = input.resourcesUrl;
+        if (input.platforms !== undefined) updates.platforms = input.platforms;
+        if (input.rewardRlc !== undefined) updates.rewardRlc = input.rewardRlc;
+        if (input.bonusRlc !== undefined) updates.bonusRlc = input.bonusRlc;
+        if (input.startDate !== undefined) updates.startDate = input.startDate ? new Date(input.startDate) : null;
+        if (input.endDate !== undefined) updates.endDate = input.endDate ? new Date(input.endDate) : null;
+        if (input.isActive !== undefined) updates.isActive = input.isActive;
+        await db.update(creatorMissions).set(updates).where(eq(creatorMissions.id, input.id));
+        return { ok: true };
+      }),
+    /** [ADMIN] Approve or reject a submission */
+    adminReview: adminProcedure
+      .input(z.object({
+        submissionId: z.number(),
+        action: z.enum(["approved", "rejected"]),
+        adminNote: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissionSubmissions, creatorMissions } = await import("../drizzle/schema");
+        const [sub] = await db.select().from(creatorMissionSubmissions).where(eq(creatorMissionSubmissions.id, input.submissionId)).limit(1);
+        if (!sub) throw new TRPCError({ code: "NOT_FOUND" });
+        await db.update(creatorMissionSubmissions).set({ status: input.action, adminNote: input.adminNote ?? null, reviewedAt: new Date(), reviewedBy: ctx.user.id }).where(eq(creatorMissionSubmissions.id, input.submissionId));
+        const [mission] = await db.select().from(creatorMissions).where(eq(creatorMissions.id, sub.missionId)).limit(1);
+        if (input.action === "approved" && !sub.rewardPaid && mission) {
+          const newBalance = await addRlcTransaction({ userId: sub.userId, type: "reward", amount: mission.rewardRlc, description: `Misión creador aprobada: ${mission.title}`, referenceId: mission.id });
+          await db.update(creatorMissionSubmissions).set({ rewardPaid: true }).where(eq(creatorMissionSubmissions.id, input.submissionId));
+          await notifyRlcReceived({ userId: sub.userId, amount: mission.rewardRlc, type: "reward", newBalance, description: `Misión aprobada: ${mission.title}` });
+          await createNotification({ userId: sub.userId, type: "mission_approved", title: "¡Misión aprobada!", message: `Tu entrega para "${mission.title}" fue aprobada. Recibiste ${mission.rewardRlc} RLC.`, link: `/creator-missions`, referenceId: mission.id, referenceType: "creator_mission" });
+          sseNotifyUser(sub.userId, "notification");
+          sseNotifyUser(sub.userId, "coins");
+        } else if (input.action === "rejected" && mission) {
+          await createNotification({ userId: sub.userId, type: "mission_rejected", title: "Entrega rechazada", message: `Tu entrega para "${mission.title}" fue rechazada.${input.adminNote ? ` Motivo: ${input.adminNote}` : ""} Puedes volver a enviar.`, link: `/creator-missions`, referenceId: mission.id, referenceType: "creator_mission" });
+          sseNotifyUser(sub.userId, "notification");
+        }
+        return { ok: true };
+      }),
+    /** [ADMIN] Delete a creator mission */
+    adminDelete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { creatorMissions, creatorMissionAccepts, creatorMissionSubmissions, creatorMissionLinks } = await import("../drizzle/schema");
+        const subs = await db.select({ id: creatorMissionSubmissions.id }).from(creatorMissionSubmissions).where(eq(creatorMissionSubmissions.missionId, input.id));
+        for (const s of subs) {
+          await db.delete(creatorMissionLinks).where(eq(creatorMissionLinks.submissionId, s.id));
+        }
+        await db.delete(creatorMissionSubmissions).where(eq(creatorMissionSubmissions.missionId, input.id));
+        await db.delete(creatorMissionAccepts).where(eq(creatorMissionAccepts.missionId, input.id));
+        await db.delete(creatorMissions).where(eq(creatorMissions.id, input.id));
+        return { ok: true };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;
 

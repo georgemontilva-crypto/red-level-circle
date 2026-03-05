@@ -3,6 +3,7 @@ import { TournamentsPage } from "./TournamentsPage";
 import { TeamsPage } from "./TeamsPage";
 import { RankingsPage } from "./RankingsPage";
 import { MissionsAdminPage } from "./MissionsAdminPage";
+import { CreatorMissionsAdminPage } from "./CreatorMissionsAdminPage";
 import { Trophy } from "lucide-react";
 import { PageHeader } from "../components/AdminUI";
 
@@ -16,5 +17,6 @@ export function CompetitiveModule() {
   if (location.startsWith("/admin/competitive/teams")) return <TeamsPage />;
   if (location.startsWith("/admin/competitive/rankings")) return <RankingsPage />;
   if (location.startsWith("/admin/competitive/missions")) return <MissionsAdminPage />;
+  if (location.startsWith("/admin/competitive/creator-missions")) return <CreatorMissionsAdminPage />;
   return <CompetitiveOverview />;
 }
