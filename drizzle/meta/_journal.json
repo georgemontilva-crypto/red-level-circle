@@ -211,6 +211,13 @@
       "when": 1772900000000,
       "tag": "0029_allies_tiktok",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "5",
+      "when": 1741200000000,
+      "tag": "0030_missions_system",
+      "breakpoints": true
     }
   ]
 }
