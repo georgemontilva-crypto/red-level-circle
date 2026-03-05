@@ -488,8 +488,9 @@ export default function Shop() {
                 onClick={() => setMainTab(tab.id as any)}
                 className="flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200 whitespace-nowrap"
                 style={{
-                  background: mainTab === tab.id ? "oklch(0.55 0.22 25)" : "transparent",
+                  background: mainTab === tab.id ? "oklch(0.55 0.22 25)" : "rgba(255,255,255,0.04)",
                   color: mainTab === tab.id ? "#fff" : "rgba(255,255,255,0.4)",
+                  border: mainTab === tab.id ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.08)",
                 }}
               >
                 {tab.icon}
