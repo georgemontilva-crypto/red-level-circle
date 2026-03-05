@@ -90,6 +90,7 @@ export function AdsPage() {
       linkUrl: form.destinationUrl || undefined,
       accentColor: form.accentColor || undefined,
       imageUrl: form.bannerImage,
+      logoImage: form.logoImage || undefined,
       adType: "featured",
       isFeatured: form.isFeatured,
     });
@@ -106,6 +107,7 @@ export function AdsPage() {
       accentColor: editForm.accentColor,
       imageUrl: editForm.bannerImage,
       mobileImageUrl: editForm.mobileImage || undefined,
+      logoImage: editForm.logoImage || undefined,
       isFeatured: editForm.isFeatured,
     });
   };
@@ -286,6 +288,31 @@ export function AdsPage() {
           </div>
           </div>{/* end grid imágenes */}
 
+          {/* Logo de la marca */}
+          <div>
+            <label className="text-xs text-zinc-400 font-mono mb-2 block">Logo de la marca (aparece en la miniatura lateral)</label>
+            <div className="flex items-center gap-4">
+              <div
+                className="w-16 h-16 rounded-xl overflow-hidden border-2 border-dashed border-zinc-700 hover:border-red-500 transition-colors flex-shrink-0 flex items-center justify-center"
+                style={{ background: form.logoImage ? `url(${form.logoImage}) center/cover` : "#18181b" }}
+              >
+                {!form.logoImage && <span className="text-zinc-600 text-xs font-mono text-center leading-tight px-1">Sin logo</span>}
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-red-500 transition-colors rounded-lg px-3 py-2 text-xs text-white flex items-center gap-2">
+                  <Upload size={13} /> Subir logo
+                  <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("logoImage", e.target.files[0])} />
+                </label>
+                {form.logoImage && (
+                  <button onClick={() => setForm(f => ({ ...f, logoImage: "" }))} className="bg-zinc-800 hover:bg-red-900/40 border border-zinc-600 hover:border-red-500 transition-colors rounded-lg px-3 py-2 text-xs text-zinc-400 hover:text-red-400 flex items-center gap-2">
+                    <X size={13} /> Quitar logo
+                  </button>
+                )}
+                {uploading === "logoImage" && <span className="text-xs text-zinc-400 font-mono animate-pulse">Subiendo...</span>}
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between pt-2">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -390,6 +417,30 @@ export function AdsPage() {
                             <span className="text-xs text-white font-mono animate-pulse">Subiendo...</span>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                  {/* Logo en edición */}
+                  <div>
+                    <label className="text-xs text-zinc-500 font-mono mb-2 block">Logo de la marca</label>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-lg overflow-hidden border border-zinc-700 flex-shrink-0 flex items-center justify-center"
+                        style={{ background: editForm.logoImage ? `url(${editForm.logoImage}) center/cover` : "#18181b" }}
+                      >
+                        {!editForm.logoImage && <span className="text-zinc-600 text-xs">Sin logo</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <label className="cursor-pointer bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 hover:border-red-500 transition-colors rounded px-2 py-1.5 text-xs text-white flex items-center gap-1">
+                          <Upload size={11} /> {editForm.logoImage ? "Cambiar" : "Subir logo"}
+                          <input type="file" accept="image/*" className="hidden" onChange={e => e.target.files?.[0] && handleUpload("logoImage", e.target.files[0], true)} />
+                        </label>
+                        {editForm.logoImage && (
+                          <button onClick={() => setEditForm(f => ({ ...f, logoImage: "" }))} className="bg-zinc-800 hover:bg-red-900/40 border border-zinc-600 rounded px-2 py-1.5 text-xs text-zinc-400 hover:text-red-400 flex items-center gap-1">
+                            <X size={11} /> Quitar
+                          </button>
+                        )}
+                        {uploading === "logoImage" && <span className="text-xs text-zinc-400 font-mono animate-pulse self-center">Subiendo...</span>}
                       </div>
                     </div>
                   </div>

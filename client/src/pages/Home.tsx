@@ -206,12 +206,16 @@ function HeroSection() {
                   }}
                 />
               )}
-              {/* Portada vertical estilo Epic */}
+              {/* Portada / Logo */}
               <div
-                className="shrink-0 overflow-hidden relative z-10"
-                style={{ width: "56px", height: "72px", borderRadius: "6px", background: "#1a1a1f" }}
+                className="shrink-0 overflow-hidden relative z-10 flex items-center justify-center"
+                style={{ width: "56px", height: "56px", borderRadius: "8px", background: "#1a1a1f" }}
               >
-                <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
+                {ad.logoImage ? (
+                  <img src={ad.logoImage} alt={ad.brandName} className="w-full h-full object-cover" />
+                ) : (
+                  <img src={ad.bannerImage} alt={ad.brandName} className="w-full h-full object-cover" />
+                )}
               </div>
               {/* Texto */}
               <div className="flex-1 min-w-0 relative z-10">

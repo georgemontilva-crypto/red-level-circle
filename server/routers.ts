@@ -1988,6 +1988,7 @@ Genera el reporte de precio RLC para este producto.`;
         isPremium: z.boolean().default(false),
         isFeatured: z.boolean().default(false),
         accentColor: z.string().optional(),
+        logoImage: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         await createBrandAd({
@@ -1996,6 +1997,7 @@ Genera el reporte de precio RLC para este producto.`;
           tagline: input.tagline,
           description: input.description,
           bannerImage: input.imageUrl,
+          logoImage: input.logoImage,
           destinationUrl: input.linkUrl,
           ctaLabel: input.ctaLabel,
           adType: input.adType,
@@ -2022,14 +2024,16 @@ Genera el reporte de precio RLC para este producto.`;
         isFeatured: z.boolean().optional(),
         isPremium: z.boolean().optional(),
         accentColor: z.string().optional(),
+        logoImage: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, imageUrl, linkUrl, mobileImageUrl, ...rest } = input;
+        const { id, imageUrl, linkUrl, mobileImageUrl, logoImage, ...rest } = input;
         await adminUpdateBrandAd(id, {
           ...rest,
           ...(imageUrl !== undefined ? { bannerImage: imageUrl } : {}),
           ...(linkUrl !== undefined ? { destinationUrl: linkUrl } : {}),
           ...(mobileImageUrl !== undefined ? { logoImage: mobileImageUrl } : {}),
+          ...(logoImage !== undefined ? { logoImage } : {}),
         });
         return { success: true };
       }),
