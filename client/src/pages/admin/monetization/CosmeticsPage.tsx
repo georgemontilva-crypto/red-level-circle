@@ -1,7 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles, Package, Clock, Eye, EyeOff, CalendarClock, Globe } from "lucide-react";
+import { Star, Plus, Edit3, Trash2, CheckCircle2, Sparkles, Package, Clock, Eye, EyeOff, CalendarClock, Globe, ChevronDown, FolderPlus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "../components/AdminUI";
@@ -61,6 +61,15 @@ export function CosmeticsPage() {
 
   // Usar el nuevo endpoint que incluye datos del catálogo
   const { data: cosmetics, refetch } = trpc.cosmetics.adminListWithCatalog.useQuery();
+  // Colecciones disponibles
+  const { data: collectionsList = [], refetch: refetchCollections } = trpc.commerce.collections.useQuery();
+  const createCollection = trpc.commerce.adminCreateCollection.useMutation({
+    onSuccess: () => { toast.success("Colección creada"); refetchCollections(); },
+    onError: e => toast.error(e.message),
+  });
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [creatingCollection, setCreatingCollection] = useState(false);
   const uploadImage = trpc.admin.uploadImage.useMutation();
   const suggestPrice = trpc.admin.suggestPrice.useMutation({
     onSuccess: (data) => { setAiReport(data); toast.success("Precio sugerido por IA"); },
@@ -224,7 +233,100 @@ export function CosmeticsPage() {
           </div>
           <div>
             <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">COLECCIÓN</label>
-            <input value={form.collection} onChange={e => setForm(f => ({ ...f, collection: e.target.value }))} className={inputCls} placeholder="Ej: Red Level Pack" />
+            {/* CollectionPicker: dropdown con colecciones existentes + crear nueva */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setCollectionOpen(o => !o)}
+                className="w-full flex items-center justify-between bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-red-500 transition-colors hover:border-white/20"
+                style={{ color: form.collection ? "white" : "var(--text-muted)" }}
+              >
+                <span className="truncate">{form.collection || "Sin colección"}</span>
+                <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-2 transition-transform ${collectionOpen ? "rotate-180" : ""}`} style={{ color: "var(--text-muted)" }} />
+              </button>
+              {collectionOpen && (
+                <div
+                  className="absolute z-50 mt-1 w-full rounded-xl border overflow-hidden"
+                  style={{ background: "var(--bg-card, #18181b)", borderColor: "rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                >
+                  {/* Opción: sin colección */}
+                  <button
+                    type="button"
+                    onClick={() => { setForm(f => ({ ...f, collection: "", catalogCollectionId: undefined })); setCollectionOpen(false); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors hover:bg-white/5"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {!form.collection && <Check className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+                    <span className={!form.collection ? "ml-0" : "ml-5"}>Sin colección</span>
+                  </button>
+                  {/* Colecciones existentes */}
+                  {collectionsList.map((col: any) => (
+                    <button
+                      key={col.id}
+                      type="button"
+                      onClick={() => { setForm(f => ({ ...f, collection: col.name, catalogCollectionId: col.id })); setCollectionOpen(false); }}
+                      className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left transition-colors hover:bg-white/5"
+                      style={{ color: "white" }}
+                    >
+                      {form.catalogCollectionId === col.id && <Check className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />}
+                      <span className={form.catalogCollectionId === col.id ? "ml-0" : "ml-5"}>{col.name}</span>
+                      {!col.isActive && <span className="ml-auto text-[9px] font-mono text-zinc-500 border border-zinc-700 rounded px-1">INACTIVA</span>}
+                    </button>
+                  ))}
+                  {/* Separador + crear nueva */}
+                  <div style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }} className="p-2">
+                    {!creatingCollection ? (
+                      <button
+                        type="button"
+                        onClick={() => setCreatingCollection(true)}
+                        className="w-full flex items-center gap-2 px-2 py-2 rounded-lg text-xs font-semibold transition-colors hover:bg-red-500/10"
+                        style={{ color: "var(--accent-red, #dc2626)" }}
+                      >
+                        <FolderPlus className="w-3.5 h-3.5" /> Crear nueva colección
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={newCollectionName}
+                          onChange={e => setNewCollectionName(e.target.value)}
+                          onKeyDown={async e => {
+                            if (e.key === "Enter" && newCollectionName.trim()) {
+                              const slug = newCollectionName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                              await createCollection.mutateAsync({ name: newCollectionName.trim(), slug, isActive: true, isFeatured: false });
+                              setForm(f => ({ ...f, collection: newCollectionName.trim() }));
+                              setNewCollectionName("");
+                              setCreatingCollection(false);
+                              setCollectionOpen(false);
+                            }
+                            if (e.key === "Escape") { setCreatingCollection(false); setNewCollectionName(""); }
+                          }}
+                          placeholder="Nombre de la colección..."
+                          className="flex-1 bg-zinc-800 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-red-500"
+                        />
+                        <button
+                          type="button"
+                          disabled={!newCollectionName.trim() || createCollection.isPending}
+                          onClick={async () => {
+                            if (!newCollectionName.trim()) return;
+                            const slug = newCollectionName.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+                            await createCollection.mutateAsync({ name: newCollectionName.trim(), slug, isActive: true, isFeatured: false });
+                            setForm(f => ({ ...f, collection: newCollectionName.trim() }));
+                            setNewCollectionName("");
+                            setCreatingCollection(false);
+                            setCollectionOpen(false);
+                          }}
+                          className="px-2 py-1.5 rounded-lg text-xs font-orbitron bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white flex-shrink-0"
+                        >
+                          {createCollection.isPending ? "..." : "OK"}
+                        </button>
+                        <button type="button" onClick={() => { setCreatingCollection(false); setNewCollectionName(""); }} className="px-2 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-white">✕</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <div>
             <label className="text-zinc-400 text-xs font-rajdhani mb-1 block">TIPO</label>
