@@ -2616,6 +2616,16 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           if (catalogVisibleFrom !== undefined) catalogUpdate.visibleFrom = catalogVisibleFrom ? new Date(catalogVisibleFrom) : null;
           if (catalogVisibleUntil !== undefined) catalogUpdate.visibleUntil = catalogVisibleUntil ? new Date(catalogVisibleUntil) : null;
           if (input.name) catalogUpdate.title = input.name;
+          // DEBUG: log para diagnosticar publicación programada
+          console.log('[DEBUG adminUpdate cosmetic]', JSON.stringify({
+            cosmeticId: id,
+            catalogPublishDate_raw: catalogPublishDate,
+            catalogPublishDate_parsed: catalogPublishDate ? new Date(catalogPublishDate).toISOString() : null,
+            catalogVisible,
+            catalogUpdate_publishDate: catalogUpdate.publishDate ? (catalogUpdate.publishDate as Date).toISOString() : null,
+            serverNow: new Date().toISOString(),
+            existingCount: existing.length,
+          }));
           if (existing.length > 0) {
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
           } else {
