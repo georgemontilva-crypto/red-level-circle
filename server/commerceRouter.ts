@@ -555,10 +555,17 @@ export const commerceRouter = router({
       const db = await getDb();
       if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
 
+      // Construir el objeto explícitamente para evitar que MySQL2 interprete
+      // los booleanos como strings en el prepared statement
       await db.insert(collections).values({
-        ...input,
-        startDate: input.startDate ? new Date(input.startDate) : undefined,
-        endDate: input.endDate ? new Date(input.endDate) : undefined,
+        name: input.name,
+        slug: input.slug,
+        description: input.description ?? null,
+        bannerImage: input.bannerImage ?? null,
+        isActive: input.isActive !== false,
+        isFeatured: input.isFeatured === true,
+        startDate: input.startDate ? new Date(input.startDate) : null,
+        endDate: input.endDate ? new Date(input.endDate) : null,
       });
       return { ok: true };
     }),

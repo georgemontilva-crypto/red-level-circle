@@ -179,9 +179,10 @@ function App() {
             theme="dark"
             toastOptions={{
               style: {
-                background: "var(--bg-card)",
-                border: "1px solid oklch(0.55 0.22 25 / 0.4)",
-                color: "var(--text-primary)",
+                background: "#1a1d24",
+                border: "1px solid rgba(220,38,38,0.4)",
+                color: "#ffffff",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.8)",
               },
             }}
           />
