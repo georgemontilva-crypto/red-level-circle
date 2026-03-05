@@ -861,17 +861,21 @@ export default function Shop() {
 
       {/* Buy Product Dialog */}
       <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
-        <DialogContent className="bg-[#141416] border border-red-500/30 text-white w-[calc(100%-1rem)] sm:w-full max-w-lg mx-auto max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
-          <DialogHeader>
-            <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
-              {isPhysical ? <><Package className="w-5 h-5" />PEDIDO FÍSICO</> : <><Key className="w-5 h-5" />ENTREGA DIGITAL</>}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              {isPhysical ? "Necesitamos tu dirección de envío para procesar el pedido." : "Recibirás el código o acceso por notificación en la plataforma."}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent className="bg-[#141416] border border-red-500/30 text-white w-[calc(100%-1rem)] sm:w-full max-w-lg mx-auto flex flex-col !top-[50%] !translate-y-[-50%] max-h-[90dvh] sm:max-h-[88dvh] overflow-hidden !p-0 !gap-0">
+          {/* Header fijo */}
+          <div className="flex-shrink-0 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 border-b border-white/10">
+            <DialogHeader>
+              <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
+                {isPhysical ? <><Package className="w-5 h-5" />PEDIDO FÍSICO</> : <><Key className="w-5 h-5" />ENTREGA DIGITAL</>}
+              </DialogTitle>
+              <DialogDescription className="text-muted-foreground text-sm mt-1">
+                {isPhysical ? "Necesitamos tu dirección de envío para procesar el pedido." : "Recibirás el código o acceso por notificación en la plataforma."}
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+          {/* Cuerpo con scroll interno */}
           {itemToBuy && (
-            <div className="space-y-5">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-5">
               <div className="flex gap-3 p-3 rounded-lg bg-zinc-800/80 border border-white/10">
                 {itemToBuy.image ? <img src={itemToBuy.image} alt={itemToBuy.name} className="w-16 h-16 rounded object-cover flex-shrink-0" /> : <div className="w-16 h-16 rounded bg-muted flex items-center justify-center flex-shrink-0"><ShoppingBag className="w-8 h-8 text-muted-foreground" /></div>}
                 <div className="flex-1 min-w-0">
@@ -959,7 +963,12 @@ export default function Shop() {
               </div>
               {userBalance < totalCost && <div className="flex items-center gap-2 p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />Saldo insuficiente. Gana más RLC en la sección de Recompensas.</div>}
               {isPhysical && !shippingValid && <div className="flex items-center gap-2 p-3 rounded-lg bg-orange-500/10 border border-orange-500/30 text-orange-400 text-sm"><AlertCircle className="w-4 h-4 flex-shrink-0" />Completa todos los campos obligatorios de envío (*) para continuar.</div>}
-              <Button onClick={handleBuyItem} disabled={buyItemMutation.isPending || userBalance < totalCost || !shippingValid} className="w-full bg-red-500 hover:bg-red-600 text-white font-mono font-bold">
+            </div>
+          )}
+          {/* Botón fijo al fondo */}
+          {itemToBuy && (
+            <div className="flex-shrink-0 px-4 pb-4 pt-3 sm:px-6 border-t border-white/10 bg-[#141416]">
+              <Button onClick={handleBuyItem} disabled={buyItemMutation.isPending || userBalance < totalCost || !shippingValid} className="w-full bg-red-500 hover:bg-red-600 text-white font-mono font-bold py-3 text-base">
                 {buyItemMutation.isPending ? "Procesando..." : `Confirmar — ${totalCost} RLC`}
               </Button>
             </div>
