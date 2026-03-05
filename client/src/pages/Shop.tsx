@@ -770,68 +770,100 @@ export default function Shop() {
               </div>
             )}
 
-            {cosmetics.length === 0 ? (
-              <div className="text-center py-16">
-                <Sparkles className="w-14 h-14 text-purple-500/30 mx-auto mb-4" />
-                <p className="text-muted-foreground font-mono">No hay cosméticos disponibles aún</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {cosmetics.map((cosmetic) => {
-                  const owned = ownedCosmeticIds.has(cosmetic.id);
-                  const equipped = equippedCosmeticIds.has(cosmetic.id);
-                  const rarityClass = RARITY_COLORS[cosmetic.rarity] ?? RARITY_COLORS.common;
-                  const glowClass = RARITY_GLOW[cosmetic.rarity] ?? "";
-                  const discount = cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price ? Math.round((1 - cosmetic.price / cosmetic.originalPrice) * 100) : null;
-                  return (
-                    <div key={cosmetic.id} className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 ${rarityClass} ${glowClass}`}>
-                      <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
-                        {cosmetic.previewImage ? (
-                          <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="relative w-24 h-24">
-                            <img src={AVATAR_PLACEHOLDER} alt="avatar" className="w-full h-full rounded-full" />
-                            {cosmetic.frameImage ? <img src={cosmetic.frameImage} alt="frame" className="absolute inset-0 w-full h-full" /> : <div className="absolute inset-0 rounded-full border-4 border-current opacity-60" />}
-                          </div>
-                        )}
-                        <div className="absolute top-2 left-2 flex flex-col gap-1">
-                          {cosmetic.isLimited && <span className="px-1.5 py-0.5 bg-orange-500 text-white text-xs font-bold rounded font-mono">LIMITADO</span>}
-                          {discount && <span className="px-1.5 py-0.5 bg-green-500 text-white text-xs font-bold rounded font-mono">-{discount}%</span>}
+{(() => {
+              // Agrupar cosméticos por colección
+              const grouped: { label: string; items: typeof cosmetics }[] = [];
+              const noCollection = cosmetics.filter((c) => !c.collection);
+              const colNames = Array.from(new Set(cosmetics.map((c) => c.collection).filter(Boolean))) as string[];
+              colNames.forEach((col) => grouped.push({ label: col, items: cosmetics.filter((c) => c.collection === col) }));
+              if (noCollection.length > 0) grouped.push({ label: "Otros", items: noCollection });
+
+              if (grouped.length === 0) return (
+                <div className="text-center py-16">
+                  <Sparkles className="w-14 h-14 text-purple-500/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground font-mono">No hay cosméticos disponibles aún</p>
+                </div>
+              );
+
+              const renderCard = (cosmetic: typeof cosmetics[number]) => {
+                const owned = ownedCosmeticIds.has(cosmetic.id);
+                const equipped = equippedCosmeticIds.has(cosmetic.id);
+                const rarityClass = RARITY_COLORS[cosmetic.rarity] ?? RARITY_COLORS.common;
+                const glowClass = RARITY_GLOW[cosmetic.rarity] ?? "";
+                const discount = cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price ? Math.round((1 - cosmetic.price / cosmetic.originalPrice) * 100) : null;
+                return (
+                  <div key={cosmetic.id} className={`relative rounded-xl border bg-card overflow-hidden transition-all hover:scale-[1.03] hover:-translate-y-0.5 flex-shrink-0 w-40 sm:w-48 ${rarityClass} ${glowClass}`}>
+                    <div className="relative aspect-square bg-secondary flex items-center justify-center overflow-hidden">
+                      {cosmetic.previewImage ? (
+                        <img src={cosmetic.previewImage} alt={cosmetic.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="relative w-20 h-20">
+                          <img src={AVATAR_PLACEHOLDER} alt="avatar" className="w-full h-full rounded-full" />
+                          {cosmetic.frameImage ? <img src={cosmetic.frameImage} alt="frame" className="absolute inset-0 w-full h-full" /> : <div className="absolute inset-0 rounded-full border-4 border-current opacity-60" />}
                         </div>
-                        {owned && <div className="absolute top-2 right-2"><div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div></div>}
+                      )}
+                      <div className="absolute top-2 left-2 flex flex-col gap-1">
+                        {cosmetic.isLimited && <span className="px-1.5 py-0.5 bg-orange-500 text-white text-xs font-bold rounded font-mono">LIMITADO</span>}
+                        {discount && <span className="px-1.5 py-0.5 bg-green-500 text-white text-xs font-bold rounded font-mono">-{discount}%</span>}
                       </div>
-                      <div className="p-3">
-                        <div className="flex items-center gap-1 mb-1">{TYPE_ICONS[cosmetic.type]}<span className="text-xs text-muted-foreground font-mono">{TYPE_LABELS[cosmetic.type]}</span></div>
-                        <p className="font-bold text-sm text-white leading-tight mb-1">{cosmetic.name}</p>
-                        <Badge variant="outline" className={`text-xs ${rarityClass} mb-2`}>{RARITY_LABELS[cosmetic.rarity]}</Badge>
-                        {(() => {
-                          const cols = Array.isArray(cosmetic.colors) ? (cosmetic.colors as unknown[]).filter((c): c is string => typeof c === "string") : [];
-                          return cols.length > 0 ? (
-                            <div className="flex gap-1 mb-2">
-                              {cols.slice(0, 4).map((color, i) => <div key={i} className="w-4 h-4 rounded-full border border-white/20" style={{ background: color }} />)}
-                              {cols.length > 4 && <span className="text-muted-foreground text-xs self-center">+{cols.length - 4}</span>}
-                            </div>
-                          ) : null;
-                        })()}
-                        <div className="flex items-center justify-between mt-2">
-                          <div>
-                            {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-muted-foreground text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>}
-                            <div className="flex items-center gap-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-bold text-sm font-mono">{cosmetic.price}</span></div>
+                      {owned && <div className="absolute top-2 right-2"><div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div></div>}
+                    </div>
+                    <div className="p-3">
+                      <div className="flex items-center gap-1 mb-1">{TYPE_ICONS[cosmetic.type]}<span className="text-xs text-muted-foreground font-mono">{TYPE_LABELS[cosmetic.type]}</span></div>
+                      <p className="font-bold text-sm text-white leading-tight mb-1 truncate">{cosmetic.name}</p>
+                      <Badge variant="outline" className={`text-xs ${rarityClass} mb-2`}>{RARITY_LABELS[cosmetic.rarity]}</Badge>
+                      {(() => {
+                        const cols = Array.isArray(cosmetic.colors) ? (cosmetic.colors as unknown[]).filter((c): c is string => typeof c === "string") : [];
+                        return cols.length > 0 ? (
+                          <div className="flex gap-1 mb-2">
+                            {cols.slice(0, 4).map((color, i) => <div key={i} className="w-4 h-4 rounded-full border border-white/20" style={{ background: color }} />)}
+                            {cols.length > 4 && <span className="text-muted-foreground text-xs self-center">+{cols.length - 4}</span>}
                           </div>
-                          {owned ? (
-                            <button onClick={() => equipMutation.mutate({ cosmeticId: cosmetic.id })} className={`px-2 py-1 rounded text-xs font-mono font-bold transition-all ${equipped ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"}`}>{equipped ? "Equipado" : "Equipar"}</button>
-                          ) : isAuthenticated ? (
-                            <button onClick={() => { setBuyError(null); setConfirmCosmetic(cosmetic); }} className="px-2 py-1 rounded text-xs font-mono font-bold bg-red-500 hover:bg-red-600 text-white transition-all">Comprar</button>
-                          ) : (
-                            <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-muted text-muted-foreground hover:bg-zinc-600 transition-all flex items-center gap-1"><Lock className="w-3 h-3" />Login</a>
-                          )}
+                        ) : null;
+                      })()}
+                      <div className="flex items-center justify-between mt-2">
+                        <div>
+                          {cosmetic.originalPrice && cosmetic.originalPrice > cosmetic.price && <p className="text-muted-foreground text-xs line-through font-mono">{cosmetic.originalPrice} RLC</p>}
+                          <div className="flex items-center gap-1"><Coins className="w-3 h-3 text-yellow-400" /><span className="text-yellow-400 font-bold text-sm font-mono">{cosmetic.price}</span></div>
                         </div>
+                        {owned ? (
+                          <button onClick={() => equipMutation.mutate({ cosmeticId: cosmetic.id })} className={`px-2 py-1 rounded text-xs font-mono font-bold transition-all ${equipped ? "bg-green-500/20 text-green-400 border border-green-500/50" : "bg-red-500/20 text-red-400 border border-red-500/50 hover:bg-red-500/30"}`}>{equipped ? "Equipado" : "Equipar"}</button>
+                        ) : isAuthenticated ? (
+                          <button onClick={() => { setBuyError(null); setConfirmCosmetic(cosmetic); }} className="px-2 py-1 rounded text-xs font-mono font-bold bg-red-500 hover:bg-red-600 text-white transition-all">Comprar</button>
+                        ) : (
+                          <a href={getLoginUrl()} className="px-2 py-1 rounded text-xs font-mono font-bold bg-muted text-muted-foreground hover:bg-zinc-600 transition-all flex items-center gap-1"><Lock className="w-3 h-3" />Login</a>
+                        )}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                );
+              };
+
+              return (
+                <div className="space-y-10">
+                  {grouped.map(({ label, items }) => (
+                    <div key={label}>
+                      {/* Cabecera de colección */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-purple-400" />
+                          <h3 className="text-base font-black font-mono tracking-wide uppercase text-white">{label}</h3>
+                          <span className="text-xs text-muted-foreground font-mono">({items.length})</span>
+                        </div>
+                        <div className="flex-1 h-px bg-white/10" />
+                      </div>
+                      {/* Scroll horizontal */}
+                      <div
+                        className="flex gap-3 overflow-x-auto pb-3"
+                        style={{ scrollbarWidth: "thin", scrollbarColor: "rgba(168,85,247,0.4) transparent" }}
+                      >
+                        {items.map(renderCard)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* My Collection */}
             {isAuthenticated && myCosmetics.length > 0 && (mainTab === "cosmetics") && (
