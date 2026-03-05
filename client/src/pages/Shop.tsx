@@ -861,7 +861,7 @@ export default function Shop() {
 
       {/* Buy Product Dialog */}
       <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
-        <DialogContent className="bg-[#141416] border border-red-500/30 text-white w-[calc(100%-1rem)] sm:w-full max-w-lg mx-auto flex flex-col !top-[50%] !translate-y-[-50%] max-h-[90dvh] sm:max-h-[88dvh] overflow-hidden !p-0 !gap-0">
+        <DialogContent className="bg-[#141416] border border-red-500/30 text-white w-[calc(100%-1rem)] sm:w-full max-w-lg mx-auto flex flex-col !z-[100002] !top-[calc(56px+0.5rem)] !translate-y-0 sm:!top-[50%] sm:!translate-y-[-50%] max-h-[calc(100dvh-56px-1rem)] sm:max-h-[88dvh] overflow-hidden !p-0 !gap-0">
           {/* Header fijo */}
           <div className="flex-shrink-0 px-4 pt-4 pb-3 sm:px-6 sm:pt-5 border-b border-white/10">
             <DialogHeader>
