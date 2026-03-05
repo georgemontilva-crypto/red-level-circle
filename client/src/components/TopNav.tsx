@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { useLocation } from "wouter";
-import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X, Bell } from "lucide-react";
+import { Search, Bookmark, Gift, ShoppingCart, ChevronLeft, X, Bell, Store, LayoutGrid } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
@@ -18,6 +18,10 @@ export function TopNav() {
   // Right panel state
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<RightPanelTab>("notifications");
+
+  // Grid popover state
+  const [gridOpen, setGridOpen] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
@@ -152,60 +156,23 @@ export function TopNav() {
         {/* Action icons */}
         <div className="flex items-center gap-1">
 
-          {/* Wishlist */}
-          {isAuthenticated && (
-            <button
-              onClick={() => openPanel("wishlist")}
-              className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
-              style={{
-                color: panelOpen && activeTab === "wishlist" ? "var(--text-primary)" : "var(--text-secondary)",
-                background: panelOpen && activeTab === "wishlist" ? "var(--bg-hover)" : "transparent",
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={e => {
-                if (!(panelOpen && activeTab === "wishlist")) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
-                }
-              }}
-              title="Mis favoritos"
-            >
-              <Bookmark className="w-6 h-6" />
-              {wishlistCount > 0 && (
-                <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                  {wishlistCount > 99 ? "99+" : wishlistCount}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Gifts / Rewards */}
-          {isAuthenticated && (
-            <button
-              onClick={() => openPanel("rewards")}
-              className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
-              style={{
-                color: panelOpen && activeTab === "rewards" ? "var(--text-primary)" : "var(--text-secondary)",
-                background: panelOpen && activeTab === "rewards" ? "var(--bg-hover)" : "transparent",
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={e => {
-                if (!(panelOpen && activeTab === "rewards")) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
-                }
-              }}
-              title="Recompensas"
-            >
-              <Gift className="w-6 h-6" />
-            </button>
-          )}
+          {/* Tienda */}
+          <button
+            onClick={() => navigate("/shop")}
+            className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
+            style={{ color: location === "/shop" || location.startsWith("/shop") ? "var(--text-primary)" : "var(--text-secondary)" }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+              (e.currentTarget as HTMLButtonElement).style.color = location === "/shop" || location.startsWith("/shop") ? "var(--text-primary)" : "var(--text-secondary)";
+            }}
+            title="Tienda"
+          >
+            <Store className="w-6 h-6" />
+          </button>
 
           {/* Notifications bell */}
           {isAuthenticated && (
@@ -237,28 +204,93 @@ export function TopNav() {
             </button>
           )}
 
-          {/* Cart */}
-          <button
-            onClick={() => navigate("/shop?tab=cart")}
-            className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
-            style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
-            }}
-            onMouseLeave={e => {
-              (e.currentTarget as HTMLButtonElement).style.background = "transparent";
-              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
-            }}
-            title="Mi carrito"
-          >
-            <ShoppingCart className="w-6 h-6" />
-            {cartCount > 0 && (
-              <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            )}
-          </button>
+          {/* Grid button — agrupa: wishlist, recompensas, carrito */}
+          {isAuthenticated && (
+            <div ref={gridRef} className="relative">
+              <button
+                onClick={() => setGridOpen(o => !o)}
+                className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-150"
+                style={{
+                  color: gridOpen ? "var(--text-primary)" : "var(--text-secondary)",
+                  background: gridOpen ? "var(--bg-hover)" : "transparent",
+                }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-hover)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={e => {
+                  if (!gridOpen) {
+                    (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+                  }
+                }}
+                title="Más opciones"
+              >
+                <LayoutGrid className="w-6 h-6" />
+                {(wishlistCount + cartCount) > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                    {wishlistCount + cartCount > 99 ? "99+" : wishlistCount + cartCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Popover */}
+              {gridOpen && (
+                <>
+                  {/* Overlay para cerrar al hacer click fuera */}
+                  <div className="fixed inset-0 z-40" onClick={() => setGridOpen(false)} />
+                  <div
+                    className="absolute right-0 top-14 z-50 rounded-2xl border border-white/10 p-3 flex flex-col gap-1 min-w-[180px]"
+                    style={{ background: "var(--bg-card)", boxShadow: "0 16px 48px rgba(0,0,0,0.7)" }}
+                  >
+                    {/* Wishlist */}
+                    <button
+                      onClick={() => { setGridOpen(false); openPanel("wishlist"); }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white/5 text-left w-full"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <div className="relative">
+                        <Bookmark className="w-5 h-5" />
+                        {wishlistCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                            {wishlistCount > 9 ? "9+" : wishlistCount}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-white">Favoritos</span>
+                    </button>
+
+                    {/* Recompensas */}
+                    <button
+                      onClick={() => { setGridOpen(false); openPanel("rewards"); }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white/5 text-left w-full"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <Gift className="w-5 h-5" />
+                      <span className="text-sm font-medium text-white">Recompensas</span>
+                    </button>
+
+                    {/* Carrito */}
+                    <button
+                      onClick={() => { setGridOpen(false); navigate("/shop?tab=cart"); }}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-white/5 text-left w-full"
+                      style={{ color: "var(--text-secondary)" }}
+                    >
+                      <div className="relative">
+                        <ShoppingCart className="w-5 h-5" />
+                        {cartCount > 0 && (
+                          <span className="absolute -top-1 -right-1 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                            {cartCount > 9 ? "9+" : cartCount}
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-sm font-medium text-white">Carrito</span>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
 
           {/* User avatar / login */}
           {isAuthenticated && user ? (
