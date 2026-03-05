@@ -486,7 +486,7 @@ export default function Shop() {
               <button
                 key={tab.id}
                 onClick={() => setMainTab(tab.id as any)}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200 whitespace-nowrap"
+                className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200 whitespace-nowrap"
                 style={{
                   background: mainTab === tab.id ? "oklch(0.55 0.22 25)" : "transparent",
                   color: mainTab === tab.id ? "#fff" : "rgba(255,255,255,0.4)",
@@ -506,7 +506,7 @@ export default function Shop() {
                   onClick={() => setMainTab(tab.id as any)}
                   className="flex items-center gap-1.5 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
                   style={{
-                    borderRadius: "6px",
+                    borderRadius: "10px",
                     background: mainTab === tab.id ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
                     border: mainTab === tab.id ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.08)",
                     color: mainTab === tab.id ? "#ef4444" : "rgba(255,255,255,0.45)",

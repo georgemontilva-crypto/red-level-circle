@@ -141,7 +141,7 @@ export default function MyGallery() {
           <button
             key={f.value}
             onClick={() => setActiveType(f.value)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-all flex-shrink-0"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all flex-shrink-0"
             style={{
               background: activeType === f.value ? "var(--accent-red)" : "var(--bg-card)",
               color: activeType === f.value ? "#fff" : "var(--text-secondary)",
