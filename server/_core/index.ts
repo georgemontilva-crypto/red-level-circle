@@ -179,6 +179,48 @@ async function runCustomMigrations() {
     '  `missionId`  int          NOT NULL,' +
     '  `rewardRlc`  int          NOT NULL,' +
     '  `claimedAt`  timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')',
+    // 0039: creator missions system
+    'CREATE TABLE IF NOT EXISTS `creator_missions` (' +
+    '  `id`            int           NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `title`         varchar(255)  NOT NULL,' +
+    '  `description`   text          NOT NULL,' +
+    '  `requirements`  text          NULL,' +
+    '  `resourcesUrl`  varchar(500)  NULL,' +
+    '  `platforms`     varchar(255)  NULL,' +
+    '  `rewardRlc`     int           NOT NULL DEFAULT 0,' +
+    '  `bonusRlc`      int           NOT NULL DEFAULT 0,' +
+    '  `startDate`     timestamp     NULL,' +
+    '  `endDate`       timestamp     NULL,' +
+    '  `isActive`      tinyint(1)    NOT NULL DEFAULT 1,' +
+    '  `createdBy`     int           NOT NULL,' +
+    '  `createdAt`     timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  `updatedAt`     timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' +
+    ')',
+    'CREATE TABLE IF NOT EXISTS `creator_mission_accepts` (' +
+    '  `id`         int        NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `missionId`  int        NOT NULL,' +
+    '  `userId`     int        NOT NULL,' +
+    '  `acceptedAt` timestamp  NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  UNIQUE KEY `cma_unique` (`missionId`, `userId`)' +
+    ')',
+    'CREATE TABLE IF NOT EXISTS `creator_mission_submissions` (' +
+    '  `id`          int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `missionId`   int          NOT NULL,' +
+    '  `userId`      int          NOT NULL,' +
+    '  `status`      varchar(20)  NOT NULL DEFAULT \'pending\',' +
+    '  `adminNote`   text         NULL,' +
+    '  `rewardPaid`  tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `submittedAt` timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  `reviewedAt`  timestamp    NULL,' +
+    '  UNIQUE KEY `cms_unique` (`missionId`, `userId`)' +
+    ')',
+    'CREATE TABLE IF NOT EXISTS `creator_mission_links` (' +
+    '  `id`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `submissionId` int          NOT NULL,' +
+    '  `url`          varchar(500) NOT NULL,' +
+    '  `platform`     varchar(100) NULL,' +
+    '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
     ')'
   ];
   for (const sql of customMigrations) {
