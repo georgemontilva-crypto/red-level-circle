@@ -94,7 +94,23 @@ async function runCustomMigrations() {
     'ALTER TABLE `cosmetics` ADD COLUMN `currentSupply` int NOT NULL DEFAULT 0',
     'ALTER TABLE `cosmetics` ADD COLUMN `dropStart` timestamp NULL',
     'ALTER TABLE `cosmetics` ADD COLUMN `dropEnd` timestamp NULL',
-    // 0034: catalog_items — rotation & scheduling fields
+    // 0034: catalog_items — tabla base + rotation & scheduling fields
+    'CREATE TABLE IF NOT EXISTS `catalog_items` (' +
+    '  `id`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `type`         ENUM(\'physical\',\'cosmetic\') NOT NULL,' +
+    '  `referenceId`  int          NOT NULL,' +
+    '  `title`        varchar(256) NOT NULL,' +
+    '  `isFeatured`   tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `isVisible`    tinyint(1)   NOT NULL DEFAULT 1,' +
+    '  `weeklyFeatured` tinyint(1) NOT NULL DEFAULT 0,' +
+    '  `featuredPriority` int      NOT NULL DEFAULT 0,' +
+    '  `visibleFrom`  timestamp    NULL,' +
+    '  `visibleUntil` timestamp    NULL,' +
+    '  `publishDate`  timestamp    NULL,' +
+    '  `collectionId` int          NULL,' +
+    '  `sortOrder`    int          NOT NULL DEFAULT 0,' +
+    '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')',
     'ALTER TABLE `catalog_items` ADD COLUMN `weeklyFeatured` tinyint(1) NOT NULL DEFAULT 0',
     'ALTER TABLE `catalog_items` ADD COLUMN `featuredPriority` int NOT NULL DEFAULT 0',
     'ALTER TABLE `catalog_items` ADD COLUMN `visibleFrom` timestamp NULL',
@@ -118,8 +134,12 @@ async function runCustomMigrations() {
     try {
       await conn.execute(sql);
     } catch (err: any) {
-      // 1060 = ER_DUP_FIELDNAME: column already exists — safe to ignore
-      if (err.errno !== 1060 && err.code !== "ER_DUP_FIELDNAME") {
+      // 1060 = ER_DUP_FIELDNAME: column already exists
+      // 1050 = ER_TABLE_EXISTS_ERROR: table already exists (CREATE TABLE IF NOT EXISTS)
+      // 1146 = ER_NO_SUCH_TABLE: table doesn't exist yet for ALTER (will be created by CREATE TABLE above)
+      const ignoredErrno = [1050, 1060];
+      const ignoredCodes = ["ER_DUP_FIELDNAME", "ER_TABLE_EXISTS_ERROR"];
+      if (!ignoredErrno.includes(err.errno) && !ignoredCodes.includes(err.code)) {
         console.warn("[DB] Custom migration warning:", err.message);
       }
     }
