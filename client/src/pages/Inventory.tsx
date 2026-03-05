@@ -19,7 +19,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
 import { Shield, Sparkles, Star, Zap, Layers, Wand2, ShoppingBag, Check } from "lucide-react";
 import { CosmeticPreviewModal, type CosmeticItem } from "@/components/CosmeticPreviewModal";
-import { PageContainer } from "@/components/PageContainer";
+import PageContainer from "@/components/PageContainer";
 import { SectionBanner } from "@/components/SectionBanner";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
@@ -161,7 +161,7 @@ export default function Inventory() {
 
   return (
     <PageContainer>
-      <SectionBanner section="inventory" />
+      <SectionBanner sectionKey="inventory" />
 
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
