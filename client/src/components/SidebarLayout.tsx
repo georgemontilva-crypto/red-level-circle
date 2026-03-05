@@ -141,32 +141,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
         </Link>
       </div>
 
-      {/* Header usuario (si autenticado) */}
-      {isAuthenticated && user && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", borderTop: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <UserAvatar
-            avatar={(user as any).avatar ?? null}
-            name={(user as any).nickname ?? (user as any).name ?? null}
-            size={36}
-            containerSize={36}
-            ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}
-          />
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>
-              {(user as any).nickname ?? user.name ?? "Usuario"}
-            </p>
-            {wallet && (
-              <p className="text-xs font-mono" style={{ color: "rgba(220,38,38,0.8)" }}>
-                ⬡ {wallet.balance ?? 0} RLC
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Grid de secciones */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
         {sections.map((section) => {
@@ -446,7 +420,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
     <div className="min-h-screen flex overflow-x-clip" style={{ background: "var(--bg-main)", color: "var(--text-primary)" }}>
 
       {/* ── Desktop sidebar ─────────────────────────────────────────────────── */}
-      <aside className="hidden md:flex w-60 flex-col fixed h-full z-40 overflow-visible" style={{ background: "transparent" }}>
+      <aside className="hidden md:flex w-72 flex-col fixed h-full z-40 overflow-visible" style={{ background: "transparent" }}>
         <DesktopSidebarContent />
       </aside>
 
@@ -568,7 +542,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
 
       {/* ── Main content ────────────────────────────────────────────────────── */}
       <main
-        className="flex-1 md:ml-60 min-h-screen overflow-x-clip min-w-0"
+        className="flex-1 md:ml-72 min-h-screen overflow-x-clip min-w-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 56px)" }}
         ref={(el) => {
           if (el) {
