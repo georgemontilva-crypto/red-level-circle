@@ -174,7 +174,7 @@ import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, isNotNull } from "drizzle-orm";
 import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
-import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification } from "./notifications";
+import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification, notifyRlcReceived } from "./notifications";
 import { eventBus } from "./eventBus";
 import {
   createMatchSeries,
@@ -1569,10 +1569,17 @@ export const appRouter = router({
      addCoins: adminProcedure
       .input(z.object({ userId: z.number(), amount: z.number().int(), description: z.string().optional() }))
       .mutation(async ({ input }) => {
-        await addRlcTransaction({
+        const newBalance = await addRlcTransaction({
           userId: input.userId,
           type: "deposit",
           amount: input.amount,
+          description: input.description ?? "Depósito de administrador",
+        });
+        await notifyRlcReceived({
+          userId: input.userId,
+          amount: input.amount,
+          type: "deposit",
+          newBalance,
           description: input.description ?? "Depósito de administrador",
         });
         return { success: true };
@@ -3646,10 +3653,18 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         if (!um.completed) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no completada" });
         if (um.claimed) throw new TRPCError({ code: "BAD_REQUEST", message: "Recompensa ya reclamada" });
         // Grant RLC
-        await addRlcTransaction({
+        const newBalance = await addRlcTransaction({
           userId: ctx.user.id,
           type: "reward",
           amount: mission.rewardRlc,
+          description: `Misión completada: ${mission.title}`,
+        });
+        // Notify user of coins received
+        await notifyRlcReceived({
+          userId: ctx.user.id,
+          amount: mission.rewardRlc,
+          type: "reward",
+          newBalance,
           description: `Misión completada: ${mission.title}`,
         });
         // Mark as claimed

@@ -32,7 +32,7 @@ import {
   tournamentRankings,
   type MatchSeries,
 } from "../drizzle/schema";
-import { createNotification } from "./notifications";
+import { createNotification, notifyRlcReceived } from "./notifications";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -349,24 +349,20 @@ export async function processBetPayouts(params: {
         .set({ status: "refunded", resolvedAt: new Date() })
         .where(eq(bets.id, bet.id));
 
-      await addRlcTransaction({
+      const newBal1 = await addRlcTransaction({
         userId: bet.userId,
         type: "refund",
         amount: bet.amount,
         description: `Reembolso por empate en serie BO2 (match #${matchId})`,
         referenceId: bet.id,
       });
-
-      // Notificar al usuario
       try {
-        await createNotification({
+        await notifyRlcReceived({
           userId: bet.userId,
-          type: "general",
-          title: "🔄 Apuesta reembolsada",
-          message: `La serie terminó en empate. Tu apuesta de ${bet.amount} RLC ha sido reembolsada.`,
-          link: "/betting",
-          referenceId: matchId,
-          referenceType: "match",
+          amount: bet.amount,
+          type: "refund",
+          newBalance: newBal1,
+          description: `La serie terminó en empate. Reembolso de ${bet.amount} RLC.`,
         });
       } catch (_) { /* non-critical */ }
     }
@@ -432,24 +428,20 @@ export async function processBetPayouts(params: {
       .set({ status: "won", resolvedAt: new Date() })
       .where(eq(bets.id, bet.id));
 
-    await addRlcTransaction({
+    const newBal2 = await addRlcTransaction({
       userId: bet.userId,
       type: "bet_won",
       amount: payout,
       description: `Apuesta ganada (pool betting, match #${matchId}) — ${bet.amount} RLC apostados`,
       referenceId: bet.id,
     });
-
-    // Notificar al ganador
     try {
-      await createNotification({
+      await notifyRlcReceived({
         userId: bet.userId,
-        type: "general",
-        title: "🏆 ¡Apuesta ganada!",
-        message: `Ganaste ${payout} RLC en la serie (match #${matchId}). Tu apuesta de ${bet.amount} RLC fue ganadora.`,
-        link: "/betting",
-        referenceId: matchId,
-        referenceType: "match",
+        amount: payout,
+        type: "bet_won",
+        newBalance: newBal2,
+        description: `¡Apuesta ganada! Ganaste ${payout} RLC en el match #${matchId}.`,
       });
     } catch (_) { /* non-critical */ }
   }

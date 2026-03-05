@@ -6,9 +6,43 @@
 import { getDb } from "./db";
 import { notifications, tournamentRegistrations, teams } from "../drizzle/schema";
 import { eventBus } from "./eventBus";
+import { sseNotifyUser } from "./sse";
 import { eq, and } from "drizzle-orm";
 
 // ─── Core helper ─────────────────────────────────────────────────────────────
+
+/**
+ * Notify user that they received RLC coins.
+ * Call this from routers.ts AFTER addRlcTransaction to avoid circular imports.
+ */
+export async function notifyRlcReceived(params: {
+  userId: number;
+  amount: number;
+  type: "deposit" | "withdrawal" | "bet_placed" | "bet_won" | "bet_lost" | "reward" | "refund";
+  newBalance: number;
+  description?: string;
+}): Promise<void> {
+  if (params.amount <= 0) return; // only notify on receipts
+  const typeLabels: Record<string, string> = {
+    deposit: "Depósito de RLC",
+    bet_won: "Apuesta ganada",
+    refund: "Reembolso de RLC",
+    reward: "Recompensa RLC",
+  };
+  const title = typeLabels[params.type] ?? "RLC recibidos";
+  const message = params.description
+    ? `${params.description}. Saldo actual: ${params.newBalance} RLC`
+    : `Has recibido ${params.amount} RLC. Saldo actual: ${params.newBalance} RLC`;
+  await createNotification({
+    userId: params.userId,
+    type: "coins_earned",
+    title,
+    message,
+  });
+  // Push SSE so the client updates the bell and balance instantly
+  sseNotifyUser(params.userId, "notification");
+  sseNotifyUser(params.userId, "coins");
+}
 
 export async function createNotification(params: {
   userId: number;
