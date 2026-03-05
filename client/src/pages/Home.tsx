@@ -149,9 +149,7 @@ function HeroSection() {
             className="absolute bottom-0 left-0 right-0 p-5 sm:p-7"
             style={{ opacity: transitioning ? 0 : 1, transition: "opacity 250ms ease" }}
           >
-            {current.logoImage && (
-              <img src={current.logoImage} alt={current.brandName} className="h-7 sm:h-9 mb-2 sm:mb-3 object-contain" style={{ filter: "drop-shadow(0 2px 8px rgba(0,0,0,0.6))" }} />
-            )}
+
             {current.tagline && (
               <p className="text-xs font-semibold uppercase tracking-widest mb-1 sm:mb-1.5" style={{ color: current.accentColor ?? "rgba(255,255,255,0.7)" }}>{current.tagline}</p>
             )}
