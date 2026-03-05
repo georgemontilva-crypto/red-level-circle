@@ -2101,10 +2101,11 @@ export async function adminAdjustRLC(userId: number, amount: number, reason: str
 }
 
 // ─── Admin: Shop Items ────────────────────────────────────────────────────────
-export async function adminCreateShopItem(data: InsertShopItem) {
+export async function adminCreateShopItem(data: InsertShopItem): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.insert(shopItems).values(data);
+  const [result] = await db.insert(shopItems).values(data).$returningId();
+  return result.id;
 }
 
 export async function adminUpdateShopItem(id: number, data: Partial<InsertShopItem>) {
@@ -2155,10 +2156,11 @@ export async function adminUpdateOrderStatus(orderId: number, status: "pending" 
 }
 
 // ─── Admin: Cosmetics ─────────────────────────────────────────────────────────
-export async function adminCreateCosmetic(data: InsertCosmetic) {
+export async function adminCreateCosmetic(data: InsertCosmetic): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.insert(cosmetics).values(data);
+  const [result] = await db.insert(cosmetics).values(data).$returningId();
+  return result.id;
 }
 
 export async function adminUpdateCosmetic(id: number, data: Partial<InsertCosmetic>) {

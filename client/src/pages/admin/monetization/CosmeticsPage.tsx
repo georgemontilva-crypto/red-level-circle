@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PageHeader } from "../components/AdminUI";
 
 export function CosmeticsPage() {
-  const emptyForm = { name: "", description: "", type: "frame" as any, rarity: "common" as any, previewImage: "", frameImage: "", price: "", originalPrice: "", isActive: true, isFeatured: false, isLimited: false, collection: "", sortOrder: "0" };
+  const emptyForm = { name: "", description: "", type: "frame" as any, rarity: "common" as any, previewImage: "", frameImage: "", price: "", originalPrice: "", isActive: true, isFeatured: false, isLimited: false, collection: "", sortOrder: "0", catalogVisible: true, catalogFeatured: false, catalogCollectionId: undefined as number | undefined, catalogPublishDate: "" };
   const [form, setForm] = useState(emptyForm);
   const [editing, setEditing] = useState<number | null>(null);
   const [uploadingPreview, setUploadingPreview] = useState(false);
@@ -52,7 +52,8 @@ export function CosmeticsPage() {
   };
 
   const handleSubmit = () => {
-    const data = { name: form.name, description: form.description || undefined, type: form.type, rarity: form.rarity, previewImage: form.previewImage || undefined, frameImage: form.frameImage || undefined, price: parseInt(form.price) || 0, originalPrice: form.originalPrice ? parseInt(form.originalPrice) : undefined, isActive: form.isActive, isFeatured: form.isFeatured, isLimited: form.isLimited, collection: form.collection || undefined, sortOrder: parseInt(form.sortOrder) || 0 };
+    const catalogFields = { catalogVisible: form.catalogVisible, catalogFeatured: form.catalogFeatured, catalogCollectionId: form.catalogCollectionId, catalogPublishDate: form.catalogPublishDate || undefined };
+    const data = { name: form.name, description: form.description || undefined, type: form.type, rarity: form.rarity, previewImage: form.previewImage || undefined, frameImage: form.frameImage || undefined, price: parseInt(form.price) || 0, originalPrice: form.originalPrice ? parseInt(form.originalPrice) : undefined, isActive: form.isActive, isFeatured: form.isFeatured, isLimited: form.isLimited, collection: form.collection || undefined, sortOrder: parseInt(form.sortOrder) || 0, ...catalogFields };
     if (editing !== null) update.mutate({ id: editing, ...data });
     else create.mutate(data);
   };
@@ -190,6 +191,27 @@ export function CosmeticsPage() {
               <span className="text-zinc-400 text-xs font-rajdhani">{label}</span>
             </label>
           ))}
+        </div>
+
+        {/* Commerce Core — Catálogo */}
+        <div className="border border-white/5 rounded-xl p-4 space-y-3 bg-zinc-800/20">
+          <p className="text-xs font-orbitron text-zinc-400 uppercase tracking-wider flex items-center gap-2">⚡ Configuración de Catálogo</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.catalogVisible} onChange={e => setForm(f => ({ ...f, catalogVisible: e.target.checked }))} className="w-4 h-4 accent-red-500" />
+                <span className="text-xs text-zinc-300 font-rajdhani">Visible en /store</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.catalogFeatured} onChange={e => setForm(f => ({ ...f, catalogFeatured: e.target.checked }))} className="w-4 h-4 accent-red-500" />
+                <span className="text-xs text-zinc-300 font-rajdhani">Destacado en portada</span>
+              </label>
+            </div>
+            <div>
+              <label className="block text-xs text-zinc-400 mb-1 font-rajdhani uppercase">Fecha de publicación</label>
+              <input type="datetime-local" value={form.catalogPublishDate} onChange={e => setForm(f => ({ ...f, catalogPublishDate: e.target.value }))} className={inputCls} />
+            </div>
+          </div>
         </div>
 
         <div className="flex gap-3">

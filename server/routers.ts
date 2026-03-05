@@ -1671,9 +1671,27 @@ export const appRouter = router({
         stock: z.number().int().default(-1),
         category: z.enum(["physical", "digital", "bundle", "limited"]),
         maxPerUser: z.number().int().min(1).nullable().optional(),
+        // Commerce Core fields
+        catalogVisible: z.boolean().optional().default(true),
+        catalogFeatured: z.boolean().optional().default(false),
+        catalogCollectionId: z.number().int().optional(),
+        catalogPublishDate: z.string().optional(), // ISO date string
       }))
       .mutation(async ({ input }) => {
-        await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category, maxPerUser: input.maxPerUser ?? null });
+        const newId = await adminCreateShopItem({ name: input.name, description: input.description, image: input.imageUrl, price: input.price, stock: input.stock, category: input.category, maxPerUser: input.maxPerUser ?? null });
+        // Auto-register in commerce_catalog
+        const db = await getDb();
+        if (db) {
+          const { catalogItems } = await import("../drizzle/schema");
+          await db.insert(catalogItems).values({
+            type: "physical",
+            referenceId: newId,
+            title: input.name,
+            isFeatured: input.catalogFeatured ?? false,
+            isVisible: input.catalogVisible ?? true,
+            collectionId: input.catalogCollectionId ?? null,
+          } as any);
+        }
         return { success: true };
       }),
     updateShopItem: adminProcedure
@@ -1688,10 +1706,33 @@ export const appRouter = router({
         maxPerUser: z.number().int().min(1).nullable().optional(),
         isActive: z.boolean().optional(),
         isFeatured: z.boolean().optional(),
+        // Commerce Core fields
+        catalogVisible: z.boolean().optional(),
+        catalogFeatured: z.boolean().optional(),
+        catalogCollectionId: z.number().int().nullable().optional(),
+        catalogPublishDate: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, imageUrl, ...rest } = input;
+        const { id, imageUrl, catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...rest } = input;
         await adminUpdateShopItem(id, { ...rest, ...(imageUrl !== undefined ? { image: imageUrl } : {}) });
+        // Sync catalog entry
+        const db = await getDb();
+        if (db && (catalogVisible !== undefined || catalogFeatured !== undefined || catalogCollectionId !== undefined || catalogPublishDate !== undefined)) {
+          const { catalogItems } = await import("../drizzle/schema");
+          const { eq, and } = await import("drizzle-orm");
+          const existing = await db.select({ id: catalogItems.id }).from(catalogItems)
+            .where(and(eq(catalogItems.type, "physical"), eq(catalogItems.referenceId, id)))
+            .limit(1);
+          const catalogUpdate: Record<string, unknown> = {};
+          if (catalogVisible !== undefined) catalogUpdate.isVisible = catalogVisible;
+          if (catalogFeatured !== undefined) catalogUpdate.isFeatured = catalogFeatured;
+          if (catalogCollectionId !== undefined) catalogUpdate.collectionId = catalogCollectionId;
+          if (catalogPublishDate !== undefined) catalogUpdate.publishDate = catalogPublishDate ? new Date(catalogPublishDate) : null;
+          if (input.name) catalogUpdate.title = input.name;
+          if (existing.length > 0) {
+            await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
+          }
+        }
         return { success: true };
       }),
     deleteShopItem: adminProcedure
@@ -2424,9 +2465,28 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         isLimited: z.boolean().default(false),
         collection: z.string().optional(),
         sortOrder: z.number().int().default(0),
+        // Commerce Core fields
+        catalogVisible: z.boolean().optional().default(true),
+        catalogFeatured: z.boolean().optional().default(false),
+        catalogCollectionId: z.number().int().optional(),
+        catalogPublishDate: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        await adminCreateCosmetic(input as any);
+        const { catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...cosmeticData } = input;
+        const newId = await adminCreateCosmetic(cosmeticData as any);
+        // Auto-register in commerce_catalog
+        const db = await getDb();
+        if (db) {
+          const { catalogItems } = await import("../drizzle/schema");
+          await db.insert(catalogItems).values({
+            type: "cosmetic",
+            referenceId: newId,
+            title: input.name,
+            isFeatured: catalogFeatured ?? false,
+            isVisible: catalogVisible ?? true,
+            collectionId: catalogCollectionId ?? null,
+          } as any);
+        }
         return { success: true };
       }),
     adminUpdate: adminProcedure
@@ -2447,10 +2507,33 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
         isLimited: z.boolean().optional(),
         collection: z.string().optional(),
         sortOrder: z.number().int().optional(),
+        // Commerce Core fields
+        catalogVisible: z.boolean().optional(),
+        catalogFeatured: z.boolean().optional(),
+        catalogCollectionId: z.number().int().nullable().optional(),
+        catalogPublishDate: z.string().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, catalogVisible, catalogFeatured, catalogCollectionId, catalogPublishDate, ...data } = input;
         await adminUpdateCosmetic(id, data as any);
+        // Sync catalog entry
+        const db = await getDb();
+        if (db && (catalogVisible !== undefined || catalogFeatured !== undefined || catalogCollectionId !== undefined || catalogPublishDate !== undefined)) {
+          const { catalogItems } = await import("../drizzle/schema");
+          const { eq, and } = await import("drizzle-orm");
+          const existing = await db.select({ id: catalogItems.id }).from(catalogItems)
+            .where(and(eq(catalogItems.type, "cosmetic"), eq(catalogItems.referenceId, id)))
+            .limit(1);
+          const catalogUpdate: Record<string, unknown> = {};
+          if (catalogVisible !== undefined) catalogUpdate.isVisible = catalogVisible;
+          if (catalogFeatured !== undefined) catalogUpdate.isFeatured = catalogFeatured;
+          if (catalogCollectionId !== undefined) catalogUpdate.collectionId = catalogCollectionId;
+          if (catalogPublishDate !== undefined) catalogUpdate.publishDate = catalogPublishDate ? new Date(catalogPublishDate) : null;
+          if (input.name) catalogUpdate.title = input.name;
+          if (existing.length > 0) {
+            await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
+          }
+        }
         return { success: true };
       }),
     adminDelete: adminProcedure
