@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import {
   Bell, Gift, Bookmark, X, ChevronRight, CheckCheck,
@@ -289,6 +289,14 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 
+  // Detectar si es móvil para ajustar el top del panel
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   const { data: wallet } = trpc.auth.wallet.useQuery(undefined, { enabled: isAuthenticated });
   const { data: unreadData } = trpc.notifications.unreadCount.useQuery(undefined, {
     enabled: isAuthenticated,
@@ -324,10 +332,11 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop — z-index por encima del mobile navbar (z-[100001]) */}
       <div
-        className="fixed inset-0 z-40 transition-opacity duration-300"
+        className="fixed inset-0 transition-opacity duration-300"
         style={{
+          zIndex: 200000,
           background: "rgba(0,0,0,0.5)",
           opacity: open ? 1 : 0,
           pointerEvents: open ? "auto" : "none",
@@ -338,17 +347,25 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
       {/* Panel */}
       <div
         ref={panelRef}
-        className="fixed z-50 flex flex-col"
+        className="fixed flex flex-col"
         style={{
-          top: "12px",
-          right: "12px",
-          bottom: "12px",
-          width: "clamp(300px, 360px, calc(100vw - 24px))",
+          zIndex: 200001,
+          /* Móvil: panel debajo del header (56px + safe-area), ocupa casi toda la pantalla.
+             Desktop: panel flotante en la esquina superior derecha. */
+          top: isMobile ? "calc(env(safe-area-inset-top, 0px) + 58px)" : "12px",
+          right: isMobile ? "0" : "12px",
+          bottom: isMobile ? "0" : "12px",
+          left: isMobile ? "0" : "auto",
+          width: isMobile ? "100%" : "clamp(300px, 360px, calc(100vw - 24px))",
           background: "#1e1e24",
-          border: "1px solid rgba(255,255,255,0.09)",
-          borderRadius: "16px",
+          border: isMobile ? "none" : "1px solid rgba(255,255,255,0.09)",
+          borderRadius: isMobile ? "16px 16px 0 0" : "16px",
           boxShadow: "0 24px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.04)",
-          transform: open ? "translateX(0)" : "translateX(calc(100% + 24px))",
+          transform: open
+            ? "translate(0, 0)"
+            : isMobile
+              ? "translateY(100%)"
+              : "translateX(calc(100% + 24px))",
           transition: "transform 0.28s cubic-bezier(0.4, 0, 0.2, 1)",
           overflow: "hidden",
         }}
