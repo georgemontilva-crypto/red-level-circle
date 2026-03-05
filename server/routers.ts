@@ -2575,9 +2575,6 @@ Genera el reporte de precio RLC para este producto.`;
       }),
   }),
 
-  // ─── Rewards ───────────────────────────────────────────────────────────────
-  }),
-
   // ─── Brand Ads ─────────────────────────────────────────────────────────────
   ads: router({
     list: publicProcedure
