@@ -303,27 +303,44 @@ function WalletTab() {
       <div
         className="flex-shrink-0 mx-4 mt-4 mb-3 rounded-2xl p-5 relative overflow-hidden"
         style={{
-          background: "linear-gradient(135deg, rgba(234,179,8,0.18) 0%, rgba(234,179,8,0.06) 60%, rgba(0,0,0,0) 100%)",
-          border: "1px solid rgba(234,179,8,0.25)",
+          background: "linear-gradient(135deg, rgba(220,38,38,0.22) 0%, rgba(180,20,20,0.10) 60%, rgba(0,0,0,0) 100%)",
+          border: "1px solid rgba(220,38,38,0.30)",
         }}
       >
+        {/* Skull decorativo semitransparente */}
+        <img
+          src="/rlcskull.webp"
+          alt=""
+          aria-hidden="true"
+          className="absolute pointer-events-none select-none"
+          style={{
+            right: "-10px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            width: "110px",
+            height: "110px",
+            objectFit: "contain",
+            opacity: 0.13,
+            filter: "grayscale(1) brightness(1.5)",
+          }}
+        />
         {/* Decorative glow */}
         <div
           className="absolute -top-6 -right-6 w-28 h-28 rounded-full pointer-events-none"
-          style={{ background: "rgba(234,179,8,0.12)", filter: "blur(24px)" }}
+          style={{ background: "rgba(220,38,38,0.15)", filter: "blur(28px)" }}
         />
-        <p className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: "rgba(250,204,21,0.6)" }}>Saldo disponible</p>
+        <p className="text-xs font-mono uppercase tracking-widest mb-3" style={{ color: "rgba(220,38,38,0.7)" }}>Saldo disponible</p>
         <div className="flex items-center gap-3">
           <RLCIcon size={40} />
           <div>
             {isLoading ? (
               <div className="w-24 h-8 rounded-lg animate-pulse" style={{ background: "rgba(255,255,255,0.08)" }} />
             ) : (
-              <p className="text-4xl font-black font-mono leading-none" style={{ color: "#FACC15" }}>
+              <p className="text-4xl font-black font-mono leading-none" style={{ color: "#ef4444" }}>
                 {balance.toLocaleString()}
               </p>
             )}
-            <p className="text-xs font-mono mt-1" style={{ color: "rgba(250,204,21,0.5)" }}>RLC Coins</p>
+            <p className="text-xs font-mono mt-1" style={{ color: "rgba(220,38,38,0.55)" }}>RLC Coins</p>
           </div>
         </div>
       </div>
