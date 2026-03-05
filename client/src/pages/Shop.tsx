@@ -497,9 +497,9 @@ export default function Shop() {
                 {tab.label}
               </button>
             ))}
-            {/* Separador + Wallet */}
+            {/* Separador + Wallet — solo desktop */}
             {isAuthenticated && (
-              <>
+              <div className="hidden md:contents">
                 <div className="w-px mx-1 self-stretch" style={{ background: "rgba(255,255,255,0.1)" }} />
                 <div
                   className="flex items-center gap-2 px-4 py-2.5 rounded-md whitespace-nowrap"
@@ -509,7 +509,7 @@ export default function Shop() {
                   <RLCIcon size={16} />
                   <span className="text-sm font-bold font-mono">{userBalance.toLocaleString()}</span>
                 </div>
-              </>
+              </div>
             )}
           </div>
           {/* Tabs secundarios: Pedidos, Carrito, Favoritos */}

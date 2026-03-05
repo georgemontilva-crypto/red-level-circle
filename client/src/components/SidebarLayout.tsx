@@ -377,18 +377,6 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
             }}
           >
             <div className="flex gap-2 mt-2">
-              <Link href="/gallery" onClick={() => setMobileOpen(false)} className="flex-1">
-                <div
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200"
-                  style={{
-                    background: location === "/gallery" ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
-                    border: location === "/gallery" ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
-                  }}
-                >
-                  <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: location === "/gallery" ? "var(--accent-red)" : "var(--text-muted)" }} />
-                  <span className="font-semibold text-xs" style={{ color: location === "/gallery" ? "var(--accent-red)" : "var(--text-primary)" }}>Mi Galería</span>
-                </div>
-              </Link>
               <Link href="/settings" onClick={() => setMobileOpen(false)} className="flex-1">
                 <div
                   className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200"
