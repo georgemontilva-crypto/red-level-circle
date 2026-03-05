@@ -185,15 +185,16 @@ export default function Shop() {
   const [confirmCosmetic, setConfirmCosmetic] = useState<any | null>(null);
   const [buyError, setBuyError] = useState<string | null>(null);
 
-  // Queries
-  const { data: items = [], refetch: refetchItems } = trpc.shop.list.useQuery({
-    category: activeCategory === "all" ? undefined : activeCategory,
-  });
+  // Queries — staleTime: 0 para que siempre se refetchen al montar (cambios del admin visibles sin recargar)
+  const { data: items = [], refetch: refetchItems } = trpc.shop.list.useQuery(
+    { category: activeCategory === "all" ? undefined : activeCategory },
+    { staleTime: 0 }
+  );
   const { data: myOrders = [], refetch: refetchOrders } = trpc.shop.myOrders.useQuery(undefined, { enabled: isAuthenticated });
-  const { data: cosmetics = [], refetch: refetchCosmetics } = trpc.cosmetics.list.useQuery({
-    type: activeType === "all" ? undefined : activeType,
-    collection: activeCollection,
-  });
+  const { data: cosmetics = [], refetch: refetchCosmetics } = trpc.cosmetics.list.useQuery(
+    { type: activeType === "all" ? undefined : activeType, collection: activeCollection },
+    { staleTime: 0 }
+  );
   const { data: myCosmetics = [], refetch: refetchOwned } = trpc.cosmetics.myCosmetics.useQuery(undefined, { enabled: isAuthenticated });
   const { data: me, refetch: refetchMe } = trpc.auth.me.useQuery();
 

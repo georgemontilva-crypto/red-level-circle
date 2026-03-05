@@ -220,10 +220,10 @@ export default function CosmeticsShop() {
   const [previewCosmetic, setPreviewCosmetic] = useState<CosmeticItem | null>(null);
   const [, navigate] = useLocation();
 
-  const { data: cosmetics = [], refetch } = trpc.cosmetics.list.useQuery({
-    type: activeType === "all" ? undefined : activeType,
-    collection: activeCollection,
-  });
+  const { data: cosmetics = [], refetch } = trpc.cosmetics.list.useQuery(
+    { type: activeType === "all" ? undefined : activeType, collection: activeCollection },
+    { staleTime: 0 }
+  );
   const { data: myCosmetics = [], refetch: refetchOwned } = trpc.cosmetics.myCosmetics.useQuery(
     undefined,
     { enabled: isAuthenticated }

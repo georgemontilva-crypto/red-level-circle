@@ -242,7 +242,7 @@ function CollectionCard({ collection }: { collection: any }) {
 // ─── Sección: Drops activos ───────────────────────────────────────────────────
 
 function DropsSection() {
-  const { data: drops, isLoading } = trpc.commerce.activeDrops.useQuery();
+  const { data: drops, isLoading } = trpc.commerce.activeDrops.useQuery(undefined, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -298,7 +298,7 @@ function DropsSection() {
 // ─── Sección: Rotación semanal ────────────────────────────────────────────────
 
 function WeeklyFeaturedSection() {
-  const { data: weekly, isLoading } = trpc.commerce.weeklyFeatured.useQuery();
+  const { data: weekly, isLoading } = trpc.commerce.weeklyFeatured.useQuery(undefined, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -356,7 +356,7 @@ function WeeklyFeaturedSection() {
 // ─── Sección: Destacados ──────────────────────────────────────────────────────
 
 function FeaturedSection() {
-  const { data: featured, isLoading } = trpc.commerce.featured.useQuery();
+  const { data: featured, isLoading } = trpc.commerce.featured.useQuery(undefined, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -386,7 +386,7 @@ function FeaturedSection() {
 }
 
 function CollectionsSection() {
-  const { data: cols, isLoading } = trpc.commerce.collections.useQuery({ featuredOnly: false });
+  const { data: cols, isLoading } = trpc.commerce.collections.useQuery({ featuredOnly: false }, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -424,7 +424,7 @@ function CatalogSection({ type, title, icon, limit = 12 }: {
   icon: React.ReactNode;
   limit?: number;
 }) {
-  const { data: catalog, isLoading } = trpc.commerce.catalog.useQuery({ type, limit });
+  const { data: catalog, isLoading } = trpc.commerce.catalog.useQuery({ type, limit }, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -467,7 +467,7 @@ function CatalogSection({ type, title, icon, limit = 12 }: {
 // ─── Sub-páginas ──────────────────────────────────────────────────────────────
 
 function CollectionDetail({ slug }: { slug: string }) {
-  const { data, isLoading } = trpc.commerce.collection.useQuery({ slug });
+  const { data, isLoading } = trpc.commerce.collection.useQuery({ slug }, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="space-y-4">
@@ -528,7 +528,7 @@ function CollectionDetail({ slug }: { slug: string }) {
 }
 
 function AllCollections() {
-  const { data: cols, isLoading } = trpc.commerce.collections.useQuery({});
+  const { data: cols, isLoading } = trpc.commerce.collections.useQuery({}, { staleTime: 0 });
 
   if (isLoading) return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
