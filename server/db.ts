@@ -1381,6 +1381,38 @@ export async function addRlcTransaction(data: {
     referenceId: data.referenceId,
   });
 
+  // Notify user when they RECEIVE coins (amount > 0)
+  if (data.amount > 0) {
+    try {
+      const { createNotification } = await import("./notifications");
+      const { sseNotifyUser } = await import("./sse");
+
+      const typeLabels: Record<string, string> = {
+        deposit: "Depósito de RLC",
+        bet_won: "Apuesta ganada",
+        refund: "Reembolso de RLC",
+        reward: "Recompensa RLC",
+      };
+      const title = typeLabels[data.type] ?? "RLC recibidos";
+      const message = data.description
+        ? `${data.description}. Saldo actual: ${newBalance} RLC`
+        : `Has recibido ${data.amount} RLC. Saldo actual: ${newBalance} RLC`;
+
+      await createNotification({
+        userId: data.userId,
+        type: "coins_earned",
+        title,
+        message,
+      });
+
+      // Push SSE events so the client updates balance and notification bell instantly
+      sseNotifyUser(data.userId, "coins");
+      sseNotifyUser(data.userId, "notification");
+    } catch (e) {
+      console.error("[RLC] Failed to send coin notification:", e);
+    }
+  }
+
   return newBalance;
 }
 
