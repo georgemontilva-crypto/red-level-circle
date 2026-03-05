@@ -1,4 +1,4 @@
-CREATE TABLE `missions` (
+CREATE TABLE IF NOT EXISTS `missions` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`title` varchar(256) NOT NULL,
 	`description` text,
@@ -15,7 +15,7 @@ CREATE TABLE `missions` (
 	CONSTRAINT `missions_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
-CREATE TABLE `userMissions` (
+CREATE TABLE IF NOT EXISTS `userMissions` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
 	`missionId` int NOT NULL,
@@ -29,7 +29,7 @@ CREATE TABLE `userMissions` (
 	CONSTRAINT `userMissions_userId_missionId_unique` UNIQUE(`userId`,`missionId`)
 );
 --> statement-breakpoint
-CREATE TABLE `missionClaims` (
+CREATE TABLE IF NOT EXISTS `missionClaims` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`userId` int NOT NULL,
 	`missionId` int NOT NULL,
