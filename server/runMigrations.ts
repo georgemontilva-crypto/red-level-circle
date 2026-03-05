@@ -45,6 +45,47 @@ const MIGRATIONS: { id: string; up: string }[] = [
       );
     `,
   },
+  {
+    id: "0011_missions_system",
+    up: `
+      CREATE TABLE IF NOT EXISTS \`missions\` (
+        \`id\`                   INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`title\`                VARCHAR(256) NOT NULL,
+        \`description\`          TEXT,
+        \`bannerUrl\`             TEXT,
+        \`videoUrl\`              TEXT         NOT NULL,
+        \`sponsorName\`           VARCHAR(128),
+        \`sponsorLogo\`           TEXT,
+        \`rewardRlc\`             INT          NOT NULL DEFAULT 0,
+        \`requiredWatchSeconds\`  INT          NOT NULL DEFAULT 30,
+        \`startDate\`             TIMESTAMP    NULL,
+        \`endDate\`               TIMESTAMP    NULL,
+        \`isActive\`              TINYINT(1)   NOT NULL DEFAULT 1,
+        \`createdAt\`             TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS \`userMissions\` (
+        \`id\`           INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`userId\`       INT          NOT NULL,
+        \`missionId\`    INT          NOT NULL,
+        \`accepted\`     TINYINT(1)   NOT NULL DEFAULT 0,
+        \`watchedSeconds\` INT        NOT NULL DEFAULT 0,
+        \`completed\`    TINYINT(1)   NOT NULL DEFAULT 0,
+        \`claimed\`      TINYINT(1)   NOT NULL DEFAULT 0,
+        \`completedAt\`  TIMESTAMP    NULL,
+        \`createdAt\`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY \`userMissions_userId_missionId_unique\` (\`userId\`, \`missionId\`)
+      );
+
+      CREATE TABLE IF NOT EXISTS \`missionClaims\` (
+        \`id\`         INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`userId\`     INT          NOT NULL,
+        \`missionId\`  INT          NOT NULL,
+        \`rewardRlc\`  INT          NOT NULL,
+        \`claimedAt\`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `,
+  },
 ];
 
 export async function runMigrations() {
