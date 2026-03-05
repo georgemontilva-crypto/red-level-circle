@@ -111,6 +111,7 @@
   /* ── Custom design tokens (used directly in components) ── */
   --bg-main:           #0f1115;
   --bg-card:           rgba(255,255,255,0.03);
+  --bg-dropdown:       #1a1d24;  /* fondo sólido para dropdowns y paneles flotantes */
   --bg-hover:          rgba(255,255,255,0.06);
   --border-main:       transparent;
   --text-primary:      #FFFFFF;

@@ -247,7 +247,7 @@ export function CosmeticsPage() {
               {collectionOpen && (
                 <div
                   className="absolute z-50 mt-1 w-full rounded-xl border overflow-hidden"
-                  style={{ background: "var(--bg-card, #18181b)", borderColor: "rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}
+                  style={{ background: "#1a1d24", borderColor: "rgba(255,255,255,0.12)", boxShadow: "0 8px 32px rgba(0,0,0,0.8)" }}
                 >
                   {/* Opción: sin colección */}
                   <button
