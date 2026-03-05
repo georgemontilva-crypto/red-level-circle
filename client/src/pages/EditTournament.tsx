@@ -175,9 +175,15 @@ export default function EditTournament() {
     }
   };
 
+  const utils = trpc.useUtils();
   const updateMutation = trpc.tournaments.update.useMutation({
     onSuccess: () => {
       toast.success("¡Torneo actualizado correctamente!");
+      // Invalidate so updated tournament appears immediately
+      utils.tournaments.list.invalidate();
+      utils.tournaments.myTournaments.invalidate();
+      utils.tournaments.getById.invalidate({ id: tournamentId });
+      utils.home.featuredTournaments.invalidate();
       navigate(`/dashboard/tournament/${tournamentId}`);
     },
     onError: (err) => toast.error(err.message),

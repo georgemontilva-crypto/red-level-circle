@@ -220,10 +220,15 @@ export default function CreateTournament() {
   const set = (key: keyof FormData) => (val: string | number | boolean) =>
     setForm((prev) => ({ ...prev, [key]: val }));
 
+  const utils = trpc.useUtils();
   const createMutation = trpc.tournaments.create.useMutation({
     onSuccess: (data) => {
       setCreatedId(data.id);
       setCreatedName(form.name);
+      // Invalidate so the new tournament appears immediately in lists
+      utils.tournaments.list.invalidate();
+      utils.tournaments.myTournaments.invalidate();
+      utils.home.featuredTournaments.invalidate();
     },
     onError: (err) => toast.error(err.message),
   });

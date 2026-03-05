@@ -67,17 +67,23 @@ function SizeGuide() {
 }
 
 export function AdsPage() {
+  const utils = trpc.useUtils();
   const { data: ads, refetch } = trpc.admin.listAds.useQuery();
+  const invalidateAds = () => {
+    refetch();
+    utils.ads.list.invalidate();
+    utils.home.featuredAds.invalidate();
+  };
   const createAd = trpc.admin.createAd.useMutation({
-    onSuccess: () => { toast.success("Publicidad creada"); refetch(); setShowCreate(false); setForm(EMPTY_FORM); },
+    onSuccess: () => { toast.success("Publicidad creada"); invalidateAds(); setShowCreate(false); setForm(EMPTY_FORM); },
     onError: e => toast.error(e.message),
   });
   const updateAd = trpc.admin.updateAd.useMutation({
-    onSuccess: () => { toast.success("Guardado"); refetch(); setEditingId(null); },
+    onSuccess: () => { toast.success("Guardado"); invalidateAds(); setEditingId(null); },
     onError: e => toast.error(e.message),
   });
   const deleteAd = trpc.admin.deleteAd.useMutation({
-    onSuccess: () => { toast.success("Eliminado"); refetch(); },
+    onSuccess: () => { toast.success("Eliminado"); invalidateAds(); },
     onError: e => toast.error(e.message),
   });
   const uploadImage = trpc.admin.uploadImage.useMutation({

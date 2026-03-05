@@ -16,10 +16,16 @@ const SECTION_DEFS = [
 ];
 
 export function BannersPage() {
+  const utils = trpc.useUtils();
   const { data: allBanners, refetch } = trpc.banners.listAll.useQuery();
   const uploadBannerImage = trpc.banners.uploadImage.useMutation({ onError: e => toast.error(e.message) });
   const upsertBanner = trpc.banners.upsert.useMutation({
-    onSuccess: () => { toast.success("Banner guardado"); refetch(); },
+    onSuccess: () => {
+      toast.success("Banner guardado");
+      refetch();
+      // Invalidate all section banner queries so changes appear immediately
+      utils.banners.getSection.invalidate();
+    },
     onError: e => toast.error(e.message),
   });
 

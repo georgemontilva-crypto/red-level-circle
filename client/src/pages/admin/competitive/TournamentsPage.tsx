@@ -6,13 +6,19 @@ import { Link } from "wouter";
 import { PageHeader, EmptyState } from "../components/AdminUI";
 
 export function TournamentsPage() {
+  const utils = trpc.useUtils();
   const { data: pending, refetch } = trpc.admin.pendingTournaments.useQuery();
+  const invalidateTournaments = () => {
+    refetch();
+    utils.tournaments.list.invalidate();
+    utils.home.featuredTournaments.invalidate();
+  };
   const approve = trpc.admin.approveTournament.useMutation({
-    onSuccess: () => { toast.success("Torneo aprobado"); refetch(); },
+    onSuccess: () => { toast.success("Torneo aprobado"); invalidateTournaments(); },
     onError: e => toast.error(e.message),
   });
   const reject = trpc.admin.rejectTournament.useMutation({
-    onSuccess: () => { toast.success("Torneo rechazado"); refetch(); },
+    onSuccess: () => { toast.success("Torneo rechazado"); invalidateTournaments(); },
     onError: e => toast.error(e.message),
   });
 

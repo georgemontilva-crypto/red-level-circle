@@ -375,6 +375,8 @@ export const appRouter = router({
           startDate: input.startDate ? new Date(input.startDate) : undefined,
           endDate: input.endDate ? new Date(input.endDate) : undefined,
         });
+        // Invalidate tournament list cache so changes appear immediately
+        cache.invalidatePrefix("tournaments:list:");
         // Generate news article for new tournament (non-blocking)
         const { handleTournamentCreated } = await import("./newsGenerator");
         handleTournamentCreated(id).catch((err: Error) =>
@@ -426,6 +428,9 @@ export const appRouter = router({
           startDate: startDate ? new Date(startDate) : undefined,
           endDate: endDate ? new Date(endDate) : undefined,
         });
+        // Invalidate caches so changes appear immediately
+        cache.invalidatePrefix("tournaments:list:");
+        cache.del(CacheKey.tournament(id));
         return { success: true };
       }),
 
@@ -441,6 +446,9 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournamentStatus(input.id, input.status);
+        // Invalidate caches so changes appear immediately
+        cache.invalidatePrefix("tournaments:list:");
+        cache.del(CacheKey.tournament(input.id));
         // Notify registered teams about status change
         try {
           eventBus.emit("tournament.status_changed", {
@@ -470,6 +478,9 @@ export const appRouter = router({
           });
         }
         await deleteTournament(input.id);
+        // Invalidate caches so changes appear immediately
+        cache.invalidatePrefix("tournaments:list:");
+        cache.del(CacheKey.tournament(input.id));
         return { success: true };
       }),
 
@@ -1719,6 +1730,8 @@ export const appRouter = router({
             visibleUntil: input.catalogVisibleUntil ? new Date(input.catalogVisibleUntil) : null,
           } as any);
         }
+        // Invalidate shop cache so new product appears immediately
+        cache.invalidatePrefix("shop:");
         return { success: true };
       }),
     updateShopItem: adminProcedure
@@ -1768,12 +1781,16 @@ export const appRouter = router({
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
           }
         }
+        // Invalidate shop cache so updated product appears immediately
+        cache.invalidatePrefix("shop:");
         return { success: true };
       }),
     deleteShopItem: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await adminDeleteShopItem(input.id);
+        // Invalidate shop cache so deleted product disappears immediately
+        cache.invalidatePrefix("shop:");
         return { success: true };
       }),
 
@@ -2239,6 +2256,9 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
             tournamentName: t?.name ?? "",
           });
         } catch (e) { console.error("[ApproveTournament] EventBus error:", e); }
+        // Invalidate caches so approved tournament appears immediately
+        cache.invalidatePrefix("tournaments:list:");
+        cache.del(CacheKey.tournament(input.id));
         return { success: true };
       }),
     rejectTournament: adminProcedure
@@ -2258,6 +2278,9 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
             });
           } catch (e) { console.error("[RejectTournament] Notification error:", e); }
         }
+        // Invalidate caches
+        cache.invalidatePrefix("tournaments:list:");
+        cache.del(CacheKey.tournament(input.id));
         return { success: true };
       }),
     stats: adminProcedure
