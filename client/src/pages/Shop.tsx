@@ -521,7 +521,7 @@ export default function Shop() {
                   onClick={() => setMainTab(tab.id as any)}
                   className="flex items-center gap-1.5 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
                   style={{
-                    borderRadius: "6px",
+                    borderRadius: "20px",
                     background: mainTab === tab.id ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
                     border: mainTab === tab.id ? "1px solid rgba(239,68,68,0.5)" : "1px solid rgba(255,255,255,0.08)",
                     color: mainTab === tab.id ? "#ef4444" : "rgba(255,255,255,0.45)",
@@ -766,7 +766,7 @@ export default function Shop() {
               </div>
             )}
 
-            {/* Category filters — scroll horizontal en móvil, border-radius 3px */}
+            {/* Category filters — scroll horizontal en móvil */}
             <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
               {Object.entries(CATEGORY_LABELS).map(([cat, label]) => (
                 <button
@@ -774,7 +774,7 @@ export default function Shop() {
                   onClick={() => setActiveCategory(cat)}
                   className="flex items-center gap-2 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
                   style={{
-                    borderRadius: "3px",
+                    borderRadius: "20px",
                     background: activeCategory === cat ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.04)",
                     border: activeCategory === cat ? "1px solid rgba(239,68,68,0.6)" : "1px solid rgba(255,255,255,0.1)",
                     color: activeCategory === cat ? "#ef4444" : "rgba(255,255,255,0.5)",
@@ -903,7 +903,7 @@ export default function Shop() {
                   onClick={() => setActiveType(type)}
                   className="flex items-center gap-2 flex-shrink-0 px-4 py-2 font-mono text-sm font-medium transition-all whitespace-nowrap"
                   style={{
-                    borderRadius: "3px",
+                    borderRadius: "20px",
                     background: activeType === type ? "rgba(168,85,247,0.12)" : "rgba(255,255,255,0.04)",
                     border: activeType === type ? "1px solid rgba(168,85,247,0.6)" : "1px solid rgba(255,255,255,0.1)",
                     color: activeType === type ? "#a855f7" : "rgba(255,255,255,0.5)",
