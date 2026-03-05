@@ -1746,14 +1746,35 @@ export async function updateOrderStatus(orderId: number, status: string, deliver
 export async function getCosmetics(type?: string, collection?: string) {
   const db = await getDb();
   if (!db) return [];
-  const conditions = [eq(cosmetics.isActive, true)];
-  if (type && type !== "all") {
-    conditions.push(eq(cosmetics.type, type as "frame" | "aura" | "badge" | "background"));
-  }
-  if (collection) {
-    conditions.push(eq(cosmetics.collection, collection));
-  }
-  return db.select().from(cosmetics).where(and(...conditions)).orderBy(cosmetics.sortOrder, desc(cosmetics.createdAt));
+  const { catalogItems } = await import('../drizzle/schema');
+  const { or, isNull, lte, gte } = await import('drizzle-orm');
+  const now = new Date();
+  // LEFT JOIN: si no tiene catalog_item, se muestra (compatibilidad hacia atrás)
+  // Si tiene catalog_item, se aplican los filtros de visibilidad
+  const rows = await db
+    .select({ cosmetic: cosmetics, catId: catalogItems.id })
+    .from(cosmetics)
+    .leftJoin(catalogItems, and(
+      eq(catalogItems.type, 'cosmetic'),
+      eq(catalogItems.referenceId, cosmetics.id),
+    ))
+    .where(and(
+      eq(cosmetics.isActive, true),
+      ...(type && type !== 'all' ? [eq(cosmetics.type, type as any)] : []),
+      ...(collection ? [eq(cosmetics.collection, collection)] : []),
+      // Si tiene catalog_item, respetar isVisible y fechas; si no tiene, mostrar siempre
+      or(
+        isNull(catalogItems.id),
+        and(
+          eq(catalogItems.isVisible, true),
+          or(isNull(catalogItems.publishDate), lte(catalogItems.publishDate, now)),
+          or(isNull(catalogItems.visibleFrom), lte(catalogItems.visibleFrom, now)),
+          or(isNull(catalogItems.visibleUntil), gte(catalogItems.visibleUntil, now)),
+        ),
+      ),
+    ))
+    .orderBy(cosmetics.sortOrder, desc(cosmetics.createdAt));
+  return rows.map(r => r.cosmetic);
 }
 
 export async function getCosmeticById(id: number) {
