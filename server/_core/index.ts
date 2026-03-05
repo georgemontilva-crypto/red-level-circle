@@ -89,6 +89,19 @@ async function runCustomMigrations() {
     '  `position` int NOT NULL DEFAULT 0,' +
     '  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' +
     ')',
+    // 0036: collections — tabla de colecciones temáticas
+    'CREATE TABLE IF NOT EXISTS `collections` (' +
+    '  `id`          int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `name`        varchar(128) NOT NULL,' +
+    '  `slug`        varchar(128) NOT NULL UNIQUE,' +
+    '  `description` text         NULL,' +
+    '  `bannerImage` text         NULL,' +
+    '  `isActive`    tinyint(1)   NOT NULL DEFAULT 1,' +
+    '  `isFeatured`  tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `startDate`   timestamp    NULL,' +
+    '  `endDate`     timestamp    NULL,' +
+    '  `createdAt`   timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')',
     // 0033: cosmetics — supply & drop window fields
     'ALTER TABLE `cosmetics` ADD COLUMN `maxSupply` int NULL',
     'ALTER TABLE `cosmetics` ADD COLUMN `currentSupply` int NOT NULL DEFAULT 0',
