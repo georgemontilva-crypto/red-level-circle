@@ -74,46 +74,45 @@ async function runCustomMigrations() {
     // 0031: tournaments — formato de serie por defecto
     "ALTER TABLE `tournaments` ADD COLUMN `defaultSeriesFormat` ENUM('BO1','BO2','BO3','BO5','BO7') NOT NULL DEFAULT 'BO1'",
     // 0032: tournament_rankings — tabla de clasificación por torneo
-    `CREATE TABLE IF NOT EXISTS \`tournament_rankings\` (
-      \`id\` int NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      \`tournamentId\` int NOT NULL,
-      \`teamId\` int NOT NULL,
-      \`points\` int NOT NULL DEFAULT 0,
-      \`seriesPlayed\` int NOT NULL DEFAULT 0,
-      \`seriesWon\` int NOT NULL DEFAULT 0,
-      \`seriesDrawn\` int NOT NULL DEFAULT 0,
-      \`seriesLost\` int NOT NULL DEFAULT 0,
-      \`mapsWon\` int NOT NULL DEFAULT 0,
-      \`mapsLost\` int NOT NULL DEFAULT 0,
-      \`mapDiff\` int NOT NULL DEFAULT 0,
-      \`position\` int NOT NULL DEFAULT 0,
-      \`updatedAt\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    )\`
-,
+    'CREATE TABLE IF NOT EXISTS `tournament_rankings` (' +
+    '  `id` int NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId` int NOT NULL,' +
+    '  `teamId` int NOT NULL,' +
+    '  `points` int NOT NULL DEFAULT 0,' +
+    '  `seriesPlayed` int NOT NULL DEFAULT 0,' +
+    '  `seriesWon` int NOT NULL DEFAULT 0,' +
+    '  `seriesDrawn` int NOT NULL DEFAULT 0,' +
+    '  `seriesLost` int NOT NULL DEFAULT 0,' +
+    '  `mapsWon` int NOT NULL DEFAULT 0,' +
+    '  `mapsLost` int NOT NULL DEFAULT 0,' +
+    '  `mapDiff` int NOT NULL DEFAULT 0,' +
+    '  `position` int NOT NULL DEFAULT 0,' +
+    '  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP' +
+    ')',
     // 0033: cosmetics — supply & drop window fields
-    "ALTER TABLE `cosmetics` ADD COLUMN `maxSupply` int NULL",
-    "ALTER TABLE `cosmetics` ADD COLUMN `currentSupply` int NOT NULL DEFAULT 0",
-    "ALTER TABLE `cosmetics` ADD COLUMN `dropStart` timestamp NULL",
-    "ALTER TABLE `cosmetics` ADD COLUMN `dropEnd` timestamp NULL",
+    'ALTER TABLE `cosmetics` ADD COLUMN `maxSupply` int NULL',
+    'ALTER TABLE `cosmetics` ADD COLUMN `currentSupply` int NOT NULL DEFAULT 0',
+    'ALTER TABLE `cosmetics` ADD COLUMN `dropStart` timestamp NULL',
+    'ALTER TABLE `cosmetics` ADD COLUMN `dropEnd` timestamp NULL',
     // 0034: catalog_items — rotation & scheduling fields
-    "ALTER TABLE `catalog_items` ADD COLUMN `weeklyFeatured` tinyint(1) NOT NULL DEFAULT 0",
-    "ALTER TABLE `catalog_items` ADD COLUMN `featuredPriority` int NOT NULL DEFAULT 0",
-    "ALTER TABLE `catalog_items` ADD COLUMN `visibleFrom` timestamp NULL",
-    "ALTER TABLE `catalog_items` ADD COLUMN `visibleUntil` timestamp NULL",
-    "ALTER TABLE `catalog_items` ADD COLUMN `publishDate` timestamp NULL",
+    'ALTER TABLE `catalog_items` ADD COLUMN `weeklyFeatured` tinyint(1) NOT NULL DEFAULT 0',
+    'ALTER TABLE `catalog_items` ADD COLUMN `featuredPriority` int NOT NULL DEFAULT 0',
+    'ALTER TABLE `catalog_items` ADD COLUMN `visibleFrom` timestamp NULL',
+    'ALTER TABLE `catalog_items` ADD COLUMN `visibleUntil` timestamp NULL',
+    'ALTER TABLE `catalog_items` ADD COLUMN `publishDate` timestamp NULL',
     // 0035: drops table — scheduled launch events
-    `CREATE TABLE IF NOT EXISTS \`drops\` (
-      \`id\`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,
-      \`name\`         varchar(128) NOT NULL,
-      \`slug\`         varchar(128) NOT NULL UNIQUE,
-      \`description\`  text         NULL,
-      \`bannerImage\`  text         NULL,
-      \`collectionId\` int          NULL,
-      \`startDate\`    timestamp    NOT NULL,
-      \`endDate\`      timestamp    NOT NULL,
-      \`isActive\`     tinyint(1)   NOT NULL DEFAULT 0,
-      \`createdAt\`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
-    )\`
+    'CREATE TABLE IF NOT EXISTS `drops` (' +
+    '  `id`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `name`         varchar(128) NOT NULL,' +
+    '  `slug`         varchar(128) NOT NULL UNIQUE,' +
+    '  `description`  text         NULL,' +
+    '  `bannerImage`  text         NULL,' +
+    '  `collectionId` int          NULL,' +
+    '  `startDate`    timestamp    NOT NULL,' +
+    '  `endDate`      timestamp    NOT NULL,' +
+    '  `isActive`     tinyint(1)   NOT NULL DEFAULT 0,' +
+    '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
+    ')'
   ];
   for (const sql of customMigrations) {
     try {
