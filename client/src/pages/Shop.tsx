@@ -861,7 +861,7 @@ export default function Shop() {
 
       {/* Buy Product Dialog */}
       <Dialog open={selectedItem !== null} onOpenChange={resetModal}>
-        <DialogContent className="bg-[#141416] border border-red-500/30 text-white max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="bg-[#141416] border border-red-500/30 text-white w-[calc(100%-1rem)] sm:w-full max-w-lg mx-auto max-h-[92dvh] overflow-y-auto p-4 sm:p-6">
           <DialogHeader>
             <DialogTitle className="font-mono text-xl text-red-400 flex items-center gap-2">
               {isPhysical ? <><Package className="w-5 h-5" />PEDIDO FÍSICO</> : <><Key className="w-5 h-5" />ENTREGA DIGITAL</>}
@@ -893,14 +893,44 @@ export default function Shop() {
               {isPhysical && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs font-mono text-orange-400 uppercase"><MapPin className="w-3.5 h-3.5" />Dirección de envío (obligatoria)</div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><User className="w-3 h-3" />Nombre completo *</label><input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><MapPin className="w-3 h-3" />Dirección *</label><input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Ciudad *</label><input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 block">Provincia / Estado</label><input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Globe className="w-3 h-3" />País *</label><input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Hash className="w-3 h-3" />Código postal *</label><input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
-                    <div className="col-span-2"><label className="text-xs text-muted-foreground mb-1 flex items-center gap-1"><Phone className="w-3 h-3" />Discord o teléfono de contacto *</label><input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-2 rounded-lg bg-zinc-800/80 border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-red-500 focus:outline-none" /></div>
+                  <div className="flex flex-col gap-3">
+                    {/* Nombre completo */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5"><User className="w-3.5 h-3.5" />Nombre completo *</label>
+                      <input value={shippingForm.fullName} onChange={e => setShippingForm(f => ({...f, fullName: e.target.value}))} placeholder="Juan Pérez" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    {/* Dirección */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5" />Dirección *</label>
+                      <input value={shippingForm.address} onChange={e => setShippingForm(f => ({...f, address: e.target.value}))} placeholder="Calle Mayor 12, 3º A" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                    </div>
+                    {/* Ciudad + Provincia */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1.5 block">Ciudad *</label>
+                        <input value={shippingForm.city} onChange={e => setShippingForm(f => ({...f, city: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1.5 block">Provincia / Estado</label>
+                        <input value={shippingForm.state} onChange={e => setShippingForm(f => ({...f, state: e.target.value}))} placeholder="Madrid" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                      </div>
+                    </div>
+                    {/* País + Código postal */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5"><Globe className="w-3.5 h-3.5" />País *</label>
+                        <input value={shippingForm.country} onChange={e => setShippingForm(f => ({...f, country: e.target.value}))} placeholder="España" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                      </div>
+                      <div>
+                        <label className="text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5"><Hash className="w-3.5 h-3.5" />Código postal *</label>
+                        <input value={shippingForm.postalCode} onChange={e => setShippingForm(f => ({...f, postalCode: e.target.value}))} placeholder="28001" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                      </div>
+                    </div>
+                    {/* Contacto */}
+                    <div>
+                      <label className="text-xs text-zinc-400 mb-1.5 flex items-center gap-1.5"><Phone className="w-3.5 h-3.5" />Discord o teléfono de contacto *</label>
+                      <input value={shippingForm.contact} onChange={e => setShippingForm(f => ({...f, contact: e.target.value}))} placeholder="usuario#1234 o +34 600 000 000" className="w-full px-3 py-3 rounded-xl bg-zinc-800/80 border border-white/10 text-white text-base placeholder:text-zinc-600 focus:border-red-500 focus:outline-none" />
+                    </div>
                   </div>
                   <div className="flex items-start gap-2 p-2 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-300 text-xs"><AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />Tus datos de envío son confidenciales y solo se usarán para procesar este pedido.</div>
                 </div>
