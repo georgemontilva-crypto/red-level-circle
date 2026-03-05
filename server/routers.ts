@@ -2628,6 +2628,17 @@ ${input.durationSeconds ? `- Duración requerida: ${input.durationSeconds} segun
           }));
           if (existing.length > 0) {
             await db.update(catalogItems).set(catalogUpdate as any).where(eq(catalogItems.id, existing[0].id));
+            // DEBUG: verificar qué quedó en la DB
+            const afterUpdate = await db.select({
+              id: catalogItems.id,
+              isVisible: catalogItems.isVisible,
+              publishDate: catalogItems.publishDate,
+            }).from(catalogItems).where(eq(catalogItems.id, existing[0].id)).limit(1);
+            console.log('[DEBUG post-update catalog_item]', JSON.stringify({
+              afterUpdate: afterUpdate[0],
+              publishDate_in_db: afterUpdate[0]?.publishDate ? new Date(afterUpdate[0].publishDate as any).toISOString() : null,
+              isVisible_in_db: afterUpdate[0]?.isVisible,
+            }));
           } else {
             // El catalog_item no existe — crearlo ahora (cosmetics creados antes de la tabla catalog_items)
             const { cosmetics } = await import('../drizzle/schema');
