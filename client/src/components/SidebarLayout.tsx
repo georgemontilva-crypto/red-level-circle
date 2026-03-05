@@ -62,6 +62,7 @@ function buildSections(isPremium: boolean, isAdmin: boolean, pendingCount?: numb
       items: [
         { label: "Tienda", href: "/shop", icon: ShoppingBag },
         { label: "Recompensas", href: "/rewards", icon: Gift },
+        { label: "Mi Galería", href: "/gallery", icon: Sparkles, requiresAuth: true },
       ],
     },
   ];
@@ -130,80 +131,144 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const sections = buildSections(isPremium, isAdmin, pendingCount ?? 0, liveData?.count ?? 0);
   const isActive = (href: string) => location === href;
 
-  // ─── Desktop sidebar (lista vertical compacta, sin cambios) ──────────────────
+  // ─── Desktop sidebar (grid de cuadritos, igual que móvil) ───────────────────
   const DesktopSidebarContent = () => (
-    <div className="flex flex-col h-full">
-      <div className="px-5 pt-5 pb-4">
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", overflow: "hidden" }}>
+      {/* Header: logo */}
+      <div className="px-4 pt-4 pb-3 flex-shrink-0">
         <Link href="/">
-          <img src="/logocompleto.webp" alt="Red Level Circle" className="h-9 w-auto object-contain cursor-pointer select-none" />
+          <img src="/logocompleto.webp" alt="Red Level Circle" className="h-8 w-auto object-contain cursor-pointer select-none" />
         </Link>
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 space-y-5 pb-4">
-        {sections.map((section) => (
-          <div key={section.title}>
-            <p className="text-xs font-mono tracking-widest px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>{section.title}</p>
-            <div className="space-y-0.5">
-              {section.items.map((item) => {
-                if (item.requiresAuth && !isAuthenticated) return null;
-                if (item.requiresPremium && !isPremium) return null;
-                if (item.requiresAdmin && !isAdmin) return null;
-                const active = isActive(item.href);
-                return (
-                  <Link key={item.href} href={item.href}>
-                    <div
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-200 relative"
-                      style={{ background: active ? "var(--bg-hover)" : "transparent" }}
-                      onMouseEnter={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "var(--bg-hover)"; }}
-                      onMouseLeave={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
-                    >
-                      {active && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-500 rounded-r-full" />}
-                      <item.icon className="w-4 h-4 flex-shrink-0" style={{ color: active ? "var(--accent-red)" : "var(--text-muted)" }} />
-                      <span className="font-semibold text-sm flex-1" style={{ color: active ? "var(--text-primary)" : "var(--text-secondary)" }}>{item.label}</span>
-                      {item.badge !== undefined && item.badge > 0 && (
-                        <span className="bg-red-600 text-white text-xs font-mono px-1.5 py-0.5 rounded-full min-w-[20px] text-center leading-none">{item.badge}</span>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+
+      {/* Header usuario (si autenticado) */}
+      {isAuthenticated && user && (
+        <div
+          className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <UserAvatar
+            avatar={(user as any).avatar ?? null}
+            name={(user as any).nickname ?? (user as any).name ?? null}
+            size={36}
+            containerSize={36}
+            ringColor={isAdmin ? "#FFD700" : isPremium ? "var(--accent-red)" : "var(--border-main)"}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-sm truncate" style={{ color: "var(--text-primary)" }}>
+              {(user as any).nickname ?? user.name ?? "Usuario"}
+            </p>
+            {wallet && (
+              <p className="text-xs font-mono" style={{ color: "rgba(220,38,38,0.8)" }}>
+                ⬡ {wallet.balance ?? 0} RLC
+              </p>
+            )}
           </div>
-        ))}
+        </div>
+      )}
+
+      {/* Grid de secciones */}
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-4">
+        {sections.map((section) => {
+          const visibleItems = section.items.filter(item => {
+            if (item.requiresAuth && !isAuthenticated) return false;
+            if (item.requiresPremium && !isPremium) return false;
+            if (item.requiresAdmin && !isAdmin) return false;
+            return true;
+          });
+          if (visibleItems.length === 0) return null;
+          return (
+            <div key={section.title}>
+              <p className="text-[10px] font-mono tracking-widest px-1 mb-2" style={{ color: "var(--text-muted)" }}>{section.title}</p>
+              <div className="grid grid-cols-2 gap-2">
+                {visibleItems.map((item) => {
+                  const active = isActive(item.href);
+                  return (
+                    <Link key={item.href} href={item.href}>
+                      <div
+                        className="relative flex flex-col items-start justify-end px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 select-none"
+                        style={{
+                          background: active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
+                          border: active ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                          minHeight: "72px",
+                        }}
+                        onMouseEnter={e => { if (!active) (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.10)"; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = active ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)"; }}
+                      >
+                        {item.badge !== undefined && item.badge > 0 && (
+                          <span className="absolute top-2 right-2 min-w-[18px] h-[18px] bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 leading-none">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        )}
+                        <item.icon
+                          className="w-5 h-5 mb-1.5"
+                          style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                        />
+                        <span
+                          className="font-semibold text-xs leading-tight"
+                          style={{ color: active ? "var(--accent-red)" : "var(--text-primary)" }}
+                        >
+                          {item.label}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
         {!isAuthenticated && !loading && (
-          <div className="mt-2">
-            <p className="text-xs font-mono tracking-widest px-2 mb-1.5" style={{ color: "var(--text-muted)" }}>CUENTA</p>
+          <div>
+            <p className="text-[10px] font-mono tracking-widest px-1 mb-2" style={{ color: "var(--text-muted)" }}>CUENTA</p>
             <a href={getLoginUrl()}>
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150" style={{ color: "var(--text-secondary)" }}>
-                <Shield className="w-4 h-4" style={{ color: "var(--text-muted)" }} />
-                <span className="font-semibold text-sm">Iniciar Sesión</span>
+              <div
+                className="flex flex-col items-start justify-end px-3 py-3 rounded-xl cursor-pointer transition-all duration-200"
+                style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.25)", minHeight: "72px" }}
+              >
+                <Shield className="w-5 h-5 mb-1.5" style={{ color: "var(--accent-red)" }} />
+                <span className="font-semibold text-xs" style={{ color: "var(--accent-red)" }}>Iniciar Sesión</span>
               </div>
             </a>
           </div>
         )}
       </nav>
-      <div className="px-3 pb-5 pt-2 mt-auto">
-        {isAuthenticated && (
-          <>
-            <Link href="/gallery">
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 mb-1" style={{ color: location === "/gallery" ? "var(--text-primary)" : "var(--text-secondary)" }}>
-                <Sparkles className="w-4 h-4 flex-shrink-0" style={{ color: location === "/gallery" ? "var(--accent-red)" : "var(--text-muted)" }} />
-                <span className="font-semibold text-sm">Mi Galería</span>
-              </div>
-            </Link>
-            <Link href="/settings">
-              <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-all duration-150 mb-1" style={{ color: location === "/settings" ? "var(--text-primary)" : "var(--text-secondary)" }}>
+
+      {/* Footer: configuración + cerrar sesión */}
+      {isAuthenticated && (
+        <div
+          className="px-3 pb-4 pt-2 flex-shrink-0"
+          style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        >
+          <div className="flex gap-2 mt-2">
+            <Link href="/settings" className="flex-1">
+              <div
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200"
+                style={{
+                  background: location === "/settings" ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)",
+                  border: location === "/settings" ? "1px solid rgba(220,38,38,0.35)" : "1px solid rgba(255,255,255,0.07)",
+                }}
+                onMouseEnter={e => { if (location !== "/settings") (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.10)"; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = location === "/settings" ? "rgba(220,38,38,0.18)" : "rgba(255,255,255,0.06)"; }}
+              >
                 <Settings className="w-4 h-4 flex-shrink-0" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-muted)" }} />
-                <span className="font-semibold text-sm">Configuración</span>
+                <span className="font-semibold text-xs" style={{ color: location === "/settings" ? "var(--accent-red)" : "var(--text-primary)" }}>Config.</span>
               </div>
             </Link>
-            <button onClick={() => logout()} className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150" style={{ color: "var(--text-muted)" }}>
-              <LogOut className="w-4 h-4" />
-              <span className="font-semibold text-sm">Cerrar sesión</span>
+            <button
+              onClick={() => logout()}
+              className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200 text-left"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.07)" }}
+              onMouseEnter={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.10)"}
+              onMouseLeave={e => (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.06)"}
+            >
+              <LogOut className="w-4 h-4 flex-shrink-0" style={{ color: "var(--text-muted)" }} />
+              <span className="font-semibold text-xs" style={{ color: "var(--text-muted)" }}>Salir</span>
             </button>
-          </>
-        )}
-        <p className="text-center text-xs font-mono mt-3" style={{ color: "var(--text-muted)" }}>Red Level Circle v2.0</p>
-      </div>
+          </div>
+          <p className="text-center text-[10px] font-mono mt-3" style={{ color: "var(--text-muted)" }}>Red Level Circle v2.0</p>
+        </div>
+      )}
     </div>
   );
 
@@ -230,7 +295,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
               </p>
               {wallet && (
                 <p className="text-xs font-mono" style={{ color: "var(--accent-gold, #f59e0b)" }}>
-                  ⬡ {wallet.balanceRlc ?? 0} RLC
+                  ⬡ {wallet.balance ?? 0} RLC
                 </p>
               )}
             </div>
