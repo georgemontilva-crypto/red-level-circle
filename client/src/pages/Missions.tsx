@@ -247,15 +247,19 @@ function MissionVideoPlayer({
     let tickInterval: ReturnType<typeof setInterval> | null = null;
     let reportInterval: ReturnType<typeof setInterval> | null = null;
 
+    // In replay mode (already claimed), play freely without tracking
+    const isReplayMode = userMission?.claimed === true;
+
     const startTracking = () => {
       setIsPlaying(true);
+      if (isReplayMode) return; // No tracking needed in replay mode
       // Count 1 real second of watch time per tick
       tickInterval = setInterval(() => {
         accumulatedRef.current = Math.min(accumulatedRef.current + 1, required);
         setWatchedSeconds(accumulatedRef.current);
         if (accumulatedRef.current >= required) {
           setIsCompleted(true);
-          video.pause();
+          // Do NOT pause in replay mode — but we won't reach here anyway
         }
       }, 1000);
       // Report to server every 5s
@@ -265,7 +269,7 @@ function MissionVideoPlayer({
         lastReportedRef.current = current;
         try {
           const result = await updateProgress.mutateAsync({ missionId: mission.id, watchedSeconds: current });
-          if (result.completed) { setIsCompleted(true); video.pause(); }
+          if (result.completed) { setIsCompleted(true); }
           onProgressUpdate(current);
         } catch (e) { console.error("Progress update failed", e); }
       }, 5000);
@@ -298,14 +302,18 @@ function MissionVideoPlayer({
 
   // ── Anti-cheat: block seeking forward beyond accumulated time ───────────────
   // We intercept the seeking event and snap back if user tries to go past what they've watched.
+  // In replay mode (already claimed), seeking is unrestricted
+  const isReplayMode = userMission?.claimed === true;
+
   const handleSeeking = useCallback(() => {
+    if (isReplayMode) return; // Allow free seeking in replay mode
     const video = videoRef.current;
     if (!video) return;
     // Allow seeking backward freely, but cap forward seeks at accumulated seconds
     if (video.currentTime > accumulatedRef.current + 0.5) {
       video.currentTime = accumulatedRef.current;
     }
-  }, []);
+  }, [isReplayMode]);
 
   // ── Custom controls handlers ────────────────────────────────────────────────
   const handlePlayPause = () => {
