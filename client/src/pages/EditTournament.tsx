@@ -449,7 +449,7 @@ export default function EditTournament() {
                 </div>
                 <div className="space-y-3">
                   <NeonInput label="DESCRIPCIÓN DEL PREMIO" value={form.prizeDescription} onChange={set("prizeDescription")} placeholder="Ej: Periféricos gaming, tarjetas de regalo, etc." />
-                  <NeonInput label="PUNTOS DE PLATAFORMA" type="number" value={form.prizeAmount} onChange={(v) => set("prizeAmount")(parseInt(v) || 0)} min={0} placeholder="0" />
+                  <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
                 </div>
               </div>
               {/* Summary */}

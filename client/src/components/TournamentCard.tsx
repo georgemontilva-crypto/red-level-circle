@@ -114,6 +114,7 @@ export interface TournamentCardData {
   creatorName?: string | null;
   startDate?: Date | string | null;
   prizeAmount?: number | null;
+  prizeDescription?: string | null;
   isLive?: boolean | null;
   isFeatured?: boolean | null;
 }
@@ -426,7 +427,7 @@ export function TournamentCard({
           </div>
 
           {/* Right: prize badge */}
-          {(t.prizeAmount ?? 0) > 0 && (
+          {(t.prizeDescription?.trim() || (t.prizeAmount ?? 0) > 0) && (
             <div className="flex-shrink-0 flex flex-col items-end">
               <p
                 className="text-xs font-display tracking-widest uppercase mb-1"
@@ -435,18 +436,18 @@ export function TournamentCard({
                 Premio
               </p>
               <div
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg max-w-[120px]"
                 style={{
                   background: "oklch(0.22 0.08 80 / 0.25)",
                   border: "1px solid oklch(0.50 0.18 80 / 0.40)",
                 }}
               >
-                <Trophy size={12} style={{ color: "oklch(0.72 0.18 80)" }} />
+                <Trophy size={12} style={{ color: "oklch(0.72 0.18 80)", flexShrink: 0 }} />
                 <span
-                  className="text-xs font-display font-bold tracking-wider"
+                  className="text-xs font-display font-bold tracking-wider truncate"
                   style={{ color: "oklch(0.72 0.18 80)" }}
                 >
-                  {t.prizeAmount} RLC
+                  {t.prizeDescription?.trim() || `${t.prizeAmount} RLC`}
                 </span>
               </div>
             </div>
