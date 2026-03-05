@@ -894,10 +894,32 @@ export default function MissionsPage() {
         <p className="text-white/40 text-sm mt-1">Completa misiones patrocinadas y gana RLC</p>
       </div>
 
-      <div className="px-4 mb-5">
-        <div className="flex gap-1 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-          <button className="px-4 pb-2.5 text-sm font-semibold text-white border-b-2 border-red-500 -mb-px">Todas las misiones</button>
-          <button className="px-4 pb-2.5 text-sm font-medium text-white/40 hover:text-white/70 transition-colors">Misiones reclamadas</button>
+      <div className="px-4 mb-5 flex justify-center">
+        <div
+          className="flex rounded-xl p-1 w-full max-w-sm"
+          style={{
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.07)",
+          }}
+        >
+          <button
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200"
+            style={{
+              background: "oklch(0.55 0.22 25)",
+              color: "#fff",
+            }}
+          >
+            Todas
+          </button>
+          <button
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-md text-sm font-semibold font-mono tracking-wider uppercase transition-all duration-200"
+            style={{
+              background: "transparent",
+              color: "rgba(255,255,255,0.4)",
+            }}
+          >
+            Reclamadas
+          </button>
         </div>
       </div>
 
