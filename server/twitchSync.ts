@@ -721,11 +721,16 @@ export async function syncYouTubeStreams(): Promise<void> {
         channelId = await resolveYouTubeChannelId(normalized);
         if (channelId) {
           // Persist so we never need to resolve again
-          await db
-            .update(contentCreators)
-            .set({ youtubeChannelId: channelId })
-            .where(eq(contentCreators.userId, creator.userId));
-          console.log(`[youtubeSync] Saved channelId=${channelId} for userId=${creator.userId}`);
+          // Wrapped in try/catch in case migration 0013 hasn't run yet
+          try {
+            await db
+              .update(contentCreators)
+              .set({ youtubeChannelId: channelId })
+              .where(eq(contentCreators.userId, creator.userId));
+            console.log(`[youtubeSync] Saved channelId=${channelId} for userId=${creator.userId}`);
+          } catch {
+            console.warn(`[youtubeSync] Could not persist channelId (migration pending) — using in-memory: ${channelId}`);
+          }
         }
       }
 
