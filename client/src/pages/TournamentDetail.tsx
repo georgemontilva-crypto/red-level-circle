@@ -1228,9 +1228,9 @@ export default function TournamentDetail() {
             ) : (
               <div>
                 {/* Group by round */}
-                {Array.from(new Set(completedResults.map((r) => r.round ?? 1)))
-                  .sort((a, b) => a - b)
-                  .map((round) => {
+                {(Array.from(new Set(completedResults.map((r) => r.round ?? 1))) as number[])
+                  .sort((a: number, b: number) => a - b)
+                  .map((round: number) => {
                     const roundMatches = completedResults.filter((r) => (r.round ?? 1) === round);
                     return (
                       <div key={round} className="mb-8">

@@ -222,7 +222,7 @@ function CustomVideoControls({
   onSkip,
   onFullscreen,
 }: {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   currentTime: number;
   duration: number;
   isPlaying: boolean;

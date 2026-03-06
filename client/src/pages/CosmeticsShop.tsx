@@ -260,9 +260,10 @@ export default function CosmeticsShop() {
     },
   });
 
-  const ownedIds = new Set(myCosmetics.map((c) => c.cosmeticId));
-  const equippedIds = new Set(myCosmetics.filter((c) => c.isEquipped).map((c) => c.cosmeticId));
-  const collections = Array.from(new Set(cosmetics.map((c) => c.collection).filter(Boolean)));
+  type MyCosmetic = NonNullable<typeof myCosmetics>[number];
+  const ownedIds = new Set(myCosmetics.map((c: MyCosmetic) => c.cosmeticId));
+  const equippedIds = new Set(myCosmetics.filter((c: MyCosmetic) => c.isEquipped).map((c: MyCosmetic) => c.cosmeticId));
+  const collections = Array.from(new Set(cosmetics.map((c) => c.collection).filter((c): c is string => !!c))) as string[];
   const userBalance = (me as any)?.rlcBalance ?? 0;
 
   const handleBuyClick = (cosmetic: any) => {
@@ -322,10 +323,10 @@ export default function CosmeticsShop() {
             >
               Todas
             </button>
-            {collections.map((col) => (
+            {collections.map((col: string) => (
               <button
                 key={col}
-                onClick={() => setActiveCollection(col === activeCollection ? undefined : col!)}
+                onClick={() => setActiveCollection(col === activeCollection ? undefined : col)}
                 className={`px-3 py-1 rounded text-xs font-mono border transition-all ${
                   activeCollection === col ? "border-red-500 text-red-400 bg-red-500/10" : "border-white/10 text-muted-foreground hover:border-white/30"
                 }`}
@@ -520,7 +521,7 @@ export default function CosmeticsShop() {
             refetchMe();
             setPreviewCosmetic(null);
           }}
-          onBuy={() => {
+          onPurchased={() => {
             setPreviewCosmetic(null);
             handleBuyClick(previewCosmetic);
           }}

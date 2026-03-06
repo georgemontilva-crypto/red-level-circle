@@ -455,8 +455,8 @@ export const commerceRouter = router({
       ))
       .limit(100);
 
-    const catalogMap = new Map(catalogEntries.map(e => [e.referenceId, e]));
-    const cosmeticMap = new Map(activeCosmeticDrops.map(c => [c.id, c]));
+    const catalogMap = new Map<number, (typeof catalogEntries)[0]>(catalogEntries.map(e => [e.referenceId, e]));
+    const cosmeticMap = new Map<number, (typeof activeCosmeticDrops)[0]>(activeCosmeticDrops.map(c => [c.id, c]));
 
     return cosmeticIds
       .map(id => {

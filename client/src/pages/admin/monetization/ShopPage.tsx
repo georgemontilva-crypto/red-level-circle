@@ -454,7 +454,7 @@ export function ShopPage() {
                         <>
                           <div className="flex items-center gap-2 flex-1 min-w-0">
                             <input value={code} onChange={e => setDeliveryCodes(d => ({ ...d, [order.id]: e.target.value }))} placeholder={physical ? "Número de tracking..." : "Código de entrega..."} className="flex-1 bg-zinc-800 border border-white/10 rounded-lg px-3 py-1.5 text-white text-xs focus:outline-none focus:border-green-500 font-mono min-w-0" />
-                            <Button size="sm" onClick={() => updateOrder.mutate({ orderId: order.id, status: "delivered", deliveryCode: code || undefined })} className="bg-green-600 hover:bg-green-700 text-white font-orbitron text-xs h-7 flex-shrink-0">
+                            <Button size="sm" onClick={() => updateOrder.mutate({ orderId: order.id, status: "delivered", deliveryNote: code || undefined })} className="bg-green-600 hover:bg-green-700 text-white font-orbitron text-xs h-7 flex-shrink-0">
                               <CheckCircle className="w-3 h-3 mr-1" /> ENTREGADO
                             </Button>
                           </div>

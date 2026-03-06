@@ -397,7 +397,7 @@ export default function TournamentManage() {
             ) : (
               /* List view */
               <div>
-                {Array.from(new Set(matches.map((m) => m.round))).map((round) => (
+                {(Array.from(new Set(matches.map((m) => m.round))) as number[]).map((round: number) => (
                   <div key={round} className="mb-5">
                     <div
                       className="text-xs font-display tracking-wider mb-3 flex items-center gap-2"

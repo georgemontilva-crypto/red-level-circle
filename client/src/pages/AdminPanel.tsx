@@ -1777,7 +1777,8 @@ function BetsTab() {
   const [filterMatch, setFilterMatch] = useState<string>("all");
 
   // Group bets by matchId for summary
-  const matchGroups = allBets ? Object.values(
+  type MatchGroup = { matchId: number | null; tournamentId: number | null; tournamentName: string | null; team1Name: string | null; team2Name: string | null; scheduledAt: Date | null; totalAmount: number; betCount: number; pendingCount: number };
+  const matchGroups: MatchGroup[] = allBets ? (Object.values(
     allBets.reduce((acc, b) => {
       const key = b.matchId ? `m${b.matchId}` : `t${b.tournamentId}`;
       if (!acc[key]) {
@@ -1797,8 +1798,8 @@ function BetsTab() {
       acc[key].betCount += 1;
       if (b.status === "pending") acc[key].pendingCount += 1;
       return acc;
-    }, {} as Record<string, { matchId: number | null; tournamentId: number | null; tournamentName: string | null; team1Name: string | null; team2Name: string | null; scheduledAt: Date | null; totalAmount: number; betCount: number; pendingCount: number }>)
-  ) : [];
+    }, {} as Record<string, MatchGroup>)
+  ) as MatchGroup[]) : [];
 
   const filtered = allBets?.filter(b => {
     const statusOk = filterStatus === "all" || b.status === filterStatus;

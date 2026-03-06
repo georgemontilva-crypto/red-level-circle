@@ -182,7 +182,7 @@ export default function EditTournament() {
       // Invalidate so updated tournament appears immediately
       utils.tournaments.list.invalidate();
       utils.tournaments.myTournaments.invalidate();
-      utils.tournaments.getById.invalidate({ id: tournamentId });
+      utils.tournaments.byId.invalidate({ id: tournamentId });
       utils.home.featuredTournaments.invalidate();
       navigate(`/dashboard/tournament/${tournamentId}`);
     },

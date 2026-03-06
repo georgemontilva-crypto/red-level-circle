@@ -107,7 +107,7 @@ export function NewsPage() {
           reader.onload = (ev) => resolve((ev.target?.result as string).split(",")[1]);
           reader.readAsDataURL(file);
         });
-        const result = await uploadImage.mutateAsync({ base64, filename: file.name, folder: "news-gallery" });
+        const result = await uploadImage.mutateAsync({ base64, mimeType: file.type as any, folder: "news-gallery" });
         urls.push(result.url);
       }
       setForm(f => ({ ...f, gallery: [...f.gallery, ...urls].slice(0, 4) }));

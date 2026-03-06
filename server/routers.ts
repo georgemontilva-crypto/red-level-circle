@@ -152,6 +152,12 @@ import {
   getOpenBetMatches,
   getBetsByMatch,
   resolveMatchBets,
+  getRewardTasks,
+  claimReward,
+  adminListRewardTasks,
+  adminCreateRewardTask,
+  adminUpdateRewardTask,
+  adminDeleteRewardTask,
 } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -2219,11 +2225,66 @@ Genera el reporte de precio RLC para este producto.`;
         await validateImageMime(buffer, input.mimeType, true);
         const ext = input.mimeType === "image/svg+xml" ? "svg" : input.mimeType.split("/")[1];
         const key = `${input.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { url } = await storagePut(key, buffer, input.mimeType);
+         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
+    // ─── Reward Tasks (admin) ─────────────────────────────────────────────────
+    listRewards: adminProcedure.query(() => adminListRewardTasks()),
+    createReward: adminProcedure
+      .input(z.object({
+        title: z.string().min(3).max(256),
+        description: z.string().optional(),
+        type: z.enum(["video", "ad", "daily_login", "share", "follow"]).default("video"),
+        rewardAmount: z.number().int().min(1),
+        contentUrl: z.string().url().optional(),
+        thumbnailUrl: z.string().optional(),
+        sponsorName: z.string().max(128).optional(),
+        sponsorLogoUrl: z.string().optional(),
+        durationSeconds: z.number().int().min(5).optional(),
+        expiresAt: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await adminCreateRewardTask({
+          title: input.title,
+          description: input.description ?? null,
+          type: input.type,
+          reward: input.rewardAmount,
+          contentUrl: input.contentUrl ?? null,
+          thumbnailUrl: input.thumbnailUrl ?? null,
+          sponsorName: input.sponsorName ?? null,
+          sponsorLogoUrl: input.sponsorLogoUrl ?? null,
+          durationSeconds: input.durationSeconds ?? 30,
+          expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+          isActive: true,
+          sortOrder: 0,
+          maxClaimsPerUser: 1,
+          maxClaimsPerDay: 1,
+        });
+        return { ok: true };
+      }),
+    updateReward: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        isActive: z.boolean().optional(),
+        title: z.string().min(3).max(256).optional(),
+        rewardAmount: z.number().int().min(1).optional(),
+        sortOrder: z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, rewardAmount, ...rest } = input;
+        await adminUpdateRewardTask(id, {
+          ...rest,
+          ...(rewardAmount !== undefined ? { reward: rewardAmount } : {}),
+        });
+        return { ok: true };
+      }),
+    deleteReward: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await adminDeleteRewardTask(input.id);
+        return { ok: true };
+      }),
   }),
-
   // ─── Shop ──────────────────────────────────────────────────────────────────
   shop: router({
     list: publicProcedure
@@ -2972,6 +3033,7 @@ Genera el reporte de precio RLC para este producto.`;
       return all.slice(0, 4);
     }),
     // Available missions (public preview)
+    availableMissions: publicProcedure.query(() => getRewardTasks()),
     // Featured ads for home (featured type only)
     featuredAds: publicProcedure.query(async () => {
       const all = await getBrandAds(true);
@@ -3697,7 +3759,24 @@ Genera el reporte de precio RLC para este producto.`;
         }),
     }),
   }),
-  // ─── Creator Missions ──────────────────────────────────────────────────────
+  // ─── Rewards (Tareas de recompensa) ───────────────────────────────────
+  rewards: router({
+    /** Lista tareas de recompensa activas (público) */
+    list: publicProcedure.query(() => getRewardTasks()),
+    /** Reclamar recompensa por completar una tarea */
+    claim: protectedProcedure
+      .input(z.object({ taskId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        try {
+          const result = await claimReward(ctx.user.id, input.taskId);
+          sseNotifyUser(ctx.user.id, "coins");
+          return { ok: true, newBalance: result.newBalance };
+        } catch (err: any) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err.message ?? "No se pudo reclamar la recompensa" });
+        }
+      }),
+  }),
+  // ─── Creator Missions ──────────────────────────────────────────────
   creatorMissions: router({
     /** [CREATOR] List active missions */
     list: protectedProcedure.query(async ({ ctx }) => {

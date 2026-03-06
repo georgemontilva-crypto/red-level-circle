@@ -21,7 +21,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, type Variants } from "framer-motion";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -100,7 +100,7 @@ const ROW_GAP = 32;
 
 // ─── Animaciones ──────────────────────────────────────────────────────────────
 
-const cardVariants = {
+const cardVariants: Variants = {
   hidden: { opacity: 0, scale: 0.92, y: 12 },
   visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" } },
   completed: {
@@ -109,12 +109,12 @@ const cardVariants = {
   },
 };
 
-const scoreVariants = {
+const scoreVariants: Variants = {
   initial: { scale: 0.7, opacity: 0 },
   animate: { scale: 1, opacity: 1, transition: { type: "spring", stiffness: 400, damping: 20 } },
 };
 
-const pulseVariants = {
+const pulseVariants: Variants = {
   animate: {
     scale: [1, 1.05, 1],
     opacity: [0.8, 1, 0.8],
@@ -505,7 +505,7 @@ export default function LiveBracket({ tournamentId, canEdit = false }: LiveBrack
     team2Id: number;
     team1Name: string;
     team2Name: string;
-    mapNumber: number;
+    currentMapNumber: number;
   } | null>(null);
 
   // Polling cada 10s para tiempo real
@@ -519,7 +519,7 @@ export default function LiveBracket({ tournamentId, canEdit = false }: LiveBrack
 
   // Agrupar matches por ronda
   const rounds = matches
-    ? Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b)
+    ? (Array.from(new Set(matches.map((m) => m.round))) as number[]).sort((a: number, b: number) => a - b)
     : [];
   const matchesByRound = rounds.map((r) => (matches ?? []).filter((m) => m.round === r));
 
@@ -632,7 +632,7 @@ export default function LiveBracket({ tournamentId, canEdit = false }: LiveBrack
                       team2Id: match.team2Id,
                       team1Name: match.team1Name ?? `Equipo ${match.team1Id}`,
                       team2Name: match.team2Name ?? `Equipo ${match.team2Id}`,
-                      mapNumber: seriesInfo.nextMapNumber,
+                      currentMapNumber: seriesInfo.nextMapNumber,
                     });
                   }}
                 />

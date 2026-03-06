@@ -306,7 +306,7 @@ export default function Shop() {
     if (t === "orders" || t === "products" || t === "cosmetics" || t === "cart" || t === "wishlist") return t;
     return "products";
   })();
-  const [mainTab, setMainTab] = useState<"products" | "cosmetics" | "orders" | "cart" | "wishlist">(initialTab as any);
+  const [mainTab, setMainTab] = useState<"products" | "cosmetics" | "orders" | "cart" | "wishlist">(initialTab);
 
   // Products state
   const [activeCategory, setActiveCategory] = useState("all");
@@ -416,7 +416,7 @@ export default function Shop() {
 
   const ownedCosmeticIds = new Set(myCosmetics.map((c) => c.cosmeticId));
   const equippedCosmeticIds = new Set(myCosmetics.filter((c) => c.isEquipped).map((c) => c.cosmeticId));
-  const collections = Array.from(new Set(cosmetics.map((c) => c.collection).filter(Boolean)));
+  const collections = Array.from(new Set(cosmetics.map((c) => c.collection).filter((c): c is string => !!c))) as string[];
 
   const pendingOrdersCount = myOrders.filter((o: any) => o.status === "pending" || o.status === "processing").length;
 
@@ -550,7 +550,7 @@ export default function Shop() {
               <div className="p-12 text-center">
                 <ShoppingCart className="w-14 h-14 text-blue-400/20 mx-auto mb-4" />
                 <p className="text-muted-foreground font-mono mb-4">Tu carrito está vacío</p>
-                <button onClick={() => setMainTab("all")} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-mono text-sm">Ver productos</button>
+                <button onClick={() => setMainTab("products")} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-mono text-sm">Ver productos</button>
               </div>
             ) : (
               <div>
@@ -592,7 +592,7 @@ export default function Shop() {
                       </span>
                     </div>
                   </div>
-                  <button onClick={() => setMainTab("all")} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono font-bold transition-colors">Ir a comprar</button>
+                  <button onClick={() => setMainTab("products")} className="px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono font-bold transition-colors">Ir a comprar</button>
                 </div>
               </div>
             )}
@@ -611,7 +611,7 @@ export default function Shop() {
               <div className="p-12 text-center">
                 <Heart className="w-14 h-14 text-red-400/20 mx-auto mb-4" />
                 <p className="text-muted-foreground font-mono mb-4">No tienes productos favoritos aún</p>
-                <button onClick={() => setMainTab("all")} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono text-sm">Explorar tienda</button>
+                <button onClick={() => setMainTab("products")} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-mono text-sm">Explorar tienda</button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
@@ -758,12 +758,7 @@ export default function Shop() {
         {/* ── PRODUCTS SECTION ───────────────────────────────────────────────── */}
         {showProducts && (
           <div className={showCosmetics ? "mb-16" : ""}>
-            {mainTab === "all" && (
-              <div className="flex items-center gap-3 mb-6">
-                <Package className="w-6 h-6 text-red-500" />
-                <h2 className="text-2xl font-black font-mono tracking-wide">PRODUCTOS</h2>
-              </div>
-            )}
+{/* Products heading - always shown when products tab active */}
 
             {/* Category filters — scroll horizontal en móvil */}
             <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
@@ -887,12 +882,7 @@ export default function Shop() {
         {/* ── COSMETICS SECTION ──────────────────────────────────────────────── */}
         {showCosmetics && (
           <div>
-            {mainTab === "all" && (
-              <div className="flex items-center gap-3 mb-6">
-                <Sparkles className="w-6 h-6 text-purple-400" />
-                <h2 className="text-2xl font-black font-mono tracking-wide">COSMÉTICOS</h2>
-              </div>
-            )}
+{/* Cosmetics heading - always shown when cosmetics tab active */}
 
             {/* Type filters — scroll horizontal en móvil, border-radius 3px */}
             <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap mb-6" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
