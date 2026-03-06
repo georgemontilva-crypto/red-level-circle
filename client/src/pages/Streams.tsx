@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Radio, Tv, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Radio, Tv, X, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { StreamCard } from "@/components/StreamCard";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 
@@ -124,8 +124,17 @@ function GameSection({ game, streams }: { game: string; streams: any[] }) {
 export default function Streams() {
   const { isAuthenticated } = useAuth();
 
+  // Refetch every 30s as fallback; SSE events (stream_started/ended/updated) trigger
+  // immediate invalidation via useSSE hook in App.tsx — no extra polling needed here.
   const { data: groups, isLoading } = trpc.streams.byGame.useQuery(undefined, {
     refetchInterval: 30_000,
+    staleTime: 15_000, // consider data fresh for 15s to avoid redundant fetches
+  });
+
+  // Live count badge (authoritative from server)
+  const { data: liveCountData } = trpc.streams.liveCount.useQuery(undefined, {
+    refetchInterval: 30_000,
+    staleTime: 15_000,
   });
 
   // Creator application — only fetch if authenticated
@@ -136,7 +145,8 @@ export default function Streams() {
   const isApproved = myApp?.status === "approved";
   const [showStreamPanel, setShowStreamPanel] = useState(false);
 
-  const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
+  // Use server-authoritative count; fall back to local count from groups
+  const totalLive = liveCountData?.count ?? groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
   return (
     <div className="min-h-screen text-white" style={{ background: "var(--bg-main)" }}>
@@ -157,7 +167,7 @@ export default function Streams() {
             )}
           </div>
           <p className="text-muted-foreground font-rajdhani text-base">
-            Transmisiones agrupadas por juego · actualizado cada 30 segundos
+            Transmisiones agrupadas por juego · tiempo real via SSE
           </p>
         </div>
 

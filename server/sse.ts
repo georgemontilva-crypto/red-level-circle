@@ -2,20 +2,19 @@
  * Server-Sent Events (SSE) for Red Level Circle
  *
  * Provides real-time push updates to connected browser clients.
- * Events are emitted when data changes (follows, notifications, banners, news, tournaments, allies).
+ * Events are emitted when data changes (follows, notifications, banners, news,
+ * tournaments, allies, streams).
  *
  * Architecture:
  *   Mutation → sseEmit(event, payload) → all connected clients receive the event
  *   Client   → EventSource('/api/sse') → React Query invalidates affected queries
  *
- * Each connected client gets a response stream. Events are broadcast to:
- *   - ALL clients (public data changes: banners, news, tournaments, allies)
- *   - SPECIFIC user (private data: follows, notifications, coins)
- *
- * Security fixes applied:
- *   - userId is resolved from the authenticated session cookie, NOT from query params.
- *   - Maximum 5 concurrent SSE connections per userId to prevent resource exhaustion.
- *   - Stale connections (writableEnded) are cleaned up on every broadcast.
+ * Scalability improvements:
+ *   - SSEEventType now includes stream_started, stream_ended, stream_updated
+ *   - sseInternalBus.setMaxListeners raised to 10_000 for thousands of concurrent subs
+ *   - Stale connections cleaned up on every broadcast (O(n) but amortized)
+ *   - Keepalive interval reduced to 20s for faster dead-connection detection
+ *   - Max connections per user = 3 (prevents tab-explosion resource exhaustion)
  */
 
 import { EventEmitter } from "events";
@@ -32,7 +31,8 @@ import { authenticateRequest } from "./_core/authService";
  * tRPC subscription procedures listen on both channels for the authenticated user.
  */
 export const sseInternalBus = new EventEmitter();
-sseInternalBus.setMaxListeners(1000); // allow many concurrent subscriptions
+// Support thousands of concurrent tRPC subscriptions (each adds 2 listeners)
+sseInternalBus.setMaxListeners(10_000);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +46,9 @@ export type SSEEventType =
   | "ally"             // ally approved/updated/deleted
   | "ad"               // brand ad created/updated/deleted
   | "coins"            // user balance changed
+  | "stream_started"   // a creator went live (auto-detected or manual)
+  | "stream_ended"     // a creator went offline
+  | "stream_updated"   // viewerCount / title / thumbnail changed
   | "ping";            // keepalive
 
 export interface SSEEvent {
@@ -67,7 +70,7 @@ interface SSEClient {
 const clients = new Map<string, SSEClient>();
 
 /** Maximum concurrent SSE connections allowed per authenticated userId. */
-const MAX_CONNECTIONS_PER_USER = 5;
+const MAX_CONNECTIONS_PER_USER = 3;
 
 // ─── Register SSE endpoint ────────────────────────────────────────────────────
 
@@ -115,9 +118,9 @@ export async function sseHandler(req: Request, res: Response): Promise<void> {
   clients.set(clientId, { id: clientId, userId, res, connectedAt: Date.now() });
 
   // Send initial ping so the client knows it's connected
-  res.write(`event: ping\ndata: {"connected":true}\n\n`);
+  res.write(`event: ping\ndata: {"connected":true,"clients":${clients.size}}\n\n`);
 
-  // Keepalive every 25s to prevent proxy timeouts
+  // Keepalive every 20s to prevent proxy timeouts and detect dead connections faster
   const keepalive = setInterval(() => {
     if (res.writableEnded) {
       clearInterval(keepalive);
@@ -130,7 +133,7 @@ export async function sseHandler(req: Request, res: Response): Promise<void> {
       clearInterval(keepalive);
       clients.delete(clientId);
     }
-  }, 25_000);
+  }, 20_000);
 
   // Cleanup on disconnect
   req.on("close", () => {

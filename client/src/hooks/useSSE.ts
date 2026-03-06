@@ -4,16 +4,14 @@
  * Connects to the tRPC `notifications.subscribe` procedure using
  * httpSubscriptionLink and invalidates React Query caches when the server
  * pushes events. This makes all data changes (follows, banners, news,
- * tournaments, allies, ads) appear instantly without manual refresh.
+ * tournaments, allies, ads, streams) appear instantly without manual refresh.
+ *
+ * Stream events handled:
+ *   - stream_started  → invalidates byGame, list, liveCount, liveCreators
+ *   - stream_ended    → same as above
+ *   - stream_updated  → invalidates byId (targeted), byGame, liveCount
  *
  * Usage: call once in the root layout component (App.tsx or Layout.tsx).
- *
- * Migration note:
- *   Previously this hook used a raw EventSource on /api/sse?userId=<id>.
- *   Now it uses tRPC's native subscription mechanism:
- *   - Authentication is handled by the session cookie (no userId in URL)
- *   - Reconnection and error recovery are managed by tRPC's httpSubscriptionLink
- *   - The legacy /api/sse endpoint is kept for backwards compatibility
  */
 import { skipToken } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
@@ -33,6 +31,29 @@ export function useSSE({ userId }: UseSSEOptions = {}) {
     {
       onData(event) {
         const type = event.type as string;
+        const payload = (event as { type: string; payload?: Record<string, unknown> }).payload ?? {};
+
+        // ── Stream events (real-time live detection) ───────────────────────
+        if (type === "stream_started" || type === "stream_ended") {
+          // Invalidate all stream-related queries so the UI refreshes immediately
+          utils.streams.byGame.invalidate();
+          utils.streams.list.invalidate();
+          utils.streams.liveCount.invalidate();
+          utils.streams.liveCreators.invalidate();
+          utils.streams.myActiveStream.invalidate();
+          return;
+        }
+
+        if (type === "stream_updated") {
+          // Targeted invalidation: only refresh the specific stream + aggregate counts
+          const streamId = payload.streamId as number | undefined;
+          if (streamId) {
+            utils.streams.byId.invalidate({ id: streamId });
+          }
+          utils.streams.byGame.invalidate();
+          utils.streams.liveCount.invalidate();
+          return;
+        }
 
         // ── Tournament events ──────────────────────────────────────────────
         if (type === "tournament") {

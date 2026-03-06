@@ -22,7 +22,7 @@ import { and, eq, isNotNull } from "drizzle-orm";
 import { contentCreators, streams, users } from "../drizzle/schema";
 import { getDb } from "./db";
 import { notifyOwner } from "./_core/notification";
-import { sseInternalBus } from "./sse";
+import { sseBroadcast } from "./sse";
 import crypto from "crypto";
 
 // ── Twitch credentials ───────────────────────────────────────────────────────
@@ -325,6 +325,8 @@ export async function handleCreatorWentLive(opts: {
     // Update embedUrl with real videoId for YouTube
     if (opts.embedUrl) updateData.embedUrl = opts.embedUrl;
     await db.update(streams).set(updateData).where(eq(streams.id, existing[0].id));
+    // Notify clients of viewer count / metadata update
+    sseBroadcast("stream_updated", { streamId: existing[0].id, userId: opts.userId, viewerCount: opts.viewerCount });
     return;
   }
 
@@ -357,7 +359,7 @@ export async function handleCreatorWentLive(opts: {
   console.log(`[streamSync] Auto-created stream #${result.id} for userId=${opts.userId} on ${opts.platform}`);
 
   // Emit SSE event so connected clients update in real-time
-  sseInternalBus.emit("broadcast", { type: "stream_started", streamId: result.id, userId: opts.userId });
+  sseBroadcast("stream_started", { streamId: result.id, userId: opts.userId, platform: opts.platform });
 
   // Notify platform owner
   notifyOwner({
@@ -381,7 +383,7 @@ export async function handleCreatorWentOffline(userId: number, platform: "twitch
 
   if ((updated as unknown as { affectedRows: number }).affectedRows > 0) {
     console.log(`[streamSync] Auto-closed stream for userId=${userId} on ${platform}`);
-    sseInternalBus.emit("broadcast", { type: "stream_ended", userId });
+    sseBroadcast("stream_ended", { userId, platform });
   }
 }
 

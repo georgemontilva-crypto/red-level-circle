@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Link } from "wouter";
 import { Eye, Radio, Trophy, Video } from "lucide-react";
 
@@ -25,6 +25,7 @@ const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
 };
 
 function formatViewers(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return n.toString();
 }
@@ -68,8 +69,9 @@ function resolveThumbnail(stream: StreamCardData): string | null {
   if (stream.platform === "twitch") {
     const login = extractTwitchLogin(stream.url);
     if (login) {
-      // Twitch CDN live preview — no API key needed, refreshes every ~60s
-      return `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login.toLowerCase()}-440x248.jpg`;
+      // Cache-bust every 60s so thumbnail refreshes without API calls
+      const bust = Math.floor(Date.now() / 60_000);
+      return `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login.toLowerCase()}-440x248.jpg?t=${bust}`;
     }
   }
 
@@ -92,6 +94,26 @@ export function StreamCard({ stream }: StreamCardProps) {
   const [hovered, setHovered] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [thumbError, setThumbError] = useState(false);
+  // Lazy loading: only load thumbnail when card enters viewport
+  const [inView, setInView] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // IntersectionObserver for lazy thumbnail loading
+  useEffect(() => {
+    const el = cardRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" } // start loading 200px before entering viewport
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Only show live preview for Twitch streams with embedUrl when hovered
   const canPreview = stream.isLive && !!stream.embedUrl && stream.platform === "twitch";
@@ -102,6 +124,7 @@ export function StreamCard({ stream }: StreamCardProps) {
   return (
     <Link href={`/streams/${stream.id}`}>
       <div
+        ref={cardRef}
         className="group relative flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_0_24px_rgba(220,38,38,0.18)] hover:-translate-y-0.5 select-none"
         onMouseEnter={() => canPreview && setHovered(true)}
         onMouseLeave={() => { setHovered(false); setIframeLoaded(false); }}
@@ -110,25 +133,29 @@ export function StreamCard({ stream }: StreamCardProps) {
         {/* ── Thumbnail / Live Preview ── */}
         <div className="relative w-full aspect-video overflow-hidden bg-card">
 
-          {/* Static thumbnail (always rendered, hidden when iframe is loaded) */}
-          {thumbnail ? (
+          {/* Static thumbnail — only loaded when card is in viewport (lazy) */}
+          {inView && thumbnail ? (
             <img
               src={thumbnail}
               alt={stream.title}
+              loading="lazy"
+              decoding="async"
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
                 hovered && iframeLoaded ? "opacity-0" : "opacity-100 group-hover:scale-105"
               }`}
               draggable={false}
               onError={() => setThumbError(true)}
             />
+          ) : !inView ? (
+            <div className="absolute inset-0 w-full h-full bg-secondary animate-pulse" />
           ) : (
             <div className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-300 ${hovered && iframeLoaded ? "opacity-0" : "opacity-100"}`}>
               <Radio className="w-10 h-10 text-zinc-700" />
             </div>
           )}
 
-          {/* Live preview iframe — only for Twitch, only on hover */}
-          {canPreview && hovered && stream.embedUrl && (
+          {/* Live preview iframe — only for Twitch, only on hover, only when in view */}
+          {canPreview && hovered && inView && stream.embedUrl && (
             <iframe
               src={stream.embedUrl}
               className={`absolute inset-0 w-full h-full border-0 transition-opacity duration-500 ${iframeLoaded ? "opacity-100" : "opacity-0"}`}
