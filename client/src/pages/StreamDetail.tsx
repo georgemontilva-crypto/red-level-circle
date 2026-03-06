@@ -103,7 +103,17 @@ export default function StreamDetail() {
        */}
       <div
         className="lg:hidden fixed z-40 flex flex-col bg-black"
-        style={{ top: 56, left: 0, right: 0, bottom: 0 }}
+        style={{
+          /*
+           * top = altura del navbar (56px) + safe-area-inset-top del notch/Dynamic Island.
+           * En iPhone con notch/Dynamic Island, safe-area-inset-top puede ser 44-59px.
+           * Sin esto, el video queda parcialmente detrás del navbar en iOS.
+           */
+          top: "calc(env(safe-area-inset-top, 0px) + 56px)",
+          left: 0,
+          right: 0,
+          bottom: 0,
+        }}
       >
         {/* Video: altura fija = 56.25vw (16:9), nunca cambia aunque suba el teclado */}
         {resolvedEmbedUrl ? (
