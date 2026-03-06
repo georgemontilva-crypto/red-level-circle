@@ -13,10 +13,11 @@
  */
 
 /** Variables de entorno requeridas en producción */
+// OAUTH_SERVER_URL fue removida: el sistema ya no usa Manus OAuth.
+// El login es propio (email/contraseña + Google OAuth directo).
 const REQUIRED_IN_PRODUCTION: (keyof typeof rawEnv)[] = [
   "JWT_SECRET",
   "DATABASE_URL",
-  "OAUTH_SERVER_URL",
 ];
 
 const rawEnv = {
