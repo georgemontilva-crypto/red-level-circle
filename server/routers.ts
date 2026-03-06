@@ -1272,6 +1272,15 @@ export const appRouter = router({
       .query(async () => {
         return getStreamsByGame();
       }),
+    /** Returns a single stream by id (public) */
+    byId: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return null;
+        const rows = await db.select().from(streams).where(eq(streams.id, input.id)).limit(1);
+        return rows[0] ?? null;
+      }),
     /** Returns the count of currently live streams (public, for sidebar badge) */
     liveCount: publicProcedure.query(async () => {
       const db = await getDb();
@@ -1365,7 +1374,7 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) return [] as number[];
         const rows = await db
-          .select({ userId: streams.userId })
+          .selectDistinct({ userId: streams.userId })
           .from(streams)
           .where(and(eq(streams.isLive, true), isNotNull(streams.userId)));
         return rows.map((r: { userId: number | null }) => r.userId).filter((id: number | null): id is number => id !== null);

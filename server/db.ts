@@ -1250,6 +1250,28 @@ export async function createCreatorStream(
   // Enforce 1 active stream per user
   const existing = await getActiveStreamByUser(userId);
   if (existing) throw new Error("Ya tienes una transmisión activa. Deténla antes de iniciar una nueva.");
+
+  // Auto-generate embedUrl for supported platforms
+  let embedUrl: string | undefined;
+  const productionDomain = process.env.PRODUCTION_DOMAIN ?? "redlevelcircle.com";
+  if (data.platform === "twitch") {
+    // Extract login from URL: https://twitch.tv/LOGIN or https://www.twitch.tv/LOGIN
+    const twitchMatch = data.url.match(/twitch\.tv\/([\w]+)/i);
+    if (twitchMatch) {
+      embedUrl = `https://player.twitch.tv/?channel=${twitchMatch[1]}&parent=${productionDomain}&autoplay=true&muted=true`;
+    }
+  } else if (data.platform === "youtube") {
+    // For YouTube we use the channel URL embed — live video ID will be resolved by sync job later
+    // Use nocookie embed with channel parameter
+    const ytHandleMatch = data.url.match(/youtube\.com\/@([\w.-]+)/i);
+    const ytChannelMatch = data.url.match(/youtube\.com\/channel\/([\w-]+)/i);
+    if (ytHandleMatch) {
+      embedUrl = `https://www.youtube-nocookie.com/embed/live_stream?channel=${ytHandleMatch[1]}&autoplay=1&mute=1`;
+    } else if (ytChannelMatch) {
+      embedUrl = `https://www.youtube-nocookie.com/embed/live_stream?channel=${ytChannelMatch[1]}&autoplay=1&mute=1`;
+    }
+  }
+
   const [result] = await db
     .insert(streams)
     .values({
@@ -1262,6 +1284,7 @@ export async function createCreatorStream(
       gameSlug: data.gameSlug,
       thumbnailUrl: data.thumbnailUrl,
       streamerName: data.streamerName,
+      embedUrl,
       isLive: true,
     })
     .$returningId();

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "wouter";
 import { Eye, Radio, Trophy, Video } from "lucide-react";
 
@@ -7,6 +8,7 @@ export interface StreamCardData {
   streamerName?: string | null;
   platform: "twitch" | "youtube" | "discord" | "other";
   url: string;
+  embedUrl?: string | null;
   game?: string | null;
   isLive: boolean;
   viewerCount?: number | null;
@@ -33,24 +35,49 @@ interface StreamCardProps {
 
 export function StreamCard({ stream }: StreamCardProps) {
   const badge = PLATFORM_BADGE[stream.platform] ?? PLATFORM_BADGE.other;
+  const [hovered, setHovered] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
+  // Only show live preview for Twitch streams with embedUrl when hovered
+  const canPreview = stream.isLive && !!stream.embedUrl && stream.platform === "twitch";
 
   return (
     <Link href={`/streams/${stream.id}`}>
-      <div className="group relative flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_0_24px_rgba(220,38,38,0.18)] hover:-translate-y-0.5 select-none">
+      <div
+        className="group relative flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:border-red-500/60 hover:shadow-[0_0_24px_rgba(220,38,38,0.18)] hover:-translate-y-0.5 select-none"
+        onMouseEnter={() => canPreview && setHovered(true)}
+        onMouseLeave={() => { setHovered(false); setIframeLoaded(false); }}
+      >
 
-        {/* ── Thumbnail ── */}
+        {/* ── Thumbnail / Live Preview ── */}
         <div className="relative w-full aspect-video overflow-hidden bg-card">
+
+          {/* Static thumbnail (always rendered, hidden when iframe is loaded) */}
           {stream.thumbnailUrl ? (
             <img
               src={stream.thumbnailUrl}
               alt={stream.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
+                hovered && iframeLoaded ? "opacity-0" : "opacity-100 group-hover:scale-105"
+              }`}
               draggable={false}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
+            <div className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-300 ${hovered && iframeLoaded ? "opacity-0" : "opacity-100"}`}>
               <Radio className="w-10 h-10 text-zinc-700" />
             </div>
+          )}
+
+          {/* Live preview iframe — only for Twitch, only on hover */}
+          {canPreview && hovered && stream.embedUrl && (
+            <iframe
+              src={stream.embedUrl}
+              className={`absolute inset-0 w-full h-full border-0 transition-opacity duration-500 ${iframeLoaded ? "opacity-100" : "opacity-0"}`}
+              allow="autoplay; encrypted-media"
+              allowFullScreen={false}
+              onLoad={() => setIframeLoaded(true)}
+              title={stream.title}
+            />
           )}
 
           {/* Gradient overlay */}

@@ -930,7 +930,7 @@ export default function Home() {
                   >
                     <div className="relative h-32 overflow-hidden">
                       {c.banner ? (
-                        <img src={c.banner} alt={c.displayName} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        <img src={c.banner} alt={c.nickname ?? c.userName ?? "Creador"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-red-950/40 to-zinc-900" />
                       )}
@@ -942,9 +942,9 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="p-3 flex items-center gap-2.5">
-                      <UserAvatar avatar={c.avatar} name={c.displayName} size="sm" />
+                      <UserAvatar avatar={c.avatar} name={c.nickname ?? c.userName ?? "Creador"} size="sm" />
                       <div className="min-w-0">
-                        <p className="text-foreground text-sm font-bold truncate">{c.displayName}</p>
+                        <p className="text-foreground text-sm font-bold truncate">{c.nickname ?? c.userName ?? "Creador"}</p>
                         <p className="text-muted-foreground text-xs truncate">{c.category ?? "Creador"}</p>
                       </div>
                     </div>

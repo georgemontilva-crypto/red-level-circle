@@ -1,11 +1,9 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { Radio, Tv, X, Crown } from "lucide-react";
-import { Link } from "wouter";
+import { Radio, Tv, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { StreamCard } from "@/components/StreamCard";
 import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
-import { ChevronRight } from "lucide-react";
 
 // ─── Game cover art (Twitch box art CDN) ─────────────────────────────────────
 const GAME_COVERS: Record<string, string> = {
@@ -24,7 +22,10 @@ const GAME_COVERS: Record<string, string> = {
 // ─── Skeleton card ────────────────────────────────────────────────────────────
 function SkeletonCard() {
   return (
-    <div className="flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden animate-pulse">
+    <div
+      className="flex-shrink-0 flex flex-col bg-card border border-border/60 rounded-xl overflow-hidden animate-pulse"
+      style={{ width: "clamp(260px, 80vw, 320px)" }}
+    >
       <div className="w-full aspect-video bg-secondary" />
       <div className="p-3 flex gap-3">
         <div className="w-8 h-8 rounded-full bg-secondary flex-shrink-0" />
@@ -37,35 +38,85 @@ function SkeletonCard() {
   );
 }
 
-// ─── Game section header ──────────────────────────────────────────────────────
-function GameSectionHeader({ game, count }: { game: string; count: number }) {
+// ─── Horizontal scroll row per game ──────────────────────────────────────────
+function GameSection({ game, streams }: { game: string; streams: any[] }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
   const cover = GAME_COVERS[game];
+
+  function scroll(dir: "left" | "right") {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Scroll by one card width (~300px + gap)
+    el.scrollBy({ left: dir === "right" ? 316 : -316, behavior: "smooth" });
+  }
+
   return (
-    <div className="flex items-center gap-4 mb-5">
-      <div className="flex-shrink-0 w-10 h-[54px] rounded-md overflow-hidden bg-secondary border border-border/50 shadow-lg">
-        {cover ? (
-          <img src={cover} alt={game} className="w-full h-full object-cover" draggable={false} />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Tv className="w-5 h-5 text-muted-foreground" />
+    <section>
+      <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-5" />
+
+      {/* Game header */}
+      <div className="flex items-center gap-4 mb-4 px-4 sm:px-0">
+        <div className="flex-shrink-0 w-10 h-[54px] rounded-md overflow-hidden bg-secondary border border-border/50 shadow-lg">
+          {cover ? (
+            <img src={cover} alt={game} className="w-full h-full object-cover" draggable={false} />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Tv className="w-5 h-5 text-muted-foreground" />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-orbitron font-black text-lg text-white tracking-wide leading-none">
+            {game}
+          </h2>
+          <p className="text-muted-foreground text-xs font-mono mt-1">
+            {streams.length} transmisión{streams.length !== 1 ? "es" : ""} en vivo
+          </p>
+        </div>
+        {/* Arrow buttons — visible on desktop */}
+        <div className="hidden sm:flex items-center gap-1">
+          <button
+            onClick={() => scroll("left")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 border border-border/50 hover:border-red-500/40 transition-all"
+            aria-label="Anterior"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => scroll("right")}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 border border-border/50 hover:border-red-500/40 transition-all"
+            aria-label="Siguiente"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
+
+      {/* Horizontal scroll container */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto pb-3 px-4 sm:px-0"
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+          scrollSnapType: "x mandatory",
+        }}
+      >
+        {streams.map((stream) => (
+          <div
+            key={stream.id}
+            className="flex-shrink-0"
+            style={{
+              // Mobile: 1 card fills ~85% of viewport; tablet+: fixed 300px
+              width: "clamp(260px, 80vw, 300px)",
+              scrollSnapAlign: "start",
+            }}
+          >
+            <StreamCard stream={stream as any} />
           </div>
-        )}
+        ))}
       </div>
-      <div className="flex-1 min-w-0">
-        <h2 className="font-orbitron font-black text-lg text-white tracking-wide leading-none">
-          {game}
-        </h2>
-        <p className="text-muted-foreground text-xs font-mono mt-1">
-          {count} transmisión{count !== 1 ? "es" : ""} en vivo
-        </p>
-      </div>
-      <Link href={`/streams?game=${encodeURIComponent(game)}`}>
-        <button className="flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-red-400 transition-colors border border-border/60 hover:border-red-500/50 px-3 py-1.5 rounded-lg whitespace-nowrap">
-          Mostrar todo
-          <ChevronRight className="w-3.5 h-3.5" />
-        </button>
-      </Link>
-    </div>
+    </section>
   );
 }
 
@@ -83,17 +134,16 @@ export default function Streams() {
   });
 
   const isApproved = myApp?.status === "approved";
-
   const [showStreamPanel, setShowStreamPanel] = useState(false);
 
   const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
   return (
     <div className="min-h-screen text-white" style={{ background: "var(--bg-main)" }}>
-      <div className="pt-6 pb-20">
+      <div className="pt-6 pb-24">
 
         {/* ── Page header ── */}
-        <div className="mb-10">
+        <div className="mb-8 px-4 sm:px-0">
           <div className="flex items-center gap-3 mb-2">
             <Radio className="w-5 h-5 text-red-500 flex-shrink-0" />
             <h1 className="font-orbitron font-black text-3xl sm:text-4xl text-white tracking-wider">
@@ -113,19 +163,19 @@ export default function Streams() {
 
         {/* ── Loading skeletons ── */}
         {isLoading && (
-          <div className="space-y-14">
+          <div className="space-y-12">
             {[0, 1].map((i) => (
               <div key={i}>
-                <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-6" />
-                <div className="flex items-center gap-4 mb-5">
+                <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-5 mx-4 sm:mx-0" />
+                <div className="flex items-center gap-4 mb-4 px-4 sm:px-0">
                   <div className="w-10 h-[54px] bg-secondary rounded-md animate-pulse" />
                   <div className="flex-1 space-y-2">
                     <div className="h-4 bg-secondary rounded w-40 animate-pulse" />
                     <div className="h-2 bg-secondary rounded w-24 animate-pulse" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {Array.from({ length: 5 }).map((_, j) => <SkeletonCard key={j} />)}
+                <div className="flex gap-3 overflow-x-hidden px-4 sm:px-0">
+                  {Array.from({ length: 4 }).map((_, j) => <SkeletonCard key={j} />)}
                 </div>
               </div>
             ))}
@@ -134,7 +184,7 @@ export default function Streams() {
 
         {/* ── Empty state ── */}
         {!isLoading && (!groups || groups.length === 0) && (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
+          <div className="flex flex-col items-center justify-center py-32 text-center px-4">
             <div className="w-20 h-20 rounded-full bg-card border border-border flex items-center justify-center mb-6">
               <Radio className="w-9 h-9 text-zinc-700" />
             </div>
@@ -147,19 +197,11 @@ export default function Streams() {
           </div>
         )}
 
-        {/* ── Game sections ── */}
+        {/* ── Game sections (horizontal scroll per game) ── */}
         {!isLoading && groups && groups.length > 0 && (
-          <div className="space-y-14">
+          <div className="space-y-12">
             {groups.map(({ game, streams }) => (
-              <section key={game}>
-                <div className="h-px bg-gradient-to-r from-red-600/40 via-zinc-700/30 to-transparent mb-6" />
-                <GameSectionHeader game={game} count={streams.length} />
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                  {streams.slice(0, 5).map((stream) => (
-                    <StreamCard key={stream.id} stream={stream as any} />
-                  ))}
-                </div>
-              </section>
+              <GameSection key={game} game={game} streams={streams} />
             ))}
           </div>
         )}
