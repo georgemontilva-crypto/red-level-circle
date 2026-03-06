@@ -656,17 +656,39 @@ export async function syncYouTubeStreams(): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
-  const creators = await db
+  // Fetch creators — youtubeChannelId may not exist yet if migration is pending
+  const rawCreators = await db
     .select({
       userId: contentCreators.userId,
       youtube: contentCreators.youtube,
-      youtubeChannelId: contentCreators.youtubeChannelId,
       userName: users.name,
       nickname: users.nickname,
     })
     .from(contentCreators)
     .innerJoin(users, eq(contentCreators.userId, users.id))
     .where(and(eq(contentCreators.status, "approved"), isNotNull(contentCreators.youtube)));
+
+  // Try to also fetch youtubeChannelId (column added in migration 0013)
+  type CreatorRow = typeof rawCreators[number] & { youtubeChannelId?: string | null };
+  let creators: CreatorRow[];
+  try {
+    const withChannelId = await db
+      .select({
+        userId: contentCreators.userId,
+        youtube: contentCreators.youtube,
+        youtubeChannelId: contentCreators.youtubeChannelId,
+        userName: users.name,
+        nickname: users.nickname,
+      })
+      .from(contentCreators)
+      .innerJoin(users, eq(contentCreators.userId, users.id))
+      .where(and(eq(contentCreators.status, "approved"), isNotNull(contentCreators.youtube)));
+    creators = withChannelId;
+  } catch {
+    // Column doesn't exist yet (migration pending) — proceed without it
+    console.warn("[youtubeSync] youtubeChannelId column not yet available, will resolve via API");
+    creators = rawCreators.map((c) => ({ ...c, youtubeChannelId: null as string | null }));
+  }
 
   if (creators.length === 0) {
     console.log("[youtubeSync] No approved creators with YouTube channel configured");
