@@ -354,27 +354,38 @@ async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
     if (!isLive) return empty;
 
     // ── Extract videoId — priority order: ────────────────────────────────────
-    // 1. First watchEndpoint videoId in the page.
-    //    YouTube puts the primary video's watchEndpoint FIRST in the page data
-    //    (inside webPrefetchData). This is the most reliable signal for the
-    //    live video — it's the video the /live page is actually serving.
-    // 2. videoDetails.videoId  → present in ytInitialPlayerResponse for the
-    //    primary video (pattern: "videoDetails":{"videoId":"...").
-    //    Note: sometimes videoDetails contains a playerOverlayVideoDetailsRenderer
-    //    instead of a direct videoId — in that case this match returns null.
-    // 3. videoId closest to "isLive":true  → fallback.
-    // 4. First videoId in the page  → last resort.
+    // DIAGNOSIS (2026-03-06): On the /live page, YouTube embeds the live video's
+    // videoId in a watchEndpoint that appears JUST BEFORE "isLive":true in the HTML.
+    // The distance is ~475 chars. This is the most reliable signal:
+    //
+    //   "watchEndpoint":{"videoId":"JF8q9D8S3fM",...}  ← live video
+    //   ...475 chars...
+    //   "isLive":true
+    //
+    // Other candidates that are WRONG:
+    //   - currentVideoEndpoint: points to a different video (mDmWJtSIrIk)
+    //   - First watchEndpoint in page: same as above (webPrefetchData)
+    //   - videoDetails: contains playerOverlayVideoDetailsRenderer, no direct videoId
+    //   - ytInitialPlayerResponse: videoId not present in the first 200KB
+    //
+    // Strategy: find "isLive":true, then search BACKWARDS for the last videoId.
+    // This is the video the /live page is serving.
     let videoId: string | null = null;
     let videoIdSource = 'unknown';
 
-    // Priority 1: first watchEndpoint in the page (most reliable for /live pages)
-    const watchEndpointMatch = html.match(/"watchEndpoint":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
-    if (watchEndpointMatch?.[1]) {
-      videoId = watchEndpointMatch[1];
-      videoIdSource = 'watchEndpoint';
+    // Priority 1: last videoId BEFORE "isLive":true (most reliable — confirmed by diagnosis)
+    const isLiveIdx = html.indexOf('"isLive":true');
+    if (isLiveIdx > -1) {
+      // Search backwards up to 2000 chars before isLive:true
+      const before = html.slice(Math.max(0, isLiveIdx - 2000), isLiveIdx);
+      const allBefore = Array.from(before.matchAll(/"videoId":"([a-zA-Z0-9_-]{11})"/g));
+      if (allBefore.length > 0) {
+        videoId = allBefore[allBefore.length - 1][1]; // last match = closest to isLive
+        videoIdSource = 'last-before-isLive';
+      }
     }
 
-    // Priority 2: videoDetails.videoId (direct pattern)
+    // Priority 2: videoDetails.videoId (direct pattern in ytInitialPlayerResponse)
     if (!videoId) {
       const videoDetailsMatch = html.match(/"videoDetails":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
       if (videoDetailsMatch?.[1]) {
@@ -383,17 +394,16 @@ async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
       }
     }
 
-    // Priority 3: videoId closest to "isLive":true
+    // Priority 3: first watchEndpoint in the page
     if (!videoId) {
-      const isLiveIdx = html.indexOf('"isLive":true');
-      if (isLiveIdx > -1) {
-        const ctx = html.slice(Math.max(0, isLiveIdx - 500), isLiveIdx + 500);
-        const ctxMatch = ctx.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-        if (ctxMatch?.[1]) { videoId = ctxMatch[1]; videoIdSource = 'isLive-context'; }
+      const watchEndpointMatch = html.match(/"watchEndpoint":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
+      if (watchEndpointMatch?.[1]) {
+        videoId = watchEndpointMatch[1];
+        videoIdSource = 'watchEndpoint';
       }
     }
 
-    // Priority 4: first videoId in the page (legacy fallback)
+    // Priority 4: first videoId in the page (last resort)
     if (!videoId) {
       const firstMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
       if (firstMatch?.[1]) { videoId = firstMatch[1]; videoIdSource = 'first-match'; }
