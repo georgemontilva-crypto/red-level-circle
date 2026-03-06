@@ -94,11 +94,23 @@ export default function StreamDetail() {
        *   - Video arriba (aspect-video fijo), chat llena el resto.
        * ─────────────────────────────────────────────────────────────────────
        */}
-      {/* Mobile: empieza debajo del navbar (h-14 = 56px) */}
-      <div className="lg:hidden fixed z-40 flex flex-col bg-black" style={{ top: 56, left: 0, right: 0, bottom: 0 }}>
-        {/* Video: proporción 16:9 fija */}
+      {/*
+       * Mobile: layout fijo debajo del navbar.
+       * El video tiene altura FIJA basada en el ancho (100vw * 9/16).
+       * Cuando sube el teclado, el navegador reduce el viewport — el video
+       * no se mueve porque su altura no depende del viewport height.
+       * Solo el chat (flex-1 + overflow-hidden) se comprime.
+       */}
+      <div
+        className="lg:hidden fixed z-40 flex flex-col bg-black"
+        style={{ top: 56, left: 0, right: 0, bottom: 0 }}
+      >
+        {/* Video: altura fija = 56.25vw (16:9), nunca cambia aunque suba el teclado */}
         {resolvedEmbedUrl ? (
-          <div className="w-full flex-shrink-0" style={{ aspectRatio: "16/9" }}>
+          <div
+            className="w-full flex-shrink-0 bg-black"
+            style={{ height: "calc(100vw * 9 / 16)" }}
+          >
             <iframe
               src={resolvedEmbedUrl}
               className="w-full h-full border-0"
@@ -108,12 +120,15 @@ export default function StreamDetail() {
             />
           </div>
         ) : (
-          <div className="w-full flex-shrink-0 bg-zinc-900 flex items-center justify-center" style={{ aspectRatio: "16/9" }}>
+          <div
+            className="w-full flex-shrink-0 bg-zinc-900 flex items-center justify-center"
+            style={{ height: "calc(100vw * 9 / 16)" }}
+          >
             <Tv className="w-10 h-10 text-zinc-600" />
           </div>
         )}
 
-        {/* Chat: llena el resto de la pantalla */}
+        {/* Chat: ocupa el resto y se comprime cuando sube el teclado */}
         <div className="flex-1 min-h-0 overflow-hidden">
           <RLCChat streamId={streamId} currentUser={currentUser} />
         </div>
