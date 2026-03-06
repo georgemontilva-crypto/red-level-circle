@@ -6,6 +6,7 @@ import { startTwitchSyncJob } from "../twitchSync";
 import { registerWebhookRoutes } from "../webhooks";
 import { startBetsClosingJob } from "../betsClosingJob";
 import { startSeriesCronJob } from "../seriesCronJob";
+import { setupStreamChatWS } from "../streamChat";
 import { closeDbPool } from "../db";
 import { createServer } from "http";
 import net from "net";
@@ -228,7 +229,20 @@ async function runCustomMigrations() {
     '  `addedAt`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP' +
     ')',
     // Fix: rename createdAt to addedAt if it exists
-    'ALTER TABLE `creator_mission_links` CHANGE COLUMN `createdAt` `addedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP'
+    'ALTER TABLE `creator_mission_links` CHANGE COLUMN `createdAt` `addedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP',
+    // 0040: stream_chat_messages — chat propio de RLC por stream
+    'CREATE TABLE IF NOT EXISTS `stream_chat_messages` (' +
+    '  `id`           int          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `streamId`     int          NOT NULL,' +
+    '  `userId`       int          NOT NULL,' +
+    '  `userName`     varchar(128) NOT NULL,' +
+    '  `userAvatar`   text         NULL,' +
+    '  `userRole`     varchar(32)  NULL DEFAULT \'user\',' +
+    '  `userNickname` varchar(64)  NULL,' +
+    '  `message`      text         NOT NULL,' +
+    '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `scm_stream_idx` (`streamId`)' +
+    ')'
   ];
   for (const sql of customMigrations) {
     try {
@@ -279,6 +293,9 @@ async function startServer() {
       createContext,
     })
   );
+  // Stream chat WebSocket server
+  setupStreamChatWS(server);
+
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);

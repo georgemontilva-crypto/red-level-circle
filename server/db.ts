@@ -36,6 +36,9 @@ import {
   type InsertCosmetic,
   type InsertRewardTask,
   type InsertBrandAd,
+  streamChatMessages,
+  type InsertStreamChatMessage,
+  type StreamChatMessage,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -3746,4 +3749,26 @@ export async function deleteTournament(id: number): Promise<void> {
   await db.delete(tournamentRegistrations).where(eq(tournamentRegistrations.tournamentId, id));
   await db.delete(streams).where(eq(streams.tournamentId, id));
   await db.delete(tournaments).where(eq(tournaments.id, id));
+}
+
+// ─── Stream Chat Messages ─────────────────────────────────────────────────────
+export async function insertChatMessage(data: InsertStreamChatMessage): Promise<StreamChatMessage> {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const [result] = await db.insert(streamChatMessages).values(data);
+  const insertId = (result as { insertId: number }).insertId;
+  const rows = await db.select().from(streamChatMessages).where(eq(streamChatMessages.id, insertId)).limit(1);
+  return rows[0];
+}
+
+export async function getChatMessages(streamId: number, limit = 100): Promise<StreamChatMessage[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(streamChatMessages)
+    .where(eq(streamChatMessages.streamId, streamId))
+    .orderBy(desc(streamChatMessages.createdAt))
+    .limit(limit)
+    .then((rows) => rows.reverse());
 }

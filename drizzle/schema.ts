@@ -969,3 +969,18 @@ export const creatorMissionLinks = mysqlTable("creator_mission_links", {
   addedAt: timestamp("addedAt").defaultNow().notNull(),
 });
 export type CreatorMissionLink = typeof creatorMissionLinks.$inferSelect;
+
+// ─── Stream Chat Messages ─────────────────────────────────────────────────────
+export const streamChatMessages = mysqlTable("stream_chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  streamId: int("streamId").notNull(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 128 }).notNull(),
+  userAvatar: text("userAvatar"),
+  userRole: varchar("userRole", { length: 32 }).default("user"),
+  userNickname: varchar("userNickname", { length: 64 }),
+  message: text("message").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [index("scm_stream_idx").on(t.streamId)]);
+export type StreamChatMessage = typeof streamChatMessages.$inferSelect;
+export type InsertStreamChatMessage = typeof streamChatMessages.$inferInsert;
