@@ -18,8 +18,21 @@
  *   - Stale connections (writableEnded) are cleaned up on every broadcast.
  */
 
+import { EventEmitter } from "events";
 import type { Request, Response } from "express";
 import { authenticateRequest } from "./_core/authService";
+
+// ─── Internal EventEmitter for tRPC subscriptions ────────────────────────────
+/**
+ * Internal bus that bridges sseEmit() calls with tRPC subscription procedures.
+ * Each event is emitted as:
+ *   - "broadcast"         → for public events (userId == null)
+ *   - `user:${userId}`    → for private events targeting a specific user
+ *
+ * tRPC subscription procedures listen on both channels for the authenticated user.
+ */
+export const sseInternalBus = new EventEmitter();
+sseInternalBus.setMaxListeners(1000); // allow many concurrent subscriptions
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -132,11 +145,14 @@ export async function sseHandler(req: Request, res: Response): Promise<void> {
  * Emit an SSE event to relevant connected clients.
  * - If event.userId is set, only that user's connections receive it.
  * - If event.userId is null/undefined, all clients receive it (broadcast).
+ *
+ * Also emits on the internal bus for tRPC subscription procedures.
  */
 export function sseEmit(event: SSEEvent): void {
   const data = JSON.stringify({ type: event.type, payload: event.payload ?? {} });
   const message = `event: ${event.type}\ndata: ${data}\n\n`;
 
+  // Push to legacy Express SSE clients
   for (const client of Array.from(clients.values())) {
     if (event.userId != null && client.userId !== event.userId) continue;
     if (client.res.writableEnded) {
@@ -148,6 +164,16 @@ export function sseEmit(event: SSEEvent): void {
     } catch {
       clients.delete(client.id);
     }
+  }
+
+  // Bridge to tRPC subscription procedures via internal EventEmitter
+  const eventData = { type: event.type, payload: event.payload ?? {} };
+  if (event.userId != null) {
+    // Private event: emit on user-specific channel
+    sseInternalBus.emit(`user:${event.userId}`, eventData);
+  } else {
+    // Public broadcast: emit on broadcast channel
+    sseInternalBus.emit("broadcast", eventData);
   }
 }
 

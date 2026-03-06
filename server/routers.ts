@@ -193,7 +193,7 @@ import {
   syncTournamentRankings,
 } from "./orchestrator";
 import { withCache, cache, CacheKey, TTL } from "./cache";
-import { sseBroadcast, sseNotifyUser } from "./sse";
+import { sseBroadcast, sseNotifyUser, sseInternalBus } from "./sse";
 
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -3055,6 +3055,74 @@ Genera el reporte de precio RLC para este producto.`;
       .mutation(async ({ ctx, input }) => {
         await markOneRead(input.id, ctx.user.id);
         return { success: true };
+      }),
+    /**
+     * tRPC v11 native SSE subscription.
+     * Streams real-time events to the authenticated user:
+     *   - Public broadcasts (banner, news, tournament, ally, ad)
+     *   - Private events for this user (notification, coins, follow, unfollow)
+     *
+     * The client uses httpSubscriptionLink + splitLink to connect here.
+     * The legacy Express /api/sse endpoint is kept for backwards compatibility.
+     */
+    subscribe: protectedProcedure
+      .input(
+        z.object({
+          // lastEventId allows resuming after reconnect (SSE spec)
+          lastEventId: z.string().nullish(),
+        }).optional(),
+      )
+      .subscription(async function* (opts) {
+        const userId = opts.ctx.user.id;
+        // signal may be undefined if the adapter doesn't provide one
+        const signal = opts.signal ?? new AbortController().signal;
+
+        // Merge both iterables using a simple async generator with a shared queue.
+        const queue: Array<{ type: string; payload: Record<string, unknown> }> = [];
+        let resolve: (() => void) | null = null;
+        let done = signal.aborted;
+
+        const enqueue = (data: unknown) => {
+          if (done) return;
+          const event = data as { type: string; payload: Record<string, unknown> };
+          queue.push(event);
+          resolve?.();
+          resolve = null;
+        };
+
+        // Attach listeners for both channels
+        const broadcastListener = (data: unknown) => enqueue(data);
+        const userListener = (data: unknown) => enqueue(data);
+        sseInternalBus.on("broadcast", broadcastListener);
+        sseInternalBus.on(`user:${userId}`, userListener);
+
+        // Cleanup when the subscription ends (client disconnects or server returns)
+        signal.addEventListener("abort", () => {
+          done = true;
+          sseInternalBus.off("broadcast", broadcastListener);
+          sseInternalBus.off(`user:${userId}`, userListener);
+          resolve?.();
+          resolve = null;
+        });
+
+        try {
+          while (!done) {
+            // Drain the queue
+            while (queue.length > 0) {
+              const event = queue.shift()!;
+              yield { type: event.type, payload: event.payload };
+            }
+            // Wait for the next event
+            if (!done) {
+              await new Promise<void>((res) => {
+                resolve = res;
+              });
+            }
+          }
+        } finally {
+          sseInternalBus.off("broadcast", broadcastListener);
+          sseInternalBus.off(`user:${userId}`, userListener);
+        }
       }),
   }),
 
