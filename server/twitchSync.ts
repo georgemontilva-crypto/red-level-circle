@@ -353,14 +353,42 @@ async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
 
     if (!isLive) return empty;
 
-    // Extract videoId — first match in the page (the live video)
-    const videoIdMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-    const videoId = videoIdMatch?.[1] ?? null;
+    // ── Extract videoId — priority order: ────────────────────────────────────
+    // 1. videoDetails.videoId  → the main video YouTube is serving on this page
+    //    This is the most reliable: it's the video the page is about, not a
+    //    recommendation or related video.
+    // 2. First videoId near "isLive":true  → fallback if videoDetails is absent
+    // 3. First videoId in the page  → last resort (may be a recommendation)
+    let videoId: string | null = null;
+
+    // Priority 1: videoDetails (YouTube embeds this for the primary video)
+    const videoDetailsMatch = html.match(/"videoDetails":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
+    if (videoDetailsMatch?.[1]) {
+      videoId = videoDetailsMatch[1];
+    }
+
+    // Priority 2: videoId closest to "isLive":true
+    if (!videoId) {
+      const isLiveIdx = html.indexOf('"isLive":true');
+      if (isLiveIdx > -1) {
+        const ctx = html.slice(Math.max(0, isLiveIdx - 500), isLiveIdx + 500);
+        const ctxMatch = ctx.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+        if (ctxMatch?.[1]) videoId = ctxMatch[1];
+      }
+    }
+
+    // Priority 3: first videoId in the page (legacy fallback)
+    if (!videoId) {
+      const firstMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+      videoId = firstMatch?.[1] ?? null;
+    }
 
     if (!videoId) {
       console.warn(`[youtubeSync] Live detected for "${handle}" but could not extract videoId`);
       return { ...empty, isLive: true };
     }
+
+    console.log(`[youtubeSync] Extracted videoId for "${handle}": ${videoId} (source: ${videoDetailsMatch?.[1] ? 'videoDetails' : 'fallback'})`);
 
     // Extract title
     const titleMatch = html.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
@@ -402,29 +430,53 @@ export async function handleCreatorWentLive(opts: {
   const db = await getDb();
   if (!db) return;
 
-  // Check if there's already an active stream for this user
-  const existing = await db
-    .select({ id: streams.id })
-    .from(streams)
-    .where(and(eq(streams.userId, opts.userId), eq(streams.isLive, true)))
-    .limit(1);
+  // ── Find an existing live stream for this creator ────────────────────────
+  // Strategy: look by userId first (auto-created streams), then fall back to
+  // matching by channel URL or platform (catches manually-created streams).
+  let existingId: number | null = null;
 
-  if (existing.length > 0) {
-    // Update existing stream with fresh data
+  // 1. By userId (most specific — auto-created streams)
+  if (opts.userId) {
+    const byUser = await db
+      .select({ id: streams.id })
+      .from(streams)
+      .where(and(eq(streams.userId, opts.userId), eq(streams.isLive, true)))
+      .limit(1);
+    if (byUser.length > 0) existingId = byUser[0].id;
+  }
+
+  // 2. By channel URL + platform (catches manually-created streams like "Prueba 2")
+  if (!existingId && opts.channelUrl) {
+    const byUrl = await db
+      .select({ id: streams.id })
+      .from(streams)
+      .where(and(
+        eq(streams.isLive, true),
+        eq(streams.platform, opts.platform),
+        eq(streams.url, opts.channelUrl),
+      ))
+      .limit(1);
+    if (byUrl.length > 0) existingId = byUrl[0].id;
+  }
+
+  if (existingId !== null) {
+    // Update existing stream with fresh data — always overwrite embedUrl
     const updateData: Record<string, unknown> = {
       viewerCount: opts.viewerCount,
       updatedAt: new Date(),
+      // Assign userId if the stream was created manually (no userId)
+      userId: opts.userId,
     };
     if (opts.thumbnailUrl) updateData.thumbnailUrl = opts.thumbnailUrl;
     if (opts.title) updateData.title = opts.title;
     if (opts.game) updateData.game = opts.game;
-    // Always overwrite embedUrl so the videoId is always the current live one
+    // ALWAYS overwrite embedUrl so the videoId is always the current live one
     if (opts.embedUrl) updateData.embedUrl = opts.embedUrl;
-    // Also keep the stream URL up to date
     if (opts.channelUrl) updateData.url = opts.channelUrl;
-    await db.update(streams).set(updateData).where(eq(streams.id, existing[0].id));
+    await db.update(streams).set(updateData).where(eq(streams.id, existingId));
+    console.log(`[streamSync] ✏️  Updated stream #${existingId} for userId=${opts.userId} on ${opts.platform} (embedUrl=${opts.embedUrl ?? 'unchanged'})`);
     // Notify clients of viewer count / metadata update
-    sseBroadcast("stream_updated", { streamId: existing[0].id, userId: opts.userId, viewerCount: opts.viewerCount });
+    sseBroadcast("stream_updated", { streamId: existingId, userId: opts.userId, viewerCount: opts.viewerCount });
     return;
   }
 
