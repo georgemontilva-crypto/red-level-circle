@@ -1,9 +1,8 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
-import { Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight, MessageSquare, X } from "lucide-react";
+import { Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StreamCard } from "@/components/StreamCard";
-import { useState } from "react";
 
 const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
   twitch:  { label: "TWITCH",  cls: "bg-purple-600/20 text-purple-300 border-purple-500/40" },
@@ -30,7 +29,6 @@ function buildChatUrl(
   const domain = window.location.hostname;
 
   if (platform === "twitch") {
-    // Extract channel login from the stream URL or embedUrl
     const channelFromUrl = streamUrl
       ?.replace(/https?:\/\/(www\.)?twitch\.tv\//i, "")
       .split("?")[0]
@@ -42,7 +40,6 @@ function buildChatUrl(
   }
 
   if (platform === "youtube") {
-    // Extract videoId from embedUrl (youtube-nocookie.com/embed/{videoId})
     const videoId = embedUrl?.match(/\/embed\/([\w-]+)/)?.[1];
     if (!videoId) return null;
     return `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
@@ -54,15 +51,12 @@ function buildChatUrl(
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
-  const [chatOpen, setChatOpen] = useState(true);
 
-  // Efficient: fetch only this stream by ID
   const { data: stream, isLoading } = trpc.streams.byId.useQuery(
     { id: streamId },
     { enabled: streamId > 0, refetchInterval: 30_000 },
   );
 
-  // Fetch related streams from same game using byGame (grouped by game)
   const { data: byGameData } = trpc.streams.byGame.useQuery(
     undefined,
     { enabled: !!stream?.game, refetchInterval: 30_000 },
@@ -98,7 +92,7 @@ export default function StreamDetail() {
 
   const badge = PLATFORM_BADGE[stream.platform] ?? PLATFORM_BADGE.other;
 
-  // Build embed URL client-side as fallback when server hasn't generated it yet
+  // Build embed URL client-side as fallback
   let resolvedEmbedUrl = stream.embedUrl;
   if (!resolvedEmbedUrl) {
     const channelLogin = stream.url
@@ -120,10 +114,10 @@ export default function StreamDetail() {
 
   return (
     <div className="min-h-screen bg-card text-white">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-20">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 pt-6 pb-20">
 
         {/* ── Breadcrumb ── */}
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-6">
+        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground mb-5">
           <Link href="/streams">
             <span className="hover:text-red-400 cursor-pointer transition-colors flex items-center gap-1">
               <Radio className="w-3 h-3" /> EN VIVO
@@ -139,74 +133,71 @@ export default function StreamDetail() {
           <span className="text-white truncate max-w-[200px]">{stream.title}</span>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-6">
+        {/* ── Main grid: player+chat | sidebar ── */}
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-6">
 
-          {/* ── Main content ── */}
-          <div>
-            {/* ── Player + Chat layout ── */}
+          {/* ── Left column: player + chat side by side + info bar ── */}
+          <div className="flex flex-col gap-4">
+
+            {/* ── Player + Chat side by side ── */}
             {resolvedEmbedUrl ? (
-              <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
-                {/* Video player */}
-                <div className="aspect-video">
-                  <iframe
-                    src={resolvedEmbedUrl}
-                    className="w-full h-full"
-                    allowFullScreen
-                    allow="autoplay; encrypted-media"
-                    title={stream.title}
-                  />
+              <div
+                className="bg-card border border-border rounded-xl overflow-hidden"
+                style={{ display: "flex", flexDirection: "row" }}
+              >
+                {/* Video player — takes remaining width */}
+                <div className={chatUrl ? "flex-1 min-w-0" : "w-full"}>
+                  <div className="aspect-video w-full">
+                    <iframe
+                      src={resolvedEmbedUrl}
+                      className="w-full h-full"
+                      allowFullScreen
+                      allow="autoplay; encrypted-media"
+                      title={stream.title}
+                    />
+                  </div>
                 </div>
 
-                {/* ── Integrated chat panel ── */}
+                {/* Chat panel — fixed width, same height as video */}
                 {chatUrl && (
-                  <div className="border-t border-border">
-                    {/* Chat header / toggle */}
-                    <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-red-400" />
-                        <span className="text-xs font-mono font-semibold text-white tracking-wide">
-                          CHAT EN VIVO
+                  <div
+                    className="flex flex-col border-l border-border bg-[#0e0e10]"
+                    style={{ width: "340px", flexShrink: 0 }}
+                  >
+                    {/* Chat header */}
+                    <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-secondary/20 flex-shrink-0">
+                      <MessageSquare className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-[11px] font-mono font-semibold text-white tracking-widest uppercase">
+                        Chat en vivo
+                      </span>
+                      {stream.platform === "twitch" && (
+                        <span className="ml-auto text-[9px] font-mono text-purple-300 bg-purple-600/20 border border-purple-500/30 px-1.5 py-0.5 rounded">
+                          TWITCH
                         </span>
-                        {stream.platform === "twitch" && (
-                          <span className="text-[10px] font-mono text-purple-300 bg-purple-600/20 border border-purple-500/30 px-1.5 py-0.5 rounded">
-                            TWITCH
-                          </span>
-                        )}
-                        {stream.platform === "youtube" && (
-                          <span className="text-[10px] font-mono text-red-300 bg-red-700/20 border border-red-500/30 px-1.5 py-0.5 rounded">
-                            YOUTUBE
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => setChatOpen((v) => !v)}
-                        className="text-muted-foreground hover:text-white transition-colors p-1 rounded hover:bg-white/5"
-                        title={chatOpen ? "Ocultar chat" : "Mostrar chat"}
-                      >
-                        {chatOpen ? (
-                          <X className="w-3.5 h-3.5" />
-                        ) : (
-                          <MessageSquare className="w-3.5 h-3.5" />
-                        )}
-                      </button>
+                      )}
+                      {stream.platform === "youtube" && (
+                        <span className="ml-auto text-[9px] font-mono text-red-300 bg-red-700/20 border border-red-500/30 px-1.5 py-0.5 rounded">
+                          YOUTUBE
+                        </span>
+                      )}
                     </div>
 
-                    {/* Chat iframe */}
-                    {chatOpen && (
-                      <div className="h-[480px] sm:h-[520px]">
-                        <iframe
-                          src={chatUrl}
-                          className="w-full h-full border-0"
-                          title="Chat en vivo"
-                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-storage-access-by-user-activation"
-                        />
-                      </div>
-                    )}
+                    {/* Chat iframe — fills remaining height */}
+                    <div className="flex-1 min-h-0" style={{ height: 0 }}>
+                      <iframe
+                        src={chatUrl}
+                        className="w-full h-full border-0"
+                        title="Chat en vivo"
+                        style={{ minHeight: "400px" }}
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-storage-access-by-user-activation"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+              /* No embed URL fallback */
+              <div className="bg-card border border-border rounded-xl overflow-hidden">
                 <div className="aspect-video flex flex-col items-center justify-center bg-card gap-4">
                   <div className="w-16 h-16 rounded-full bg-card border border-border flex items-center justify-center">
                     <Tv className="w-7 h-7 text-muted-foreground" />
@@ -222,7 +213,7 @@ export default function StreamDetail() {
               </div>
             )}
 
-            {/* Stream info bar */}
+            {/* ── Stream info bar ── */}
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
@@ -262,14 +253,14 @@ export default function StreamDetail() {
                     className="bg-red-600 hover:bg-red-700 font-orbitron text-xs gap-1.5"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
-                    ABRIR
+                    ABRIR EN {stream.platform.toUpperCase()}
                   </Button>
                 </a>
               </div>
             </div>
           </div>
 
-          {/* ── Sidebar: related streams ── */}
+          {/* ── Right sidebar: related streams ── */}
           {hasSidebar && (
             <aside>
               <div className="flex items-center justify-between mb-4">
