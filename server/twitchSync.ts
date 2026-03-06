@@ -687,7 +687,7 @@ export async function syncYouTubeStreams(): Promise<void> {
   } catch {
     // Column doesn't exist yet (migration pending) — proceed without it
     console.warn("[youtubeSync] youtubeChannelId column not yet available, will resolve via API");
-    creators = rawCreators.map((c) => ({ ...c, youtubeChannelId: null as string | null }));
+    creators = (rawCreators as CreatorRow[]).map((c: CreatorRow) => ({ ...c, youtubeChannelId: null as string | null }));
   }
 
   if (creators.length === 0) {
