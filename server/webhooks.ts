@@ -21,6 +21,8 @@ import {
   handleCreatorWentOffline,
   extractTwitchLogin,
   syncYouTubeStreams,
+  syncTwitchStreams,
+  normalizeYouTubeField,
 } from "./twitchSync";
 import { getDb } from "./db";
 import { contentCreators, users } from "../drizzle/schema";
@@ -242,4 +244,163 @@ export function registerWebhookRoutes(app: Express): void {
   });
 
   console.log("[webhooks] Twitch EventSub + YouTube PubSubHubbub routes registered");
+
+  // ── Debug endpoint: GET /api/debug/youtube-sync ──────────────────────────
+  // Returns a full diagnostic of approved creators, their youtube field,
+  // resolved channelId, and current live status from the YouTube API.
+  // Protected by a simple secret token to avoid public exposure.
+  app.get("/api/debug/youtube-sync", (req: Request, res: Response) => {
+    runYouTubeDiagnostic(req, res).catch((e) => {
+      console.error("[debug] youtube-sync error:", e);
+      if (!res.headersSent) res.status(500).json({ error: String(e) });
+    });
+  });
+
+  // ── Debug endpoint: POST /api/debug/force-sync ───────────────────────────
+  // Forces an immediate sync cycle and returns the logs.
+  app.post("/api/debug/force-sync", (req: Request, res: Response) => {
+    runForcedSync(req, res).catch((e) => {
+      console.error("[debug] force-sync error:", e);
+      if (!res.headersSent) res.status(500).json({ error: String(e) });
+    });
+  });
+}
+
+// ── Debug handlers ───────────────────────────────────────────────────────────
+
+const DEBUG_SECRET = process.env.DEBUG_SECRET ?? "rlc-debug-2025";
+
+async function runYouTubeDiagnostic(req: Request, res: Response): Promise<void> {
+  // Simple token protection
+  const token = (req.query.token as string) ?? "";
+  if (token !== DEBUG_SECRET) {
+    res.status(401).json({ error: "Unauthorized. Add ?token=<DEBUG_SECRET> to the URL." });
+    return;
+  }
+
+  const db = await getDb();
+  if (!db) { res.status(503).json({ error: "DB not available" }); return; }
+
+  const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY ?? "";
+  const PRODUCTION_DOMAIN = process.env.PRODUCTION_DOMAIN ?? "not set";
+
+  // Get all approved creators
+  const creators = await db
+    .select({
+      userId: contentCreators.userId,
+      youtube: contentCreators.youtube,
+      twitch: contentCreators.twitch,
+      status: contentCreators.status,
+      userName: users.name,
+      nickname: users.nickname,
+    })
+    .from(contentCreators)
+    .innerJoin(users, eq(contentCreators.userId, users.id))
+    .where(eq(contentCreators.status, "approved"));
+
+  const results: Record<string, unknown>[] = [];
+
+  for (const c of creators) {
+    const entry: Record<string, unknown> = {
+      userId: c.userId,
+      name: c.nickname ?? c.userName,
+      youtube_raw: c.youtube ?? null,
+      twitch_raw: c.twitch ?? null,
+    };
+
+    if (c.youtube) {
+      const normalized = normalizeYouTubeField(c.youtube);
+      entry.youtube_normalized = normalized;
+
+      if (!YOUTUBE_API_KEY) {
+        entry.error = "YOUTUBE_API_KEY not set";
+      } else if (normalized) {
+        // Try to resolve channelId
+        const isChannelId = /^UC[\w-]{22}$/.test(normalized);
+        if (isChannelId) {
+          entry.channelId = normalized;
+          entry.channelId_source = "direct (already a channelId)";
+        } else {
+          // Call YouTube channels API
+          const forHandle = normalized.startsWith("@") ? normalized : `@${normalized}`;
+          const params = new URLSearchParams({ part: "id,snippet", forHandle, key: YOUTUBE_API_KEY });
+          const r = await fetch(`https://www.googleapis.com/youtube/v3/channels?${params}`);
+          const d = await r.json() as { items?: { id: string; snippet?: { title: string } }[]; error?: { message: string; code: number } };
+
+          if (d.error) {
+            entry.channelId_error = `YouTube API error ${d.error.code}: ${d.error.message}`;
+          } else if (d.items && d.items.length > 0) {
+            entry.channelId = d.items[0].id;
+            entry.channelId_source = "resolved via forHandle";
+            entry.channel_title = d.items[0].snippet?.title;
+
+            // Now check if live
+            const channelId = d.items[0].id;
+            const sParams = new URLSearchParams({ part: "snippet", channelId, eventType: "live", type: "video", key: YOUTUBE_API_KEY });
+            const sr = await fetch(`https://www.googleapis.com/youtube/v3/search?${sParams}`);
+            const sd = await sr.json() as { items?: { id: { videoId: string }; snippet: { title: string } }[]; error?: { message: string } };
+
+            if (sd.error) {
+              entry.live_error = sd.error.message;
+            } else if (sd.items && sd.items.length > 0) {
+              entry.is_live = true;
+              entry.video_id = sd.items[0].id.videoId;
+              entry.live_title = sd.items[0].snippet.title;
+            } else {
+              entry.is_live = false;
+              entry.live_note = "No live stream found for this channel right now";
+            }
+          } else {
+            // Try forUsername fallback
+            const params2 = new URLSearchParams({ part: "id,snippet", forUsername: normalized, key: YOUTUBE_API_KEY });
+            const r2 = await fetch(`https://www.googleapis.com/youtube/v3/channels?${params2}`);
+            const d2 = await r2.json() as { items?: { id: string; snippet?: { title: string } }[] };
+            if (d2.items && d2.items.length > 0) {
+              entry.channelId = d2.items[0].id;
+              entry.channelId_source = "resolved via forUsername (legacy channel)";
+              entry.channel_title = d2.items[0].snippet?.title;
+            } else {
+              entry.channelId_error = `Could not resolve channelId for handle "${normalized}" — channel may not exist or handle may be wrong`;
+              entry.hint = `The youtube field in DB is "${c.youtube}". Make sure this matches your actual YouTube channel handle.`;
+            }
+          }
+        }
+      } else {
+        entry.error = `Could not normalize youtube field: "${c.youtube}"`;
+      }
+    } else {
+      entry.youtube_note = "No YouTube channel configured for this creator";
+    }
+
+    results.push(entry);
+  }
+
+  res.json({
+    timestamp: new Date().toISOString(),
+    env: {
+      YOUTUBE_API_KEY: YOUTUBE_API_KEY ? `set (${YOUTUBE_API_KEY.slice(0, 8)}...)` : "NOT SET ❌",
+      PRODUCTION_DOMAIN,
+      TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID ? "set ✅" : "NOT SET ❌",
+    },
+    approved_creators_count: creators.length,
+    creators: results,
+  });
+}
+
+async function runForcedSync(_req: Request, res: Response): Promise<void> {
+  const logs: string[] = [];
+  const origLog = console.log.bind(console);
+  const origWarn = console.warn.bind(console);
+  const origError = console.error.bind(console);
+  console.log = (...a: unknown[]) => { logs.push("[LOG] " + a.join(" ")); origLog(...a); };
+  console.warn = (...a: unknown[]) => { logs.push("[WARN] " + a.join(" ")); origWarn(...a); };
+  console.error = (...a: unknown[]) => { logs.push("[ERR] " + a.join(" ")); origError(...a); };
+  try {
+    await Promise.allSettled([syncTwitchStreams(), syncYouTubeStreams()]);
+  } finally {
+    console.log = origLog;
+    console.warn = origWarn;
+    console.error = origError;
+  }
+  res.json({ timestamp: new Date().toISOString(), logs });
 }
