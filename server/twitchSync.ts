@@ -660,6 +660,7 @@ export async function syncYouTubeStreams(): Promise<void> {
     .select({
       userId: contentCreators.userId,
       youtube: contentCreators.youtube,
+      youtubeChannelId: contentCreators.youtubeChannelId,
       userName: users.name,
       nickname: users.nickname,
     })
@@ -690,7 +691,23 @@ export async function syncYouTubeStreams(): Promise<void> {
     console.log(`[youtubeSync] Processing userId=${creator.userId} raw="${rawYoutube}" → handle="${normalized}"`);
 
     try {
-      // Use scraping — no API quota consumed
+      // ── Resolve channelId (needed for stable embed URL) ───────────────────
+      // We store it in the DB so we only call the API once per creator.
+      let channelId: string | null = creator.youtubeChannelId ?? null;
+      if (!channelId) {
+        // Try to resolve via YouTube API (costs 1 unit, done only once)
+        channelId = await resolveYouTubeChannelId(normalized);
+        if (channelId) {
+          // Persist so we never need to resolve again
+          await db
+            .update(contentCreators)
+            .set({ youtubeChannelId: channelId })
+            .where(eq(contentCreators.userId, creator.userId));
+          console.log(`[youtubeSync] Saved channelId=${channelId} for userId=${creator.userId}`);
+        }
+      }
+
+      // Use scraping only to detect live status (no API quota consumed)
       const liveData = await getYouTubeLiveStreamByHandle(normalized);
       const streamerName = creator.nickname ?? creator.userName ?? normalized;
 
@@ -699,8 +716,24 @@ export async function syncYouTubeStreams(): Promise<void> {
         ? rawYoutube
         : `https://youtube.com/@${normalized}`;
 
-      if (liveData.isLive && liveData.videoId) {
-        const embedUrl = `https://www.youtube-nocookie.com/embed/${liveData.videoId}?autoplay=1&mute=1`;
+      if (liveData.isLive) {
+        // ── Use channelId-based embed (always points to the active live) ────
+        // This is 100% stable — YouTube redirects live_stream?channel=UC...
+        // to whatever video is currently live on that channel.
+        // No videoId needed, no scraping instability.
+        let embedUrl: string;
+        if (channelId) {
+          embedUrl = `https://www.youtube-nocookie.com/embed/live_stream?channel=${channelId}&autoplay=1&mute=1`;
+          console.log(`[youtubeSync] Using channelId embed for userId=${creator.userId}: ${embedUrl}`);
+        } else {
+          // Fallback: use videoId if channelId could not be resolved
+          if (!liveData.videoId) {
+            console.warn(`[youtubeSync] ${normalized}: live detected but no channelId or videoId — skipping`);
+            continue;
+          }
+          embedUrl = `https://www.youtube-nocookie.com/embed/${liveData.videoId}?autoplay=1&mute=1`;
+          console.log(`[youtubeSync] Fallback to videoId embed for userId=${creator.userId}: ${embedUrl}`);
+        }
         await handleCreatorWentLive({
           userId: creator.userId,
           platform: "youtube",
@@ -713,9 +746,7 @@ export async function syncYouTubeStreams(): Promise<void> {
           streamerName,
           videoId: liveData.videoId,
         });
-        console.log(`[youtubeSync] 🔴 ${normalized}: LIVE "${liveData.title}" (${liveData.viewerCount} viewers, videoId=${liveData.videoId})`);
-      } else if (liveData.isLive && !liveData.videoId) {
-        console.warn(`[youtubeSync] ${normalized}: live detected but no videoId — skipping stream creation`);
+        console.log(`[youtubeSync] 🔴 ${normalized}: LIVE "${liveData.title}" (${liveData.viewerCount} viewers, channelId=${channelId ?? 'unknown'})`);
       } else {
         await handleCreatorWentOffline(creator.userId, "youtube");
         console.log(`[youtubeSync] ${normalized}: offline`);

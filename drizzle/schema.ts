@@ -508,6 +508,7 @@ export const contentCreators = mysqlTable("content_creators", {
   category: varchar("category", { length: 64 }), // gaming, esports, entertainment, education
   bio: text("bio"),
   youtube: varchar("youtube", { length: 256 }),
+  youtubeChannelId: varchar("youtubeChannelId", { length: 64 }), // UC... resolved once, used for embed
   twitch: varchar("twitch", { length: 256 }),
   twitter: varchar("twitter", { length: 256 }),
   instagram: varchar("instagram", { length: 256 }),
