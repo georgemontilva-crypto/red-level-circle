@@ -12,10 +12,14 @@
  *  3. Expose EventSub webhook handler for real-time Twitch notifications (production).
  *  4. Expose YouTube PubSubHubbub subscription management for real-time YouTube.
  *
- * Architecture:
- *  - Polling (30s): works in development and production, serves as fallback.
- *  - EventSub: real-time, activated when TWITCH_WEBHOOK_SECRET is set.
- *  - PubSubHubbub: real-time YouTube, activated when YOUTUBE_WEBHOOK_CALLBACK is set.
+ * Field format for contentCreators.youtube:
+ *   The form stores ONLY the handle/username, e.g. "georgemontilva" or "@georgemontilva"
+ *   NOT a full URL. The sync must handle all these formats:
+ *     - "georgemontilva"              (bare handle, most common)
+ *     - "@georgemontilva"             (handle with @)
+ *     - "https://youtube.com/@georgemontilva"  (full URL)
+ *     - "https://youtube.com/channel/UCxxx..." (channel URL)
+ *     - "UCxxxxxxxxxxxxxxxxxxxxxxxx"           (raw channelId)
  */
 
 import { and, eq, isNotNull } from "drizzle-orm";
@@ -200,38 +204,102 @@ export interface YouTubeStreamData {
   videoId: string | null;
 }
 
-export function extractYouTubeHandle(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    if (!parsed.hostname.includes("youtube.com")) return null;
-    const parts = parsed.pathname.split("/").filter(Boolean);
-    if (parts[0]?.startsWith("@")) return parts[0].slice(1).toLowerCase();
-    if (parts.length >= 2 && ["channel", "c", "user"].includes(parts[0])) return parts[1].toLowerCase();
-    return null;
-  } catch {
-    return null;
+/**
+ * Normalizes any YouTube field value to a clean handle or channelId.
+ *
+ * The form stores ONLY the handle (e.g. "georgemontilva"), but some users
+ * may have saved a full URL. This function handles all formats:
+ *   - "georgemontilva"                          → "georgemontilva"
+ *   - "@georgemontilva"                         → "georgemontilva"
+ *   - "https://youtube.com/@georgemontilva"     → "georgemontilva"
+ *   - "https://youtube.com/channel/UCxxx..."    → "UCxxx..."
+ *   - "https://youtube.com/c/georgemontilva"    → "georgemontilva"
+ *   - "https://youtube.com/user/georgemontilva" → "georgemontilva"
+ *   - "UCxxxxxxxxxxxxxxxxxxxxxxxx"              → "UCxxxxxxxxxxxxxxxxxxxxxxxx" (channelId)
+ */
+export function normalizeYouTubeField(raw: string): string | null {
+  if (!raw || !raw.trim()) return null;
+  const trimmed = raw.trim();
+
+  // Raw channelId (starts with UC and is 24 chars)
+  if (/^UC[\w-]{22}$/.test(trimmed)) return trimmed;
+
+  // Full URL
+  if (trimmed.includes("youtube.com") || trimmed.includes("youtu.be")) {
+    try {
+      const parsed = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+      const parts = parsed.pathname.split("/").filter(Boolean);
+      if (parts[0] === "channel" && parts[1]) return parts[1]; // channelId
+      if (parts[0]?.startsWith("@")) return parts[0].slice(1).toLowerCase();
+      if (parts[0] && ["c", "user"].includes(parts[0]) && parts[1]) return parts[1].toLowerCase();
+      if (parts[0] && !["watch", "shorts", "live"].includes(parts[0])) return parts[0].replace(/^@/, "").toLowerCase();
+    } catch {
+      // fall through to bare handle logic
+    }
   }
+
+  // Bare handle with or without @
+  return trimmed.replace(/^@/, "").toLowerCase();
+}
+
+export function extractYouTubeHandle(url: string): string | null {
+  return normalizeYouTubeField(url);
 }
 
 // Cache handle → channelId to avoid repeated API calls
 const ytChannelIdCache = new Map<string, string>();
 
-async function resolveYouTubeChannelId(handle: string): Promise<string | null> {
-  if (/^UC[\w-]{22}$/.test(handle)) return handle;
-  const cached = ytChannelIdCache.get(handle);
+async function resolveYouTubeChannelId(handleOrId: string): Promise<string | null> {
+  // Already a channelId
+  if (/^UC[\w-]{22}$/.test(handleOrId)) return handleOrId;
+
+  const cached = ytChannelIdCache.get(handleOrId);
   if (cached) return cached;
 
+  if (!YOUTUBE_API_KEY) {
+    console.warn("[youtubeSync] Cannot resolve channelId — YOUTUBE_API_KEY not set");
+    return null;
+  }
+
+  // Try forHandle first (works for @handles)
+  const forHandle = handleOrId.startsWith("@") ? handleOrId : `@${handleOrId}`;
   const params = new URLSearchParams({
     part: "id",
-    forHandle: handle.startsWith("@") ? handle : `@${handle}`,
+    forHandle,
     key: YOUTUBE_API_KEY,
   });
 
   const res = await fetch(`${YOUTUBE_CHANNELS_URL}?${params.toString()}`);
-  if (!res.ok) { console.error(`[youtubeSync] channels API error for "${handle}": ${res.status}`); return null; }
-  const data = (await res.json()) as { items?: { id: string }[] };
+  if (!res.ok) {
+    console.error(`[youtubeSync] channels API error for "${handleOrId}": ${res.status} ${await res.text()}`);
+    return null;
+  }
+  const data = (await res.json()) as { items?: { id: string }[]; error?: { message: string } };
+
+  if (data.error) {
+    console.error(`[youtubeSync] YouTube API error for "${handleOrId}": ${data.error.message}`);
+    return null;
+  }
+
   const id = data.items?.[0]?.id ?? null;
-  if (id) ytChannelIdCache.set(handle, id);
+  if (id) {
+    ytChannelIdCache.set(handleOrId, id);
+    console.log(`[youtubeSync] Resolved "${handleOrId}" → channelId=${id}`);
+  } else {
+    // Fallback: try forUsername (old-style channels)
+    const params2 = new URLSearchParams({ part: "id", forUsername: handleOrId, key: YOUTUBE_API_KEY });
+    const res2 = await fetch(`${YOUTUBE_CHANNELS_URL}?${params2.toString()}`);
+    if (res2.ok) {
+      const data2 = (await res2.json()) as { items?: { id: string }[] };
+      const id2 = data2.items?.[0]?.id ?? null;
+      if (id2) {
+        ytChannelIdCache.set(handleOrId, id2);
+        console.log(`[youtubeSync] Resolved (forUsername) "${handleOrId}" → channelId=${id2}`);
+        return id2;
+      }
+    }
+    console.warn(`[youtubeSync] Could not resolve channelId for handle "${handleOrId}" — channel may not exist or API key may be invalid`);
+  }
   return id;
 }
 
@@ -242,6 +310,10 @@ async function getYouTubeLiveStream(channelId: string): Promise<{
   title: string | null;
   videoId: string | null;
 }> {
+  if (!YOUTUBE_API_KEY) {
+    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
+  }
+
   const params = new URLSearchParams({
     part: "snippet",
     channelId,
@@ -251,7 +323,10 @@ async function getYouTubeLiveStream(channelId: string): Promise<{
   });
 
   const res = await fetch(`${YOUTUBE_SEARCH_URL}?${params.toString()}`);
-  if (!res.ok) { console.error(`[youtubeSync] search API error for channel "${channelId}": ${res.status}`); return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null }; }
+  if (!res.ok) {
+    console.error(`[youtubeSync] search API error for channel "${channelId}": ${res.status} ${await res.text()}`);
+    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
+  }
 
   const data = (await res.json()) as {
     items?: {
@@ -261,7 +336,13 @@ async function getYouTubeLiveStream(channelId: string): Promise<{
         thumbnails: { maxres?: { url: string }; high?: { url: string }; medium?: { url: string } };
       };
     }[];
+    error?: { message: string };
   };
+
+  if (data.error) {
+    console.error(`[youtubeSync] YouTube search API error: ${data.error.message}`);
+    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
+  }
 
   if (!data.items || data.items.length === 0) {
     return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
@@ -282,7 +363,7 @@ async function getYouTubeLiveStream(channelId: string): Promise<{
     }
   } catch { /* non-critical */ }
 
-  return { isLive: true, viewerCount, thumbnailUrl: thumbnail, title: item.snippet.title ?? null, videoId };
+  return { isLive: true, viewerCount, thumbnailUrl: thumbnail, title: item.snippet.title, videoId };
 }
 
 // ── Auto-create / auto-close stream helpers ──────────────────────────────────
@@ -356,7 +437,7 @@ export async function handleCreatorWentLive(opts: {
     viewerCount: opts.viewerCount,
   }).$returningId();
 
-  console.log(`[streamSync] Auto-created stream #${result.id} for userId=${opts.userId} on ${opts.platform}`);
+  console.log(`[streamSync] ✅ Auto-created stream #${result.id} for userId=${opts.userId} on ${opts.platform} (title="${opts.title}")`);
 
   // Emit SSE event so connected clients update in real-time
   sseBroadcast("stream_started", { streamId: result.id, userId: opts.userId, platform: opts.platform });
@@ -468,6 +549,8 @@ export async function syncTwitchStreams(): Promise<void> {
 
 /**
  * Syncs all approved creators' YouTube channels.
+ * The youtube field in DB stores a bare handle (e.g. "georgemontilva"),
+ * optionally with @ prefix or as a full URL.
  */
 export async function syncYouTubeStreams(): Promise<void> {
   if (!YOUTUBE_API_KEY) {
@@ -501,42 +584,30 @@ export async function syncYouTubeStreams(): Promise<void> {
 
     const rawYoutube = creator.youtube.trim();
 
-    // Robust handle/channelId extraction:
-    // Supports: https://youtube.com/@handle, https://youtube.com/channel/UCxxx,
-    //           @handle, handle, UCxxxxxxxxxxxxxxxxxxxxxxxx (channelId direct)
-    let handle: string | null = null;
-    if (rawYoutube.includes("youtube.com")) {
-      handle = extractYouTubeHandle(rawYoutube);
-      // Fallback: if URL has /channel/UCxxx, use the channelId directly
-      if (!handle) {
-        const m = rawYoutube.match(/\/channel\/(UC[\w-]{22})/);
-        if (m) handle = m[1];
-      }
-    } else if (/^UC[\w-]{22}$/.test(rawYoutube)) {
-      // Raw channelId stored directly
-      handle = rawYoutube;
-    } else {
-      // Bare handle with or without @
-      handle = rawYoutube.replace(/^@/, "").toLowerCase();
-    }
+    // Normalize to handle or channelId (handles all formats)
+    const normalized = normalizeYouTubeField(rawYoutube);
 
-    if (!handle) {
-      console.warn(`[youtubeSync] Could not extract handle from "${rawYoutube}" — skipping`);
+    if (!normalized) {
+      console.warn(`[youtubeSync] Could not normalize youtube field "${rawYoutube}" for userId=${creator.userId} — skipping`);
       continue;
     }
 
+    console.log(`[youtubeSync] Processing userId=${creator.userId} raw="${rawYoutube}" → normalized="${normalized}"`);
+
     try {
-      const channelId = await resolveYouTubeChannelId(handle);
+      const channelId = await resolveYouTubeChannelId(normalized);
       if (!channelId) {
-        console.warn(`[youtubeSync] Could not resolve channelId for "${handle}" (raw: "${rawYoutube}")`);
+        console.warn(`[youtubeSync] Could not resolve channelId for "${normalized}" (raw: "${rawYoutube}") — check YOUTUBE_API_KEY and channel existence`);
         continue;
       }
 
       const liveData = await getYouTubeLiveStream(channelId);
-      const streamerName = creator.nickname ?? creator.userName ?? handle;
+      const streamerName = creator.nickname ?? creator.userName ?? normalized;
+
+      // Build canonical channel URL
       const channelUrl = rawYoutube.includes("youtube.com")
         ? rawYoutube
-        : `https://youtube.com/@${handle}`;
+        : `https://youtube.com/@${normalized}`;
 
       if (liveData.isLive && liveData.videoId) {
         const embedUrl = `https://www.youtube-nocookie.com/embed/${liveData.videoId}?autoplay=1&mute=1`;
@@ -552,16 +623,16 @@ export async function syncYouTubeStreams(): Promise<void> {
           streamerName,
           videoId: liveData.videoId,
         });
-        console.log(`[youtubeSync] ${handle}: 🔴 LIVE "${liveData.title}" (${liveData.viewerCount} viewers, videoId=${liveData.videoId})`);
+        console.log(`[youtubeSync] 🔴 ${normalized}: LIVE "${liveData.title}" (${liveData.viewerCount} viewers, videoId=${liveData.videoId})`);
       } else if (liveData.isLive && !liveData.videoId) {
         // Live detected but no videoId — log and skip to avoid creating a broken stream
-        console.warn(`[youtubeSync] ${handle}: live detected but no videoId — skipping stream creation`);
+        console.warn(`[youtubeSync] ${normalized}: live detected but no videoId — skipping stream creation`);
       } else {
         await handleCreatorWentOffline(creator.userId, "youtube");
-        console.log(`[youtubeSync] ${handle}: offline`);
+        console.log(`[youtubeSync] ${normalized}: offline`);
       }
     } catch (e) {
-      console.error(`[youtubeSync] Error processing "${handle}":`, e);
+      console.error(`[youtubeSync] Error processing "${normalized}":`, e);
     }
   }
 }
