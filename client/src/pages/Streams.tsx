@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { Radio, Tv } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { Radio, Tv, X, Crown } from "lucide-react";
 import { Link } from "wouter";
 import { StreamCard } from "@/components/StreamCard";
+import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import { ChevronRight } from "lucide-react";
 
 // ─── Game cover art (Twitch box art CDN) ─────────────────────────────────────
@@ -68,9 +71,20 @@ function GameSectionHeader({ game, count }: { game: string; count: number }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Streams() {
+  const { isAuthenticated } = useAuth();
+
   const { data: groups, isLoading } = trpc.streams.byGame.useQuery(undefined, {
     refetchInterval: 30_000,
   });
+
+  // Creator application — only fetch if authenticated
+  const { data: myApp } = trpc.creators.getMyApplication.useQuery(undefined, {
+    enabled: isAuthenticated,
+  });
+
+  const isApproved = myApp?.status === "approved";
+
+  const [showStreamPanel, setShowStreamPanel] = useState(false);
 
   const totalLive = groups?.reduce((acc, g) => acc + g.streams.length, 0) ?? 0;
 
@@ -151,6 +165,75 @@ export default function Streams() {
         )}
 
       </div>
+
+      {/* ── Floating button: Transmitir (approved creators only) ── */}
+      {isApproved && (
+        <button
+          onClick={() => setShowStreamPanel(true)}
+          className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl font-orbitron font-bold text-sm text-white shadow-2xl transition-all hover:scale-105 active:scale-95"
+          style={{
+            background: "oklch(0.50 0.22 25)",
+            boxShadow: "0 0 24px oklch(0.50 0.22 25 / 0.4)",
+          }}
+          title="Iniciar transmisión"
+        >
+          <Radio size={16} />
+          <span className="hidden sm:inline">Transmitir</span>
+        </button>
+      )}
+
+      {/* ── Modal: Stream Panel ── */}
+      {showStreamPanel && myApp && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setShowStreamPanel(false); }}
+        >
+          <div
+            className="w-full sm:max-w-lg flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
+            style={{
+              background: "#111114",
+              border: "1px solid rgba(255,255,255,0.07)",
+              maxHeight: "92dvh",
+            }}
+          >
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+              style={{ borderColor: "rgba(255,255,255,0.06)" }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.25)" }}
+                >
+                  <Radio size={16} className="text-red-500" />
+                </div>
+                <div>
+                  <h3 className="font-orbitron font-bold text-white text-sm leading-tight">
+                    Transmitir ahora
+                  </h3>
+                  <p className="text-zinc-500 text-[11px] mt-0.5">
+                    Inicia tu live en la plataforma
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStreamPanel(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            {/* Panel content */}
+            <div className="overflow-y-auto flex-1 p-5">
+              <CreatorStreamPanel creatorApp={myApp} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
