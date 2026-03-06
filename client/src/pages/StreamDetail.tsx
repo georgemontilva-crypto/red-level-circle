@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
+import { useEffect, useRef } from "react";
 import {
   Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight,
 } from "lucide-react";
@@ -19,6 +20,25 @@ function formatViewers(n: number): string {
   return n.toString();
 }
 
+/**
+ * Hook que ajusta la altura del contenedor video+chat en desktop
+ * usando un useEffect con cleanup correcto para evitar acumular
+ * event listeners en cada re-render (causaba crash en Safari/iOS).
+ */
+function useDesktopHeight(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const setH = () => {
+      el.style.height = `${Math.max(560, window.innerHeight - 200)}px`;
+    };
+    setH();
+    window.addEventListener("resize", setH);
+    // Cleanup: eliminar el listener al desmontar o re-ejecutar
+    return () => window.removeEventListener("resize", setH);
+  }, [ref]);
+}
+
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
@@ -34,6 +54,10 @@ export default function StreamDetail() {
     undefined,
     { enabled: !!stream?.game, refetchInterval: 30_000 },
   );
+
+  // Ref para el contenedor desktop video+chat
+  const desktopContainerRef = useRef<HTMLDivElement>(null);
+  useDesktopHeight(desktopContainerRef);
 
   const related = (byGameData ?? [])
     .find((g) => g.game === stream?.game)
@@ -89,33 +113,20 @@ export default function StreamDetail() {
     <>
       {/*
        * ─────────────────────────────────────────────────────────────────────
-       * MOBILE (<lg): layout fijo 100dvh sin scroll, como WhatsApp.
-       *   - Escapamos del PageContainer con márgenes negativos y posición fija.
-       *   - Video arriba (aspect-video fijo), chat llena el resto.
+       * MOBILE (<lg): layout fijo debajo del navbar, sin scroll.
+       * top = 56px navbar + safe-area-inset-top (notch/Dynamic Island en iOS).
        * ─────────────────────────────────────────────────────────────────────
-       */}
-      {/*
-       * Mobile: layout fijo debajo del navbar.
-       * El video tiene altura FIJA basada en el ancho (100vw * 9/16).
-       * Cuando sube el teclado, el navegador reduce el viewport — el video
-       * no se mueve porque su altura no depende del viewport height.
-       * Solo el chat (flex-1 + overflow-hidden) se comprime.
        */}
       <div
         className="lg:hidden fixed z-40 flex flex-col bg-black"
         style={{
-          /*
-           * top = altura del navbar (56px) + safe-area-inset-top del notch/Dynamic Island.
-           * En iPhone con notch/Dynamic Island, safe-area-inset-top puede ser 44-59px.
-           * Sin esto, el video queda parcialmente detrás del navbar en iOS.
-           */
           top: "calc(env(safe-area-inset-top, 0px) + 56px)",
           left: 0,
           right: 0,
           bottom: 0,
         }}
       >
-        {/* Video: altura fija = 56.25vw (16:9), nunca cambia aunque suba el teclado */}
+        {/* Video: altura fija = 56.25vw (16:9), no cambia cuando sube el teclado */}
         {resolvedEmbedUrl ? (
           <div
             className="w-full flex-shrink-0 bg-black"
@@ -177,17 +188,10 @@ export default function StreamDetail() {
             <div className="flex flex-col gap-4 min-w-0">
               {resolvedEmbedUrl ? (
                 <>
-                  {/* Video + Chat lado a lado */}
+                  {/* Video + Chat lado a lado — altura controlada por useDesktopHeight */}
                   <div
+                    ref={desktopContainerRef}
                     className="w-full overflow-hidden rounded-xl border border-border bg-card flex flex-row"
-                    ref={(el) => {
-                      if (!el) return;
-                      const setH = () => {
-                        el.style.height = `${Math.max(560, window.innerHeight - 200)}px`;
-                      };
-                      setH();
-                      window.addEventListener("resize", setH);
-                    }}
                   >
                     {/* Video */}
                     <div className="flex-1 min-w-0 min-h-0 bg-black">

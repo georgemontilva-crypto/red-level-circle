@@ -354,33 +354,49 @@ async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
     if (!isLive) return empty;
 
     // ── Extract videoId — priority order: ────────────────────────────────────
-    // 1. videoDetails.videoId  → the main video YouTube is serving on this page
-    //    This is the most reliable: it's the video the page is about, not a
-    //    recommendation or related video.
-    // 2. First videoId near "isLive":true  → fallback if videoDetails is absent
-    // 3. First videoId in the page  → last resort (may be a recommendation)
+    // 1. First watchEndpoint videoId in the page.
+    //    YouTube puts the primary video's watchEndpoint FIRST in the page data
+    //    (inside webPrefetchData). This is the most reliable signal for the
+    //    live video — it's the video the /live page is actually serving.
+    // 2. videoDetails.videoId  → present in ytInitialPlayerResponse for the
+    //    primary video (pattern: "videoDetails":{"videoId":"...").
+    //    Note: sometimes videoDetails contains a playerOverlayVideoDetailsRenderer
+    //    instead of a direct videoId — in that case this match returns null.
+    // 3. videoId closest to "isLive":true  → fallback.
+    // 4. First videoId in the page  → last resort.
     let videoId: string | null = null;
+    let videoIdSource = 'unknown';
 
-    // Priority 1: videoDetails (YouTube embeds this for the primary video)
-    const videoDetailsMatch = html.match(/"videoDetails":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
-    if (videoDetailsMatch?.[1]) {
-      videoId = videoDetailsMatch[1];
+    // Priority 1: first watchEndpoint in the page (most reliable for /live pages)
+    const watchEndpointMatch = html.match(/"watchEndpoint":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
+    if (watchEndpointMatch?.[1]) {
+      videoId = watchEndpointMatch[1];
+      videoIdSource = 'watchEndpoint';
     }
 
-    // Priority 2: videoId closest to "isLive":true
+    // Priority 2: videoDetails.videoId (direct pattern)
+    if (!videoId) {
+      const videoDetailsMatch = html.match(/"videoDetails":\{"videoId":"([a-zA-Z0-9_-]{11})"/);
+      if (videoDetailsMatch?.[1]) {
+        videoId = videoDetailsMatch[1];
+        videoIdSource = 'videoDetails';
+      }
+    }
+
+    // Priority 3: videoId closest to "isLive":true
     if (!videoId) {
       const isLiveIdx = html.indexOf('"isLive":true');
       if (isLiveIdx > -1) {
         const ctx = html.slice(Math.max(0, isLiveIdx - 500), isLiveIdx + 500);
         const ctxMatch = ctx.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-        if (ctxMatch?.[1]) videoId = ctxMatch[1];
+        if (ctxMatch?.[1]) { videoId = ctxMatch[1]; videoIdSource = 'isLive-context'; }
       }
     }
 
-    // Priority 3: first videoId in the page (legacy fallback)
+    // Priority 4: first videoId in the page (legacy fallback)
     if (!videoId) {
       const firstMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
-      videoId = firstMatch?.[1] ?? null;
+      if (firstMatch?.[1]) { videoId = firstMatch[1]; videoIdSource = 'first-match'; }
     }
 
     if (!videoId) {
@@ -388,7 +404,7 @@ async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
       return { ...empty, isLive: true };
     }
 
-    console.log(`[youtubeSync] Extracted videoId for "${handle}": ${videoId} (source: ${videoDetailsMatch?.[1] ? 'videoDetails' : 'fallback'})`);
+    console.log(`[youtubeSync] Extracted videoId for "${handle}": ${videoId} (source: ${videoIdSource})`);
 
     // Extract title
     const titleMatch = html.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
