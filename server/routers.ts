@@ -194,6 +194,7 @@ import {
 } from "./orchestrator";
 import { withCache, cache, CacheKey, TTL } from "./cache";
 import { sseBroadcast, sseNotifyUser, sseInternalBus } from "./sse";
+import { syncTwitchStreams, syncYouTubeStreams } from "./twitchSync";
 
 
 // ─── Guards ───────────────────────────────────────────────────────────────────
@@ -1378,6 +1379,66 @@ export const appRouter = router({
           .from(streams)
           .where(and(eq(streams.isLive, true), isNotNull(streams.userId)));
         return rows.map((r: { userId: number | null }) => r.userId).filter((id: number | null): id is number => id !== null);
+      }),
+    /** Admin: force a sync cycle right now and return a status report */
+    forceSyncNow: adminProcedure
+      .mutation(async () => {
+        const results: string[] = [];
+        const origWarn = console.warn.bind(console);
+        const origLog = console.log.bind(console);
+        const origError = console.error.bind(console);
+        console.warn = (...a: unknown[]) => { results.push("[WARN] " + a.join(" ")); origWarn(...a); };
+        console.log = (...a: unknown[]) => { results.push("[LOG] " + a.join(" ")); origLog(...a); };
+        console.error = (...a: unknown[]) => { results.push("[ERR] " + a.join(" ")); origError(...a); };
+        try {
+          await Promise.allSettled([syncTwitchStreams(), syncYouTubeStreams()]);
+        } finally {
+          console.warn = origWarn;
+          console.log = origLog;
+          console.error = origError;
+        }
+        return { logs: results };
+      }),
+    /** Admin: show the current state of all approved creators and their streams */
+    syncDiagnose: adminProcedure
+      .query(async () => {
+        const db = await getDb();
+        if (!db) return { error: "DB not available", creators: [] as unknown[], envVars: {} as Record<string, string> };
+        const { contentCreators: cc } = await import("../drizzle/schema");
+        const creators = await db
+          .select({
+            userId: cc.userId,
+            youtube: cc.youtube,
+            twitch: cc.twitch,
+            status: cc.status,
+            userName: users.name,
+            nickname: users.nickname,
+          })
+          .from(cc)
+          .innerJoin(users, eq(cc.userId, users.id))
+          .where(eq(cc.status, "approved"));
+        const liveStreams = await db
+          .select({ userId: streams.userId, platform: streams.platform, title: streams.title, isLive: streams.isLive, embedUrl: streams.embedUrl })
+          .from(streams)
+          .where(eq(streams.isLive, true));
+        type LiveRow = typeof liveStreams[0];
+        const liveByUser = new Map<number | null, LiveRow>(liveStreams.map((ls: LiveRow) => [ls.userId, ls]));
+        type CreatorRow = typeof creators[0];
+        return {
+          envVars: {
+            YOUTUBE_API_KEY: process.env.YOUTUBE_API_KEY ? `set (${process.env.YOUTUBE_API_KEY.slice(0, 8)}...)` : "NOT SET",
+            TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID ? "set" : "NOT SET",
+            TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET ? "set" : "NOT SET",
+            PRODUCTION_DOMAIN: process.env.PRODUCTION_DOMAIN ?? "not set",
+          },
+          creators: creators.map((c: CreatorRow) => ({
+            userId: c.userId,
+            name: c.nickname ?? c.userName,
+            youtube: c.youtube ?? null,
+            twitch: c.twitch ?? null,
+            currentLiveStream: liveByUser.get(c.userId) ?? null,
+          })),
+        };
       }),
   }),
   // ─── Ranking ───────────────────────────────────────────────────────────────

@@ -2407,6 +2407,13 @@ function CreatorsTab() {
     onError: (e) => toast.error(e.message),
   });
   const [note, setNote] = useState<Record<number, string>>({});
+  const [showDiag, setShowDiag] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<string[]>([]);
+  const { data: diagData, refetch: refetchDiag } = trpc.streams.syncDiagnose.useQuery(undefined, { enabled: showDiag });
+  const forceSync = trpc.streams.forceSyncNow.useMutation({
+    onSuccess: (data) => { setSyncLogs(data.logs); refetchDiag(); toast.success("Sync completado — revisa los logs"); },
+    onError: (e) => toast.error(e.message),
+  });
 
   const byStatus = {
     pending: pending?.filter(c => c.status === "pending") ?? [],
@@ -2483,6 +2490,70 @@ function CreatorsTab() {
   return (
     <div className="space-y-6">
       <SectionHeader icon={Crown} title="CREADORES DE CONTENIDO" subtitle="Gestiona las solicitudes de creadores oficiales" />
+
+      {/* ── Diagnóstico de Sync ─────────────────────────────────────────── */}
+      <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/30">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <RefreshCw size={14} className="text-blue-400" />
+            <span className="font-orbitron text-xs text-blue-400 tracking-wider">SYNC AUTOMÁTICO DE STREAMS</span>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="h-7 text-xs border-blue-600/40 text-blue-300 hover:bg-blue-900/30"
+              onClick={() => setShowDiag(v => !v)}>
+              {showDiag ? "Ocultar diagnóstico" : "Ver diagnóstico"}
+            </Button>
+            <Button size="sm" className="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={forceSync.isPending}
+              onClick={() => forceSync.mutate()}>
+              {forceSync.isPending ? "Sincronizando..." : "⚡ Forzar sync ahora"}
+            </Button>
+          </div>
+        </div>
+        {showDiag && diagData && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(diagData.envVars ?? {}).map(([k, v]) => (
+                <div key={k} className="flex items-center justify-between bg-background/50 rounded-lg px-3 py-1.5">
+                  <span className="text-xs font-mono text-muted-foreground">{k}</span>
+                  <span className={`text-xs font-mono ${String(v).includes("NOT SET") ? "text-red-400" : "text-green-400"}`}>{String(v)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              {(diagData.creators as any[]).map((c: any) => (
+                <div key={c.userId} className="flex items-center gap-3 bg-background/50 rounded-lg px-3 py-2">
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-white">{c.name}</span>
+                    <div className="flex gap-3 mt-0.5">
+                      {c.youtube && <span className="text-xs text-red-400 font-mono truncate">YT: {c.youtube}</span>}
+                      {c.twitch && <span className="text-xs text-purple-400 font-mono truncate">TW: {c.twitch}</span>}
+                    </div>
+                  </div>
+                  {c.currentLiveStream ? (
+                    <span className="text-xs bg-green-500/20 text-green-400 border border-green-500/30 rounded-full px-2 py-0.5 font-mono">🔴 EN VIVO</span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground font-mono">offline</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {syncLogs.length > 0 && (
+          <div className="mt-3 bg-black/40 rounded-lg p-3 max-h-48 overflow-y-auto">
+            <p className="text-xs font-orbitron text-muted-foreground mb-2">LOGS DEL ÚLTIMO SYNC:</p>
+            {syncLogs.map((log, i) => (
+              <p key={i} className={`text-xs font-mono leading-5 ${
+                log.includes("[ERR]") ? "text-red-400" :
+                log.includes("[WARN]") ? "text-yellow-400" :
+                log.includes("LIVE") ? "text-green-400" : "text-muted-foreground"
+              }`}>{log}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="grid grid-cols-3 gap-3">
         <div className="p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-center">
           <p className="font-orbitron font-black text-2xl text-yellow-400">{byStatus.pending.length}</p>
