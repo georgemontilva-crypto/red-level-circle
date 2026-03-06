@@ -408,13 +408,33 @@ export async function processBetPayouts(params: {
   const commission = Math.floor(totalPool * PLATFORM_COMMISSION);
   const netPool = totalPool - commission;
 
-  // Registrar comisión de la plataforma
+  // FIX ALTO #5: Acreditar la comisión al usuario propietario de la plataforma.
+  // OWNER_OPEN_ID identifica al dueño; si no está configurado, la comisión se omite
+  // (no se pierde el dinero del pool, simplemente se distribuye sin descuento).
   if (commission > 0) {
-    console.log(
-      `[Orchestrator] Comisión de plataforma: ${commission} RLC (match #${matchId})`
-    );
-    // En producción: transferir a wallet de la plataforma
-    // await addRlcTransaction({ userId: PLATFORM_USER_ID, type: "commission", amount: commission, ... });
+    try {
+      const { getUserByOpenId } = await import("./db");
+      const ownerOpenId = process.env.OWNER_OPEN_ID ?? "";
+      if (ownerOpenId) {
+        const owner = await getUserByOpenId(ownerOpenId);
+        if (owner) {
+          await addRlcTransaction({
+            userId: owner.id,
+            type: "reward",
+            amount: commission,
+            description: `Comisión de plataforma (5%) — match #${matchId}`,
+            referenceId: matchId,
+          });
+          console.log(`[Orchestrator] Comisión ${commission} RLC acreditada al owner (userId: ${owner.id}) — match #${matchId}`);
+        } else {
+          console.warn(`[Orchestrator] OWNER_OPEN_ID configurado pero usuario no encontrado. Comisión ${commission} RLC no acreditada.`);
+        }
+      } else {
+        console.warn(`[Orchestrator] OWNER_OPEN_ID no configurado. Comisión ${commission} RLC no acreditada — configura OWNER_OPEN_ID en Railway.`);
+      }
+    } catch (err) {
+      console.error(`[Orchestrator] Error acreditando comisión:`, err);
+    }
   }
 
   // ── Pagar a los ganadores (proporcionalmente) ─────────────────────────────

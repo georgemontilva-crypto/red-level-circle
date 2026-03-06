@@ -8,7 +8,7 @@
  * la tabla `_migrations`), se salta. Esto garantiza idempotencia.
  */
 
-import { db } from "./db";
+import { getDb } from "./db";
 import { sql } from "drizzle-orm";
 
 const MIGRATIONS: { id: string; up: string }[] = [
@@ -89,6 +89,12 @@ const MIGRATIONS: { id: string; up: string }[] = [
 ];
 
 export async function runMigrations() {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[migrations] DB not available, skipping migrations");
+    return;
+  }
+
   // Ensure migrations tracking table exists
   await db.execute(sql.raw(`
     CREATE TABLE IF NOT EXISTS \`_migrations\` (

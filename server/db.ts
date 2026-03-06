@@ -183,7 +183,7 @@ export async function getUserByEmail(email: string) {
   return result[0];
 }
 
-export async function updateUserRole(userId: number, role: "user" | "premium" | "admin") {
+export async function updateUserRole(userId: number, role: "user" | "premium" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -344,10 +344,11 @@ export async function getTournaments(filters?: {
   if (filters?.creatorId) conditions.push(eq(tournaments.creatorId, filters.creatorId));
   if (filters?.isPublic !== undefined) conditions.push(eq(tournaments.isPublic, filters.isPublic));
   if (filters?.search) {
+    const safeSearch = filters.search.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_ ");
     conditions.push(
       or(
-        like(tournaments.name, `%${filters.search}%`),
-        like(tournaments.game, `%${filters.search}%`)
+        like(tournaments.name, `%${safeSearch}%`),
+        like(tournaments.game, `%${safeSearch}%`)
       )
     );
   }
@@ -677,11 +678,37 @@ export async function getOpenBetMatches() {
     )
     .orderBy(tournamentMatches.betsCloseAt);
 
-  // Enrich with per-team bet totals
-  const enriched = await Promise.all(rows.map(async (row) => {
-    const matchBets = await db!.select().from(bets).where(eq(bets.matchId, row.matchId));
-    const team1TotalBets = matchBets.filter(b => b.teamId === row.team1Id).reduce((s, b) => s + b.amount, 0);
-    const team2TotalBets = matchBets.filter(b => b.teamId === row.team2Id).reduce((s, b) => s + b.amount, 0);
+  if (rows.length === 0) return [];
+
+  // FIX MEDIO #10: Replace N+1 queries with a single aggregated query.
+  // Previously: 1 query per match to fetch bets (N+1 problem).
+  // Now: 1 query to get all bet totals grouped by (matchId, teamId).
+  const matchIds = rows.map(r => r.matchId);
+  const betTotals = await db
+    .select({
+      matchId: bets.matchId,
+      teamId: bets.teamId,
+      total: sql<number>`COALESCE(SUM(${bets.amount}), 0)`,
+    })
+    .from(bets)
+    .where(and(
+      inArray(bets.matchId, matchIds),
+      eq(bets.status, "pending")
+    ))
+    .groupBy(bets.matchId, bets.teamId);
+
+  // Build a lookup map: matchId -> { teamId -> total }
+  const betMap = new Map<number, Map<number, number>>();
+  for (const row of betTotals) {
+    if (!row.matchId || !row.teamId) continue;
+    if (!betMap.has(row.matchId)) betMap.set(row.matchId, new Map());
+    betMap.get(row.matchId)!.set(row.teamId, row.total);
+  }
+
+  const enriched = rows.map((row) => {
+    const matchBetMap = betMap.get(row.matchId) ?? new Map();
+    const team1TotalBets = row.team1Id ? (matchBetMap.get(row.team1Id) ?? 0) : 0;
+    const team2TotalBets = row.team2Id ? (matchBetMap.get(row.team2Id) ?? 0) : 0;
     return {
       ...row,
       team1Name: row.team1Name ?? "",
@@ -691,7 +718,7 @@ export async function getOpenBetMatches() {
       team1TotalBets,
       team2TotalBets,
     };
-  }));
+  });
   return enriched;
 }
 
@@ -823,7 +850,13 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
  * Si es así, rellena los equipos ganadores en la siguiente ronda.
  * Llamar después de cada updateMatchResult.
  */
-export async function advanceRoundIfComplete(tournamentId: number, round: number) {
+export async function advanceRoundIfComplete(tournamentId: number, round: number, _depth = 0) {
+  // FIX ALTO #9: Prevent infinite recursion if bracket data is corrupted.
+  // Max depth = 10 rounds is more than enough for any realistic bracket size.
+  if (_depth > 10) {
+    console.error(`[advanceRoundIfComplete] Max recursion depth reached for tournament #${tournamentId}, round ${round}. Possible bracket data corruption.`);
+    return;
+  }
   const db = await getDb();
   if (!db) return;
   const roundMatches = await db
@@ -856,7 +889,7 @@ export async function advanceRoundIfComplete(tournamentId: number, round: number
     }).where(eq(tournamentMatches.id, nextMatch.id));
   }
   // Recursively advance if next round is also complete
-  await advanceRoundIfComplete(tournamentId, round + 1);
+  await advanceRoundIfComplete(tournamentId, round + 1, _depth + 1);
 }
 
 /**
@@ -1363,25 +1396,37 @@ export async function addRlcTransaction(data: {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
 
-  // Get current balance
-  const current = await getUserBalance(data.userId);
-  const newBalance = current + data.amount;
-  if (newBalance < 0) throw new Error("Saldo insuficiente");
+  // SECURITY FIX: Wrap in a MySQL transaction with SELECT FOR UPDATE to prevent
+  // race conditions when multiple concurrent requests modify the same user balance.
+  // Without this, two simultaneous bets could both read the same balance and
+  // allow spending more RLC than available (double-spend vulnerability).
+  return await db.transaction(async (tx) => {
+    // Lock the user row for the duration of this transaction
+    const [userRow] = await tx
+      .select({ balance: users.rlcBalance })
+      .from(users)
+      .where(eq(users.id, data.userId))
+      .for("update");
 
-  // Update user balance
-  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, data.userId));
+    const current = userRow?.balance ?? 0;
+    const newBalance = current + data.amount;
+    if (newBalance < 0) throw new Error("Saldo insuficiente");
 
-  // Record transaction
-  await db.insert(rlcTransactions).values({
-    userId: data.userId,
-    type: data.type,
-    amount: data.amount,
-    balanceAfter: newBalance,
-    description: data.description,
-    referenceId: data.referenceId,
+    // Update user balance atomically
+    await tx.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, data.userId));
+
+    // Record transaction
+    await tx.insert(rlcTransactions).values({
+      userId: data.userId,
+      type: data.type,
+      amount: data.amount,
+      balanceAfter: newBalance,
+      description: data.description,
+      referenceId: data.referenceId,
+    });
+
+    return newBalance;
   });
-
-  return newBalance;
 }
 
 export async function getRlcTransactions(userId: number) {
@@ -1661,42 +1706,53 @@ export async function buyShopItem(userId: number, itemId: number, quantity: numb
 
   const totalPrice = item.price * quantity;
 
-  // Check user balance
-  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
-  const user = userRows[0];
-  if (!user || user.rlcBalance < totalPrice) throw new Error("Saldo RLC insuficiente");
+  // SECURITY FIX: Wrap in a transaction with SELECT FOR UPDATE to prevent
+  // race conditions on balance deduction and stock decrement.
+  return await db.transaction(async (tx) => {
+    // Lock user row to prevent double-spend
+    const [userRow] = await tx
+      .select({ rlcBalance: users.rlcBalance })
+      .from(users)
+      .where(eq(users.id, userId))
+      .for("update");
+    if (!userRow || userRow.rlcBalance < totalPrice) throw new Error("Saldo RLC insuficiente");
 
-  // Deduct balance
-  const newBalance = user.rlcBalance - totalPrice;
-  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+    // Lock item row to prevent overselling
+    const [itemRow] = await tx
+      .select({ stock: shopItems.stock })
+      .from(shopItems)
+      .where(eq(shopItems.id, itemId))
+      .for("update");
+    if (itemRow && itemRow.stock !== -1 && itemRow.stock < quantity) throw new Error("Stock insuficiente");
 
-  // Record transaction
-  await db.insert(rlcTransactions).values({
-    userId,
-    type: "withdrawal",
-    amount: -totalPrice,
-    balanceAfter: newBalance,
-    description: `Compra: ${item.name} x${quantity}`,
-    referenceId: itemId,
+    const newBalance = userRow.rlcBalance - totalPrice;
+    await tx.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+    await tx.insert(rlcTransactions).values({
+      userId,
+      type: "withdrawal",
+      amount: -totalPrice,
+      balanceAfter: newBalance,
+      description: `Compra: ${item.name} x${quantity}`,
+      referenceId: itemId,
+    });
+
+    if (item.stock !== -1) {
+      await tx.update(shopItems).set({ stock: sql`stock - ${quantity}` }).where(eq(shopItems.id, itemId));
+    }
+
+    const [order] = await tx.insert(shopOrders).values({
+      userId,
+      itemId,
+      quantity,
+      totalPrice,
+      status: "pending",
+      userNote: userNote ?? null,
+      shippingAddress: shippingAddress ?? null,
+    });
+
+    return { orderId: (order as { insertId: number }).insertId, totalPrice, newBalance };
   });
-
-  // Reduce stock if limited
-  if (item.stock !== -1) {
-    await db.update(shopItems).set({ stock: item.stock - quantity }).where(eq(shopItems.id, itemId));
-  }
-
-  // Create order
-  const [order] = await db.insert(shopOrders).values({
-    userId,
-    itemId,
-    quantity,
-    totalPrice,
-    status: "pending",
-    userNote: userNote ?? null,
-    shippingAddress: shippingAddress ?? null,
-  });
-
-  return { orderId: (order as { insertId: number }).insertId, totalPrice, newBalance };
 }
 
 export async function getShopOrders(userId?: number, status?: string) {
@@ -1820,26 +1876,40 @@ export async function buyCosmetic(userId: number, cosmeticId: number) {
     .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.cosmeticId, cosmeticId))).limit(1);
   if (existing.length > 0) throw new Error("Ya tienes este cosmético");
 
-  // Check balance
-  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
-  const user = userRows[0];
-  if (!user || user.rlcBalance < cosmetic.price) throw new Error("Saldo RLC insuficiente");
+  // SECURITY FIX: Wrap in a transaction with SELECT FOR UPDATE to prevent
+  // race conditions on balance deduction and duplicate cosmetic purchase.
+  return await db.transaction(async (tx) => {
+    // Lock user row to prevent double-spend
+    const [userRow] = await tx
+      .select({ rlcBalance: users.rlcBalance })
+      .from(users)
+      .where(eq(users.id, userId))
+      .for("update");
+    if (!userRow || userRow.rlcBalance < cosmetic.price) throw new Error("Saldo RLC insuficiente");
 
-  const newBalance = user.rlcBalance - cosmetic.price;
-  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+    // Double-check ownership inside transaction to prevent race on duplicate purchase
+    const [alreadyOwned] = await tx.select({ id: userCosmetics.id })
+      .from(userCosmetics)
+      .where(and(eq(userCosmetics.userId, userId), eq(userCosmetics.cosmeticId, cosmeticId)))
+      .limit(1);
+    if (alreadyOwned) throw new Error("Ya tienes este cosmético");
 
-  await db.insert(rlcTransactions).values({
-    userId,
-    type: "withdrawal",
-    amount: -cosmetic.price,
-    balanceAfter: newBalance,
-    description: `Cosmético: ${cosmetic.name}`,
-    referenceId: cosmeticId,
+    const newBalance = userRow.rlcBalance - cosmetic.price;
+    await tx.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+    await tx.insert(rlcTransactions).values({
+      userId,
+      type: "withdrawal",
+      amount: -cosmetic.price,
+      balanceAfter: newBalance,
+      description: `Cosmético: ${cosmetic.name}`,
+      referenceId: cosmeticId,
+    });
+
+    await tx.insert(userCosmetics).values({ userId, cosmeticId, isEquipped: false });
+
+    return { newBalance };
   });
-
-  await db.insert(userCosmetics).values({ userId, cosmeticId, isEquipped: false });
-
-  return { newBalance };
 }
 
 export async function equipCosmetic(userId: number, cosmeticId: number) {
@@ -1928,38 +1998,46 @@ export async function claimReward(userId: number, taskId: number) {
   const task = taskRows[0];
   if (!task || !task.isActive) throw new Error("Tarea no disponible");
 
-  // Anti-spam: check daily limit
-  const maxPerDay = task.maxClaimsPerDay ?? 1;
-  if (maxPerDay > 0) {
-    const todayClaims = await getUserClaimsToday(userId, taskId);
-    if (todayClaims >= maxPerDay) throw new Error("Ya alcanzaste el límite diario de esta tarea");
-  }
-  // Check total limit
-  const maxPerUser = task.maxClaimsPerUser ?? 1;
-  if (maxPerUser > 0) {
-    const totalClaims = await getTotalUserClaims(userId, taskId);
-     if (totalClaims >= maxPerUser) throw new Error("Ya completaste esta tarea el máximo de veces");
-  }
-  // Credit coins
-  const userRows = await db.select({ rlcBalance: users.rlcBalance }).from(users).where(eq(users.id, userId)).limit(1);
-  const user = userRows[0];
-  if (!user) throw new Error("Usuario no encontrado");
+  // FIX MEDIO #12: Use a transaction with SELECT FOR UPDATE to prevent
+  // double-claim race conditions when called in parallel.
+  return await db.transaction(async (tx) => {
+    // Re-check limits inside transaction with row locking
+    const maxPerDay = task.maxClaimsPerDay ?? 1;
+    if (maxPerDay > 0) {
+      const todayClaims = await getUserClaimsToday(userId, taskId);
+      if (todayClaims >= maxPerDay) throw new Error("Ya alcanzaste el límite diario de esta tarea");
+    }
+    const maxPerUser = task.maxClaimsPerUser ?? 1;
+    if (maxPerUser > 0) {
+      const totalClaims = await getTotalUserClaims(userId, taskId);
+      if (totalClaims >= maxPerUser) throw new Error("Ya completaste esta tarea el máximo de veces");
+    }
 
-  const newBalance = user.rlcBalance + task.reward;
-  await db.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+    // Lock user row to prevent concurrent balance modifications
+    const [userRow] = await tx
+      .select({ rlcBalance: users.rlcBalance })
+      .from(users)
+      .where(eq(users.id, userId))
+      .for("update");
+    if (!userRow) throw new Error("Usuario no encontrado");
 
-  await db.insert(rlcTransactions).values({
-    userId,
-    type: "reward",
-    amount: task.reward,
-    balanceAfter: newBalance,
-    description: `Recompensa: ${task.title}`,
-    referenceId: taskId,
+    const newBalance = userRow.rlcBalance + task.reward;
+    await tx.update(users).set({ rlcBalance: newBalance }).where(eq(users.id, userId));
+
+    await tx.insert(rlcTransactions).values({
+      userId,
+      type: "reward",
+      amount: task.reward,
+      balanceAfter: newBalance,
+      description: `Recompensa: ${task.title}`,
+      referenceId: taskId,
+    });
+
+    // Insert claim record atomically to prevent duplicate claims
+    await tx.insert(userRewardClaims).values({ userId, taskId });
+
+    return { reward: task.reward, newBalance };
   });
-
-  await db.insert(userRewardClaims).values({ userId, taskId });
-
-  return { reward: task.reward, newBalance };
 }
 
 // ─── Brand Ads ─────────────────────────────────────────────────────────────────
@@ -2085,7 +2163,7 @@ export async function adminListUsers(search?: string) {
   return query;
 }
 
-export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "admin") {
+export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -2330,10 +2408,11 @@ export async function listPublicUsers(opts: { search?: string; limit?: number; o
   const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   const conditions = [];
   if (search) {
+    const safeSearch = escapeLike(search);
     conditions.push(
       or(
-        like(users.name, `%${search}%`),
-        like(users.nickname, `%${search}%`)
+        like(users.name, `%${safeSearch}%`),
+        like(users.nickname, `%${safeSearch}%`)
       )
     );
   }
@@ -2865,10 +2944,19 @@ export async function getFeaturedTournaments(limit = 6) {
   return withCounts;
 }
 
-// ─── Search users by nickname ─────────────────────────────────────────────────
+// ─── LIKE sanitization helper ─────────────────────────────────────────────────
+// FIX BAJO #14: Escape special LIKE characters (%, _, \) to prevent
+// users from crafting wildcard patterns that could cause performance issues
+// (e.g., searching "%%%%" would match everything and be expensive).
+function escapeLike(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+}
+
+// ─── Search users by nickname ─────────────────────────────────────────────────────
 export async function searchUsersByNickname(query: string, limit = 10) {
   const db = await getDb();
   if (!db) return [];
+  const safeQuery = escapeLike(query);
   const equippedCosmetic = alias(userCosmetics, "equippedCosmetic");
   return db
     .select({
@@ -2885,7 +2973,10 @@ export async function searchUsersByNickname(query: string, limit = 10) {
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(
-      sql`(${users.nickname} LIKE ${`%${query}%`} OR ${users.name} LIKE ${`%${query}%`})`
+      or(
+        like(users.nickname, `%${safeQuery}%`),
+        like(users.name, `%${safeQuery}%`)
+      )
     )
     .limit(limit);
 }

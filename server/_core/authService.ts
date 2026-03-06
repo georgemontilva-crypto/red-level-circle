@@ -20,7 +20,16 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // ─── JWT helpers ─────────────────────────────────────────────────────────────
 
 function getSecretKey(): Uint8Array {
-  const secret = ENV.cookieSecret || "fallback-dev-secret-change-in-production";
+  const secret = ENV.cookieSecret;
+  if (!secret) {
+    // SECURITY: Never allow the server to start without a JWT secret.
+    // A missing JWT_SECRET would allow anyone to forge session tokens.
+    throw new Error(
+      "[FATAL] JWT_SECRET (env: JWT_SECRET) no está configurado. " +
+      "El servidor no puede arrancar sin esta variable de entorno. " +
+      "Configúrala en Railway → Variables."
+    );
+  }
   return new TextEncoder().encode(secret);
 }
 

@@ -164,6 +164,7 @@ import {
   reviewVerificationRequest,
 } from "./db";
 import { storagePut } from "./storage";
+import { validateImageMime } from "./mimeValidation";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, or, desc, isNotNull } from "drizzle-orm";
@@ -742,9 +743,11 @@ export const appRouter = router({
         if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-        const ext = input.mimeType.split("/")[1];
-        const key = `teams/${input.teamId}/${input.type}-${Date.now()}.${ext}`;
         const buffer = Buffer.from(input.base64, "base64");
+        // FIX ALTO #7: Validate real MIME type from buffer magic bytes
+        await validateImageMime(buffer, input.mimeType, isAdmin(ctx.user.role));
+        const ext = input.mimeType === "image/svg+xml" ? "svg" : input.mimeType.split("/")[1];
+        const key = `teams/${input.teamId}/${input.type}-${Date.now()}.${ext}`;
         const { url } = await storagePut(key, buffer, input.mimeType);
         await updateTeamImages(input.teamId, input.type === "logo" ? { logo: url } : { banner: url });
         return { url };
@@ -1293,7 +1296,19 @@ export const appRouter = router({
 
     setLive: premiumProcedure
       .input(z.object({ id: z.number(), isLive: z.boolean() }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ ctx, input }) => {
+        // FIX MEDIO #11: Verify ownership before updating stream status.
+        // Without this check, any premium user could toggle any stream live/offline.
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const [stream] = await db.select({ userId: streams.userId })
+          .from(streams)
+          .where(eq(streams.id, input.id))
+          .limit(1);
+        if (!stream) throw new TRPCError({ code: "NOT_FOUND", message: "Stream no encontrado" });
+        if (stream.userId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "No tienes permiso para modificar este stream" });
+        }
         await updateStream(input.id, { isLive: input.isLive });
         return { success: true };
       }),
@@ -1430,35 +1445,46 @@ export const appRouter = router({
         amount: z.number().int().min(10).max(10000),
       }))
       .mutation(async ({ ctx, input }) => {
+        // FIX CRÍTICO #4: Este endpoint usa pool betting real (mismo sistema que placeOnMatch).
+        // El multiplicador fijo 1.5x fue eliminado para evitar inconsistencias contables.
+        // Las apuestas por torneo se resuelven con resolveBets() que usa potentialWin=amount
+        // como placeholder; el pago real se calcula proporcionalmente en processBetPayouts.
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
         if (t.status !== "registration_open" && t.status !== "in_progress") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Las apuestas solo están disponibles para torneos activos." });
         }
-        const balance = await getUserBalance(ctx.user.id);
-        if (balance < input.amount) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Saldo insuficiente de RLC Coins." });
+        // Verificar que el equipo participa en el torneo
+        const { getRegistrationsByTournament } = await import("./db");
+        const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const teamInTournament = approvedRegs.some((r: { teamId: number }) => r.teamId === input.teamId);
+        if (!teamInTournament) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo seleccionado no participa en este torneo." });
         }
-        // Simple multiplier: 1.5x for now (can be dynamic based on odds)
-        const multiplier = 1.5;
-        const potentialWin = Math.floor(input.amount * multiplier);
-        // Deduct coins
+        // Verificar que el usuario no haya apostado ya en este torneo
+        const existingBets = await getBetsByTournament(input.tournamentId);
+        const alreadyBet = existingBets.some((b: { userId: number; matchId: number | null }) => b.userId === ctx.user.id && b.matchId === null);
+        if (alreadyBet) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ya tienes una apuesta activa en este torneo." });
+        }
+        // Deduct coins atomically (addRlcTransaction uses SELECT FOR UPDATE)
         await addRlcTransaction({
           userId: ctx.user.id,
           type: "bet_placed",
           amount: -input.amount,
           description: `Apuesta en torneo: ${t.name}`,
         });
+        // potentialWin = amount as placeholder; real payout calculated via pool betting at resolution
         const betId = await createBet({
           userId: ctx.user.id,
           tournamentId: input.tournamentId,
           teamId: input.teamId,
           amount: input.amount,
-          multiplier: multiplier.toString() as any,
-          potentialWin,
+          multiplier: "1.00" as any, // pool betting: real multiplier determined at resolution
+          potentialWin: input.amount, // placeholder
           status: "pending",
         });
-        return { betId, potentialWin };
+        return { betId, potentialWin: input.amount };
       }),
     // Partidos abiertos para apuestas (tienen betsCloseAt en el futuro)
     openMatches: publicProcedure.query(async () => {
@@ -1976,14 +2002,15 @@ Genera el reporte de precio RLC para este producto.`;
         itemId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, "base64");
+        await validateImageMime(buffer, input.mimeType, true); // admin-only, SVG not in enum
         const ext = input.mimeType.split("/")[1];
         const key = `shop/${input.itemId ?? "new"}/image-${Date.now()}.${ext}`;
-        const buffer = Buffer.from(input.base64, "base64");
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
 
-    // ─── Upload image for cosmetics (previewImage or frameImage) ─────────────────────
+    // ─── Upload image for cosmetics (previewImage or frameImage) ────────────────────
     uploadCosmeticImage: adminProcedure
       .input(z.object({
         base64: z.string(),
@@ -1992,9 +2019,10 @@ Genera el reporte de precio RLC para este producto.`;
         imageType: z.enum(["preview", "frame"]),
       }))
       .mutation(async ({ input }) => {
+        const buffer = Buffer.from(input.base64, "base64");
+        await validateImageMime(buffer, input.mimeType, true); // admin-only
         const ext = input.mimeType.split("/")[1];
         const key = `cosmetics/${input.cosmeticId ?? "new"}/${input.imageType}-${Date.now()}.${ext}`;
-        const buffer = Buffer.from(input.base64, "base64");
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
@@ -2186,9 +2214,11 @@ Genera el reporte de precio RLC para este producto.`;
         folder: z.string().default("admin"),
       }))
       .mutation(async ({ input }) => {
-        const ext = input.mimeType.split("/")[1];
-        const key = `${input.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const buffer = Buffer.from(input.base64, "base64");
+        // FIX ALTO #7: Validate real MIME type (admins can upload SVG but it's sanitized)
+        await validateImageMime(buffer, input.mimeType, true);
+        const ext = input.mimeType === "image/svg+xml" ? "svg" : input.mimeType.split("/")[1];
+        const key = `${input.folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
@@ -2614,9 +2644,11 @@ Genera el reporte de precio RLC para este producto.`;
             });
           }
         }
-        const ext = input.mimeType.split("/")[1];
-        const key = `profiles/${ctx.user.id}/${input.type}-${Date.now()}.${ext}`;
         const buffer = Buffer.from(input.base64, "base64");
+        // FIX ALTO #7: Validate real MIME type (users can upload SVG for banners if permitted)
+        await validateImageMime(buffer, input.mimeType, isAdmin(ctx.user.role));
+        const ext = input.mimeType === "image/svg+xml" ? "svg" : input.mimeType.split("/")[1];
+        const key = `profiles/${ctx.user.id}/${input.type}-${Date.now()}.${ext}`;
         const { url } = await storagePut(key, buffer, input.mimeType);
         return { url };
       }),
@@ -3072,8 +3104,8 @@ Genera el reporte de precio RLC para este producto.`;
         .selectDistinct({ country: alliesTable.country, city: alliesTable.city })
         .from(alliesTable)
         .where(eq(alliesTable.status, "approved"));
-      const countries = [...new Set(rows.map((r: any) => r.country).filter(Boolean))].sort() as string[];
-      const cities = [...new Set(rows.map((r: any) => r.city).filter(Boolean))].sort() as string[];
+      const countries = Array.from(new Set(rows.map((r: any) => r.country).filter(Boolean))).sort() as string[];
+      const cities = Array.from(new Set(rows.map((r: any) => r.city).filter(Boolean))).sort() as string[];
       return { countries, cities };
     }),
 
@@ -3488,36 +3520,47 @@ Genera el reporte de precio RLC para este producto.`;
         const { missions, userMissions, missionClaims } = await import("../drizzle/schema");
         const [mission] = await db.select().from(missions).where(eq(missions.id, input.missionId)).limit(1);
         if (!mission) throw new TRPCError({ code: "NOT_FOUND" });
-        const [um] = await db.select().from(userMissions)
-          .where(and(eq(userMissions.userId, ctx.user.id), eq(userMissions.missionId, input.missionId)))
-          .limit(1);
-        if (!um) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no aceptada" });
-        if (!um.completed) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no completada" });
-        if (um.claimed) throw new TRPCError({ code: "BAD_REQUEST", message: "Recompensa ya reclamada" });
-        // Grant RLC
+
+        // FIX ALTO #8: Usar transacción atómica con SELECT FOR UPDATE para prevenir
+        // doble claim por llamadas paralelas (race condition en el check claimed).
+        const result = await db.transaction(async (tx) => {
+          // Lock the userMission row to prevent concurrent claims
+          const [um] = await tx.select().from(userMissions)
+            .where(and(eq(userMissions.userId, ctx.user.id), eq(userMissions.missionId, input.missionId)))
+            .for("update")
+            .limit(1);
+          if (!um) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no aceptada" });
+          if (!um.completed) throw new TRPCError({ code: "BAD_REQUEST", message: "Misión no completada" });
+          if (um.claimed) throw new TRPCError({ code: "BAD_REQUEST", message: "Recompensa ya reclamada" });
+          // Mark as claimed atomically before granting RLC
+          await tx.update(userMissions).set({ claimed: true }).where(eq(userMissions.id, um.id));
+          // Record claim
+          await tx.insert(missionClaims).values({
+            userId: ctx.user.id,
+            missionId: input.missionId,
+            rewardRlc: mission.rewardRlc,
+          });
+          return { rewardRlc: mission.rewardRlc };
+        });
+
+        // Grant RLC outside transaction (addRlcTransaction has its own transaction)
         const newBalance = await addRlcTransaction({
           userId: ctx.user.id,
           type: "reward",
-          amount: mission.rewardRlc,
+          amount: result.rewardRlc,
           description: `Misión completada: ${mission.title}`,
         });
         // Notify user of coins received
-        await notifyRlcReceived({
-          userId: ctx.user.id,
-          amount: mission.rewardRlc,
-          type: "reward",
-          newBalance,
-          description: `Misión completada: ${mission.title}`,
-        });
-        // Mark as claimed
-        await db.update(userMissions).set({ claimed: true }).where(eq(userMissions.id, um.id));
-        // Record claim
-        await db.insert(missionClaims).values({
-          userId: ctx.user.id,
-          missionId: input.missionId,
-          rewardRlc: mission.rewardRlc,
-        });
-        return { ok: true, rewardRlc: mission.rewardRlc };
+        try {
+          await notifyRlcReceived({
+            userId: ctx.user.id,
+            amount: result.rewardRlc,
+            type: "reward",
+            newBalance,
+            description: `Misión completada: ${mission.title}`,
+          });
+        } catch (_) { /* non-critical */ }
+        return { ok: true, rewardRlc: result.rewardRlc };
       }),
 
     // ── Admin procedures ────────────────────────────────────────────────────

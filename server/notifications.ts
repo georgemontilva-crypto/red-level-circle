@@ -288,7 +288,7 @@ export function registerNotificationListeners(): void {
     const notif = statusMessages[newStatus];
     if (!notif) return;
 
-    const captainIds = registrations.map((r) => r.captainId).filter((id): id is number => id !== null && id !== undefined);
+    const captainIds = (registrations as Array<{ captainId: number | null | undefined }>).map((r) => r.captainId).filter((id): id is number => id !== null && id !== undefined);
     const uniqueCaptains = Array.from(new Set(captainIds));
     for (const captainId of uniqueCaptains) {
       if (captainId) {

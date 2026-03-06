@@ -27,6 +27,8 @@ export interface RlcEvents {
   "team.invite_sent": { teamId: number; invitedUserId: number; inviterUserId: number };
   "team.invite_accepted": { teamId: number; userId: number };
   "team.invite_rejected": { teamId: number; userId: number };
+  "series.map_reported": { seriesId: number; mapNumber: number; [key: string]: unknown };
+  "series.completed": { seriesId: number; winnerId: number | null; isDraw: boolean; tournamentId?: number; finalScore?: unknown };
 }
 
 // ─── Typed EventBus class ─────────────────────────────────────────────────────
