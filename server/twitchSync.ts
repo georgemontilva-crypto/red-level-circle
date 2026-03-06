@@ -303,67 +303,82 @@ async function resolveYouTubeChannelId(handleOrId: string): Promise<string | nul
   return id;
 }
 
-async function getYouTubeLiveStream(channelId: string): Promise<{
+/**
+ * Detects if a YouTube channel is currently live by scraping the /@handle/live page.
+ * This method uses ZERO API quota — it works by fetching the public page HTML.
+ *
+ * Strategy:
+ *  1. Fetch https://www.youtube.com/@{handle}/live
+ *  2. If the page contains BADGE_STYLE_TYPE_LIVE_NOW → channel is live
+ *  3. Extract videoId, title, thumbnail from the embedded ytInitialData JSON
+ *
+ * Fallback: if handle is a channelId (UCxxx...), use the channel page instead.
+ */
+async function getYouTubeLiveStreamByHandle(handle: string): Promise<{
   isLive: boolean;
   viewerCount: number;
   thumbnailUrl: string | null;
   title: string | null;
   videoId: string | null;
 }> {
-  if (!YOUTUBE_API_KEY) {
-    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
-  }
+  const empty = { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
 
-  const params = new URLSearchParams({
-    part: "snippet",
-    channelId,
-    eventType: "live",
-    type: "video",
-    key: YOUTUBE_API_KEY,
-  });
+  // Build the URL: use @handle for named channels, channel/ for channelIds
+  const isChannelId = /^UC[\w-]{22}$/.test(handle);
+  const pageUrl = isChannelId
+    ? `https://www.youtube.com/channel/${handle}/live`
+    : `https://www.youtube.com/@${handle}/live`;
 
-  const res = await fetch(`${YOUTUBE_SEARCH_URL}?${params.toString()}`);
-  if (!res.ok) {
-    console.error(`[youtubeSync] search API error for channel "${channelId}": ${res.status} ${await res.text()}`);
-    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
-  }
-
-  const data = (await res.json()) as {
-    items?: {
-      id: { videoId: string };
-      snippet: {
-        title: string;
-        thumbnails: { maxres?: { url: string }; high?: { url: string }; medium?: { url: string } };
-      };
-    }[];
-    error?: { message: string };
-  };
-
-  if (data.error) {
-    console.error(`[youtubeSync] YouTube search API error: ${data.error.message}`);
-    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
-  }
-
-  if (!data.items || data.items.length === 0) {
-    return { isLive: false, viewerCount: 0, thumbnailUrl: null, title: null, videoId: null };
-  }
-
-  const item = data.items[0];
-  const thumbnail = item.snippet.thumbnails.maxres?.url ?? item.snippet.thumbnails.high?.url ?? item.snippet.thumbnails.medium?.url ?? null;
-  const videoId = item.id.videoId;
-
-  let viewerCount = 0;
   try {
-    const vParams = new URLSearchParams({ part: "liveStreamingDetails", id: videoId, key: YOUTUBE_API_KEY });
-    const vRes = await fetch(`${YOUTUBE_VIDEOS_URL}?${vParams.toString()}`);
-    if (vRes.ok) {
-      const vData = (await vRes.json()) as { items?: { liveStreamingDetails?: { concurrentViewers?: string } }[] };
-      const viewers = vData.items?.[0]?.liveStreamingDetails?.concurrentViewers;
-      if (viewers) viewerCount = parseInt(viewers, 10);
-    }
-  } catch { /* non-critical */ }
+    const res = await fetch(pageUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+    });
 
-  return { isLive: true, viewerCount, thumbnailUrl: thumbnail, title: item.snippet.title, videoId };
+    if (!res.ok) {
+      console.warn(`[youtubeSync] HTTP ${res.status} fetching ${pageUrl}`);
+      return empty;
+    }
+
+    const html = await res.text();
+
+    // Detect live status
+    const isLive =
+      html.includes('"BADGE_STYLE_TYPE_LIVE_NOW"') ||
+      html.includes('"isLive":true') ||
+      html.includes('isLiveBroadcast');
+
+    if (!isLive) return empty;
+
+    // Extract videoId — first match in the page (the live video)
+    const videoIdMatch = html.match(/"videoId":"([a-zA-Z0-9_-]{11})"/);
+    const videoId = videoIdMatch?.[1] ?? null;
+
+    if (!videoId) {
+      console.warn(`[youtubeSync] Live detected for "${handle}" but could not extract videoId`);
+      return { ...empty, isLive: true };
+    }
+
+    // Extract title
+    const titleMatch = html.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
+    const title = titleMatch?.[1] ?? null;
+
+    // Extract thumbnail — prefer hqdefault from ytimg CDN (always available for live)
+    const thumbMatch = html.match(/"thumbnail":\{"thumbnails":\[.*?"url":"(https:\/\/i\.ytimg\.com\/vi\/[^"]+)"/);
+    const thumbnailUrl = thumbMatch?.[1]?.split('\\u0026')[0] ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+    // Extract concurrent viewers (may not be present)
+    const viewersMatch = html.match(/"concurrentViewers":"(\d+)"/);
+    const viewerCount = viewersMatch ? parseInt(viewersMatch[1], 10) : 0;
+
+    return { isLive: true, viewerCount, thumbnailUrl, title, videoId };
+  } catch (e) {
+    console.error(`[youtubeSync] Error scraping ${pageUrl}:`, e);
+    return empty;
+  }
 }
 
 // ── Auto-create / auto-close stream helpers ──────────────────────────────────
@@ -549,15 +564,15 @@ export async function syncTwitchStreams(): Promise<void> {
 
 /**
  * Syncs all approved creators' YouTube channels.
- * The youtube field in DB stores a bare handle (e.g. "georgemontilva"),
+ *
+ * Uses ZERO API quota by scraping the public /@handle/live page.
+ * The YouTube Data API is NOT used for live detection — only the public HTML page.
+ * This avoids the 10,000 units/day quota limit entirely.
+ *
+ * The youtube field in DB stores a bare handle (e.g. "tiomemox"),
  * optionally with @ prefix or as a full URL.
  */
 export async function syncYouTubeStreams(): Promise<void> {
-  if (!YOUTUBE_API_KEY) {
-    console.warn("[youtubeSync] Missing YOUTUBE_API_KEY — skipping YouTube sync");
-    return;
-  }
-
   const db = await getDb();
   if (!db) return;
 
@@ -577,7 +592,7 @@ export async function syncYouTubeStreams(): Promise<void> {
     return;
   }
 
-  console.log(`[youtubeSync] Checking ${creators.length} YouTube creator(s)`);
+  console.log(`[youtubeSync] Checking ${creators.length} YouTube creator(s) via scraping (no API quota used)`);
 
   for (const creator of creators) {
     if (!creator.youtube) continue;
@@ -592,16 +607,11 @@ export async function syncYouTubeStreams(): Promise<void> {
       continue;
     }
 
-    console.log(`[youtubeSync] Processing userId=${creator.userId} raw="${rawYoutube}" → normalized="${normalized}"`);
+    console.log(`[youtubeSync] Processing userId=${creator.userId} raw="${rawYoutube}" → handle="${normalized}"`);
 
     try {
-      const channelId = await resolveYouTubeChannelId(normalized);
-      if (!channelId) {
-        console.warn(`[youtubeSync] Could not resolve channelId for "${normalized}" (raw: "${rawYoutube}") — check YOUTUBE_API_KEY and channel existence`);
-        continue;
-      }
-
-      const liveData = await getYouTubeLiveStream(channelId);
+      // Use scraping — no API quota consumed
+      const liveData = await getYouTubeLiveStreamByHandle(normalized);
       const streamerName = creator.nickname ?? creator.userName ?? normalized;
 
       // Build canonical channel URL
@@ -625,7 +635,6 @@ export async function syncYouTubeStreams(): Promise<void> {
         });
         console.log(`[youtubeSync] 🔴 ${normalized}: LIVE "${liveData.title}" (${liveData.viewerCount} viewers, videoId=${liveData.videoId})`);
       } else if (liveData.isLive && !liveData.videoId) {
-        // Live detected but no videoId — log and skip to avoid creating a broken stream
         console.warn(`[youtubeSync] ${normalized}: live detected but no videoId — skipping stream creation`);
       } else {
         await handleCreatorWentOffline(creator.userId, "youtube");
