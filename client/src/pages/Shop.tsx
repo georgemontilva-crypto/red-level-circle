@@ -649,6 +649,7 @@ export default function Shop() {
             id: number; itemName?: string | null; itemImage?: string | null; itemCategory?: string | null;
             quantity: number; totalPrice: number; status: string; deliveryNote?: string | null;
             userNote?: string | null; shippingAddress?: string | null; createdAt: Date;
+            trackingNumber?: string | null; shippingCarrier?: string | null;
           };
           const allOrders = myOrders as OrderRow[];
           const activeOrders = allOrders.filter(o => o.status === "pending" || o.status === "processing");
@@ -701,12 +702,23 @@ export default function Shop() {
                     <span>{parsedShipping.fullName}, {parsedShipping.address}, {parsedShipping.city}, {parsedShipping.country} {parsedShipping.postalCode}</span>
                   </div>
                 )}
-                {isOrderPhysical && order.status === "delivered" && order.deliveryNote && (
+                {isOrderPhysical && order.status === "processing" && (order.trackingNumber || order.shippingCarrier) && (
+                  <div className="ml-16 flex items-center gap-2 p-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                    <Package className="w-3.5 h-3.5 text-orange-400 flex-shrink-0" />
+                    <div>
+                      <p className="text-orange-400 text-xs font-semibold font-mono">PEDIDO EN CAMINO</p>
+                      {order.shippingCarrier && <p className="text-orange-200 text-xs">{order.shippingCarrier}</p>}
+                      {order.trackingNumber && <p className="text-orange-200 text-sm font-mono select-all">{order.trackingNumber}</p>}
+                    </div>
+                  </div>
+                )}
+                {isOrderPhysical && order.status === "delivered" && (order.trackingNumber || order.deliveryNote) && (
                   <div className="ml-16 flex items-center gap-2 p-2 rounded-xl bg-blue-500/10 border border-blue-500/20">
                     <Package className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
                     <div>
                       <p className="text-blue-400 text-xs font-semibold font-mono">NÚMERO DE SEGUIMIENTO</p>
-                      <p className="text-blue-200 text-sm font-mono">{order.deliveryNote}</p>
+                      {order.shippingCarrier && <p className="text-blue-300 text-xs">{order.shippingCarrier}</p>}
+                      <p className="text-blue-200 text-sm font-mono select-all">{order.trackingNumber ?? order.deliveryNote}</p>
                     </div>
                   </div>
                 )}

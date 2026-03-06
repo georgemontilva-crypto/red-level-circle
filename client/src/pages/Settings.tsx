@@ -510,6 +510,9 @@ function VerificationSection() {
   });
   const [reason, setReason] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [verificationType, setVerificationType] = useState("");
+  const [followersCount, setFollowersCount] = useState("");
+  const [socialLinks, setSocialLinks] = useState({ twitch: "", youtube: "", twitter: "", instagram: "", other: "" });
 
   const statusInfo = {
     pending: { icon: <Clock className="w-4 h-4 text-yellow-400" />, label: "Pendiente de revisión", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30" },
@@ -558,27 +561,100 @@ function VerificationSection() {
           </button>
         )}
         {showForm && (
-          <div className="space-y-3 pt-2 border-t border-border">
-            <label className="block text-xs font-mono text-muted-foreground tracking-widest">¿POR QUÉ DEBERÍAS SER VERIFICADO?</label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="Explica brevemente quién eres, tu trayectoria, seguidores, logros..."
-              rows={4}
-              maxLength={500}
-              className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder-muted-foreground resize-none"
-            />
-            <p className="text-xs text-muted-foreground text-right">{reason.length}/500</p>
+          <div className="space-y-4 pt-2 border-t border-border">
+            {/* Tipo de verificación */}
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-2">TIPO DE VERIFICACIÓN *</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { value: "streamer", label: "🎮 Streamer" },
+                  { value: "pro_player", label: "🏆 Jugador Pro" },
+                  { value: "content_creator", label: "📹 Creador" },
+                  { value: "team", label: "👥 Equipo" },
+                  { value: "organization", label: "🏢 Organización" },
+                  { value: "other", label: "📋 Otro" },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setVerificationType(opt.value)}
+                    className={`py-2 px-3 rounded-lg border text-sm font-mono transition-colors ${
+                      verificationType === opt.value
+                        ? "bg-blue-600/20 border-blue-500 text-blue-300"
+                        : "border-border text-muted-foreground hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Seguidores */}
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1">SEGUIDORES TOTALES (aproximado)</label>
+              <input
+                type="number"
+                value={followersCount}
+                onChange={e => setFollowersCount(e.target.value)}
+                placeholder="Ej: 5000"
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+              />
+            </div>
+            {/* Redes sociales */}
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-2">REDES SOCIALES (al menos una)</label>
+              <div className="space-y-2">
+                {([
+                  { key: "twitch" as const, placeholder: "https://twitch.tv/tucanal" },
+                  { key: "youtube" as const, placeholder: "https://youtube.com/@tucanal" },
+                  { key: "twitter" as const, placeholder: "https://x.com/tuperfil" },
+                  { key: "instagram" as const, placeholder: "https://instagram.com/tuperfil" },
+                  { key: "other" as const, placeholder: "Otro link relevante" },
+                ]).map(({ key, placeholder }) => (
+                  <div key={key} className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-muted-foreground w-16 flex-shrink-0 capitalize">{key}</span>
+                    <input
+                      value={socialLinks[key]}
+                      onChange={e => setSocialLinks(s => ({ ...s, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      className="flex-1 bg-secondary border border-border rounded-lg px-3 py-1.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Motivo */}
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1">¿POR QUÉ DEBERÍAS SER VERIFICADO? *</label>
+              <textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+                placeholder="Explica brevemente tu trayectoria, logros, por qué mereces la verificación..."
+                rows={3}
+                maxLength={500}
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500 transition-colors placeholder-muted-foreground resize-none"
+              />
+              <p className="text-xs text-muted-foreground text-right">{reason.length}/500</p>
+            </div>
             <div className="flex gap-2">
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setVerificationType(""); setFollowersCount(""); setSocialLinks({ twitch: "", youtube: "", twitter: "", instagram: "", other: "" }); setReason(""); }}
                 className="flex-1 py-2 rounded-lg border border-border text-muted-foreground hover:text-white font-mono text-sm transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => { requestMutation.mutate({ reason }); setShowForm(false); }}
-                disabled={reason.length < 10 || requestMutation.isPending}
+                onClick={() => {
+                  const filteredLinks = Object.fromEntries(Object.entries(socialLinks).filter(([, v]) => v.trim()));
+                  requestMutation.mutate({
+                    reason,
+                    verificationType: (verificationType || undefined) as "streamer" | "pro_player" | "content_creator" | "team" | "organization" | "other" | undefined,
+                    followersCount: followersCount ? parseInt(followersCount) : undefined,
+                    socialLinks: Object.keys(filteredLinks).length > 0 ? filteredLinks as { twitch?: string; youtube?: string; twitter?: string; instagram?: string; tiktok?: string } : undefined,
+                  });
+                  setShowForm(false);
+                }}
+                disabled={reason.length < 10 || !verificationType || requestMutation.isPending}
                 className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-mono font-bold text-sm transition-colors"
               >
                 {requestMutation.isPending ? "Enviando..." : "Enviar solicitud"}

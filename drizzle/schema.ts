@@ -20,7 +20,7 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
   emailVerified: boolean("emailVerified").default(false).notNull(),
-  role: mysqlEnum("role", ["user", "premium", "admin", "super_admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "premium", "organizer", "admin", "super_admin"]).default("user").notNull(),
   // Profile type chosen during onboarding
   profileType: mysqlEnum("profileType", ["player", "team_captain", "event_creator"]).default("player"),
   avatar: text("avatar"),
@@ -375,6 +375,8 @@ export const shopOrders = mysqlTable("shop_orders", {
   totalPrice: int("totalPrice").notNull(), // RLC Coins spent
   status: mysqlEnum("status", ["pending", "processing", "delivered", "cancelled"]).default("pending").notNull(),
   deliveryNote: text("deliveryNote"), // admin note when delivering (also used for digital codes)
+  trackingNumber: varchar("trackingNumber", { length: 128 }), // número de guía de envío para productos físicos
+  shippingCarrier: varchar("shippingCarrier", { length: 64 }), // empresa de transporte (DHL, FedEx, Correos, etc.)
   userNote: text("userNote"), // buyer's note/instructions
   shippingAddress: text("shippingAddress"), // JSON: { fullName, address, city, state, country, postalCode, contact }
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -526,7 +528,13 @@ export const verificationRequests = mysqlTable("verification_requests", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull().unique(), // one active request per user
   status: varchar("status", { length: 32 }).default("pending").notNull(), // pending | approved | rejected
+  // Tipo de verificación solicitada
+  verificationType: mysqlEnum("verificationType", ["streamer", "pro_player", "team", "organization", "content_creator", "other"]).default("other").notNull(),
   reason: text("reason"), // user's reason for requesting verification
+  // Links de redes sociales / evidencia
+  socialLinks: text("socialLinks"), // JSON: { twitch, youtube, twitter, instagram, tiktok }
+  // Métricas declaradas por el usuario
+  followersCount: int("followersCount"), // seguidores declarados
   adminNote: text("adminNote"), // admin's note when reviewing
   requestedAt: timestamp("requestedAt").defaultNow().notNull(),
   reviewedAt: timestamp("reviewedAt"),
@@ -561,11 +569,18 @@ export const notifications = mysqlTable("notifications", {
     "mission_approved",
     "mission_rejected",
     "order_confirmed",
+    "order_processing",
+    "order_shipped",
+    "order_delivered",
+    "order_cancelled",
     "team_invite",
     "team_invite_accepted",
     "team_invite_rejected",
     "creator_verified",
     "creator_rejected",
+    "verification_approved",
+    "verification_rejected",
+    "verification_pending_admin",
     "tournament_full",
     "match_scheduled",
     "match_result",

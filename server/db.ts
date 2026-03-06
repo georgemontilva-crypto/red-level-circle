@@ -183,7 +183,7 @@ export async function getUserByEmail(email: string) {
   return result[0];
 }
 
-export async function updateUserRole(userId: number, role: "user" | "premium" | "admin" | "super_admin") {
+export async function updateUserRole(userId: number, role: "user" | "premium" | "organizer" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -2163,7 +2163,7 @@ export async function adminListUsers(search?: string) {
   return query;
 }
 
-export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "admin" | "super_admin") {
+export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "organizer" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -2248,10 +2248,65 @@ export async function adminListOrders() {
     .orderBy(desc(shopOrders.createdAt));
 }
 
-export async function adminUpdateOrderStatus(orderId: number, status: "pending" | "delivered" | "cancelled", note?: string) {
+export async function adminUpdateOrderStatus(
+  orderId: number,
+  status: "pending" | "processing" | "delivered" | "cancelled",
+  options?: {
+    note?: string;
+    trackingNumber?: string;
+    shippingCarrier?: string;
+  }
+) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.update(shopOrders).set({ status, deliveryNote: note ?? null }).where(eq(shopOrders.id, orderId));
+  const updateData: Record<string, unknown> = { status };
+  if (options?.note !== undefined) updateData.deliveryNote = options.note;
+  if (options?.trackingNumber !== undefined) updateData.trackingNumber = options.trackingNumber || null;
+  if (options?.shippingCarrier !== undefined) updateData.shippingCarrier = options.shippingCarrier || null;
+  await db.update(shopOrders).set(updateData as any).where(eq(shopOrders.id, orderId));
+  // Notificar al usuario sobre el cambio de estado
+  const [order] = await db
+    .select({ userId: shopOrders.userId, itemName: shopItems.name, itemCategory: shopItems.category })
+    .from(shopOrders)
+    .innerJoin(shopItems, eq(shopOrders.itemId, shopItems.id))
+    .where(eq(shopOrders.id, orderId))
+    .limit(1);
+  if (order) {
+    const { createNotification } = await import("./notifications");
+    const notifMap: Record<string, { type: any; title: string; message: string }> = {
+      processing: {
+        type: "order_processing",
+        title: "Pedido en proceso",
+        message: `Tu pedido de "${order.itemName}" está siendo preparado para envío.`,
+      },
+      delivered: {
+        type: order.itemCategory === "physical" ? "order_delivered" : "order_delivered",
+        title: order.itemCategory === "physical" ? "¡Pedido enviado!" : "¡Pedido entregado!",
+        message: order.itemCategory === "physical"
+          ? `Tu pedido de "${order.itemName}" ha sido enviado.${
+              options?.trackingNumber ? ` Número de guía: ${options.trackingNumber}${options?.shippingCarrier ? ` (${options.shippingCarrier})` : ""}.` : ""
+            } Revisa los detalles en Mis Pedidos.`
+          : `Tu pedido de "${order.itemName}" ha sido entregado. Revisa el código en Mis Pedidos.`,
+      },
+      cancelled: {
+        type: "order_cancelled",
+        title: "Pedido cancelado",
+        message: `Tu pedido de "${order.itemName}" ha sido cancelado.${options?.note ? ` Motivo: ${options.note}` : ""} Contacta al soporte si tienes dudas.`,
+      },
+    };
+    const notif = notifMap[status];
+    if (notif) {
+      await createNotification({
+        userId: order.userId,
+        type: notif.type,
+        title: notif.title,
+        message: notif.message,
+        link: "/shop?tab=orders",
+        referenceId: orderId,
+        referenceType: "order",
+      });
+    }
+  }
 }
 
 // ─── Admin: Cosmetics ─────────────────────────────────────────────────────────
@@ -3028,7 +3083,15 @@ export async function hasApprovedTeamMembership(userId: number): Promise<boolean
 }
 
 // ─── Verification Requests ────────────────────────────────────────────────────
-export async function requestVerification(userId: number, reason: string) {
+export async function requestVerification(
+  userId: number,
+  data: {
+    reason: string;
+    verificationType?: "streamer" | "pro_player" | "team" | "organization" | "content_creator" | "other";
+    socialLinks?: string; // JSON string
+    followersCount?: number;
+  }
+) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   // Upsert: if user already has a request, update it (re-request)
@@ -3044,11 +3107,50 @@ export async function requestVerification(userId: number, reason: string) {
     // Allow re-request if previously rejected
     await db
       .update(verificationRequests)
-      .set({ status: "pending", reason, adminNote: null, requestedAt: new Date(), reviewedAt: null, reviewedBy: null })
+      .set({
+        status: "pending",
+        reason: data.reason,
+        verificationType: data.verificationType ?? "other",
+        socialLinks: data.socialLinks ?? null,
+        followersCount: data.followersCount ?? null,
+        adminNote: null,
+        requestedAt: new Date(),
+        reviewedAt: null,
+        reviewedBy: null,
+      } as any)
       .where(eq(verificationRequests.userId, userId));
-    return { success: true };
+  } else {
+    await db.insert(verificationRequests).values({
+      userId,
+      reason: data.reason,
+      verificationType: data.verificationType ?? "other",
+      socialLinks: data.socialLinks ?? null,
+      followersCount: data.followersCount ?? null,
+    } as any);
   }
-  await db.insert(verificationRequests).values({ userId, reason });
+  // Notificar a todos los admins que hay una solicitud pendiente
+  try {
+    const { createNotification } = await import("./notifications");
+    const adminUsers = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`${users.role} IN ('admin', 'super_admin')`);
+    const requestingUser = await db
+      .select({ name: users.name, nickname: users.nickname })
+      .from(users).where(eq(users.id, userId)).limit(1);
+    const userName = requestingUser[0]?.nickname ?? requestingUser[0]?.name ?? `Usuario #${userId}`;
+    for (const admin of adminUsers) {
+      await createNotification({
+        userId: admin.id,
+        type: "verification_pending_admin",
+        title: "Nueva solicitud de verificación",
+        message: `${userName} ha solicitado verificación de cuenta (${data.verificationType ?? "other"}).`,
+        link: "/admin?tab=verifications",
+        referenceId: userId,
+        referenceType: "verification",
+      });
+    }
+  } catch {}
   return { success: true };
 }
 
@@ -3071,7 +3173,10 @@ export async function listVerificationRequests(status?: string) {
       id: verificationRequests.id,
       userId: verificationRequests.userId,
       status: verificationRequests.status,
+      verificationType: (verificationRequests as any).verificationType,
       reason: verificationRequests.reason,
+      socialLinks: (verificationRequests as any).socialLinks,
+      followersCount: (verificationRequests as any).followersCount,
       adminNote: verificationRequests.adminNote,
       requestedAt: verificationRequests.requestedAt,
       reviewedAt: verificationRequests.reviewedAt,
@@ -3111,6 +3216,31 @@ export async function reviewVerificationRequest(
     .update(users)
     .set({ isVerified: status === "approved" })
     .where(eq(users.id, userId));
+  // Notificar al usuario sobre el resultado
+  try {
+    const { createNotification } = await import("./notifications");
+    if (status === "approved") {
+      await createNotification({
+        userId,
+        type: "verification_approved",
+        title: "✅ Verificación aprobada",
+        message: "Tu solicitud de verificación ha sido aprobada. Tu cuenta ahora tiene la insignia verificada.",
+        link: "/profile",
+        referenceType: "verification",
+      });
+    } else {
+      await createNotification({
+        userId,
+        type: "verification_rejected",
+        title: "Solicitud de verificación rechazada",
+        message: adminNote
+          ? `Tu solicitud de verificación fue rechazada. Motivo: ${adminNote}`
+          : "Tu solicitud de verificación fue rechazada. Puedes volver a solicitarla con más información.",
+        link: "/profile",
+        referenceType: "verification",
+      });
+    }
+  } catch {}
   return { success: true };
 }
 

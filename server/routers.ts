@@ -1616,47 +1616,19 @@ export const appRouter = router({
         return getShopOrders(undefined, input.status);
       }),
     updateOrderStatus: adminProcedure
-      .input(z.object({ orderId: z.number(), status: z.string(), deliveryNote: z.string().optional() }))
+      .input(z.object({
+        orderId: z.number(),
+        status: z.enum(["pending", "processing", "delivered", "cancelled"]),
+        deliveryNote: z.string().optional(),
+        trackingNumber: z.string().optional(),
+        shippingCarrier: z.string().optional(),
+      }))
       .mutation(async ({ input }) => {
-        await updateOrderStatus(input.orderId, input.status, input.deliveryNote);
-        // Notify buyer about status change
-        try {
-          const db = await getDb();
-          if (db) {
-            const { shopOrders: so, users: u, shopItems: si } = await import("../drizzle/schema");
-            const rows = await db.select({
-              userId: so.userId,
-              itemName: si.name,
-              itemCategory: si.category,
-            }).from(so)
-              .innerJoin(si, eq(so.itemId, si.id))
-              .where(eq(so.id, input.orderId))
-              .limit(1);
-            if (rows[0]) {
-              const { notifications } = await import("../drizzle/schema");
-              const statusMessages: Record<string, string> = {
-                processing: `Tu pedido de "${rows[0].itemName}" está siendo procesado. Te contactaremos pronto.`,
-                delivered: rows[0].itemCategory === "digital" || rows[0].itemCategory === "limited"
-                  ? `Tu pedido de "${rows[0].itemName}" ha sido entregado. Revisa la nota de entrega para tu código/acceso.`
-                  : `Tu pedido de "${rows[0].itemName}" ha sido enviado. ${input.deliveryNote ? `Nota: ${input.deliveryNote}` : ""}`,
-                cancelled: `Tu pedido de "${rows[0].itemName}" ha sido cancelado. Los RLC Coins serán reembolsados.`,
-              };
-              const msg = statusMessages[input.status];
-              if (msg) {
-                await db.insert(notifications).values({
-                  userId: rows[0].userId,
-                  type: "order_confirmed",
-                  title: `🛒 Pedido #${input.orderId} — ${input.status === "processing" ? "En proceso" : input.status === "delivered" ? "Entregado" : "Cancelado"}`,
-                  message: msg,
-                  isRead: false,
-                  link: "/shop?tab=orders",
-                  referenceId: input.orderId,
-                  referenceType: "order",
-                });
-              }
-            }
-          }
-        } catch {}
+        await adminUpdateOrderStatus(input.orderId, input.status, {
+          note: input.deliveryNote,
+          trackingNumber: input.trackingNumber,
+          shippingCarrier: input.shippingCarrier,
+        });
         return { success: true };
       }),
     createBrandAd: adminProcedure
@@ -2978,9 +2950,25 @@ Genera el reporte de precio RLC para este producto.`;
   // ─── Verification ─────────────────────────────────────────────────────────────
   verification: router({
     request: protectedProcedure
-      .input(z.object({ reason: z.string().min(10).max(500) }))
+      .input(z.object({
+        reason: z.string().min(10).max(500),
+        verificationType: z.enum(["streamer", "pro_player", "team", "organization", "content_creator", "other"]).optional(),
+        socialLinks: z.object({
+          twitch: z.string().url().optional().or(z.literal("")),
+          youtube: z.string().url().optional().or(z.literal("")),
+          twitter: z.string().url().optional().or(z.literal("")),
+          instagram: z.string().url().optional().or(z.literal("")),
+          tiktok: z.string().url().optional().or(z.literal("")),
+        }).optional(),
+        followersCount: z.number().min(0).optional(),
+      }))
       .mutation(async ({ ctx, input }) => {
-        return requestVerification(ctx.user.id, input.reason);
+        return requestVerification(ctx.user.id, {
+          reason: input.reason,
+          verificationType: input.verificationType,
+          socialLinks: input.socialLinks ? JSON.stringify(input.socialLinks) : undefined,
+          followersCount: input.followersCount,
+        });
       }),
     myRequest: protectedProcedure.query(async ({ ctx }) => {
       return getMyVerificationRequest(ctx.user.id);

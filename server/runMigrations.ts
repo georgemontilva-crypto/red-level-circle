@@ -86,6 +86,32 @@ const MIGRATIONS: { id: string; up: string }[] = [
       );
     `,
   },
+  {
+    id: "0012_admin_improvements",
+    up: `
+      -- Agregar rol organizer al enum de users
+      ALTER TABLE \`users\` MODIFY COLUMN \`role\` ENUM('user','premium','organizer','admin','super_admin') NOT NULL DEFAULT 'user';
+      -- Agregar campos de tracking a shop_orders
+      ALTER TABLE \`shop_orders\`
+        ADD COLUMN IF NOT EXISTS \`trackingNumber\`  VARCHAR(128) NULL AFTER \`deliveryNote\`,
+        ADD COLUMN IF NOT EXISTS \`shippingCarrier\` VARCHAR(64)  NULL AFTER \`trackingNumber\`;
+      -- Agregar campos estructurados a verification_requests
+      ALTER TABLE \`verification_requests\`
+        ADD COLUMN IF NOT EXISTS \`verificationType\` ENUM('streamer','pro_player','team','organization','content_creator','other') NOT NULL DEFAULT 'other' AFTER \`status\`,
+        ADD COLUMN IF NOT EXISTS \`socialLinks\`      TEXT NULL AFTER \`reason\`,
+        ADD COLUMN IF NOT EXISTS \`followersCount\`   INT  NULL AFTER \`socialLinks\`;
+      -- Ampliar enum de notificaciones con nuevos tipos
+      ALTER TABLE \`notifications\` MODIFY COLUMN \`type\` ENUM(
+        'bracket_ready','mission_approved','mission_rejected',
+        'order_confirmed','order_processing','order_shipped','order_delivered','order_cancelled',
+        'team_invite','team_invite_accepted','team_invite_rejected',
+        'creator_verified','creator_rejected',
+        'verification_approved','verification_rejected','verification_pending_admin',
+        'tournament_full','match_scheduled','match_result',
+        'coins_earned','coins_spent','general'
+      ) NOT NULL;
+    `,
+  },
 ];
 
 export async function runMigrations() {

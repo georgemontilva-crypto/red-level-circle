@@ -13,7 +13,7 @@ import {
   BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database,
   MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil, Sparkles
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -85,9 +85,20 @@ function UsersTab() {
   });
 
   const roleColors: Record<string, string> = {
+    super_admin: "bg-purple-500/20 text-purple-300 border-purple-600/40",
     admin: "bg-yellow-500/20 text-yellow-400 border-yellow-600/40",
+    organizer: "bg-green-500/20 text-green-400 border-green-600/40",
     premium: "bg-blue-500/20 text-blue-400 border-blue-600/40",
     user: "bg-gray-500/20 text-muted-foreground border-gray-600/40",
+  };
+  const roleLabel = (role: string) => {
+    switch (role) {
+      case "super_admin": return "SUPER ADMIN";
+      case "admin": return "ADMIN";
+      case "organizer": return "ORGA";
+      case "premium": return "CDC";
+      default: return "USUARIO";
+    }
   };
 
   return (
@@ -111,7 +122,7 @@ function UsersTab() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`font-orbitron text-xs border ${roleColors[u.role] ?? roleColors.user}`}>
-                {u.role === "premium" ? "CDC" : u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : "USUARIO"}
+                {roleLabel(u.role)}
               </Badge>
               <span className="text-yellow-400 text-xs font-orbitron">{u.rlcBalance ?? 0} RLC</span>
               <Select
@@ -124,6 +135,7 @@ function UsersTab() {
                 <SelectContent>
                   <SelectItem value="user">Usuario</SelectItem>
                   <SelectItem value="premium">CDC</SelectItem>
+                  <SelectItem value="organizer">Organizador (ORGA)</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
@@ -265,6 +277,7 @@ function ShopTab() {
   const [aiReport, setAiReport] = useState<any>(null);
   const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
   const [deliveryCodes, setDeliveryCodes] = useState<Record<number, string>>({});
+  const [shippingCarriers, setShippingCarriers] = useState<Record<number, string>>({});
   const [statusFilter, setStatusFilter] = useState<"pending" | "processing" | "delivered" | "cancelled" | "all">("all");
   const [editingItem, setEditingItem] = useState<null | { id: number; name: string; description: string; imageUrl: string; price: string; stock: string; category: string; maxPerUser: number | null; isActive: boolean; isFeatured: boolean }>(null);
   const [uploadingEditImg, setUploadingEditImg] = useState(false);
@@ -632,16 +645,34 @@ function ShopTab() {
                       </div>
                     )}
 
-                    {/* Tracking number for physical */}
+                    {/* Tracking number + carrier for physical */}
                     {physical && (
-                      <div>
-                        <label className="text-xs text-muted-foreground font-mono mb-1 block flex items-center gap-1"><Package className="w-3 h-3" /> NÚMERO DE SEGUIMIENTO (opcional)</label>
+                      <div className="space-y-2">
+                        <label className="text-xs text-muted-foreground font-mono mb-1 block flex items-center gap-1"><Package className="w-3 h-3" /> NÚMERO DE GUÍA / SEGUIMIENTO</label>
                         <input
                           value={code}
                           onChange={e => setDeliveryCodes(d => ({...d, [order.id]: e.target.value}))}
                           placeholder="Ej: ES123456789ES"
                           className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-orange-500 focus:outline-none font-mono"
                         />
+                        <label className="text-xs text-muted-foreground font-mono block">EMPRESA DE TRANSPORTE</label>
+                        <select
+                          value={shippingCarriers[order.id] ?? ""}
+                          onChange={e => setShippingCarriers(d => ({...d, [order.id]: e.target.value}))}
+                          className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm focus:border-orange-500 focus:outline-none"
+                        >
+                          <option value="">Seleccionar empresa...</option>
+                          <option value="Correos">Correos</option>
+                          <option value="DHL">DHL</option>
+                          <option value="FedEx">FedEx</option>
+                          <option value="UPS">UPS</option>
+                          <option value="MRW">MRW</option>
+                          <option value="SEUR">SEUR</option>
+                          <option value="GLS">GLS</option>
+                          <option value="Amazon Logistics">Amazon Logistics</option>
+                          <option value="Otra">Otra</option>
+                        </select>
+                        <p className="text-xs text-muted-foreground">La guía y empresa serán visibles para el usuario en su historial de pedidos.</p>
                       </div>
                     )}
 
@@ -649,7 +680,12 @@ function ShopTab() {
                     <div className="flex gap-2 flex-wrap">
                       {order.status === "pending" && (
                         <Button size="sm"
-                          onClick={() => updateOrder.mutate({ orderId: order.id, status: "processing" })}
+                          onClick={() => updateOrder.mutate({
+                            orderId: order.id,
+                            status: "processing",
+                            trackingNumber: physical ? (code || undefined) : undefined,
+                            shippingCarrier: physical ? (shippingCarriers[order.id] || undefined) : undefined,
+                          })}
                           className="bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-700/40 font-orbitron text-xs h-7"
                         >
                           <AlertCircle className="w-3 h-3 mr-1" />
@@ -657,7 +693,13 @@ function ShopTab() {
                         </Button>
                       )}
                       <Button size="sm"
-                        onClick={() => updateOrder.mutate({ orderId: order.id, status: "delivered", deliveryNote: code || undefined })}
+                        onClick={() => updateOrder.mutate({
+                          orderId: order.id,
+                          status: "delivered",
+                          deliveryNote: code || undefined,
+                          trackingNumber: physical ? (code || undefined) : undefined,
+                          shippingCarrier: physical ? (shippingCarriers[order.id] || undefined) : undefined,
+                        })}
                         disabled={!physical && !code.trim()}
                         className="bg-green-600/20 hover:bg-green-600/40 text-green-400 border border-green-700/40 font-orbitron text-xs h-7 disabled:opacity-40"
                       >
@@ -2187,6 +2229,8 @@ function AuditTab() {
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
 function OverviewTab() {
   const { data: stats } = trpc.admin.stats.useQuery();
+  const { data: pendingVerifs } = trpc.verification.list.useQuery({ status: "pending" });
+  const { data: pendingCreators } = trpc.creators.listPending.useQuery();
 
   if (!stats) return (
     <div className="flex items-center justify-center py-16">
@@ -2194,9 +2238,35 @@ function OverviewTab() {
     </div>
   );
 
+  const pendingActions = [
+    stats.pendingOrders > 0 && { label: "Pedidos sin procesar", count: stats.pendingOrders, color: "text-pink-400 bg-pink-500/10 border-pink-500/30", icon: ShoppingBag },
+    stats.pendingTournaments > 0 && { label: "Torneos pendientes de aprobación", count: stats.pendingTournaments, color: "text-orange-400 bg-orange-500/10 border-orange-500/30", icon: Trophy },
+    (pendingVerifs?.length ?? 0) > 0 && { label: "Solicitudes de verificación", count: pendingVerifs!.length, color: "text-blue-400 bg-blue-500/10 border-blue-500/30", icon: BadgeCheck },
+    (pendingCreators?.length ?? 0) > 0 && { label: "Aplicaciones de creadores", count: pendingCreators!.length, color: "text-purple-400 bg-purple-500/10 border-purple-500/30", icon: Crown },
+  ].filter(Boolean) as { label: string; count: number; color: string; icon: React.ElementType }[];
+
   return (
     <div className="space-y-6">
       <SectionHeader icon={BarChart3} title="RESUMEN GENERAL" subtitle="Métricas globales de la plataforma" />
+
+      {/* Panel de Acciones Pendientes */}
+      {pendingActions.length > 0 && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-400" />
+            <h3 className="font-orbitron text-sm text-red-400 tracking-wider">ACCIONES REQUERIDAS ({pendingActions.length})</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {pendingActions.map((action) => (
+              <div key={action.label} className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${action.color}`}>
+                <action.icon className="w-4 h-4 flex-shrink-0" />
+                <p className="flex-1 text-sm font-mono font-semibold">{action.label}</p>
+                <span className="text-lg font-black font-mono">{action.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Global Stats Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -2842,6 +2912,48 @@ function VerificationsTab() {
               </span>
             </div>
 
+            {/* Verification Type + Followers */}
+            {(req.verificationType || req.followersCount) && (
+              <div className="flex gap-3 flex-wrap">
+                {req.verificationType && (
+                  <span className="px-3 py-1 rounded-full text-xs font-orbitron border bg-purple-500/10 text-purple-300 border-purple-600/30">
+                    {req.verificationType === "streamer" ? "🎮 STREAMER"
+                      : req.verificationType === "pro_player" ? "🏆 JUGADOR PRO"
+                      : req.verificationType === "team" ? "👥 EQUIPO"
+                      : req.verificationType === "organization" ? "🏢 ORGANIZACIÓN"
+                      : req.verificationType === "content_creator" ? "📹 CREADOR DE CONTENIDO"
+                      : "📋 OTRO"}
+                  </span>
+                )}
+                {req.followersCount != null && (
+                  <span className="px-3 py-1 rounded-full text-xs font-orbitron border bg-blue-500/10 text-blue-300 border-blue-600/30">
+                    👥 {req.followersCount.toLocaleString()} seguidores
+                  </span>
+                )}
+              </div>
+            )}
+            {/* Social Links */}
+            {req.socialLinks && (() => {
+              try {
+                const links = JSON.parse(req.socialLinks);
+                const entries = Object.entries(links).filter(([, v]) => v);
+                if (entries.length === 0) return null;
+                return (
+                  <div className="bg-secondary/30 rounded-lg px-4 py-3 border border-border/50">
+                    <p className="text-xs text-muted-foreground font-mono mb-2">REDES SOCIALES:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {entries.map(([platform, url]) => (
+                        <a key={platform} href={url as string} target="_blank" rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-2 py-1 rounded bg-background/60 border border-border/50 text-xs text-blue-400 hover:text-blue-300 transition-colors">
+                          {platform === "twitch" ? <Twitch className="w-3 h-3" /> : platform === "youtube" ? <Youtube className="w-3 h-3" /> : platform === "twitter" ? <Twitter className="w-3 h-3" /> : <span className="w-3 h-3 text-center">🔗</span>}
+                          {platform}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                );
+              } catch { return null; }
+            })()}
             {/* Reason */}
             {req.reason && (
               <div className="bg-secondary/50 rounded-lg px-4 py-3 border border-border/50">
