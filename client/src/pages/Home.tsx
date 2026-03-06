@@ -387,21 +387,26 @@ function GamesSection({ allTournaments }: { allTournaments: any[] }) {
 
 // ─── Mission Card (full visible, horizontal scroll) ───────────────────────────
 function MissionCard({ m }: { m: any }) {
+  // missions.list devuelve: { id, title, bannerUrl, videoUrl, sponsorName, sponsorLogo, rewardRlc, requiredWatchSeconds }
+  const thumbnail = m.bannerUrl ?? m.thumbnailUrl ?? null;
+  const sponsorImg = m.sponsorLogo ?? m.sponsorLogoUrl ?? null;
+  const reward = m.rewardRlc ?? m.reward ?? 0;
+  const duration = m.requiredWatchSeconds ?? m.durationSeconds ?? null;
   return (
     <Link href="/missions">
       <div
-        className="shrink-0 w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+        className="shrink-0 w-64 sm:w-72 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
         style={{ scrollSnapAlign: "start", background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)" }}
         onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.45 0.18 145 / 0.5)"; }}
         onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.borderColor = "oklch(0.20 0.01 0)"; }}
       >
         {/* Thumbnail */}
         <div className="relative h-44 bg-card overflow-hidden">
-          {m.thumbnailUrl ? (
-            <img src={m.thumbnailUrl} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-          ) : m.sponsorLogoUrl ? (
+          {thumbnail ? (
+            <img src={thumbnail} alt={m.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+          ) : sponsorImg ? (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-zinc-800 to-zinc-900">
-              <img src={m.sponsorLogoUrl} alt={m.sponsorName ?? ""} className="max-h-16 max-w-full object-contain p-4" />
+              <img src={sponsorImg} alt={m.sponsorName ?? ""} className="max-h-16 max-w-full object-contain p-4" />
             </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-950/30 to-zinc-900">
@@ -410,23 +415,29 @@ function MissionCard({ m }: { m: any }) {
           )}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to top, oklch(0.12 0.005 0) 0%, transparent 60%)" }} />
           {/* Type badge */}
-          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono font-semibold capitalize"
+          <div className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-xs font-mono font-semibold"
             style={{ background: "rgba(0,0,0,0.70)", color: "oklch(0.65 0.18 145)", border: "1px solid oklch(0.45 0.18 145 / 0.4)", backdropFilter: "blur(8px)" }}>
-            {m.type === "video" ? <><Play size={9} className="inline mr-0.5" />Video</> : m.type === "ad" ? <><Zap size={9} className="inline mr-0.5" />Publicidad</> : m.type}
+            <Play size={9} className="inline mr-0.5" />Video
           </div>
+          {/* Sponsor logo overlay (solo si hay thumbnail Y logo) */}
+          {sponsorImg && thumbnail && (
+            <div className="absolute bottom-2.5 left-2.5">
+              <img src={sponsorImg} alt={m.sponsorName ?? ""} className="h-6 object-contain drop-shadow-lg" />
+            </div>
+          )}
         </div>
         {/* Body */}
         <div className="p-4 space-y-2">
           {m.sponsorName && <p className="text-muted-foreground text-xs font-mono truncate">{m.sponsorName}</p>}
           <p className="text-foreground font-bold text-sm line-clamp-2 leading-snug group-hover:text-green-300 transition-colors">{m.title}</p>
-          {m.durationSeconds && (
+          {duration && (
             <div className="flex items-center gap-1 text-muted-foreground text-xs font-mono">
-              <Clock size={10} /> {Math.ceil(m.durationSeconds / 60)} min
+              <Clock size={10} /> {Math.ceil(duration / 60)} min
             </div>
           )}
           <div className="flex items-center justify-between pt-2 border-t border-border/60">
             <span className="text-muted-foreground text-xs font-mono">Recompensa</span>
-            <span className="font-orbitron font-black text-base text-yellow-400">+{m.reward} RLC</span>
+            <span className="font-orbitron font-black text-base text-yellow-400">+{reward} RLC</span>
           </div>
         </div>
       </div>
@@ -874,7 +885,7 @@ export default function Home() {
   const { data: featuredTournaments } = trpc.home.featuredTournaments.useQuery();
   const { data: news } = trpc.news.list.useQuery({ limit: 10 });
   const { data: creators } = trpc.creators.listApproved.useQuery();
-  const { data: missions } = trpc.home.availableMissions.useQuery();
+  const { data: missions } = trpc.missions.list.useQuery();
   const { data: sideAds } = trpc.ads.list.useQuery();
   const { data: featuredAllies } = trpc.allies.list.useQuery({ featuredOnly: true });
   const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });

@@ -201,6 +201,21 @@
   ::-webkit-scrollbar-track { background: var(--bg-main); }
   ::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: var(--accent-red); }
+
+  /* ── Native <select> / <option> dark theme ── */
+  select {
+    background-color: #1a1d24;
+    color: #fff;
+    border-color: rgba(255,255,255,0.10);
+    color-scheme: dark;
+  }
+  select option {
+    background-color: #1a1d24;
+    color: #fff;
+  }
+  select option:disabled {
+    color: #6b7280;
+  }
 }
 
 @layer utilities {

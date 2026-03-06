@@ -8,7 +8,7 @@ import { CreatorStreamPanel } from "@/components/CreatorStreamPanel";
 import {
   Star, Crown, Youtube, Twitch, Twitter, Instagram, Facebook, Play,
   CheckCircle, Clock, XCircle, Send, Users,
-  Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X,
+  Gamepad2, Mic, Camera, Music, Zap, ExternalLink, X, Radio,
 } from "lucide-react";
 import { toast } from "sonner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
@@ -145,14 +145,15 @@ function CreatorCard({ c, isLive }: { c: any; isLive?: boolean }) {
 }
 
 // ─── Application Form ─────────────────────────────────────────────────────────
-function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClose?: () => void }) {
-  const { isAuthenticated, user } = useAuth();
+// Shown when user clicks "Aplicar ahora" — always shows the creator application
+// form, regardless of approval status.
+function ApplicationForm({ onClose }: { onClose?: () => void }) {
+  const { isAuthenticated } = useAuth();
   const { data: myApp, refetch } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
   const submit = trpc.creators.submitApplication.useMutation({
     onSuccess: () => {
       toast.success("¡Solicitud enviada! La revisaremos pronto.");
       refetch();
-      onSuccess?.();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -177,183 +178,316 @@ function ApplicationForm({ onSuccess, onClose }: { onSuccess?: () => void; onClo
     }
   }, [myApp]);
 
+  // ── Not logged in ──────────────────────────────────────────────────────────
   if (!isAuthenticated) {
     return (
-      <div className="text-center py-12">
-        <Crown size={40} className="text-red-500/40 mx-auto mb-4" />
-        <h3 className="font-orbitron font-bold text-white text-lg mb-2">Inicia sesión para aplicar</h3>
-        <p className="text-muted-foreground text-sm mb-6">Necesitas una cuenta para solicitar ser creador oficial.</p>
-        <a href={getLoginUrl()}>
-          <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-red-600 hover:bg-red-700 transition-colors">
-            INICIAR SESIÓN
-          </button>
-        </a>
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.25)" }}>
+              <Crown size={18} className="text-red-500" />
+            </div>
+            <div>
+              <h3 className="font-orbitron font-bold text-white text-base leading-tight">Aplicar como Creador</h3>
+              <p className="text-zinc-500 text-xs mt-0.5">Obtén tu badge verificado</p>
+            </div>
+          </div>
+          {onClose && (
+            <button type="button" onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="text-center py-8">
+          <Crown size={36} className="text-red-500/30 mx-auto mb-4" />
+          <h4 className="font-orbitron font-bold text-white text-base mb-2">Inicia sesión para aplicar</h4>
+          <p className="text-zinc-500 text-sm mb-6">Necesitas una cuenta para solicitar ser creador oficial.</p>
+          <a href={getLoginUrl()}>
+            <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-colors"
+              style={{ background: "oklch(0.50 0.22 25)" }}>
+              INICIAR SESIÓN
+            </button>
+          </a>
+        </div>
       </div>
     );
   }
 
+  // ── Already approved ───────────────────────────────────────────────────────
   if (myApp?.status === "approved") {
     return (
-      <div className="max-w-2xl mx-auto">
-        <CreatorStreamPanel creatorApp={myApp} />
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.25)" }}>
+              <CheckCircle size={18} className="text-green-500" />
+            </div>
+            <div>
+              <h3 className="font-orbitron font-bold text-white text-base leading-tight">Creador Verificado</h3>
+              <p className="text-zinc-500 text-xs mt-0.5">Tu solicitud fue aprobada</p>
+            </div>
+          </div>
+          {onClose && (
+            <button type="button" onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+              <X size={16} />
+            </button>
+          )}
+        </div>
+        <div className="text-center py-8">
+          <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: "rgba(34,197,94,0.10)", border: "1px solid rgba(34,197,94,0.25)" }}>
+            <CheckCircle size={32} className="text-green-500" />
+          </div>
+          <h4 className="font-orbitron font-bold text-white text-lg mb-2">¡Ya eres Creador Oficial!</h4>
+          <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+            Tu cuenta está verificada y apareces en la plataforma.<br />
+            Usa el botón <span className="text-red-400 font-mono">Transmitir</span> para iniciar un live.
+          </p>
+          {onClose && (
+            <button onClick={onClose}
+              className="px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs text-zinc-400 hover:text-white border transition-colors"
+              style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              CERRAR
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
+  // ── Pending review ─────────────────────────────────────────────────────────
   if (myApp?.status === "pending") {
     return (
-      <div className="text-center py-12">
-        <Clock size={40} className="text-yellow-500 mx-auto mb-4" />
-        <h3 className="font-orbitron font-bold text-white text-lg mb-2">Solicitud en revisión</h3>
-        <p className="text-muted-foreground text-sm">Tu solicitud está siendo revisada por el equipo. Te notificaremos pronto.</p>
-        <div className="mt-6 p-4 rounded-xl bg-card border border-border text-left max-w-md mx-auto">
-          <p className="text-xs font-mono text-muted-foreground mb-2">DATOS ENVIADOS</p>
-          {form.bio && <p className="text-secondary-foreground text-sm">{form.bio}</p>}
-          <div className="flex flex-wrap gap-2 mt-3">
-            {form.youtube && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Youtube size={10} /> {form.youtube}</span>}
-            {form.twitch && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Twitch size={10} /> {form.twitch}</span>}
-            {form.twitter && <span className="text-xs text-muted-foreground font-mono flex items-center gap-1"><Twitter size={10} /> {form.twitter}</span>}
+      <div className="p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              style={{ background: "rgba(234,179,8,0.10)", border: "1px solid rgba(234,179,8,0.25)" }}>
+              <Clock size={18} className="text-yellow-500" />
+            </div>
+            <div>
+              <h3 className="font-orbitron font-bold text-white text-base leading-tight">Solicitud Enviada</h3>
+              <p className="text-zinc-500 text-xs mt-0.5">En revisión por el equipo</p>
+            </div>
           </div>
+          {onClose && (
+            <button type="button" onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+              <X size={16} />
+            </button>
+          )}
         </div>
+        <div className="text-center py-6">
+          <Clock size={36} className="text-yellow-500/60 mx-auto mb-4" />
+          <h4 className="font-orbitron font-bold text-white text-base mb-2">Solicitud en revisión</h4>
+          <p className="text-zinc-400 text-sm mb-6">Tu solicitud está siendo revisada por el equipo. Te notificaremos pronto.</p>
+        </div>
+        {/* Submitted data summary */}
+        {(form.bio || form.youtube || form.twitch || form.twitter) && (
+          <div className="rounded-xl border p-4 space-y-2" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.06)" }}>
+            <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-3">Datos enviados</p>
+            {form.bio && <p className="text-zinc-300 text-sm leading-relaxed">{form.bio}</p>}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {form.youtube && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Youtube size={10} /> {form.youtube}</span>}
+              {form.twitch && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Twitch size={10} /> {form.twitch}</span>}
+              {form.twitter && <span className="text-xs text-zinc-500 font-mono flex items-center gap-1"><Twitter size={10} /> {form.twitter}</span>}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  if (myApp?.status === "rejected") {
-    // Allow re-application
-  }
-
+  // ── Rejected or no application yet ────────────────────────────────────────
   return (
-    <form onSubmit={e => { e.preventDefault(); submit.mutate(form); }} className="space-y-5 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <h3 className="font-orbitron font-bold text-lg text-white">Solicitar Verificación</h3>
-          <p className="text-zinc-400 text-xs mt-0.5">Completa el formulario y el equipo revisará tu solicitud</p>
+    <form onSubmit={e => { e.preventDefault(); submit.mutate(form); }} className="flex flex-col">
+      {/* Sticky header */}
+      <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+        style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.25)" }}>
+            <Crown size={16} className="text-red-500" />
+          </div>
+          <div>
+            <h3 className="font-orbitron font-bold text-white text-sm leading-tight">Solicitar Verificación</h3>
+            <p className="text-zinc-500 text-[11px] mt-0.5">El equipo revisará tu solicitud</p>
+          </div>
         </div>
         {onClose && (
-          <button type="button" onClick={onClose} className="text-zinc-500 hover:text-white transition-colors">
-            <X size={20} />
+          <button type="button" onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+            <X size={16} />
           </button>
         )}
       </div>
 
-      {myApp?.status === "rejected" && (
-        <div className="p-3 rounded-lg bg-red-950/30 border border-red-800/40">
-          <p className="text-red-400 text-xs font-mono flex items-center gap-2"><XCircle size={12} /> Solicitud rechazada — puedes actualizar y reenviar</p>
-          {myApp.adminNote && <p className="text-zinc-400 text-xs mt-1">{myApp.adminNote}</p>}
-        </div>
-      )}
+      {/* Scrollable body */}
+      <div className="overflow-y-auto flex-1 px-5 py-5 space-y-5">
 
-      {/* Category */}
-      <div>
-        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Categoría *</label>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.value}
-              type="button"
-              onClick={() => setForm(f => ({ ...f, category: cat.value }))}
-              className={`flex items-center gap-2 p-3 rounded-lg border text-sm font-mono transition-all ${
-                form.category === cat.value
-                  ? "border-red-600/70 bg-red-600/20 text-white"
-                  : "border-white/10 bg-zinc-800/60 text-zinc-400 hover:border-zinc-600 hover:text-zinc-200"
-              }`}
-            >
-              <cat.icon size={14} /> {cat.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Bio */}
-      <div>
-        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-1">Descripción / Bio *</label>
-        <textarea
-          value={form.bio}
-          onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
-          placeholder="Cuéntanos sobre ti y tu contenido..."
-          rows={3}
-          className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-red-500/60 transition-colors resize-none"
-        />
-      </div>
-
-      {/* Social links */}
-      <div>
-        <label className="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">Redes sociales (al menos una)</label>
-        <div className="space-y-2">
-          {[
-            { key: "youtube",   icon: Youtube,   placeholder: "tu_canal",   prefix: "youtube.com/@" },
-            { key: "twitch",    icon: Twitch,    placeholder: "tu_usuario", prefix: "twitch.tv/" },
-            { key: "twitter",   icon: Twitter,   placeholder: "tu_usuario", prefix: "twitter.com/" },
-            { key: "instagram", icon: Instagram, placeholder: "tu_usuario", prefix: "instagram.com/" },
-            { key: "tiktok",    icon: null,      placeholder: "tu_usuario", prefix: "tiktok.com/@",   label: "TT" },
-            { key: "facebook",  icon: null,      placeholder: "tu_pagina",  prefix: "facebook.com/",  label: "FB" },
-            { key: "kick",      icon: null,      placeholder: "tu_usuario", prefix: "kick.com/",      label: "KC" },
-          ].map(({ key, icon: Icon, placeholder, prefix, label }: any) => (
-            <div key={key} className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-zinc-700/60 border border-white/10 flex items-center justify-center shrink-0">
-                {Icon ? (
-                  <Icon size={14} className="text-zinc-400" />
-                ) : (
-                  <span className="text-[9px] font-bold text-zinc-400 font-mono">{label}</span>
-                )}
-              </div>
-              <div className="flex-1 flex flex-col">
-                <span className="text-[10px] text-zinc-500 font-mono px-1 mb-0.5 truncate">{prefix}</span>
-                <input
-                  type="text"
-                  value={(form as any)[key]}
-                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
-                  placeholder={placeholder}
-                  className="w-full bg-zinc-800/60 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-red-500/60 transition-colors"
-                />
-              </div>
+        {/* Rejected notice */}
+        {myApp?.status === "rejected" && (
+          <div className="flex items-start gap-3 p-3 rounded-xl"
+            style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)" }}>
+            <XCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
+            <div>
+              <p className="text-red-400 text-xs font-mono font-semibold">Solicitud rechazada — puedes actualizar y reenviar</p>
+              {myApp.adminNote && <p className="text-zinc-400 text-xs mt-1">{myApp.adminNote}</p>}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Disclaimer */}
-      <div className="rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-4 py-3 text-xs text-zinc-400 leading-relaxed">
-        <p className="font-semibold text-zinc-300 mb-1 uppercase tracking-wider font-mono text-[10px]">Requisito mínimo</p>
-        Para ser considerado creador oficial de Red Level Circle debes contar con al menos <strong className="text-white">1,000 seguidores</strong> en alguna de tus plataformas.
-      </div>
-
-      {submit.error && (
-        <p className="text-red-400 text-xs">{submit.error.message}</p>
-      )}
-
-      <button
-        type="submit"
-        disabled={submit.isPending || !form.bio || !form.category}
-        className="w-full bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
-      >
-        {submit.isPending ? (
-          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : (
-          <Send size={15} />
+          </div>
         )}
-        {myApp?.status === "rejected" ? "Reenviar solicitud" : "Enviar solicitud"}
-      </button>
+
+        {/* Category */}
+        <div>
+          <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
+            Categoría *
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => setForm(f => ({ ...f, category: cat.value }))}
+                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl border text-sm font-mono transition-all text-left ${
+                  form.category === cat.value
+                    ? "text-white"
+                    : "text-zinc-400 hover:text-zinc-200"
+                }`}
+                style={form.category === cat.value
+                  ? { background: "rgba(220,38,38,0.15)", borderColor: "rgba(220,38,38,0.50)" }
+                  : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }
+                }
+              >
+                <cat.icon size={13} className={form.category === cat.value ? "text-red-400" : "text-zinc-500"} />
+                <span className="text-xs">{cat.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Bio */}
+        <div>
+          <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+            Descripción / Bio *
+          </label>
+          <textarea
+            value={form.bio}
+            onChange={e => setForm(f => ({ ...f, bio: e.target.value }))}
+            placeholder="Cuéntanos sobre ti y tu contenido..."
+            rows={3}
+            className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors resize-none"
+            style={{
+              background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.08)",
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.50)"; }}
+            onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+          />
+        </div>
+
+        {/* Social links */}
+        <div>
+          <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-2.5">
+            Redes sociales <span className="text-zinc-600 normal-case font-normal">(al menos una)</span>
+          </label>
+          <div className="space-y-2">
+            {[
+              { key: "youtube",   icon: Youtube,   placeholder: "tu_canal",   prefix: "youtube.com/@" },
+              { key: "twitch",    icon: Twitch,    placeholder: "tu_usuario", prefix: "twitch.tv/" },
+              { key: "twitter",   icon: Twitter,   placeholder: "tu_usuario", prefix: "twitter.com/" },
+              { key: "instagram", icon: Instagram, placeholder: "tu_usuario", prefix: "instagram.com/" },
+              { key: "tiktok",    icon: null,      placeholder: "tu_usuario", prefix: "tiktok.com/@",   label: "TT" },
+              { key: "facebook",  icon: null,      placeholder: "tu_pagina",  prefix: "facebook.com/",  label: "FB" },
+              { key: "kick",      icon: null,      placeholder: "tu_usuario", prefix: "kick.com/",      label: "KC" },
+            ].map(({ key, icon: Icon, placeholder, prefix, label }: any) => (
+              <div key={key} className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                  {Icon ? (
+                    <Icon size={13} className="text-zinc-500" />
+                  ) : (
+                    <span className="text-[9px] font-bold text-zinc-500 font-mono">{label}</span>
+                  )}
+                </div>
+                <div className="flex-1 flex flex-col min-w-0">
+                  <span className="text-[10px] text-zinc-600 font-mono px-1 mb-0.5 truncate">{prefix}</span>
+                  <input
+                    type="text"
+                    value={(form as any)[key]}
+                    onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                    onFocus={e => { e.currentTarget.style.borderColor = "rgba(220,38,38,0.50)"; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div className="rounded-xl px-4 py-3 text-xs text-zinc-400 leading-relaxed"
+          style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)" }}>
+          <p className="font-semibold text-zinc-300 mb-1 uppercase tracking-wider font-mono text-[10px]">Requisito mínimo</p>
+          Para ser considerado creador oficial debes contar con al menos{" "}
+          <strong className="text-white">1,000 seguidores</strong> en alguna de tus plataformas.
+        </div>
+
+        {submit.error && (
+          <p className="text-red-400 text-xs">{submit.error.message}</p>
+        )}
+      </div>
+
+      {/* Sticky footer */}
+      <div className="px-5 pb-5 pt-3 shrink-0 border-t" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+        <button
+          type="submit"
+          disabled={submit.isPending || !form.bio || !form.category}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{ background: "oklch(0.50 0.22 25)" }}
+        >
+          {submit.isPending ? (
+            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <Send size={14} />
+          )}
+          {myApp?.status === "rejected" ? "Reenviar solicitud" : "Enviar solicitud"}
+        </button>
+      </div>
     </form>
   );
 }
 
 // ─── Main Creators Page ───────────────────────────────────────────────────────
 export default function Creators() {
+  const { isAuthenticated } = useAuth();
+  const { data: myApp } = trpc.creators.getMyApplication.useQuery(undefined, { enabled: isAuthenticated });
   const { data: creators, isLoading } = trpc.creators.listApproved.useQuery();
   const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
   const liveSet = new Set(liveUserIds ?? []);
   const [activeFilter, setActiveFilter] = useState("all");
-  const [showForm, setShowForm] = useState(false);
+
+  // Two separate modals: one for applying, one for streaming
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [showStreamPanel, setShowStreamPanel] = useState(false);
+
+  const isApproved = myApp?.status === "approved";
 
   useEffect(() => {
     if (window.location.hash === "#apply") {
-      setShowForm(true);
-      setTimeout(() => {
-        document.getElementById("apply-section")?.scrollIntoView({ behavior: "smooth" });
-      }, 300);
+      setShowApplyForm(true);
     }
   }, []);
 
@@ -449,28 +583,95 @@ export default function Creators() {
           </div>
         )}
 
-        {/* Floating apply button */}
-        <div className="fixed bottom-8 right-8 z-50">
+        {/* ── Floating action buttons ── */}
+        <div className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-50 flex flex-col items-end gap-2">
+          {/* Transmitir button — only for approved creators */}
+          {isApproved && (
+            <button
+              onClick={() => setShowStreamPanel(true)}
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl font-orbitron font-bold text-sm text-white shadow-2xl transition-all hover:scale-105 active:scale-95"
+              style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 24px oklch(0.50 0.22 25 / 0.4)" }}
+              title="Iniciar transmisión"
+            >
+              <Radio size={16} />
+              <span className="hidden sm:inline">Transmitir</span>
+            </button>
+          )}
+          {/* Apply button — always visible */}
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => setShowApplyForm(true)}
             className="flex items-center gap-2 px-4 py-3 rounded-2xl font-orbitron font-bold text-sm text-white shadow-2xl transition-all hover:scale-105 active:scale-95"
-            style={{ background: "oklch(0.55 0.22 25)", boxShadow: "0 0 24px oklch(0.55 0.22 25 / 0.5)" }}
+            style={{
+              background: isApproved ? "rgba(255,255,255,0.06)" : "oklch(0.50 0.22 25)",
+              border: isApproved ? "1px solid rgba(255,255,255,0.10)" : "none",
+              boxShadow: isApproved ? "none" : "0 0 24px oklch(0.50 0.22 25 / 0.4)",
+            }}
             title="Solicitar ser Creador Oficial"
           >
-            <Crown size={16} />
-            <span className="hidden sm:inline">Ser Creador</span>
+            <Crown size={16} className={isApproved ? "text-zinc-400" : "text-white"} />
+            <span className={`hidden sm:inline ${isApproved ? "text-zinc-400" : "text-white"}`}>
+              {isApproved ? "Mi solicitud" : "Ser Creador"}
+            </span>
           </button>
         </div>
 
-        {/* Modal */}
-        {showForm && (
+        {/* ── Modal: Application Form ── */}
+        {showApplyForm && (
           <div
             className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-            style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
-            onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowApplyForm(false); }}
           >
-            <div className="w-full sm:max-w-lg bg-zinc-900 border border-white/10 sm:rounded-2xl rounded-t-2xl overflow-y-auto max-h-[95vh] shadow-2xl">
-              <ApplicationForm onSuccess={() => setShowForm(false)} onClose={() => setShowForm(false)} />
+            <div
+              className="w-full sm:max-w-md flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
+              style={{
+                background: "#111114",
+                border: "1px solid rgba(255,255,255,0.07)",
+                maxHeight: "92dvh",
+              }}
+            >
+              <ApplicationForm onClose={() => setShowApplyForm(false)} />
+            </div>
+          </div>
+        )}
+
+        {/* ── Modal: Stream Panel (approved creators only) ── */}
+        {showStreamPanel && myApp && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
+            onClick={e => { if (e.target === e.currentTarget) setShowStreamPanel(false); }}
+          >
+            <div
+              className="w-full sm:max-w-lg flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
+              style={{
+                background: "#111114",
+                border: "1px solid rgba(255,255,255,0.07)",
+                maxHeight: "92dvh",
+              }}
+            >
+              {/* Header with close button */}
+              <div className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+                style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: "rgba(220,38,38,0.12)", border: "1px solid rgba(220,38,38,0.25)" }}>
+                    <Radio size={16} className="text-red-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-orbitron font-bold text-white text-sm leading-tight">Transmitir ahora</h3>
+                    <p className="text-zinc-500 text-[11px] mt-0.5">Inicia tu live en la plataforma</p>
+                  </div>
+                </div>
+                <button type="button" onClick={() => setShowStreamPanel(false)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 transition-colors">
+                  <X size={16} />
+                </button>
+              </div>
+              {/* Panel content */}
+              <div className="overflow-y-auto flex-1 p-5">
+                <CreatorStreamPanel creatorApp={myApp} />
+              </div>
             </div>
           </div>
         )}

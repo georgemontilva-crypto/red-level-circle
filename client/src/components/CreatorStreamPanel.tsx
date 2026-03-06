@@ -10,7 +10,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import {
   Radio, StopCircle, Twitch, Youtube, ExternalLink,
-  CheckCircle, Loader2, Users, Gamepad2, Globe, Disc3,
+  CheckCircle, Loader2, Users, Gamepad2, Globe, Disc3, ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +34,85 @@ const PLATFORM_COLORS: Record<string, string> = {
   discord: "text-indigo-400",
   other: "text-muted-foreground",
 };
+
+// ─── Shared input style ───────────────────────────────────────────────────────
+const inputStyle: React.CSSProperties = {
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.10)",
+  color: "#fff",
+  outline: "none",
+};
+
+function NeonInput({
+  value,
+  onChange,
+  placeholder,
+  type = "text",
+  maxLength,
+  fontMono,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  type?: string;
+  maxLength?: number;
+  fontMono?: boolean;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder={placeholder}
+      maxLength={maxLength}
+      className={`w-full px-3.5 py-2.5 rounded-xl text-sm placeholder-zinc-600 transition-colors ${fontMono ? "font-mono" : ""}`}
+      style={{
+        ...inputStyle,
+        borderColor: focused ? "rgba(220,38,38,0.55)" : "rgba(255,255,255,0.10)",
+        boxShadow: focused ? "0 0 0 2px rgba(220,38,38,0.10)" : "none",
+      }}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
+    />
+  );
+}
+
+// ─── Custom select with chevron ───────────────────────────────────────────────
+function NeonSelect({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  children: React.ReactNode;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-3.5 py-2.5 rounded-xl text-sm text-white cursor-pointer appearance-none transition-colors"
+        style={{
+          ...inputStyle,
+          borderColor: focused ? "rgba(220,38,38,0.55)" : "rgba(255,255,255,0.10)",
+          boxShadow: focused ? "0 0 0 2px rgba(220,38,38,0.10)" : "none",
+          paddingRight: "2.5rem",
+        }}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+      >
+        {children}
+      </select>
+      <ChevronDown
+        size={14}
+        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500"
+      />
+    </div>
+  );
+}
 
 interface CreatorStreamPanelProps {
   /** The creator's application record (from trpc.creators.getMyApplication) */
@@ -90,16 +169,6 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
 
   // ── Derived ──────────────────────────────────────────────────────────────
   const isLive = !!activeStream;
-  const PlatformIcon = PLATFORM_ICONS[form.platform] ?? Globe;
-
-  function handleGameChange(e: React.ChangeEvent<HTMLSelectElement>) {
-    const selected = games?.find((g) => g.slug === e.target.value);
-    setForm((f) => ({
-      ...f,
-      game: selected?.name ?? e.target.value,
-      gameSlug: e.target.value,
-    }));
-  }
 
   function handlePlatformChange(p: "twitch" | "youtube" | "discord" | "other") {
     let url = form.url;
@@ -122,74 +191,79 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
     });
   }
 
-  // ── Active stream view ───────────────────────────────────────────────────
+  // ── Loading ──────────────────────────────────────────────────────────────
   if (loadingActive) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="animate-spin text-muted-foreground" size={28} />
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="animate-spin text-zinc-500" size={24} />
       </div>
     );
   }
 
+  // ── Active stream view ───────────────────────────────────────────────────
   if (isLive && activeStream) {
     const Icon = PLATFORM_ICONS[activeStream.platform] ?? Globe;
     return (
-      <div className="space-y-6">
+      <div className="space-y-5">
         {/* Live banner */}
-        <div className="relative rounded-2xl overflow-hidden border border-red-600/40 bg-card">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-950/40 via-transparent to-transparent pointer-events-none" />
-          <div className="relative p-6">
+        <div className="relative rounded-2xl overflow-hidden"
+          style={{ border: "1px solid rgba(220,38,38,0.35)", background: "rgba(220,38,38,0.05)" }}>
+          <div className="absolute inset-0 bg-gradient-to-br from-red-950/30 via-transparent to-transparent pointer-events-none" />
+          <div className="relative p-5">
             {/* Status row */}
-            <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-600 text-white text-xs font-orbitron font-bold animate-pulse">
-                <Radio size={10} />
+            <div className="flex flex-wrap items-center gap-2.5 mb-3">
+              <span className="flex items-center gap-1.5 px-3 py-1 rounded-full text-white text-xs font-orbitron font-bold"
+                style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 12px oklch(0.50 0.22 25 / 0.4)" }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                 EN VIVO
               </span>
               <span className={`flex items-center gap-1.5 text-sm font-mono ${PLATFORM_COLORS[activeStream.platform]}`}>
-                <Icon size={14} />
+                <Icon size={13} />
                 {PLATFORM_LABELS[activeStream.platform]}
               </span>
             </div>
 
             {/* Title + game */}
-            <h3 className="font-orbitron font-bold text-white text-xl mb-1 leading-tight">
+            <h3 className="font-orbitron font-bold text-white text-base sm:text-lg mb-1 leading-tight">
               {activeStream.title}
             </h3>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-zinc-500 mb-5">
               {activeStream.game && (
                 <span className="flex items-center gap-1.5">
-                  <Gamepad2 size={13} />
+                  <Gamepad2 size={12} />
                   {activeStream.game}
                 </span>
               )}
               {activeStream.viewerCount != null && activeStream.viewerCount > 0 && (
                 <span className="flex items-center gap-1.5">
-                  <Users size={13} />
+                  <Users size={12} />
                   {activeStream.viewerCount.toLocaleString()} viewers
                 </span>
               )}
             </div>
 
             {/* Actions */}
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <a
                 href={activeStream.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-secondary hover:bg-muted text-white text-sm font-mono transition-colors border border-border"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-mono transition-colors"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)" }}
               >
-                <ExternalLink size={14} />
+                <ExternalLink size={13} />
                 Abrir stream
               </a>
               <button
                 onClick={() => stopStream.mutate({ id: activeStream.id })}
                 disabled={stopStream.isPending}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-red-700 hover:bg-red-600 text-white text-sm font-orbitron font-bold transition-colors disabled:opacity-60"
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white text-sm font-orbitron font-bold transition-colors disabled:opacity-60"
+                style={{ background: "rgba(220,38,38,0.20)", border: "1px solid rgba(220,38,38,0.40)" }}
               >
                 {stopStream.isPending ? (
-                  <Loader2 size={14} className="animate-spin" />
+                  <Loader2 size={13} className="animate-spin" />
                 ) : (
-                  <StopCircle size={14} />
+                  <StopCircle size={13} />
                 )}
                 DETENER TRANSMISIÓN
               </button>
@@ -198,9 +272,10 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
         </div>
 
         {/* Profile link */}
-        <div className="text-center">
+        <div className="text-center pt-1">
           <Link href={`/profile/${user?.id}`}>
-            <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white bg-secondary hover:bg-muted border border-border transition-colors">
+            <button className="px-5 py-2.5 rounded-xl font-orbitron font-bold text-xs text-zinc-400 hover:text-white transition-colors"
+              style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
               VER MI PERFIL PÚBLICO
             </button>
           </Link>
@@ -211,141 +286,125 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
 
   // ── Start stream form ────────────────────────────────────────────────────
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-xl bg-red-600/10 border border-red-600/20 flex items-center justify-center flex-shrink-0">
-          <Radio size={22} className="text-red-500" />
-        </div>
-        <div>
-          <h3 className="font-orbitron font-bold text-white text-lg">Transmitir ahora</h3>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Inicia una transmisión en vivo que aparecerá en la sección pública{" "}
-            <Link href="/streams" className="text-red-400 hover:text-red-300 transition-colors">
-              EN VIVO
-            </Link>
-            .
-          </p>
-        </div>
-      </div>
-
+    <form onSubmit={handleStart} className="space-y-4">
       {/* Approved badge */}
-      <div className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-950/30 border border-green-800/30">
-        <CheckCircle size={14} className="text-green-500 flex-shrink-0" />
-        <span className="text-green-400 text-sm font-mono">Creador oficial aprobado</span>
+      <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl"
+        style={{ background: "rgba(34,197,94,0.07)", border: "1px solid rgba(34,197,94,0.20)" }}>
+        <CheckCircle size={13} className="text-green-500 shrink-0" />
+        <span className="text-green-400 text-xs font-mono">Creador oficial aprobado</span>
       </div>
 
-      {/* Form */}
-      <form onSubmit={handleStart} className="space-y-4">
-        {/* Title */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
-            Título del stream *
-          </label>
-          <input
-            type="text"
-            value={form.title}
-            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-            placeholder="ej. Ranked Challenger — ¡Subiendo a Master!"
-            maxLength={256}
-            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white placeholder-muted-foreground text-sm focus:outline-none focus:border-red-600/60 transition-colors"
-          />
-        </div>
+      {/* Title */}
+      <div>
+        <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+          Título del stream <span className="text-red-500">*</span>
+        </label>
+        <NeonInput
+          value={form.title}
+          onChange={v => setForm(f => ({ ...f, title: v }))}
+          placeholder="ej. Ranked Challenger — ¡Subiendo a Master!"
+          maxLength={256}
+        />
+      </div>
 
-        {/* Game */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
-            Juego *
-          </label>
-          <select
-            value={form.gameSlug}
-            onChange={handleGameChange}
-            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white text-sm focus:outline-none focus:border-red-600/60 transition-colors appearance-none cursor-pointer"
-          >
-            <option value="">Selecciona un juego…</option>
-            {(games ?? []).map((g) => (
-              <option key={g.slug} value={g.slug}>
-                {g.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Platform selector */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
-            Plataforma *
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {(["twitch", "youtube", "discord", "other"] as const).map((p) => {
-              const Icon = PLATFORM_ICONS[p];
-              const isSelected = form.platform === p;
-              return (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => handlePlatformChange(p)}
-                  className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-mono transition-all ${
-                    isSelected
-                      ? "bg-red-600/10 border-red-600/50 text-white"
-                      : "bg-card border-border text-muted-foreground hover:border-border"
-                  }`}
-                >
-                  <Icon size={16} className={isSelected ? PLATFORM_COLORS[p] : ""} />
-                  {PLATFORM_LABELS[p]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* URL */}
-        <div>
-          <label className="block text-xs font-mono text-muted-foreground mb-1.5 uppercase tracking-wider">
-            URL del canal *
-          </label>
-          <input
-            type="url"
-            value={form.url}
-            onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
-            placeholder="https://twitch.tv/tu_canal"
-            className="w-full px-4 py-3 rounded-xl bg-card border border-border text-white placeholder-muted-foreground text-sm focus:outline-none focus:border-red-600/60 transition-colors font-mono"
-          />
-          {form.platform === "twitch" && creatorApp.twitch && (
-            <p className="mt-1.5 text-xs text-muted-foreground font-mono">
-              Canal registrado: twitch.tv/{creatorApp.twitch}
-            </p>
-          )}
-          {form.platform === "youtube" && creatorApp.youtube && (
-            <p className="mt-1.5 text-xs text-muted-foreground font-mono">
-              Canal registrado: youtube.com/@{creatorApp.youtube}
-            </p>
-          )}
-        </div>
-
-        {/* Submit */}
-        <button
-          type="submit"
-          disabled={startStream.isPending}
-          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-orbitron font-bold text-sm text-white bg-red-600 hover:bg-red-500 disabled:opacity-60 transition-colors"
+      {/* Game */}
+      <div>
+        <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+          Juego <span className="text-red-500">*</span>
+        </label>
+        <NeonSelect
+          value={form.gameSlug}
+          onChange={v => {
+            const selected = games?.find((g: { slug: string; name: string }) => g.slug === v);
+            setForm(f => ({ ...f, game: selected?.name ?? v, gameSlug: v }));
+          }}
         >
-          {startStream.isPending ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Radio size={16} />
-          )}
-          INICIAR TRANSMISIÓN
-        </button>
-      </form>
+          <option value="" style={{ background: "#1a1d24", color: "#9ca3af" }}>Selecciona un juego…</option>
+          {(games ?? []).map((g: { slug: string; name: string }) => (
+            <option key={g.slug} value={g.slug} style={{ background: "#1a1d24", color: "#fff" }}>
+              {g.name}
+            </option>
+          ))}
+        </NeonSelect>
+      </div>
+
+      {/* Platform selector */}
+      <div>
+        <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+          Plataforma <span className="text-red-500">*</span>
+        </label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {(["twitch", "youtube", "discord", "other"] as const).map((p) => {
+            const Icon = PLATFORM_ICONS[p];
+            const isSelected = form.platform === p;
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => handlePlatformChange(p)}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl border text-xs font-mono transition-all"
+                style={isSelected
+                  ? { background: "rgba(220,38,38,0.12)", borderColor: "rgba(220,38,38,0.50)", color: "#fff" }
+                  : { background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "#6b7280" }
+                }
+              >
+                <Icon size={16} className={isSelected ? PLATFORM_COLORS[p] : "text-zinc-500"} />
+                {PLATFORM_LABELS[p]}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* URL */}
+      <div>
+        <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
+          URL del canal <span className="text-red-500">*</span>
+        </label>
+        <NeonInput
+          type="url"
+          value={form.url}
+          onChange={v => setForm(f => ({ ...f, url: v }))}
+          placeholder="https://twitch.tv/tu_canal"
+          fontMono
+        />
+        {form.platform === "twitch" && creatorApp.twitch && (
+          <p className="mt-1.5 text-[11px] text-zinc-500 font-mono">
+            Canal registrado: twitch.tv/{creatorApp.twitch}
+          </p>
+        )}
+        {form.platform === "youtube" && creatorApp.youtube && (
+          <p className="mt-1.5 text-[11px] text-zinc-500 font-mono">
+            Canal registrado: youtube.com/@{creatorApp.youtube}
+          </p>
+        )}
+      </div>
+
+      {/* Submit */}
+      <button
+        type="submit"
+        disabled={startStream.isPending}
+        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-orbitron font-bold text-sm text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.01] active:scale-[0.99]"
+        style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 20px oklch(0.50 0.22 25 / 0.30)" }}
+      >
+        {startStream.isPending ? (
+          <Loader2 size={15} className="animate-spin" />
+        ) : (
+          <Radio size={15} />
+        )}
+        INICIAR TRANSMISIÓN
+      </button>
 
       {/* Profile link */}
-      <div className="pt-2 border-t border-border/60 text-center">
+      <div className="pt-1 text-center">
         <Link href={`/profile/${user?.id}`}>
-          <button className="px-6 py-2.5 rounded-xl font-orbitron font-bold text-xs text-muted-foreground hover:text-white bg-transparent hover:bg-secondary border border-border transition-colors">
+          <button type="button"
+            className="px-5 py-2 rounded-xl font-orbitron font-bold text-xs text-zinc-500 hover:text-white transition-colors"
+            style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
             VER MI PERFIL PÚBLICO
           </button>
         </Link>
       </div>
-    </div>
+    </form>
   );
 }

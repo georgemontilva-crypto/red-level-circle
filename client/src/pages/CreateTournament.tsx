@@ -3,7 +3,9 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Trophy, ChevronRight, ChevronLeft, CheckCircle, Clock, Bell } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, CheckCircle, Clock, Bell, Crown, ArrowRight, Lock } from "lucide-react";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
 import { DateTimePicker } from "@/components/DateTimePicker";
 import {
   Select,
@@ -184,6 +186,13 @@ function NeonTextarea({
 
 export default function CreateTournament() {
   const [, navigate] = useLocation();
+  const { isAuthenticated } = useAuth();
+  const { data: myApp, isLoading: loadingApp } = trpc.creators.getMyApplication.useQuery(
+    undefined,
+    { enabled: isAuthenticated }
+  );
+  const isApproved = myApp?.status === "approved";
+
   const [form, setForm] = useState<FormData>(defaultForm);
   const [step, setStep] = useState(1);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -258,6 +267,70 @@ export default function CreateTournament() {
       banner: form.banner || undefined,
     });
   };
+
+  // ── Guard: solo creadores aprobados pueden crear torneos ───────────────────
+  if (!isAuthenticated) {
+    return (
+      <PremiumLayout title="CREAR TORNEO">
+        <div className="max-w-lg mx-auto">
+          <div className="rounded-2xl p-8 sm:p-10 text-center" style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(220,38,38,0.10)", border: "1px solid rgba(220,38,38,0.25)" }}>
+              <Lock size={28} className="text-red-500" />
+            </div>
+            <h2 className="font-orbitron font-bold text-xl text-white mb-2">Acceso restringido</h2>
+            <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Debes iniciar sesión para crear torneos en la plataforma.</p>
+            <a href={getLoginUrl()}>
+              <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>INICIAR SESIÓN</button>
+            </a>
+          </div>
+        </div>
+      </PremiumLayout>
+    );
+  }
+
+  if (isAuthenticated && !loadingApp && !isApproved) {
+    const isPending = myApp?.status === "pending";
+    return (
+      <PremiumLayout title="CREAR TORNEO">
+        <div className="max-w-lg mx-auto">
+          <div className="rounded-2xl p-8 sm:p-10 text-center" style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(220,38,38,0.10)", border: "1px solid rgba(220,38,38,0.25)" }}>
+              <Crown size={28} className="text-red-500" />
+            </div>
+            <h2 className="font-orbitron font-bold text-xl text-white mb-2">
+              {isPending ? "Solicitud en revisión" : "Creador Oficial requerido"}
+            </h2>
+            <p className="text-zinc-400 text-sm mb-2 leading-relaxed">
+              {isPending
+                ? "Tu solicitud como creador está siendo revisada. Podrás crear torneos una vez que sea aprobada."
+                : "Solo los creadores oficiales aprobados pueden organizar torneos en Red Level Circle."}
+            </p>
+            {!isPending && (
+              <p className="text-zinc-500 text-xs mb-6 leading-relaxed">
+                Esto garantiza la calidad y seriedad de los torneos, y protege a los participantes de posibles incumplimientos.
+              </p>
+            )}
+            {isPending ? (
+              <div className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-mono" style={{ background: "rgba(234,179,8,0.08)", border: "1px solid rgba(234,179,8,0.25)", color: "#eab308" }}>
+                <Clock size={14} />
+                Solicitud pendiente de aprobación
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/creators#apply")}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white mx-auto transition-all hover:scale-105"
+                style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 20px oklch(0.50 0.22 25 / 0.35)" }}
+              >
+                <Crown size={14} />
+                APLICAR COMO CREADOR
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      </PremiumLayout>
+    );
+  }
 
   // ── Success modal ──────────────────────────────────────────────────────────
   if (createdId !== null) {
