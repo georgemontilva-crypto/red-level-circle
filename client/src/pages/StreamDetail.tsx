@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
+import { useEffect, useRef } from "react";
 import {
   Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight,
 } from "lucide-react";
@@ -21,9 +22,53 @@ function formatViewers(n: number): string {
 
 
 
+/**
+ * En iOS Safari, al abrir el teclado el viewport se reduce y los elementos
+ * fixed con bottom:0 se redimensionan, haciendo que el video suba.
+ * Solución: fijar la altura del contenedor mobile al valor inicial del viewport
+ * (antes de que aparezca el teclado) usando visualViewport API.
+ * Cuando el teclado aparece, el contenedor mantiene su altura original y
+ * solo el chat (flex-1 overflow-hidden) se comprime internamente.
+ */
+function useMobileContainerHeight(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const vv = window.visualViewport;
+
+    const applyHeight = () => {
+      // Usar visualViewport.height si está disponible (iOS Safari)
+      // De lo contrario usar window.innerHeight
+      const h = vv ? vv.height + vv.offsetTop : window.innerHeight;
+      const top = parseFloat(el.style.top || "56");
+      // No tocar el top, solo ajustar el bottom para que el contenedor
+      // mantenga la altura del viewport visible actual
+      el.style.height = `${h - top}px`;
+      el.style.bottom = "auto";
+    };
+
+    applyHeight();
+
+    if (vv) {
+      vv.addEventListener("resize", applyHeight);
+      vv.addEventListener("scroll", applyHeight);
+      return () => {
+        vv.removeEventListener("resize", applyHeight);
+        vv.removeEventListener("scroll", applyHeight);
+      };
+    } else {
+      window.addEventListener("resize", applyHeight);
+      return () => window.removeEventListener("resize", applyHeight);
+    }
+  }, [ref]);
+}
+
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
+  useMobileContainerHeight(mobileContainerRef);
 
   const { data: stream, isLoading } = trpc.streams.byId.useQuery(
     { id: streamId },
@@ -98,12 +143,15 @@ export default function StreamDetail() {
        * ─────────────────────────────────────────────────────────────────────
        */}
       <div
+        ref={mobileContainerRef}
         className="lg:hidden fixed z-40 flex flex-col bg-black"
         style={{
           top: "calc(env(safe-area-inset-top, 0px) + 56px)",
           left: 0,
           right: 0,
           bottom: 0,
+          // El hook useMobileContainerHeight sobreescribe bottom con height
+          // para que el contenedor no se redimensione cuando aparece el teclado en iOS
         }}
       >
         {/* Video: altura fija = 56.25vw (16:9), no cambia cuando sube el teclado */}
