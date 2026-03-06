@@ -94,7 +94,8 @@ export default function StreamDetail() {
        *   - Video arriba (aspect-video fijo), chat llena el resto.
        * ─────────────────────────────────────────────────────────────────────
        */}
-      <div className="lg:hidden fixed inset-0 z-40 flex flex-col bg-black" style={{ top: 0, left: 0, right: 0, bottom: 0 }}>
+      {/* Mobile: empieza debajo del navbar (h-14 = 56px) */}
+      <div className="lg:hidden fixed z-40 flex flex-col bg-black" style={{ top: 56, left: 0, right: 0, bottom: 0 }}>
         {/* Video: proporción 16:9 fija */}
         {resolvedEmbedUrl ? (
           <div className="w-full flex-shrink-0" style={{ aspectRatio: "16/9" }}>

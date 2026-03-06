@@ -4,6 +4,8 @@
  * - Checkmark de verificación si el usuario está verificado
  * - Sin badge de rol
  * - Mensajes empiezan desde abajo y van subiendo
+ * - Textos más grandes para mejor legibilidad en desktop y mobile
+ * - Input con padding-bottom seguro para no quedar cortado en mobile
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
@@ -25,7 +27,7 @@ interface RLCChatProps {
 function VerifiedIcon() {
   return (
     <svg
-      className="inline-block w-3 h-3 text-blue-400 flex-shrink-0 mb-px"
+      className="inline-block w-3.5 h-3.5 text-blue-400 flex-shrink-0 mb-px"
       viewBox="0 0 24 24"
       fill="currentColor"
       aria-label="Verificado"
@@ -40,7 +42,7 @@ function UserAvatar({
   src,
   name,
   frameImage,
-  size = 26,
+  size = 30,
 }: {
   src?: string | null;
   name: string;
@@ -90,19 +92,19 @@ function MessageRow({ msg }: { msg: ChatMessage }) {
       : "text-zinc-300";
 
   return (
-    <div className="flex items-start gap-2 px-2 py-0.5 hover:bg-white/[0.03] transition-colors">
+    <div className="flex items-start gap-2 px-3 py-1 hover:bg-white/[0.03] transition-colors">
       <UserAvatar
         src={msg.userAvatar}
         name={displayName}
         frameImage={(msg as any).userFrameImage ?? null}
-        size={26}
+        size={30}
       />
       <div className="flex-1 min-w-0 leading-snug">
-        <span className={`text-[11px] font-semibold mr-1 ${nameColor}`}>
+        <span className={`text-sm font-semibold mr-1 ${nameColor}`}>
           {displayName}
         </span>
         {(msg as any).userIsVerified && <VerifiedIcon />}
-        <span className="text-[12px] text-white/80 break-words"> {msg.message}</span>
+        <span className="text-sm text-white/80 break-words"> {msg.message}</span>
       </div>
     </div>
   );
@@ -174,19 +176,19 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
   return (
     <div className="flex flex-col h-full bg-[#0d0d0d]">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 flex-shrink-0">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono font-bold text-white tracking-widest uppercase">
+          <span className="text-xs font-mono font-bold text-white tracking-widest uppercase">
             Chat RLC
           </span>
           {connected ? (
-            <Wifi className="w-3 h-3 text-green-400" />
+            <Wifi className="w-3.5 h-3.5 text-green-400" />
           ) : (
-            <WifiOff className="w-3 h-3 text-red-400 animate-pulse" />
+            <WifiOff className="w-3.5 h-3.5 text-red-400 animate-pulse" />
           )}
         </div>
-        <div className="flex items-center gap-1 text-[10px] font-mono text-zinc-500">
-          <Users className="w-3 h-3" />
+        <div className="flex items-center gap-1 text-xs font-mono text-zinc-500">
+          <Users className="w-3.5 h-3.5" />
           <span>{viewerCount}</span>
         </div>
       </div>
@@ -203,7 +205,7 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
           <div style={{ minHeight: "100%" }} className="flex flex-col justify-end">
             <div className="flex flex-col py-1">
               {messages.length === 0 && (
-                <p className="text-center text-[11px] text-zinc-600 font-mono py-6">
+                <p className="text-center text-sm text-zinc-600 font-mono py-6">
                   {connected ? "Sé el primero en escribir" : "Conectando..."}
                 </p>
               )}
@@ -218,9 +220,9 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
         {!atBottom && newCount > 0 && (
           <button
             onClick={scrollToBottom}
-            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-mono px-3 py-1 rounded-full shadow-lg transition-colors z-10"
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-xs font-mono px-3 py-1 rounded-full shadow-lg transition-colors z-10"
           >
-            <ChevronDown className="w-3 h-3" />
+            <ChevronDown className="w-3.5 h-3.5" />
             {newCount} nuevo{newCount !== 1 ? "s" : ""}
           </button>
         )}
@@ -228,20 +230,23 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
 
       {/* ── Error ── */}
       {error && (
-        <div className="mx-2 mb-1 px-2 py-1 text-[10px] font-mono text-red-300 bg-red-900/20 border border-red-500/30 rounded flex-shrink-0">
+        <div className="mx-2 mb-1 px-2 py-1 text-xs font-mono text-red-300 bg-red-900/20 border border-red-500/30 rounded flex-shrink-0">
           {error}
         </div>
       )}
 
-      {/* ── Input ── */}
-      <div className="flex-shrink-0 border-t border-zinc-800 px-2 py-2">
+      {/* ── Input — padding-bottom seguro para mobile (no queda cortado) ── */}
+      <div
+        className="flex-shrink-0 border-t border-zinc-800 px-3 pt-2.5"
+        style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+      >
         {currentUser ? (
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-1">
             <UserAvatar
               src={currentUser.avatar}
               name={currentUser.nickname ?? currentUser.name ?? "U"}
               frameImage={null}
-              size={24}
+              size={28}
             />
             <input
               ref={inputRef}
@@ -252,18 +257,18 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
               maxLength={500}
               placeholder="Escribe un mensaje..."
               disabled={!connected}
-              className="flex-1 bg-zinc-900 border border-zinc-700 focus:border-red-500 rounded-full px-3 py-1.5 text-[12px] text-white placeholder-zinc-500 outline-none transition-colors disabled:opacity-40"
+              className="flex-1 bg-zinc-900 border border-zinc-700 focus:border-red-500 rounded-full px-4 py-2 text-sm text-white placeholder-zinc-500 outline-none transition-colors disabled:opacity-40"
             />
             <button
               onClick={handleSend}
               disabled={!input.trim() || !connected}
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
             >
-              <Send className="w-3.5 h-3.5 text-white" />
+              <Send className="w-4 h-4 text-white" />
             </button>
           </div>
         ) : (
-          <p className="text-center text-[11px] text-zinc-500 font-mono py-1">
+          <p className="text-center text-sm text-zinc-500 font-mono py-2">
             Inicia sesión para chatear
           </p>
         )}

@@ -418,8 +418,10 @@ export async function handleCreatorWentLive(opts: {
     if (opts.thumbnailUrl) updateData.thumbnailUrl = opts.thumbnailUrl;
     if (opts.title) updateData.title = opts.title;
     if (opts.game) updateData.game = opts.game;
-    // Update embedUrl with real videoId for YouTube
+    // Always overwrite embedUrl so the videoId is always the current live one
     if (opts.embedUrl) updateData.embedUrl = opts.embedUrl;
+    // Also keep the stream URL up to date
+    if (opts.channelUrl) updateData.url = opts.channelUrl;
     await db.update(streams).set(updateData).where(eq(streams.id, existing[0].id));
     // Notify clients of viewer count / metadata update
     sseBroadcast("stream_updated", { streamId: existing[0].id, userId: opts.userId, viewerCount: opts.viewerCount });
