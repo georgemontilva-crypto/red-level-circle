@@ -454,53 +454,6 @@ export function CreatorMissionsAdminPage() {
           ))}
         </div>
       )}
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" /> {m.acceptCount} tomaron
-                    </span>
-                    {m.pendingCount > 0 && (
-                      <span className="flex items-center gap-1 text-orange-400 font-semibold">
-                        <AlertCircle className="w-3.5 h-3.5" /> {m.pendingCount} pendiente{m.pendingCount !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {m.approvedCount > 0 && (
-                      <span className="flex items-center gap-1 text-green-400">
-                        <Check className="w-3.5 h-3.5" /> {m.approvedCount} aprobado{m.approvedCount !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                    {m.endDate && (
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        Vence {new Date(m.endDate).toLocaleDateString("es", { day: "numeric", month: "short" })}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => { setSelectedId(m.id); setView("detail"); }}
-                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                    title="Ver detalle y entregas">
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => { setEditData(m); setView("edit"); }}
-                    className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-                    title="Editar">
-                    <Edit2 className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => { if (confirm(`¿Eliminar "${m.title}"?`)) deleteMutation.mutate({ id: m.id }); }}
-                    className="p-2 text-zinc-400 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"
-                    title="Eliminar">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

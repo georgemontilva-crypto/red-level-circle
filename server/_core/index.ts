@@ -235,11 +235,13 @@ async function runCustomMigrations() {
     } catch (err: any) {
       // 1060 = ER_DUP_FIELDNAME: column already exists
       // 1050 = ER_TABLE_EXISTS_ERROR: table already exists (CREATE TABLE IF NOT EXISTS)
-      // 1146 = ER_NO_SUCH_TABLE: table doesn't exist yet for ALTER (will be created by CREATE TABLE above)
-      const ignoredErrno = [1050, 1060];
-      const ignoredCodes = ["ER_DUP_FIELDNAME", "ER_TABLE_EXISTS_ERROR"];
+      // 1146 = ER_NO_SUCH_TABLE: table doesn't exist yet for ALTER
+      // 1054 = ER_BAD_FIELD_ERROR: column doesn't exist (CHANGE COLUMN on non-existent column)
+      // 1091 = ER_CANT_DROP_FIELD_OR_KEY: can't drop field that doesn't exist
+      const ignoredErrno = [1050, 1054, 1060, 1091, 1146];
+      const ignoredCodes = ["ER_DUP_FIELDNAME", "ER_TABLE_EXISTS_ERROR", "ER_BAD_FIELD_ERROR", "ER_NO_SUCH_TABLE", "ER_CANT_DROP_FIELD_OR_KEY"];
       if (!ignoredErrno.includes(err.errno) && !ignoredCodes.includes(err.code)) {
-        console.warn("[DB] Custom migration warning:", err.message);
+        console.warn("[DB] Custom migration warning:", err.message, "errno:", err.errno, "code:", err.code);
       }
     }
   }
