@@ -112,6 +112,14 @@ const MIGRATIONS: { id: string; up: string }[] = [
       ) NOT NULL;
     `,
   },
+  {
+    id: "0013_youtube_channel_id",
+    up: `
+      -- Add youtubeChannelId to content_creators for stable channelId-based embed URL
+      ALTER TABLE \`content_creators\`
+        ADD COLUMN IF NOT EXISTS \`youtubeChannelId\` VARCHAR(64) NULL AFTER \`youtube\`;
+    `,
+  },
 ];
 
 export async function runMigrations() {
