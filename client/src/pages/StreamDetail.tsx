@@ -1,6 +1,5 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
-import { useEffect, useRef } from "react";
 import {
   Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight,
 } from "lucide-react";
@@ -20,24 +19,7 @@ function formatViewers(n: number): string {
   return n.toString();
 }
 
-/**
- * Hook que ajusta la altura del contenedor video+chat en desktop
- * usando un useEffect con cleanup correcto para evitar acumular
- * event listeners en cada re-render (causaba crash en Safari/iOS).
- */
-function useDesktopHeight(ref: React.RefObject<HTMLDivElement | null>) {
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const setH = () => {
-      el.style.height = `${Math.max(560, window.innerHeight - 200)}px`;
-    };
-    setH();
-    window.addEventListener("resize", setH);
-    // Cleanup: eliminar el listener al desmontar o re-ejecutar
-    return () => window.removeEventListener("resize", setH);
-  }, [ref]);
-}
+
 
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
@@ -55,9 +37,7 @@ export default function StreamDetail() {
     { enabled: !!stream?.game, refetchInterval: 30_000 },
   );
 
-  // Ref para el contenedor desktop video+chat
-  const desktopContainerRef = useRef<HTMLDivElement>(null);
-  useDesktopHeight(desktopContainerRef);
+
 
   const related = (byGameData ?? [])
     .find((g) => g.game === stream?.game)
@@ -188,10 +168,10 @@ export default function StreamDetail() {
             <div className="flex flex-col gap-4 min-w-0">
               {resolvedEmbedUrl ? (
                 <>
-                  {/* Video + Chat lado a lado — altura controlada por useDesktopHeight */}
+                  {/* Video + Chat lado a lado — altura = viewport - navbar(100px) - breadcrumb+info(~160px) - padding */}
                   <div
-                    ref={desktopContainerRef}
                     className="w-full overflow-hidden rounded-xl border border-border bg-card flex flex-row"
+                    style={{ height: "calc(100vh - 280px)", minHeight: "500px" }}
                   >
                     {/* Video */}
                     <div className="flex-1 min-w-0 min-h-0 bg-black">
