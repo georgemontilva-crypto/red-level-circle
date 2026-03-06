@@ -29,6 +29,60 @@ function formatViewers(n: number): string {
   return n.toString();
 }
 
+/**
+ * Extract Twitch login from a Twitch URL.
+ * e.g. https://www.twitch.tv/karapro → "karapro"
+ */
+function extractTwitchLogin(url: string): string | null {
+  try {
+    const m = url.match(/twitch\.tv\/([a-zA-Z0-9_]+)/i);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Extract YouTube video/channel ID from a YouTube URL for thumbnail.
+ * Supports: watch?v=ID, youtu.be/ID, /live/ID
+ */
+function extractYouTubeVideoId(url: string): string | null {
+  try {
+    const m =
+      url.match(/[?&]v=([a-zA-Z0-9_-]{11})/) ||
+      url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/) ||
+      url.match(/\/live\/([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolve the best thumbnail URL for a stream.
+ * Priority: DB thumbnailUrl → Twitch CDN live preview → YouTube maxres → null
+ */
+function resolveThumbnail(stream: StreamCardData): string | null {
+  if (stream.thumbnailUrl) return stream.thumbnailUrl;
+
+  if (stream.platform === "twitch") {
+    const login = extractTwitchLogin(stream.url);
+    if (login) {
+      // Twitch CDN live preview — no API key needed, refreshes every ~60s
+      return `https://static-cdn.jtvnw.net/previews-ttv/live_user_${login.toLowerCase()}-440x248.jpg`;
+    }
+  }
+
+  if (stream.platform === "youtube") {
+    const videoId = extractYouTubeVideoId(stream.url);
+    if (videoId) {
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+  }
+
+  return null;
+}
+
 interface StreamCardProps {
   stream: StreamCardData;
 }
@@ -37,9 +91,13 @@ export function StreamCard({ stream }: StreamCardProps) {
   const badge = PLATFORM_BADGE[stream.platform] ?? PLATFORM_BADGE.other;
   const [hovered, setHovered] = useState(false);
   const [iframeLoaded, setIframeLoaded] = useState(false);
+  const [thumbError, setThumbError] = useState(false);
 
   // Only show live preview for Twitch streams with embedUrl when hovered
   const canPreview = stream.isLive && !!stream.embedUrl && stream.platform === "twitch";
+
+  // Resolve thumbnail with fallbacks
+  const thumbnail = thumbError ? null : resolveThumbnail(stream);
 
   return (
     <Link href={`/streams/${stream.id}`}>
@@ -53,14 +111,15 @@ export function StreamCard({ stream }: StreamCardProps) {
         <div className="relative w-full aspect-video overflow-hidden bg-card">
 
           {/* Static thumbnail (always rendered, hidden when iframe is loaded) */}
-          {stream.thumbnailUrl ? (
+          {thumbnail ? (
             <img
-              src={stream.thumbnailUrl}
+              src={thumbnail}
               alt={stream.title}
               className={`absolute inset-0 w-full h-full object-cover transition-all duration-500 ${
                 hovered && iframeLoaded ? "opacity-0" : "opacity-100 group-hover:scale-105"
               }`}
               draggable={false}
+              onError={() => setThumbError(true)}
             />
           ) : (
             <div className={`absolute inset-0 w-full h-full flex items-center justify-center transition-opacity duration-300 ${hovered && iframeLoaded ? "opacity-0" : "opacity-100"}`}>

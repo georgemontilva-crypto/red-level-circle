@@ -20,12 +20,22 @@ export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
 
-  // Fetch all live streams to find the current one and related
-  const { data: allStreams, isLoading } = trpc.streams.list.useQuery({ liveOnly: false });
+  // Efficient: fetch only this stream by ID
+  const { data: stream, isLoading } = trpc.streams.byId.useQuery(
+    { id: streamId },
+    { enabled: streamId > 0, refetchInterval: 30_000 },
+  );
 
-  const stream = allStreams?.find((s) => s.id === streamId);
-  const related = allStreams
-    ?.filter((s) => s.id !== streamId && s.game === stream?.game && s.isLive)
+  // Fetch related streams from same game using byGame (grouped by game)
+  const { data: byGameData } = trpc.streams.byGame.useQuery(
+    undefined,
+    { enabled: !!stream?.game, refetchInterval: 30_000 },
+  );
+
+  const related = (byGameData ?? [])
+    .find((g) => g.game === stream?.game)
+    ?.streams
+    .filter((s) => s.id !== streamId && s.isLive)
     .slice(0, 5) ?? [];
 
   if (isLoading) {
@@ -51,6 +61,19 @@ export default function StreamDetail() {
   }
 
   const badge = PLATFORM_BADGE[stream.platform] ?? PLATFORM_BADGE.other;
+
+  // Build embed URL client-side as fallback when server hasn't generated it yet
+  let resolvedEmbedUrl = stream.embedUrl;
+  if (!resolvedEmbedUrl) {
+    const channelLogin = stream.url
+      ?.replace(/https?:\/\/(www\.)?twitch\.tv\//i, "")
+      .split("?")[0]
+      .replace(/\/$/, "");
+    if (stream.platform === "twitch" && channelLogin) {
+      const parent = window.location.hostname;
+      resolvedEmbedUrl = `https://player.twitch.tv/?channel=${channelLogin}&parent=${parent}&autoplay=true&muted=false`;
+    }
+  }
 
   return (
     <div className="min-h-screen bg-card text-white">
@@ -79,10 +102,10 @@ export default function StreamDetail() {
           <div>
             {/* Stream player / preview */}
             <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
-              {stream.embedUrl ? (
+              {resolvedEmbedUrl ? (
                 <div className="aspect-video">
                   <iframe
-                    src={stream.embedUrl}
+                    src={resolvedEmbedUrl}
                     className="w-full h-full"
                     allowFullScreen
                     allow="autoplay; encrypted-media"

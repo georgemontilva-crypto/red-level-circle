@@ -9,6 +9,7 @@ import {
   json,
   decimal,
   bigint,
+  index,
 } from "drizzle-orm/mysql-core";
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -261,7 +262,7 @@ export const rlcTransactions = mysqlTable("rlc_transactions", {
   description: varchar("description", { length: 256 }),
   referenceId: int("referenceId"), // bet id or tournament id
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (t) => [index("rlc_tx_userId_idx").on(t.userId)]);
 
 export type RlcTransaction = typeof rlcTransactions.$inferSelect;
 
@@ -340,7 +341,7 @@ export const streams = mysqlTable("streams", {
   thumbnailUrl: text("thumbnailUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-});
+}, (t) => [index("streams_isLive_idx").on(t.isLive), index("streams_userId_idx").on(t.userId)]);
 export type Stream = typeof streams.$inferSelect;
 export type InsertStream = typeof streams.$inferInsert;
 
@@ -595,7 +596,7 @@ export const notifications = mysqlTable("notifications", {
   referenceId: int("referenceId"), // tournamentId, missionId, orderId, etc.
   referenceType: varchar("referenceType", { length: 64 }), // "tournament" | "mission" | "order" etc.
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-});
+}, (t) => [index("notif_userId_idx").on(t.userId), index("notif_userId_isRead_idx").on(t.userId, t.isRead)]);
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
 
