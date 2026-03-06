@@ -183,20 +183,6 @@ export default function StreamDetail() {
                 <div className="flex flex-wrap items-start justify-between gap-3 px-4 lg:px-0 pt-3 pb-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {stream.isLive && (
-                        <span className="flex items-center gap-1.5 text-[10px] font-mono bg-red-600 text-white px-2 py-0.5 rounded-full">
-                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
-                          EN VIVO
-                        </span>
-                      )}
-                      <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${badge.cls}`}>
-                        {badge.label}
-                      </span>
-                      {stream.game && (
-                        <span className="text-[10px] font-mono text-muted-foreground bg-secondary border border-border px-2 py-0.5 rounded">
-                          {stream.game}
-                        </span>
-                      )}
                     </div>
                     <h1 className="font-rajdhani font-bold text-xl text-white leading-tight">
                       {stream.title}

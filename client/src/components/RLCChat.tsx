@@ -1,17 +1,14 @@
 /**
- * RLCChat — Chat en tiempo real propio de RLC para streams en vivo.
- *
- * Características:
- *   - Mensajes en tiempo real via WebSocket
- *   - Avatar + nombre + badge de rol del usuario
- *   - Auto-scroll al último mensaje
- *   - Contador de viewers en tiempo real
- *   - Diseño gaming oscuro consistente con la plataforma
+ * RLCChat — Chat en tiempo real propio de RLC.
+ * - Foto de perfil + frame cosmético superpuesto
+ * - Checkmark de verificación si el usuario está verificado
+ * - Sin badge de rol
+ * - Mensajes empiezan desde abajo y van subiendo
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useStreamChat, type ChatMessage } from "@/hooks/useStreamChat";
-import { Send, Users, Wifi, WifiOff } from "lucide-react";
+import { Send, Users, Wifi, WifiOff, ChevronDown } from "lucide-react";
 
 interface RLCChatProps {
   streamId: number;
@@ -24,118 +21,161 @@ interface RLCChatProps {
   } | null;
 }
 
-const ROLE_BADGE: Record<string, { label: string; cls: string }> = {
-  super_admin: { label: "ADMIN",    cls: "text-yellow-300 bg-yellow-500/20 border-yellow-500/40" },
-  admin:       { label: "ADMIN",    cls: "text-yellow-300 bg-yellow-500/20 border-yellow-500/40" },
-  organizer:   { label: "ORG",      cls: "text-blue-300 bg-blue-500/20 border-blue-500/40" },
-  premium:     { label: "PREMIUM",  cls: "text-purple-300 bg-purple-500/20 border-purple-500/40" },
-  user:        { label: "",         cls: "" },
-};
-
-function Avatar({ src, name, size = 24 }: { src?: string | null; name: string; size?: number }) {
-  const [err, setErr] = useState(false);
-  const initials = name.slice(0, 2).toUpperCase();
-  if (src && !err) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        width={size}
-        height={size}
-        className="rounded-full object-cover flex-shrink-0"
-        style={{ width: size, height: size }}
-        onError={() => setErr(true)}
-      />
-    );
-  }
+// ── Checkmark de verificación ─────────────────────────────────────────────────
+function VerifiedIcon() {
   return (
-    <div
-      className="rounded-full bg-red-600/30 border border-red-500/30 flex items-center justify-center flex-shrink-0 text-[9px] font-bold text-red-300"
-      style={{ width: size, height: size }}
+    <svg
+      className="inline-block w-3 h-3 text-blue-400 flex-shrink-0 mb-px"
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      aria-label="Verificado"
     >
-      {initials}
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5l-4-4 1.41-1.41L10 13.67l6.59-6.59L18 8.5l-8 8z" />
+    </svg>
+  );
+}
+
+// ── Avatar con frame cosmético ────────────────────────────────────────────────
+function UserAvatar({
+  src,
+  name,
+  frameImage,
+  size = 26,
+}: {
+  src?: string | null;
+  name: string;
+  frameImage?: string | null;
+  size?: number;
+}) {
+  const [err, setErr] = useState(false);
+  const initials = name.slice(0, 1).toUpperCase();
+
+  return (
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
+      {src && !err ? (
+        <img
+          src={src}
+          alt={name}
+          className="w-full h-full rounded-full object-cover"
+          onError={() => setErr(true)}
+        />
+      ) : (
+        <div
+          className="w-full h-full rounded-full bg-zinc-700 flex items-center justify-center text-white font-bold"
+          style={{ fontSize: size * 0.42 }}
+        >
+          {initials}
+        </div>
+      )}
+      {frameImage && (
+        <img
+          src={frameImage}
+          alt=""
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          style={{ objectFit: "contain" }}
+        />
+      )}
     </div>
   );
 }
 
-function MessageBubble({ msg, isOwn }: { msg: ChatMessage; isOwn: boolean }) {
-  const badge = ROLE_BADGE[msg.userRole] ?? ROLE_BADGE.user;
+// ── Fila de mensaje ───────────────────────────────────────────────────────────
+function MessageRow({ msg }: { msg: ChatMessage }) {
   const displayName = msg.userNickname || msg.userName;
-  const time = new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const nameColor =
+    msg.userRole === "admin" || msg.userRole === "super_admin"
+      ? "text-red-400"
+      : msg.userRole === "premium"
+      ? "text-purple-400"
+      : "text-zinc-300";
 
   return (
-    <div className={`flex gap-2 items-start group px-3 py-1 hover:bg-white/[0.03] transition-colors ${isOwn ? "flex-row-reverse" : ""}`}>
-      <Avatar src={msg.userAvatar} name={displayName} size={24} />
-      <div className={`flex-1 min-w-0 ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
-        <div className={`flex items-center gap-1.5 mb-0.5 ${isOwn ? "flex-row-reverse" : ""}`}>
-          <span className={`text-[11px] font-semibold truncate max-w-[120px] ${isOwn ? "text-red-300" : "text-white/90"}`}>
-            {displayName}
-          </span>
-          {badge.label && (
-            <span className={`text-[8px] font-mono px-1 py-0.5 rounded border ${badge.cls} flex-shrink-0`}>
-              {badge.label}
-            </span>
-          )}
-          <span className="text-[9px] text-white/30 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-            {time}
-          </span>
-        </div>
-        <p className={`text-[12px] text-white/80 leading-relaxed break-words max-w-[220px] ${isOwn ? "text-right" : ""}`}>
-          {msg.message}
-        </p>
+    <div className="flex items-start gap-2 px-2 py-0.5 hover:bg-white/[0.03] transition-colors">
+      <UserAvatar
+        src={msg.userAvatar}
+        name={displayName}
+        frameImage={(msg as any).userFrameImage ?? null}
+        size={26}
+      />
+      <div className="flex-1 min-w-0 leading-snug">
+        <span className={`text-[11px] font-semibold mr-1 ${nameColor}`}>
+          {displayName}
+        </span>
+        {(msg as any).userIsVerified && <VerifiedIcon />}
+        <span className="text-[12px] text-white/80 break-words"> {msg.message}</span>
       </div>
     </div>
   );
 }
 
+// ── Componente principal ──────────────────────────────────────────────────────
 export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
   const [input, setInput] = useState("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [atBottom, setAtBottom] = useState(true);
+  const [newCount, setNewCount] = useState(0);
+  const prevLenRef = useRef(0);
 
   const { messages, viewerCount, connected, sendMessage, error } = useStreamChat({
     streamId,
     enabled: true,
   });
 
-  // Auto-scroll al último mensaje
+  // Scroll al fondo cuando llegan mensajes nuevos (solo si ya estaba abajo)
   useEffect(() => {
-    if (autoScroll) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = containerRef.current;
+    if (!el) return;
+    const diff = messages.length - prevLenRef.current;
+    prevLenRef.current = messages.length;
+    if (atBottom) {
+      el.scrollTop = el.scrollHeight;
+      setNewCount(0);
+    } else if (diff > 0) {
+      setNewCount((n) => n + diff);
     }
-  }, [messages, autoScroll]);
+  }, [messages, atBottom]);
 
-  // Detectar si el usuario scrolleó hacia arriba (deshabilitar auto-scroll)
   const handleScroll = useCallback(() => {
     const el = containerRef.current;
     if (!el) return;
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-    setAutoScroll(isAtBottom);
+    const isBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+    setAtBottom(isBottom);
+    if (isBottom) setNewCount(0);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    const el = containerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    setAtBottom(true);
+    setNewCount(0);
   }, []);
 
   const handleSend = useCallback(() => {
     const text = input.trim();
-    if (!text || !currentUser) return;
+    if (!text || !currentUser || !connected) return;
     sendMessage(text);
     setInput("");
-    setAutoScroll(true);
+    setAtBottom(true);
+    setTimeout(scrollToBottom, 50);
     inputRef.current?.focus();
-  }, [input, currentUser, sendMessage]);
+  }, [input, currentUser, connected, sendMessage, scrollToBottom]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
 
   return (
-    <div className="flex flex-col h-full bg-[#0e0e10] border-l border-border">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-secondary/10 flex-shrink-0">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+    <div className="flex flex-col h-full bg-[#0d0d0d]">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800 flex-shrink-0">
+        <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono font-bold text-white tracking-widest uppercase">
             Chat RLC
           </span>
@@ -145,88 +185,85 @@ export default function RLCChat({ streamId, currentUser }: RLCChatProps) {
             <WifiOff className="w-3 h-3 text-red-400 animate-pulse" />
           )}
         </div>
-        {viewerCount > 0 && (
-          <div className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground">
-            <Users className="w-3 h-3" />
-            <span>{viewerCount}</span>
-          </div>
-        )}
+        <div className="flex items-center gap-1 text-[10px] font-mono text-zinc-500">
+          <Users className="w-3 h-3" />
+          <span>{viewerCount}</span>
+        </div>
       </div>
 
-      {/* Messages */}
-      <div
-        ref={containerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto py-2 space-y-0.5 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent"
-        style={{ minHeight: 0 }}
-      >
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full gap-2 text-center px-4">
-            <div className="w-8 h-8 rounded-full bg-red-600/20 border border-red-500/30 flex items-center justify-center">
-              <span className="text-red-400 text-lg">💬</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground font-mono">
-              {connected ? "Sé el primero en chatear" : "Conectando al chat..."}
-            </p>
-          </div>
-        )}
-        {messages.map((msg) => (
-          <MessageBubble
-            key={msg.id}
-            msg={msg}
-            isOwn={currentUser?.id === msg.userId}
-          />
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Scroll to bottom button */}
-      {!autoScroll && (
-        <button
-          onClick={() => {
-            setAutoScroll(true);
-            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-          }}
-          className="mx-3 mb-1 py-1 text-[10px] font-mono text-white/60 bg-white/5 hover:bg-white/10 rounded border border-white/10 transition-colors"
+      {/* ── Lista de mensajes (crece desde abajo) ── */}
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="absolute inset-0 overflow-y-auto"
+          style={{ scrollBehavior: "auto" }}
         >
-          ↓ Nuevos mensajes
-        </button>
-      )}
+          {/* Spacer: empuja los mensajes hacia abajo */}
+          <div style={{ minHeight: "100%" }} className="flex flex-col justify-end">
+            <div className="flex flex-col py-1">
+              {messages.length === 0 && (
+                <p className="text-center text-[11px] text-zinc-600 font-mono py-6">
+                  {connected ? "Sé el primero en escribir" : "Conectando..."}
+                </p>
+              )}
+              {messages.map((msg) => (
+                <MessageRow key={msg.id} msg={msg} />
+              ))}
+            </div>
+          </div>
+        </div>
 
-      {/* Error */}
+        {/* Botón "nuevos mensajes" */}
+        {!atBottom && newCount > 0 && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-mono px-3 py-1 rounded-full shadow-lg transition-colors z-10"
+          >
+            <ChevronDown className="w-3 h-3" />
+            {newCount} nuevo{newCount !== 1 ? "s" : ""}
+          </button>
+        )}
+      </div>
+
+      {/* ── Error ── */}
       {error && (
-        <div className="mx-3 mb-1 px-2 py-1 text-[10px] font-mono text-red-300 bg-red-900/20 border border-red-500/30 rounded">
+        <div className="mx-2 mb-1 px-2 py-1 text-[10px] font-mono text-red-300 bg-red-900/20 border border-red-500/30 rounded flex-shrink-0">
           {error}
         </div>
       )}
 
-      {/* Input */}
-      <div className="px-3 py-2 border-t border-border flex-shrink-0">
+      {/* ── Input ── */}
+      <div className="flex-shrink-0 border-t border-zinc-800 px-2 py-2">
         {currentUser ? (
           <div className="flex items-center gap-2">
-            <Avatar src={currentUser.avatar} name={currentUser.nickname ?? currentUser.name ?? "?"} size={22} />
-            <div className="flex-1 flex items-center gap-1 bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 focus-within:border-red-500/50 transition-colors">
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Escribe un mensaje..."
-                maxLength={500}
-                className="flex-1 bg-transparent text-[12px] text-white placeholder-white/30 outline-none"
-              />
-              <button
-                onClick={handleSend}
-                disabled={!input.trim() || !connected}
-                className="text-red-400 hover:text-red-300 disabled:text-white/20 transition-colors flex-shrink-0"
-              >
-                <Send className="w-3.5 h-3.5" />
-              </button>
-            </div>
+            <UserAvatar
+              src={currentUser.avatar}
+              name={currentUser.nickname ?? currentUser.name ?? "U"}
+              frameImage={null}
+              size={24}
+            />
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              maxLength={500}
+              placeholder="Escribe un mensaje..."
+              disabled={!connected}
+              className="flex-1 bg-zinc-900 border border-zinc-700 focus:border-red-500 rounded-full px-3 py-1.5 text-[12px] text-white placeholder-zinc-500 outline-none transition-colors disabled:opacity-40"
+            />
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || !connected}
+              className="w-7 h-7 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex-shrink-0"
+            >
+              <Send className="w-3.5 h-3.5 text-white" />
+            </button>
           </div>
         ) : (
-          <p className="text-center text-[11px] font-mono text-muted-foreground py-1">
+          <p className="text-center text-[11px] text-zinc-500 font-mono py-1">
             Inicia sesión para chatear
           </p>
         )}

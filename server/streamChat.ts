@@ -1,25 +1,12 @@
 /**
  * streamChat.ts
  * Chat en tiempo real para streams de RLC usando WebSockets nativos (ws).
- *
- * Protocolo de mensajes (JSON):
- *   Cliente → Servidor:
- *     { type: "auth",    token: string }          // autenticar con cookie de sesión
- *     { type: "join",    streamId: number }        // unirse a sala de stream
- *     { type: "message", text: string }            // enviar mensaje
- *
- *   Servidor → Cliente:
- *     { type: "history",  messages: ChatMessage[] }  // historial al unirse
- *     { type: "message",  message: ChatMessage }     // nuevo mensaje en sala
- *     { type: "error",    text: string }             // error
- *     { type: "joined",   streamId: number, viewerCount: number }
- *     { type: "viewers",  streamId: number, count: number }
  */
 
 import { WebSocketServer, WebSocket } from "ws";
 import type { Server } from "http";
 import { verifySessionToken } from "./_core/authService";
-import { getUserByOpenId, insertChatMessage, getChatMessages } from "./db";
+import { getUserByOpenId, insertChatMessage, getChatMessages, getEquippedCosmetic } from "./db";
 import type { User } from "../drizzle/schema";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,6 +18,8 @@ export interface ChatMessage {
   userAvatar: string | null;
   userRole: string;
   userNickname: string | null;
+  userFrameImage: string | null;
+  userIsVerified: boolean;
   message: string;
   createdAt: string;
 }
@@ -39,10 +28,10 @@ interface ExtendedWS extends WebSocket {
   user?: User;
   streamId?: number;
   isAlive?: boolean;
+  frameImage?: string | null;
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
-// Map<streamId, Set<WebSocket>>
 const rooms = new Map<number, Set<ExtendedWS>>();
 
 function getRoom(streamId: number): Set<ExtendedWS> {
@@ -66,7 +55,6 @@ function broadcastViewerCount(streamId: number) {
   broadcastToRoom(streamId, { type: "viewers", streamId, count });
 }
 
-// ─── Parse cookie header ──────────────────────────────────────────────────────
 function parseCookies(cookieHeader: string | undefined): Map<string, string> {
   const map = new Map<string, string>();
   if (!cookieHeader) return map;
@@ -77,11 +65,19 @@ function parseCookies(cookieHeader: string | undefined): Map<string, string> {
   return map;
 }
 
+async function resolveUserFrame(userId: number): Promise<string | null> {
+  try {
+    const c = await getEquippedCosmetic(userId, "frame");
+    return c?.frameImage ?? null;
+  } catch {
+    return null;
+  }
+}
+
 // ─── Main setup ───────────────────────────────────────────────────────────────
 export function setupStreamChatWS(httpServer: Server) {
   const wss = new WebSocketServer({ server: httpServer, path: "/ws/chat" });
 
-  // Heartbeat: detectar clientes muertos cada 30s
   const heartbeat = setInterval(() => {
     rooms.forEach((room, streamId) => {
       room.forEach((ws) => {
@@ -105,14 +101,17 @@ export function setupStreamChatWS(httpServer: Server) {
 
     ws.on("pong", () => { ws.isAlive = true; });
 
-    // Intentar autenticar desde cookie de sesión en el handshake
+    // Autenticar desde cookie de sesión
     const cookies = parseCookies(req.headers.cookie);
     const sessionToken = cookies.get("app_session_id");
     if (sessionToken) {
       const session = await verifySessionToken(sessionToken);
       if (session) {
         const user = await getUserByOpenId(session.openId);
-        if (user) ws.user = user;
+        if (user) {
+          ws.user = user;
+          ws.frameImage = await resolveUserFrame(user.id);
+        }
       }
     }
 
@@ -124,19 +123,21 @@ export function setupStreamChatWS(httpServer: Server) {
         return;
       }
 
-      // ── auth: autenticar con token explícito (fallback si la cookie no llegó) ──
+      // ── auth ──
       if (msg.type === "auth" && msg.token) {
         const session = await verifySessionToken(msg.token);
         if (session) {
           const user = await getUserByOpenId(session.openId);
-          if (user) ws.user = user;
+          if (user) {
+            ws.user = user;
+            ws.frameImage = await resolveUserFrame(user.id);
+          }
         }
         return;
       }
 
-      // ── join: unirse a sala de stream ──
+      // ── join ──
       if (msg.type === "join" && typeof msg.streamId === "number") {
-        // Salir de sala anterior si existe
         if (ws.streamId != null) {
           const prevRoom = rooms.get(ws.streamId);
           if (prevRoom) {
@@ -149,14 +150,12 @@ export function setupStreamChatWS(httpServer: Server) {
         ws.streamId = msg.streamId;
         getRoom(msg.streamId).add(ws);
 
-        // Enviar historial de los últimos 100 mensajes
         const history = await getChatMessages(msg.streamId, 100);
         ws.send(JSON.stringify({
           type: "history",
           messages: history.map(formatMessage),
         }));
 
-        // Notificar viewer count actualizado
         broadcastViewerCount(msg.streamId);
 
         ws.send(JSON.stringify({
@@ -167,7 +166,7 @@ export function setupStreamChatWS(httpServer: Server) {
         return;
       }
 
-      // ── message: enviar mensaje al chat ──
+      // ── message ──
       if (msg.type === "message" && typeof msg.text === "string") {
         if (!ws.user) {
           ws.send(JSON.stringify({ type: "error", text: "Debes iniciar sesión para chatear" }));
@@ -192,13 +191,14 @@ export function setupStreamChatWS(httpServer: Server) {
           message: text,
         });
 
-        const payload = {
-          type: "message",
-          message: formatMessage(saved),
+        // Enriquecer con frame e isVerified
+        const enriched = {
+          ...formatMessage(saved),
+          userFrameImage: ws.frameImage ?? null,
+          userIsVerified: user.isVerified ?? false,
         };
 
-        // Broadcast a toda la sala incluyendo al emisor
-        broadcastToRoom(ws.streamId, payload);
+        broadcastToRoom(ws.streamId, { type: "message", message: enriched });
         return;
       }
     });
@@ -214,9 +214,7 @@ export function setupStreamChatWS(httpServer: Server) {
       }
     });
 
-    ws.on("error", () => {
-      // Silenciar errores de socket para no crashear el servidor
-    });
+    ws.on("error", () => {});
   });
 
   console.log("[Chat WS] Servidor de chat en tiempo real activo en /ws/chat");
@@ -242,6 +240,8 @@ function formatMessage(m: {
     userAvatar: m.userAvatar ?? null,
     userRole: m.userRole ?? "user",
     userNickname: m.userNickname ?? null,
+    userFrameImage: null,
+    userIsVerified: false,
     message: m.message,
     createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
   };
