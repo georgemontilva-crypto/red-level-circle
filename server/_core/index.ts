@@ -3,6 +3,7 @@ import express from "express";
 import { registerNotificationListeners } from "../notifications";
 import { registerNewsGeneratorListeners } from "../newsGenerator";
 import { startTwitchSyncJob } from "../twitchSync";
+import { registerWebhookRoutes } from "../webhooks";
 import { startBetsClosingJob } from "../betsClosingJob";
 import { startSeriesCronJob } from "../seriesCronJob";
 import { closeDbPool } from "../db";
@@ -261,6 +262,8 @@ async function startServer() {
   // Chrome muestre "No es seguro" aunque el certificado SSL sea válido.
   app.set("trust proxy", 1);
 
+  // Webhook routes MUST be registered BEFORE express.json() to capture raw body for signature verification
+  registerWebhookRoutes(app);
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -299,7 +302,7 @@ async function startServer() {
 registerNotificationListeners();
 // Register auto-news generation listeners (GPT-powered)
 registerNewsGeneratorListeners();
-// Start Twitch stream sync job (polls every 2 minutes)
+// Start Twitch stream sync job (polls every 30s, auto-creates/closes streams)
 startTwitchSyncJob();
 // Start bets closing job (checks every 60s for expired betting windows)
 startBetsClosingJob();

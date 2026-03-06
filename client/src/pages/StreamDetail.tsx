@@ -1,8 +1,9 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
-import { Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight } from "lucide-react";
+import { Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight, MessageSquare, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StreamCard } from "@/components/StreamCard";
+import { useState } from "react";
 
 const PLATFORM_BADGE: Record<string, { label: string; cls: string }> = {
   twitch:  { label: "TWITCH",  cls: "bg-purple-600/20 text-purple-300 border-purple-500/40" },
@@ -16,9 +17,44 @@ function formatViewers(n: number): string {
   return n.toString();
 }
 
+/**
+ * Builds the chat embed URL for Twitch or YouTube.
+ * - Twitch: https://www.twitch.tv/embed/{channel}/chat?parent={domain}
+ * - YouTube: https://www.youtube.com/live_chat?v={videoId}&embed_domain={domain}
+ */
+function buildChatUrl(
+  platform: string,
+  streamUrl: string | null | undefined,
+  embedUrl: string | null | undefined,
+): string | null {
+  const domain = window.location.hostname;
+
+  if (platform === "twitch") {
+    // Extract channel login from the stream URL or embedUrl
+    const channelFromUrl = streamUrl
+      ?.replace(/https?:\/\/(www\.)?twitch\.tv\//i, "")
+      .split("?")[0]
+      .replace(/\/$/, "");
+    const channelFromEmbed = embedUrl?.match(/[?&]channel=([^&]+)/)?.[1];
+    const channel = channelFromUrl || channelFromEmbed;
+    if (!channel) return null;
+    return `https://www.twitch.tv/embed/${channel}/chat?parent=${domain}&darkpopout`;
+  }
+
+  if (platform === "youtube") {
+    // Extract videoId from embedUrl (youtube-nocookie.com/embed/{videoId})
+    const videoId = embedUrl?.match(/\/embed\/([\w-]+)/)?.[1];
+    if (!videoId) return null;
+    return `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${domain}`;
+  }
+
+  return null;
+}
+
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
+  const [chatOpen, setChatOpen] = useState(true);
 
   // Efficient: fetch only this stream by ID
   const { data: stream, isLoading } = trpc.streams.byId.useQuery(
@@ -75,6 +111,13 @@ export default function StreamDetail() {
     }
   }
 
+  // Build chat URL (only for live Twitch/YouTube streams)
+  const chatUrl = stream.isLive
+    ? buildChatUrl(stream.platform, stream.url, resolvedEmbedUrl)
+    : null;
+
+  const hasSidebar = related.length > 0;
+
   return (
     <div className="min-h-screen bg-card text-white">
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-6 pb-20">
@@ -100,9 +143,10 @@ export default function StreamDetail() {
 
           {/* ── Main content ── */}
           <div>
-            {/* Stream player / preview */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
-              {resolvedEmbedUrl ? (
+            {/* ── Player + Chat layout ── */}
+            {resolvedEmbedUrl ? (
+              <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
+                {/* Video player */}
                 <div className="aspect-video">
                   <iframe
                     src={resolvedEmbedUrl}
@@ -112,7 +156,57 @@ export default function StreamDetail() {
                     title={stream.title}
                   />
                 </div>
-              ) : (
+
+                {/* ── Integrated chat panel ── */}
+                {chatUrl && (
+                  <div className="border-t border-border">
+                    {/* Chat header / toggle */}
+                    <div className="flex items-center justify-between px-4 py-2.5 bg-secondary/30">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-red-400" />
+                        <span className="text-xs font-mono font-semibold text-white tracking-wide">
+                          CHAT EN VIVO
+                        </span>
+                        {stream.platform === "twitch" && (
+                          <span className="text-[10px] font-mono text-purple-300 bg-purple-600/20 border border-purple-500/30 px-1.5 py-0.5 rounded">
+                            TWITCH
+                          </span>
+                        )}
+                        {stream.platform === "youtube" && (
+                          <span className="text-[10px] font-mono text-red-300 bg-red-700/20 border border-red-500/30 px-1.5 py-0.5 rounded">
+                            YOUTUBE
+                          </span>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setChatOpen((v) => !v)}
+                        className="text-muted-foreground hover:text-white transition-colors p-1 rounded hover:bg-white/5"
+                        title={chatOpen ? "Ocultar chat" : "Mostrar chat"}
+                      >
+                        {chatOpen ? (
+                          <X className="w-3.5 h-3.5" />
+                        ) : (
+                          <MessageSquare className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Chat iframe */}
+                    {chatOpen && (
+                      <div className="h-[480px] sm:h-[520px]">
+                        <iframe
+                          src={chatUrl}
+                          className="w-full h-full border-0"
+                          title="Chat en vivo"
+                          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-storage-access-by-user-activation"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-card border border-border rounded-xl overflow-hidden mb-4">
                 <div className="aspect-video flex flex-col items-center justify-center bg-card gap-4">
                   <div className="w-16 h-16 rounded-full bg-card border border-border flex items-center justify-center">
                     <Tv className="w-7 h-7 text-muted-foreground" />
@@ -125,8 +219,8 @@ export default function StreamDetail() {
                     </Button>
                   </a>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Stream info bar */}
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -176,7 +270,7 @@ export default function StreamDetail() {
           </div>
 
           {/* ── Sidebar: related streams ── */}
-          {related.length > 0 && (
+          {hasSidebar && (
             <aside>
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-orbitron font-bold text-sm text-white tracking-wide">
