@@ -834,17 +834,7 @@ export default function CreateTournament() {
                     <option value="captains_draft">Captain's Draft</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">AGENTES LIBRES (MÁX.)</label>
-                  <input
-                    type="number"
-                    value={form.maxFreeAgents}
-                    onChange={(e) => set("maxFreeAgents")(parseInt(e.target.value) || 0)}
-                    min={0} max={100}
-                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                  />
-                </div>
+
               </div>
               {/* Require Riot Account */}
               <div className="flex items-center gap-3">
@@ -874,7 +864,7 @@ export default function CreateTournament() {
                   max={256}
                 />
                 <NeonInput
-                  label="MÍN. JUGADORES"
+                  label="MÍN. JUGADORES POR EQUIPO"
                   type="number"
                   value={form.minPlayersPerTeam}
                   onChange={(v) => set("minPlayersPerTeam")(parseInt(v) || 1)}
@@ -882,7 +872,7 @@ export default function CreateTournament() {
                   max={20}
                 />
                 <NeonInput
-                  label="MÁX. JUGADORES"
+                  label="MÁX. JUGADORES POR EQUIPO"
                   type="number"
                   value={form.maxPlayersPerTeam}
                   onChange={(v) => set("maxPlayersPerTeam")(parseInt(v) || 5)}
