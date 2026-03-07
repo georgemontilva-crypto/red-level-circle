@@ -48,7 +48,7 @@ function HighlightCard({
   return (
     <button
       onClick={onClick}
-      className="flex-1 min-w-[200px] rounded-2xl p-4 text-left transition-all duration-300"
+      className="flex-1 min-w-[160px] rounded-2xl p-3 sm:p-4 text-left transition-all duration-300"
       style={{ background: "var(--bg-main)", border: `1px solid ${accent}22` }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLButtonElement).style.borderColor = `${accent}55`;
@@ -371,9 +371,8 @@ function RankingRow({
 
   return (
     <div
-      className="grid items-center gap-2 px-4 py-3.5 cursor-pointer transition-all duration-200 group"
+      className="flex items-center gap-2 px-3 sm:px-4 py-3 cursor-pointer transition-all duration-200 group"
       style={{
-        gridTemplateColumns: "44px 1fr 90px 50px 50px 90px",
         background: isSelected ? `${c.from}cc` : isTop3 ? "oklch(0.09 0.005 0)" : "transparent",
         borderBottom: "1px solid oklch(0.13 0.01 0)",
         borderLeft: isSelected ? `3px solid ${c.accent}` : "3px solid transparent",
@@ -387,42 +386,42 @@ function RankingRow({
       onClick={onSelect}
     >
       {/* Rank */}
-      <div className="flex items-center justify-center">
+      <div className="w-8 flex items-center justify-center shrink-0">
         {isTop3 ? (
-          <span className="text-base font-bold" style={{ color: medalColors[rank - 1] }}>#{rank}</span>
+          <span className="text-sm font-bold" style={{ color: medalColors[rank - 1] }}>#{rank}</span>
         ) : (
           <span className="font-mono text-sm text-muted-foreground">{rank}</span>
         )}
       </div>
 
-      {/* Team */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          className="w-9 h-9 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
-          style={{
-            border: isTop3 ? `1px solid ${medalColors[rank - 1]}44` : "1px solid oklch(0.20 0.01 0)",
-            background: "var(--bg-card)",
-          }}
-        >
-          {team.logo ? (
-            <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
-          ) : (
-            <Users size={14} className="text-muted-foreground" />
-          )}
-        </div>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <p className="font-rajdhani font-bold text-sm text-white group-hover:text-red-300 transition-colors truncate">
-              {team.name}
-            </p>
-            {team.isVerified && <Star size={10} className="text-yellow-400 shrink-0" />}
-          </div>
-          {team.tag && <p className="text-muted-foreground text-xs font-mono">[{team.tag}]</p>}
-        </div>
+      {/* Logo */}
+      <div
+        className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center"
+        style={{
+          border: isTop3 ? `1px solid ${medalColors[rank - 1]}44` : "1px solid oklch(0.20 0.01 0)",
+          background: "var(--bg-card)",
+        }}
+      >
+        {team.logo ? (
+          <img src={team.logo || undefined} alt={team.name} className="w-full h-full object-cover" />
+        ) : (
+          <Users size={12} className="text-muted-foreground" />
+        )}
       </div>
 
-      {/* Tasa de Victoria */}
-      <div className="flex items-center gap-1.5">
+      {/* Team name */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1">
+          <p className="font-rajdhani font-bold text-sm text-white group-hover:text-red-300 transition-colors truncate">
+            {team.name}
+          </p>
+          {team.isVerified && <Star size={9} className="text-yellow-400 shrink-0" />}
+        </div>
+        {team.tag && <p className="text-muted-foreground text-xs font-mono">[{team.tag}]</p>}
+      </div>
+
+      {/* WR — oculto en xs, visible en sm+ */}
+      <div className="hidden sm:flex items-center gap-1.5 w-20 shrink-0">
         {wr !== null ? (
           <>
             <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
@@ -446,25 +445,36 @@ function RankingRow({
         )}
       </div>
 
-      {/* V */}
-      <div className="text-center">
-        <span className="text-green-400 font-mono text-xs font-bold">{team.wins ?? 0}</span>
+      {/* V/D — oculto en xs */}
+      <div className="hidden sm:flex items-center gap-2 shrink-0">
+        <span className="text-green-400 font-mono text-xs font-bold w-6 text-center">{team.wins ?? 0}</span>
+        <span className="text-zinc-700 font-mono text-xs">/</span>
+        <span className="text-red-400 font-mono text-xs font-bold w-6 text-center">{team.losses ?? 0}</span>
       </div>
 
-      {/* D */}
-      <div className="text-center">
-        <span className="text-red-400 font-mono text-xs font-bold">{team.losses ?? 0}</span>
+      {/* WR compacto en móvil */}
+      <div className="flex sm:hidden items-center shrink-0">
+        {wr !== null ? (
+          <span
+            className="text-xs font-mono font-bold"
+            style={{ color: wr >= 60 ? "#22c55e" : wr >= 40 ? "#eab308" : "#ef4444" }}
+          >
+            {wr}%
+          </span>
+        ) : (
+          <span className="text-muted-foreground text-xs font-mono">—</span>
+        )}
       </div>
 
       {/* Points */}
-      <div className="text-right">
+      <div className="text-right shrink-0">
         <span
           className="font-orbitron font-black text-sm"
           style={{ color: isTop3 ? medalColors[rank - 1] : isSelected ? c.accent : "oklch(0.75 0.01 0)" }}
         >
           {(team.points ?? 0).toLocaleString()}
         </span>
-        <span className="text-muted-foreground font-mono text-xs ml-1">pts</span>
+        <span className="text-muted-foreground font-mono text-xs ml-0.5">pts</span>
       </div>
     </div>
   );
@@ -483,7 +493,7 @@ function Top5Cards({ teams, onSelect, selectedTeamId }: { teams: any[]; onSelect
         <h2 className="font-orbitron font-bold text-sm text-white uppercase tracking-wider">TOP 5 EQUIPOS</h2>
         <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
       </div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-3">
         {top5.map((team, i) => {
           const c = getGameColor(team.gameSlug);
           const medal = MEDAL_COLORS[i];
@@ -696,23 +706,23 @@ export default function Ranking() {
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         {/* Contenido centrado */}
-        <div className="absolute inset-0 flex items-center px-6 sm:px-10">
-          <div className="flex items-center justify-between gap-4 w-full">
-            <div className="flex flex-col gap-1">
+        <div className="absolute inset-0 flex items-center px-4 sm:px-10">
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div className="flex flex-col gap-0.5">
               <span className="font-mono text-xs uppercase tracking-widest text-red-400">Red Level Circle</span>
-              <h1 className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg">
+              <h1 className="font-orbitron font-black text-2xl sm:text-5xl lg:text-6xl text-white tracking-tight drop-shadow-lg leading-tight">
                 GLOBAL POWER
               </h1>
               <h1
-                className="font-orbitron font-black text-4xl sm:text-5xl lg:text-6xl tracking-tight drop-shadow-lg"
+                className="font-orbitron font-black text-2xl sm:text-5xl lg:text-6xl tracking-tight drop-shadow-lg leading-tight"
                 style={{ color: activeColor.accent, transition: "color 600ms ease" }}
               >
                 RANKINGS
               </h1>
             </div>
             <div className="text-right shrink-0">
-              <p className="text-muted-foreground text-xs font-mono">Actualizado en tiempo real</p>
-              <p className="text-muted-foreground text-xs font-mono">{teams.length} equipos clasificados</p>
+              <p className="text-muted-foreground text-xs font-mono hidden sm:block">Actualizado en tiempo real</p>
+              <p className="text-muted-foreground text-xs font-mono">{teams.length} equipos</p>
             </div>
           </div>
         </div>
@@ -1088,19 +1098,18 @@ export default function Ranking() {
               <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid oklch(0.16 0.01 0)" }}>
                 {/* Header */}
                 <div
-                  className="grid items-center gap-2 px-4 py-3"
+                  className="flex items-center gap-2 px-3 sm:px-4 py-3"
                   style={{
-                    gridTemplateColumns: "44px 1fr 90px 50px 50px 90px",
                     background: "var(--bg-main)",
                     borderBottom: "1px solid oklch(0.16 0.01 0)",
                   }}
                 >
-                  <div className="text-center text-xs font-mono text-muted-foreground">#</div>
-                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Equipo</div>
-                  <div className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Tasa de Victoria</div>
-                  <div className="text-center text-xs font-mono text-green-700 uppercase">V</div>
-                  <div className="text-center text-xs font-mono text-red-800 uppercase">D</div>
-                  <div className="text-right text-xs font-mono text-muted-foreground uppercase tracking-wider">Puntos</div>
+                  <div className="w-8 text-center text-xs font-mono text-muted-foreground shrink-0">#</div>
+                  <div className="w-8 shrink-0" />
+                  <div className="flex-1 text-xs font-mono text-muted-foreground uppercase tracking-wider">Equipo</div>
+                  <div className="hidden sm:block w-20 text-xs font-mono text-muted-foreground uppercase tracking-wider shrink-0">WR</div>
+                  <div className="hidden sm:block text-xs font-mono text-muted-foreground uppercase tracking-wider shrink-0 w-20 text-center">V / D</div>
+                  <div className="text-right text-xs font-mono text-muted-foreground uppercase tracking-wider shrink-0">Pts</div>
                 </div>
                 {/* Rows */}
                 {teams.map((team, i) => (
