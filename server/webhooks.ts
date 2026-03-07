@@ -25,7 +25,7 @@ import {
   normalizeYouTubeField,
 } from "./twitchSync";
 import { getDb } from "./db";
-import { contentCreators, users } from "../drizzle/schema";
+import { contentCreators, users, streams as streamsSchema } from "../drizzle/schema";
 import { eq, and, isNotNull } from "drizzle-orm";
 
 const PRODUCTION_DOMAIN = process.env.PRODUCTION_DOMAIN ?? "redlevelcircle.com";
@@ -278,6 +278,57 @@ export function registerWebhookRoutes(app: Express): void {
       console.error("[debug] force-sync error:", e);
       if (!res.headersSent) res.status(500).json({ error: String(e) });
     });
+  });
+
+  // ── Debug endpoint: GET /api/debug/streams ──────────────────────────────
+  app.get("/api/debug/streams", async (req: Request, res: Response) => {
+    const token = (req.query.token as string) ?? "";
+    if (token !== (process.env.DEBUG_SECRET ?? "rlc-debug-2025")) {
+      res.status(401).json({ error: "Unauthorized" }); return;
+    }
+    const db = await getDb();
+    if (!db) { res.status(503).json({ error: "DB not available" }); return; }
+    const allStreams = await db
+      .select({ id: streamsSchema.id, userId: streamsSchema.userId, title: streamsSchema.title, platform: streamsSchema.platform, isLive: streamsSchema.isLive, embedUrl: streamsSchema.embedUrl, url: streamsSchema.url, createdAt: streamsSchema.createdAt })
+      .from(streamsSchema)
+      .orderBy(streamsSchema.id);
+    res.json({ count: allStreams.length, streams: allStreams });
+  });
+
+  // ── Debug endpoint: POST /api/debug/cleanup-streams ─────────────────────
+  // Deletes duplicate streams for the same userId+platform, keeping the most recent.
+  app.post("/api/debug/cleanup-streams", async (req: Request, res: Response) => {
+    const token = (req.query.token as string) ?? "";
+    if (token !== (process.env.DEBUG_SECRET ?? "rlc-debug-2025")) {
+      res.status(401).json({ error: "Unauthorized" }); return;
+    }
+    const db = await getDb();
+    if (!db) { res.status(503).json({ error: "DB not available" }); return; }
+    const { desc: descOp } = await import("drizzle-orm");
+    const allStreams = await db
+      .select({ id: streamsSchema.id, userId: streamsSchema.userId, platform: streamsSchema.platform, isLive: streamsSchema.isLive })
+      .from(streamsSchema)
+      .where(isNotNull(streamsSchema.userId))
+      .orderBy(descOp(streamsSchema.id));
+    // Group by userId+platform
+    const groups = new Map<string, Array<{ id: number; userId: number | null; platform: string | null; isLive: boolean | null }> >();
+    for (const s of allStreams) {
+      const key = `${s.userId}-${s.platform}`;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key)!.push(s);
+    }
+    const deleted: number[] = [];
+    const groupEntries = Array.from(groups.values());
+    for (const group of groupEntries) {
+      if (group.length <= 1) continue;
+      // Keep the first (most recent by id desc), delete the rest
+      const toDelete = group.slice(1).map((s: { id: number }) => s.id);
+      for (const id of toDelete) {
+        await db.delete(streamsSchema).where(eq(streamsSchema.id, id));
+        deleted.push(id);
+      }
+    }
+    res.json({ deleted, message: `Deleted ${deleted.length} duplicate stream(s)` });
   });
 }
 

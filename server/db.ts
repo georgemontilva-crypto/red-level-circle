@@ -2888,7 +2888,7 @@ export async function listApprovedCreators() {
       nickname: users.nickname,
       avatar: users.avatar,
       banner: users.bannerUrl,
-      activeFrameImage: cosmetics.frameImage,
+      activeFrameImage: sql<string | null>`MAX(${cosmetics.frameImage})`,
       isVerified: users.isVerified,
     })
     .from(contentCreators)
@@ -2896,6 +2896,7 @@ export async function listApprovedCreators() {
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(eq(contentCreators.status, "approved"))
+    .groupBy(contentCreators.id, contentCreators.userId, contentCreators.category, contentCreators.bio, contentCreators.youtube, contentCreators.twitch, contentCreators.twitter, contentCreators.instagram, contentCreators.tiktok, contentCreators.subscribers, contentCreators.appliedAt, users.name, users.nickname, users.avatar, users.bannerUrl, users.isVerified)
     .orderBy(desc(contentCreators.subscribers));
 }
 
