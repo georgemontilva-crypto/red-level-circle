@@ -2670,6 +2670,15 @@ export async function getTeamPublicProfile(teamId: number) {
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmeticPublic.cosmeticId))
     .where(eq(teamMembers.teamId, teamId));
 
+  // Deduplicar por userId — priorizar captain sobre player si hay duplicados
+  const membersMap = new Map<number, typeof members[0]>();
+  for (const m of members) {
+    if (!m.userId) continue;
+    const existing = membersMap.get(m.userId);
+    if (!existing || m.role === "captain") membersMap.set(m.userId, m);
+  }
+  const uniqueMembers = Array.from(membersMap.values());
+
   // Get all approved registrations with tournament info
   const registrations = await db
     .select({
@@ -2712,7 +2721,7 @@ export async function getTeamPublicProfile(teamId: number) {
 
   // Per-player stats: count matches where they were part of the team
   const memberStats = await Promise.all(
-    members.map(async (member) => {
+    uniqueMembers.map(async (member) => {
       // Count tournaments played by this player (as part of this team)
       const playerTournaments = registrations.filter(r => r.tournamentStatus === "completed").length;
       const playerWins = registrations.filter(r => r.tournamentStatus === "completed" && r.tournamentWinnerId === teamId).length;

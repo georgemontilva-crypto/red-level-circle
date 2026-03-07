@@ -548,7 +548,7 @@ export default function TeamProfile() {
                 </div>
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
-                  {team.members.map((m: any) => (
+                  {Array.from(new Map(team.members.map((m: any) => [m.userId, m])).values()).map((m: any) => (
                     <RosterCard
                       key={m.id}
                       playerName={m.nickname ?? m.userName ?? m.username ?? m.name ?? "Jugador"}
