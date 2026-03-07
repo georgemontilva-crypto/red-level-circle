@@ -60,8 +60,19 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
-  // fall through to index.html if the file doesn't exist
+  // fall through to index.html — inject runtime env vars so VITE_ vars work even if not set at build time
   app.use("*", (_req, res) => {
-    res.sendFile(path.resolve(distPath, "index.html"));
+    const indexPath = path.resolve(distPath, "index.html");
+    try {
+      let html = fs.readFileSync(indexPath, "utf-8");
+      // Inject Google Client ID as a runtime global so the frontend can always read it
+      const googleClientId = process.env.GOOGLE_CLIENT_ID ?? "";
+      const injection = `<script>window.__GOOGLE_CLIENT_ID__=${JSON.stringify(googleClientId)};</script>`;
+      html = html.replace("</head>", `${injection}</head>`);
+      res.setHeader("Content-Type", "text/html");
+      res.send(html);
+    } catch {
+      res.sendFile(indexPath);
+    }
   });
 }

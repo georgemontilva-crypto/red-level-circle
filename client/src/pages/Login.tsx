@@ -89,7 +89,7 @@ export default function Login() {
   }, [isAuthenticated, navigate]);
 
   useEffect(() => {
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || (window as any).__GOOGLE_CLIENT_ID__;
     if (!clientId) return;
     const script = document.createElement("script");
     script.src = "https://accounts.google.com/gsi/client";
