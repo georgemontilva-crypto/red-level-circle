@@ -256,6 +256,21 @@ export function registerWebhookRoutes(app: Express): void {
     });
   });
 
+  // ── Debug endpoint: GET /api/debug/users ────────────────────────────────
+  app.get("/api/debug/users", async (req: Request, res: Response) => {
+    const token = (req.query.token as string) ?? "";
+    if (token !== (process.env.DEBUG_SECRET ?? "rlc-debug-2025")) {
+      res.status(401).json({ error: "Unauthorized" }); return;
+    }
+    const db = await getDb();
+    if (!db) { res.status(503).json({ error: "DB not available" }); return; }
+    const allUsers = await db
+      .select({ id: users.id, name: users.name, nickname: users.nickname, email: users.email, role: users.role, openId: users.openId, createdAt: users.createdAt })
+      .from(users)
+      .orderBy(users.id);
+    res.json({ count: allUsers.length, users: allUsers });
+  });
+
   // ── Debug endpoint: POST /api/debug/force-sync ───────────────────────────
   // Forces an immediate sync cycle and returns the logs.
   app.post("/api/debug/force-sync", (req: Request, res: Response) => {
