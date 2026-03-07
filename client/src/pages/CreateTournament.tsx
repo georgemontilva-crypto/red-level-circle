@@ -577,7 +577,7 @@ export default function CreateTournament() {
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un juego" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent side="bottom" avoidCollisions={false} className="z-[9999]">
                     {GAMES.map((g) => (
                       <SelectItem key={g} value={g}>{g}</SelectItem>
                     ))}
