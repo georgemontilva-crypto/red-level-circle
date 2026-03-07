@@ -1280,6 +1280,34 @@ async function _advanceDoubleElim(
     }
   }
 
+  // ── Notify captains of teams that advanced ──────────────────────────────
+  try {
+    const { createNotification } = await import("./notifications.js");
+    const t = await getTournamentById(tournamentId);
+    const tName = t?.name ?? `Torneo #${tournamentId}`;
+    const advancedTeamIds = [...winners];
+    if (advancedTeamIds.length > 0) {
+      const { teams: teamsTable } = await import("../drizzle/schema.js");
+      const { inArray } = await import("drizzle-orm");
+      const teamRows = await db!.select({ id: teamsTable.id, captainId: teamsTable.captainId, name: teamsTable.name })
+        .from(teamsTable).where(inArray(teamsTable.id, advancedTeamIds));
+      for (const team of teamRows) {
+        if (!team.captainId) continue;
+        await createNotification({
+          userId: team.captainId,
+          type: "general",
+          title: "¡Avanzaste de ronda!",
+          message: `Tu equipo "${team.name}" ha avanzado a la siguiente ronda en el torneo "${tName}".`,
+          link: `/tournaments/${tournamentId}`,
+          referenceId: tournamentId,
+          referenceType: "tournament",
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[advanceRoundIfComplete] Failed to send notifications:", e);
+  }
+
   // Recurse for next round if it's now complete
   await advanceRoundIfComplete(tournamentId, round + 1, _depth + 1);
 }

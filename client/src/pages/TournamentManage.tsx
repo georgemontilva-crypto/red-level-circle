@@ -28,6 +28,7 @@ import {
   UserCheck,
   Send,
   CheckSquare,
+  Download,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -122,6 +123,18 @@ export default function TournamentManage() {
       setTeam1Score("");
       setTeam2Score("");
       setResultNotes("");
+      refetchMatches();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const fetchRiotStatsMutation = trpc.matches.fetchRiotMatchStats.useMutation({
+    onSuccess: (data) => {
+      if (data?.found) {
+        toast.success(`Stats de Riot obtenidas: ${data.playerCount ?? 0} jugadores`);
+      } else {
+        toast.info("No se encontró una partida reciente de Riot para este match");
+      }
       refetchMatches();
     },
     onError: (err) => toast.error(err.message),
@@ -226,9 +239,37 @@ export default function TournamentManage() {
                   </span>
                   <span className="text-xs text-muted-foreground font-tech">{tournament.game}</span>
                 </div>
-                <h1 className="font-display text-2xl font-black tracking-wider text-foreground">
-                  {tournament.name}
-                </h1>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <h1 className="font-display text-2xl font-black tracking-wider text-foreground">
+                    {tournament.name}
+                  </h1>
+                  {!(tournament as any).isPublic && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-1 rounded-lg"
+                      style={{ background: "oklch(0.55 0.18 280 / 0.1)", border: "1px solid oklch(0.55 0.18 280 / 0.3)" }}
+                    >
+                      <span className="text-xs font-display tracking-wider" style={{ color: "oklch(0.65 0.18 280)" }}>PRIVADO</span>
+                      {(tournament as any).inviteCode && (
+                        <>
+                          <span className="text-xs font-mono font-bold" style={{ color: "oklch(0.80 0.18 280)" }}>
+                            {(tournament as any).inviteCode}
+                          </span>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText((tournament as any).inviteCode);
+                              toast.success("Código copiado al portapapeles");
+                            }}
+                            className="text-xs"
+                            style={{ color: "oklch(0.55 0.18 280)" }}
+                            title="Copiar código"
+                          >
+                            📋
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -257,6 +298,35 @@ export default function TournamentManage() {
                     <Eye size={14} /> VER PÚBLICO
                   </button>
                 </Link>
+
+                {/* Exportar resultados */}
+                <div className="flex gap-1">
+                  <a
+                    href={`/api/tournaments/${id}/export?format=csv`}
+                    download
+                    className="flex items-center gap-2 px-3 py-2 rounded-l-lg font-display text-xs tracking-widest transition-all duration-200"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+                      color: "oklch(0.65 0.18 145)",
+                    }}
+                  >
+                    <Download size={12} /> CSV
+                  </a>
+                  <a
+                    href={`/api/tournaments/${id}/export?format=json`}
+                    download
+                    className="flex items-center gap-2 px-3 py-2 rounded-r-lg font-display text-xs tracking-widest transition-all duration-200"
+                    style={{
+                      background: "var(--bg-card)",
+                      border: "1px solid oklch(0.55 0.18 145 / 0.4)",
+                      borderLeft: "none",
+                      color: "oklch(0.65 0.18 145)",
+                    }}
+                  >
+                    JSON
+                  </a>
+                </div>
 
                 {canAdvance && tournament.status !== "registration_closed" && (
                   <button
@@ -681,6 +751,16 @@ export default function TournamentManage() {
                                     style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}
                                   >
                                     RESULTADO
+                                  </button>
+                                )}
+                                {isCompleted && match.winnerId && (
+                                  <button
+                                    onClick={() => fetchRiotStatsMutation.mutate({ matchId: match.id, tournamentId: id })}
+                                    disabled={fetchRiotStatsMutation.isPending}
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200 disabled:opacity-50"
+                                    style={{ background: "oklch(0.55 0.18 220 / 0.15)", border: "1px solid oklch(0.55 0.18 220 / 0.3)", color: "oklch(0.65 0.18 220)" }}
+                                  >
+                                    {fetchRiotStatsMutation.isPending ? "..." : "STATS RIOT"}
                                   </button>
                                 )}
                               </div>

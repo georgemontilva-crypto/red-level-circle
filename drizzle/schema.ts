@@ -183,6 +183,8 @@ export const tournaments = mysqlTable("tournaments", {
   requireRiotAccount: boolean("requireRiotAccount").default(false).notNull(),
   // Máximo de agentes libres permitidos
   maxFreeAgents: int("maxFreeAgents").default(0).notNull(),
+  // Código de invitación para torneos privados (isPublic=false)
+  inviteCode: varchar("inviteCode", { length: 32 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

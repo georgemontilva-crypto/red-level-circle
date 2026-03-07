@@ -192,7 +192,7 @@ function ParticipantCard({
   );
 }
 
-// ─── Result Row ───────────────────────────────────────────────────────────────
+// ─── Result Row ─────────────────────────────────────────────────────────────────────────────────
 function ResultRow({
   match,
   totalRounds,
@@ -215,10 +215,23 @@ function ResultRow({
   };
   totalRounds: number;
 }) {
+  const [showRiotStats, setShowRiotStats] = useState(false);
+
   if (match.notes === "BYE") return null;
   const team1Won = match.winnerId === match.team1Id;
   const team2Won = match.winnerId === match.team2Id;
   const roundLabel = getRoundLabel(match.round ?? 1, totalRounds);
+
+  // Parse Riot stats and seriesFormat from notes field
+  let riotStats: { players?: Array<{ summonerName: string; champion: string; kills: number; deaths: number; assists: number; cs: number; damage: number; teamId: number }> } | null = null;
+  let seriesFormat: string | null = null;
+  try {
+    if (match.notes && match.notes !== "BYE") {
+      const parsed = JSON.parse(match.notes);
+      if (parsed.riotStats) riotStats = parsed.riotStats;
+      if (parsed.seriesFormat) seriesFormat = parsed.seriesFormat;
+    }
+  } catch {}
 
   return (
     <div
@@ -229,16 +242,30 @@ function ResultRow({
       }}
     >
       <div className="flex items-center justify-between mb-3">
-        <span
-          className="text-xs font-mono px-2 py-0.5 rounded"
-          style={{
-            background: "oklch(0.55 0.22 25 / 0.1)",
-            color: "oklch(0.65 0.22 25)",
-            border: "1px solid oklch(0.55 0.22 25 / 0.2)",
-          }}
-        >
-          {roundLabel}
-        </span>
+        <div className="flex items-center gap-2">
+          <span
+            className="text-xs font-mono px-2 py-0.5 rounded"
+            style={{
+              background: "oklch(0.55 0.22 25 / 0.1)",
+              color: "oklch(0.65 0.22 25)",
+              border: "1px solid oklch(0.55 0.22 25 / 0.2)",
+            }}
+          >
+            {roundLabel}
+          </span>
+          {seriesFormat && (
+            <span
+              className="text-xs font-mono px-2 py-0.5 rounded"
+              style={{
+                background: "oklch(0.55 0.18 220 / 0.1)",
+                color: "oklch(0.65 0.18 220)",
+                border: "1px solid oklch(0.55 0.18 220 / 0.2)",
+              }}
+            >
+              {seriesFormat}
+            </span>
+          )}
+        </div>
         {match.completedAt && (
           <span className="text-xs text-muted-foreground font-mono">
             {new Date(match.completedAt).toLocaleDateString("es-ES", {
@@ -284,6 +311,51 @@ function ResultRow({
           </div>
         ))}
       </div>
+      {/* Riot Stats section */}
+      {riotStats?.players && riotStats.players.length > 0 && (
+        <div className="mt-3 border-t pt-3" style={{ borderColor: "oklch(0.18 0.01 0)" }}>
+          <button
+            onClick={() => setShowRiotStats(!showRiotStats)}
+            className="flex items-center gap-2 text-xs font-display tracking-wider transition-colors"
+            style={{ color: showRiotStats ? "oklch(0.65 0.22 25)" : "oklch(0.50 0.005 0)" }}
+          >
+            <span style={{ fontSize: 10 }}>{showRiotStats ? "▼" : "►"}</span>
+            STATS DE RIOT ({riotStats.players.length} jugadores)
+          </button>
+          {showRiotStats && (
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr style={{ color: "oklch(0.50 0.005 0)" }}>
+                    <th className="text-left pb-2 font-display tracking-wider">JUGADOR</th>
+                    <th className="text-left pb-2 font-display tracking-wider">CAMPEÓN</th>
+                    <th className="text-center pb-2 font-display tracking-wider">K/D/A</th>
+                    <th className="text-center pb-2 font-display tracking-wider">CS</th>
+                    <th className="text-center pb-2 font-display tracking-wider">DAÑO</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {riotStats.players.map((p, idx) => (
+                    <tr key={idx} style={{ borderTop: "1px solid oklch(0.15 0.01 0)" }}>
+                      <td className="py-1.5 pr-2 font-mono" style={{ color: "oklch(0.75 0.005 0)" }}>{p.summonerName}</td>
+                      <td className="py-1.5 pr-2" style={{ color: "oklch(0.65 0.18 80)" }}>{p.champion}</td>
+                      <td className="py-1.5 text-center font-mono" style={{ color: "oklch(0.70 0.005 0)" }}>
+                        <span style={{ color: "oklch(0.75 0.18 145)" }}>{p.kills}</span>
+                        <span style={{ color: "oklch(0.45 0.005 0)" }}>/</span>
+                        <span style={{ color: "oklch(0.65 0.22 25)" }}>{p.deaths}</span>
+                        <span style={{ color: "oklch(0.45 0.005 0)" }}>/</span>
+                        <span style={{ color: "oklch(0.65 0.18 220)" }}>{p.assists}</span>
+                      </td>
+                      <td className="py-1.5 text-center font-mono" style={{ color: "oklch(0.65 0.005 0)" }}>{p.cs}</td>
+                      <td className="py-1.5 text-center font-mono" style={{ color: "oklch(0.65 0.005 0)" }}>{p.damage.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -373,6 +445,7 @@ export default function TournamentDetail() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [teamMessage, setTeamMessage] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [activeTab, setActiveTab] = useState<"overview" | "participants" | "brackets" | "stats" | "announcements" | "freeagents">("overview");
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [showCheckInModal, setShowCheckInModal] = useState(false);
@@ -387,6 +460,7 @@ export default function TournamentDetail() {
   const { data: announcements, refetch: refetchAnnouncements } = trpc.tournaments.announcements.useQuery({ tournamentId: id });
   const { data: checkins, refetch: refetchCheckins } = trpc.tournaments.getCheckins.useQuery({ tournamentId: id });
   const { data: freeAgents, refetch: refetchFreeAgents } = trpc.tournaments.getFreeAgents.useQuery({ tournamentId: id });
+  const { data: tournamentRankings } = trpc.ranking.rankings.useQuery({ tournamentId: id });
   const [showFreeAgentModal, setShowFreeAgentModal] = useState(false);
   const [freeAgentRole, setFreeAgentRole] = useState("");
   const [freeAgentMessage, setFreeAgentMessage] = useState("");
@@ -1241,10 +1315,78 @@ export default function TournamentDetail() {
                 )}
               </div>
             ) : (
-              <div
-                className="rounded-xl overflow-x-auto"
-                style={{ background: "var(--bg-main)", border: "1px solid oklch(0.15 0.01 0)" }}
-              >
+              <>
+                {/* ── TABLA DE POSICIONES (solo para fase de grupos) ── */}
+                {tournament.bracketType === "groups" && tournamentRankings && tournamentRankings.length > 0 && (
+                  <div
+                    className="rounded-xl mb-6 overflow-hidden"
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+                  >
+                    <div
+                      className="px-5 py-3 flex items-center gap-2"
+                      style={{ background: "oklch(0.55 0.18 220 / 0.08)", borderBottom: "1px solid oklch(0.18 0.01 0)" }}
+                    >
+                      <ListOrdered size={14} style={{ color: "oklch(0.65 0.18 220)" }} />
+                      <span className="font-display text-xs font-bold tracking-widest" style={{ color: "oklch(0.65 0.18 220)" }}>TABLA DE POSICIONES</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr style={{ borderBottom: "1px solid oklch(0.18 0.01 0)" }}>
+                            {["#", "EQUIPO", "PJ", "PG", "PP", "MW", "ML", "PUNTOS"].map((h) => (
+                              <th key={h} className="px-3 py-2 text-left font-display tracking-wider" style={{ color: "oklch(0.45 0.005 0)" }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(tournamentRankings as any[]).map((r, i) => {
+                            const team = registeredTeams?.find((t: any) => t.teamId === r.teamId);
+                            const isTop = i < 2;
+                            return (
+                              <tr
+                                key={r.id ?? r.teamId}
+                                style={{
+                                  borderBottom: "1px solid oklch(0.13 0.005 0)",
+                                  background: isTop ? "oklch(0.55 0.18 220 / 0.05)" : "transparent",
+                                }}
+                              >
+                                <td className="px-3 py-2.5">
+                                  <span
+                                    className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                                    style={{
+                                      background: i === 0 ? "oklch(0.65 0.18 80 / 0.2)" : i === 1 ? "oklch(0.65 0.005 0 / 0.2)" : "transparent",
+                                      color: i === 0 ? "oklch(0.75 0.18 80)" : i === 1 ? "oklch(0.70 0.005 0)" : "oklch(0.45 0.005 0)",
+                                    }}
+                                  >
+                                    {i + 1}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2.5">
+                                  <span className="font-display text-xs font-bold text-foreground">
+                                    {team?.teamName ?? r.teamName ?? `Equipo #${r.teamId}`}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{(r.seriesWon ?? 0) + (r.seriesLost ?? 0)}</td>
+                                <td className="px-3 py-2.5" style={{ color: "oklch(0.65 0.18 145)" }}>{r.seriesWon ?? 0}</td>
+                                <td className="px-3 py-2.5" style={{ color: "oklch(0.60 0.22 25)" }}>{r.seriesLost ?? 0}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{r.mapsWon ?? 0}</td>
+                                <td className="px-3 py-2.5 text-muted-foreground">{r.mapsLost ?? 0}</td>
+                                <td className="px-3 py-2.5">
+                                  <span className="font-display font-bold text-sm" style={{ color: "oklch(0.65 0.18 220)" }}>{r.points ?? 0}</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div
+                  className="rounded-xl overflow-x-auto"
+                  style={{ background: "var(--bg-main)", border: "1px solid oklch(0.15 0.01 0)" }}
+                >
                 <div className="p-6" style={{ minWidth: "fit-content" }}>
                   <BracketView
                     matches={matches ?? []}
@@ -1256,6 +1398,7 @@ export default function TournamentDetail() {
                   />
                 </div>
               </div>
+              </>
             )}
           </div>
         )}
@@ -1657,6 +1800,29 @@ export default function TournamentDetail() {
                     </button>
                   ))}
                 </div>
+                {/* Campo de código de invitación para torneos privados */}
+                {tournament && !(tournament as any).isPublic && (
+                  <div>
+                    <label className="block text-xs font-display tracking-wider mb-2" style={{ color: "oklch(0.65 0.22 25)" }}>
+                      CÓDIGO DE INVITACIÓN *
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteCode}
+                      onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                      placeholder="Ej: AB3X9K"
+                      maxLength={10}
+                      className="w-full rounded-lg px-3 py-2 text-sm font-mono text-foreground"
+                      style={{
+                        background: "var(--bg-main)",
+                        border: "1px solid oklch(0.55 0.22 25 / 0.4)",
+                        outline: "none",
+                        letterSpacing: "0.15em",
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">Este torneo es privado. Solicita el código al organizador.</p>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">
                     MENSAJE PARA EL ORGANIZADOR (OPCIONAL)
@@ -1689,6 +1855,7 @@ export default function TournamentDetail() {
                         tournamentId: id,
                         teamId: selectedTeamId,
                         teamMessage: teamMessage || undefined,
+                        inviteCode: inviteCode || undefined,
                       });
                     }}
                     disabled={!selectedTeamId || registerMutation.isPending}

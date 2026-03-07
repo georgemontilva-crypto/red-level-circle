@@ -3,7 +3,7 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useLocation, useParams } from "wouter";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
-import { Trophy, ChevronRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, Loader2, Shield, Calendar, Medal } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -29,6 +29,17 @@ const SERIES_FORMATS = [
   { value: "BO5", label: "BO5 — Al Mejor de 5", desc: "Primero en ganar 3 mapas. Para semifinales y finales." },
   { value: "BO7", label: "BO7 — Al Mejor de 7", desc: "Primero en ganar 4 mapas. Para grandes finales épicas." },
 ];
+const REGIONS = [
+  { value: "Latinoamérica Norte", label: "Latinoamérica Norte (LAN)" },
+  { value: "Latinoamérica Sur", label: "Latinoamérica Sur (LAS)" },
+  { value: "North America", label: "North America (NA)" },
+  { value: "Brazil", label: "Brazil (BR)" },
+  { value: "Europe", label: "Europe (EUW/EUNE)" },
+  { value: "Korea", label: "Korea (KR)" },
+  { value: "Japan", label: "Japan (JP)" },
+  { value: "Oceania", label: "Oceania (OCE)" },
+  { value: "Global", label: "Global (Sin restricción)" },
+];
 
 interface FormData {
   name: string;
@@ -43,12 +54,22 @@ interface FormData {
   maxPlayersPerTeam: number;
   prizeDescription: string;
   prizeAmount: number;
+  prizeFirst: string;
+  prizeSecond: string;
+  prizeThird: string;
   registrationStart: string;
   registrationEnd: string;
   startDate: string;
   endDate: string;
+  checkInStart: string;
+  checkInEnd: string;
   isPublic: boolean;
   banner: string;
+  region: string;
+  requireRiotAccount: boolean;
+  contactName: string;
+  contactDiscord: string;
+  contactDiscordServer: string;
 }
 
 function toDatetimeLocal(ts: Date | null | undefined): string {
@@ -96,6 +117,24 @@ function NeonTextarea({ label, value, onChange, placeholder, rows = 4 }: {
   );
 }
 
+function Toggle({ label, description, value, onChange }: { label: string; description?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="flex items-center gap-3">
+      <button
+        onClick={() => onChange(!value)}
+        className="relative w-12 h-6 rounded-full transition-all duration-300 shrink-0"
+        style={{ background: value ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)", boxShadow: value ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none" }}
+      >
+        <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300" style={{ left: value ? "calc(100% - 1.25rem)" : "0.25rem" }} />
+      </button>
+      <div>
+        <span className="text-sm text-foreground font-display tracking-wider">{label}</span>
+        {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function EditTournament() {
   const { id } = useParams<{ id: string }>();
   const tournamentId = parseInt(id ?? "0");
@@ -103,14 +142,18 @@ export default function EditTournament() {
   const [step, setStep] = useState(1);
   const [uploadingBanner, setUploadingBanner] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   const [form, setForm] = useState<FormData>({
     name: "", game: "", customGame: "", description: "", rules: "",
     bracketType: "single_elimination", defaultSeriesFormat: "BO3", maxTeams: 16, minPlayersPerTeam: 1,
     maxPlayersPerTeam: 5, prizeDescription: "", prizeAmount: 0,
+    prizeFirst: "", prizeSecond: "", prizeThird: "",
     registrationStart: "", registrationEnd: "", startDate: "", endDate: "",
+    checkInStart: "", checkInEnd: "",
     isPublic: true, banner: "",
+    region: "Global", requireRiotAccount: false,
+    contactName: "", contactDiscord: "", contactDiscordServer: "",
   });
 
   const { data: tournament, isLoading } = trpc.tournaments.byId.useQuery(
@@ -121,6 +164,7 @@ export default function EditTournament() {
   // Pre-load form with tournament data
   useEffect(() => {
     if (tournament && !initialized) {
+      const t = tournament as any;
       const knownGames = GAMES.filter((g) => g !== "Otro");
       const isKnownGame = knownGames.includes(tournament.game);
       setForm({
@@ -130,18 +174,28 @@ export default function EditTournament() {
         description: tournament.description ?? "",
         rules: tournament.rules ?? "",
         bracketType: (tournament.bracketType as FormData["bracketType"]) ?? "single_elimination",
-        defaultSeriesFormat: ((tournament as { defaultSeriesFormat?: string }).defaultSeriesFormat as FormData["defaultSeriesFormat"]) ?? "BO3",
+        defaultSeriesFormat: (t.defaultSeriesFormat as FormData["defaultSeriesFormat"]) ?? "BO3",
         maxTeams: tournament.maxTeams ?? 16,
         minPlayersPerTeam: tournament.minPlayersPerTeam ?? 1,
         maxPlayersPerTeam: tournament.maxPlayersPerTeam ?? 5,
         prizeDescription: tournament.prizeDescription ?? "",
         prizeAmount: tournament.prizeAmount ?? 0,
+        prizeFirst: t.prizeFirst ?? "",
+        prizeSecond: t.prizeSecond ?? "",
+        prizeThird: t.prizeThird ?? "",
         registrationStart: toDatetimeLocal(tournament.registrationStart),
         registrationEnd: toDatetimeLocal(tournament.registrationEnd),
         startDate: toDatetimeLocal(tournament.startDate),
         endDate: toDatetimeLocal(tournament.endDate),
+        checkInStart: toDatetimeLocal(t.checkInStart),
+        checkInEnd: toDatetimeLocal(t.checkInEnd),
         isPublic: tournament.isPublic ?? true,
         banner: tournament.banner ?? "",
+        region: t.region ?? "Global",
+        requireRiotAccount: t.requireRiotAccount ?? false,
+        contactName: t.contactName ?? "",
+        contactDiscord: t.contactDiscord ?? "",
+        contactDiscordServer: t.contactDiscordServer ?? "",
       });
       setInitialized(true);
     }
@@ -179,7 +233,6 @@ export default function EditTournament() {
   const updateMutation = trpc.tournaments.update.useMutation({
     onSuccess: () => {
       toast.success("¡Torneo actualizado correctamente!");
-      // Invalidate so updated tournament appears immediately
       utils.tournaments.list.invalidate();
       utils.tournaments.myTournaments.invalidate();
       utils.tournaments.byId.invalidate({ id: tournamentId });
@@ -206,12 +259,22 @@ export default function EditTournament() {
       maxPlayersPerTeam: form.maxPlayersPerTeam,
       prizeDescription: form.prizeDescription || undefined,
       prizeAmount: form.prizeAmount,
+      prizeFirst: form.prizeFirst || undefined,
+      prizeSecond: form.prizeSecond || undefined,
+      prizeThird: form.prizeThird || undefined,
       registrationStart: form.registrationStart ? new Date(form.registrationStart).getTime() : undefined,
       registrationEnd: form.registrationEnd ? new Date(form.registrationEnd).getTime() : undefined,
       startDate: form.startDate ? new Date(form.startDate).getTime() : undefined,
       endDate: form.endDate ? new Date(form.endDate).getTime() : undefined,
+      checkInStart: form.checkInStart ? new Date(form.checkInStart).getTime() : undefined,
+      checkInEnd: form.checkInEnd ? new Date(form.checkInEnd).getTime() : undefined,
       isPublic: form.isPublic,
       banner: form.banner || undefined,
+      region: form.region !== "Global" ? form.region : undefined,
+      requireRiotAccount: form.requireRiotAccount,
+      contactName: form.contactName || undefined,
+      contactDiscord: form.contactDiscord || undefined,
+      contactDiscordServer: form.contactDiscordServer || undefined,
     });
   };
 
@@ -236,13 +299,15 @@ export default function EditTournament() {
     );
   }
 
+  const stepLabels = ["INFO BÁSICA", "CONFIGURACIÓN", "FECHAS Y CHECK-IN", "PREMIOS Y CONTACTO"];
+
   return (
     <PremiumLayout title={`EDITAR: ${tournament.name}`}>
       <div className="max-w-2xl mx-auto overflow-x-hidden">
         {/* Progress */}
-        <div className="flex items-center gap-3 mb-8">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center gap-3 flex-1">
+        <div className="flex items-center gap-2 mb-8 overflow-x-auto pb-2">
+          {[1, 2, 3, 4].map((s) => (
+            <div key={s} className="flex items-center gap-2 shrink-0">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold transition-all duration-300"
                 style={
@@ -257,10 +322,10 @@ export default function EditTournament() {
                 className="text-xs font-display tracking-wider hidden sm:block"
                 style={{ color: step >= s ? "oklch(0.80 0.005 0)" : "oklch(0.45 0.005 0)" }}
               >
-                {s === 1 ? "INFO BÁSICA" : s === 2 ? "CONFIGURACIÓN" : "FECHAS Y PREMIO"}
+                {stepLabels[s - 1]}
               </span>
               {s < totalSteps && (
-                <div className="flex-1 h-px" style={{ background: step > s ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)" }} />
+                <div className="w-6 h-px" style={{ background: step > s ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)" }} />
               )}
             </div>
           ))}
@@ -330,17 +395,7 @@ export default function EditTournament() {
                 <input id="edit-tournament-banner-input" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleBannerUpload} />
               </div>
               {/* Public toggle */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => set("isPublic")(!form.isPublic)}
-                  className="relative w-12 h-6 rounded-full transition-all duration-300"
-                  style={{ background: form.isPublic ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)", boxShadow: form.isPublic ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none" }}
-                >
-                  <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300" style={{ left: form.isPublic ? "calc(100% - 1.25rem)" : "0.25rem" }} />
-                </button>
-                <span className="text-sm text-foreground font-display tracking-wider">Torneo público</span>
-                <span className="text-xs text-muted-foreground">{form.isPublic ? "Visible para todos" : "Solo por invitación"}</span>
-              </div>
+              <Toggle label="Torneo público" description={form.isPublic ? "Visible para todos" : "Solo por invitación"} value={form.isPublic} onChange={set("isPublic")} />
             </div>
           )}
 
@@ -385,12 +440,11 @@ export default function EditTournament() {
                   ))}
                 </div>
               </div>
-              {/* Formato de serie por defecto */}
+              {/* Formato de serie */}
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
                   FORMATO DE SERIE <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
                 </label>
-                <p className="text-xs text-zinc-500 mb-3">Define cuántos mapas se juegan por enfrentamiento. Puedes sobreescribirlo por match individualmente.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SERIES_FORMATS.map((sf) => (
                     <button
@@ -413,10 +467,7 @@ export default function EditTournament() {
                           )}
                         </div>
                         <div>
-                          <p
-                            className="font-display text-xs font-bold tracking-wide"
-                            style={{ color: form.defaultSeriesFormat === sf.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}
-                          >
+                          <p className="font-display text-xs font-bold tracking-wide" style={{ color: form.defaultSeriesFormat === sf.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}>
                             {sf.label}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">{sf.desc}</p>
@@ -426,21 +477,43 @@ export default function EditTournament() {
                   ))}
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <NeonInput label="MÁX. EQUIPOS" type="number" value={form.maxTeams} onChange={(v) => set("maxTeams")(parseInt(v) || 2)} min={2} max={256} />
                 <NeonInput label="MÍN. JUGADORES" type="number" value={form.minPlayersPerTeam} onChange={(v) => set("minPlayersPerTeam")(parseInt(v) || 1)} min={1} max={20} />
                 <NeonInput label="MÁX. JUGADORES" type="number" value={form.maxPlayersPerTeam} onChange={(v) => set("maxPlayersPerTeam")(parseInt(v) || 1)} min={1} max={20} />
               </div>
+              {/* Región */}
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">REGIÓN DEL TORNEO</label>
+                <Select value={form.region} onValueChange={set("region")}>
+                  <SelectTrigger><SelectValue placeholder="Seleccionar región" /></SelectTrigger>
+                  <SelectContent>
+                    {REGIONS.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Riot Account required */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Shield size={14} style={{ color: "oklch(0.65 0.18 220)" }} />
+                  <span className="font-display text-xs font-bold tracking-wider" style={{ color: "oklch(0.65 0.18 220)" }}>REQUISITOS DE CUENTA</span>
+                </div>
+                <Toggle
+                  label="Requiere cuenta Riot vinculada"
+                  description="Los participantes deben tener su cuenta de Riot Games vinculada en su perfil"
+                  value={form.requireRiotAccount}
+                  onChange={set("requireRiotAccount")}
+                />
+              </div>
             </div>
           )}
 
-          {/* Step 3: Dates & Prize */}
+          {/* Step 3: Dates & Check-in */}
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">FECHAS Y PREMIO</h2>
-                <p className="text-muted-foreground text-sm">Define el calendario y los premios</p>
+                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">FECHAS Y CHECK-IN</h2>
+                <p className="text-muted-foreground text-sm">Define el calendario del torneo</p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <NeonInput label="INICIO DE INSCRIPCIONES" type="datetime-local" value={form.registrationStart} onChange={set("registrationStart")} />
@@ -448,14 +521,50 @@ export default function EditTournament() {
                 <NeonInput label="FECHA DE INICIO" type="datetime-local" value={form.startDate} onChange={set("startDate")} />
                 <NeonInput label="FECHA DE FIN" type="datetime-local" value={form.endDate} onChange={set("endDate")} />
               </div>
+              {/* Check-in window */}
               <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <div className="flex items-center gap-2 mb-3">
-                  <Trophy size={16} style={{ color: "oklch(0.65 0.18 80)" }} />
-                  <span className="font-display text-sm font-bold tracking-wider text-foreground">PREMIO</span>
+                  <Calendar size={14} style={{ color: "oklch(0.65 0.18 145)" }} />
+                  <span className="font-display text-xs font-bold tracking-wider" style={{ color: "oklch(0.65 0.18 145)" }}>VENTANA DE CHECK-IN</span>
+                </div>
+                <p className="text-xs text-muted-foreground mb-3">Período en el que los equipos deben confirmar su asistencia antes del inicio del torneo</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <NeonInput label="INICIO DEL CHECK-IN" type="datetime-local" value={form.checkInStart} onChange={set("checkInStart")} />
+                  <NeonInput label="FIN DEL CHECK-IN" type="datetime-local" value={form.checkInEnd} onChange={set("checkInEnd")} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Prizes & Contact */}
+          {step === 4 && (
+            <div className="space-y-5">
+              <div>
+                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">PREMIOS Y CONTACTO</h2>
+                <p className="text-muted-foreground text-sm">Define los premios y la información de contacto</p>
+              </div>
+              {/* Prizes */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Medal size={14} style={{ color: "oklch(0.65 0.18 80)" }} />
+                  <span className="font-display text-xs font-bold tracking-wider" style={{ color: "oklch(0.65 0.18 80)" }}>PREMIOS POR PUESTO</span>
                 </div>
                 <div className="space-y-3">
-                  <NeonInput label="DESCRIPCIÓN DEL PREMIO" value={form.prizeDescription} onChange={set("prizeDescription")} placeholder="Ej: Periféricos gaming, tarjetas de regalo, etc." />
-                  <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
+                  <NeonInput label="🥇 1ER LUGAR" value={form.prizeFirst} onChange={set("prizeFirst")} placeholder="Ej: $500 USD, Periféricos gaming..." />
+                  <NeonInput label="🥈 2DO LUGAR" value={form.prizeSecond} onChange={set("prizeSecond")} placeholder="Ej: $250 USD, Tarjeta de regalo..." />
+                  <NeonInput label="🥉 3ER LUGAR" value={form.prizeThird} onChange={set("prizeThird")} placeholder="Ej: $100 USD, Skin exclusiva..." />
+                  <NeonTextarea label="DESCRIPCIÓN GENERAL DEL PREMIO" value={form.prizeDescription} onChange={set("prizeDescription")} placeholder="Información adicional sobre los premios y su entrega..." rows={2} />
+                </div>
+              </div>
+              {/* Contact */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="font-display text-xs font-bold tracking-wider text-muted-foreground">INFORMACIÓN DE CONTACTO</span>
+                </div>
+                <div className="space-y-3">
+                  <NeonInput label="NOMBRE DEL ORGANIZADOR" value={form.contactName} onChange={set("contactName")} placeholder="Nombre o alias" />
+                  <NeonInput label="DISCORD DEL ORGANIZADOR" value={form.contactDiscord} onChange={set("contactDiscord")} placeholder="usuario#0000 o @usuario" />
+                  <NeonInput label="SERVIDOR DE DISCORD" value={form.contactDiscordServer} onChange={set("contactDiscordServer")} placeholder="https://discord.gg/..." />
                 </div>
               </div>
               {/* Summary */}
@@ -481,6 +590,14 @@ export default function EditTournament() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Equipos:</span>
                     <span className="text-foreground">Máx. {form.maxTeams}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Región:</span>
+                    <span className="text-foreground">{form.region}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Cuenta Riot:</span>
+                    <span className="text-foreground">{form.requireRiotAccount ? "Requerida" : "No requerida"}</span>
                   </div>
                 </div>
               </div>

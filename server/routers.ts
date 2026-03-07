@@ -392,8 +392,14 @@ export const appRouter = router({
         if (input.checkInStart && input.checkInEnd && input.checkInStart >= input.checkInEnd) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "El inicio del check-in debe ser anterior al fin del check-in." });
         }
+        // ── Generar código de invitación para torneos privados ──
+        const inviteCode = !input.isPublic
+          ? Math.random().toString(36).substring(2, 8).toUpperCase()
+          : undefined;
+
         const id = await createTournament({
           ...input,
+          inviteCode,
           creatorId: ctx.user.id,
           status: "pending_approval",
           registrationStart: input.registrationStart ? new Date(input.registrationStart) : undefined,
@@ -448,6 +454,17 @@ export const appRouter = router({
         streamPlatform: z.enum(["twitch", "youtube", "discord", "other"]).optional(),
         isLive: z.boolean().optional(),
         defaultSeriesFormat: z.enum(["BO1", "BO2", "BO3", "BO5", "BO7"]).optional(),
+        // Nuevos campos
+        region: z.string().max(64).optional(),
+        checkInStart: z.number().optional(),
+        checkInEnd: z.number().optional(),
+        requireRiotAccount: z.boolean().optional(),
+        contactName: z.string().max(128).optional(),
+        contactDiscord: z.string().max(128).optional(),
+        contactDiscordServer: z.string().max(256).optional(),
+        prizeFirst: z.string().max(256).optional(),
+        prizeSecond: z.string().max(256).optional(),
+        prizeThird: z.string().max(256).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
@@ -455,13 +472,31 @@ export const appRouter = router({
         if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-        const { id, registrationStart, registrationEnd, startDate, endDate, ...rest } = input;
+        // Si se cambia a privado y no tiene inviteCode, generar uno
+        const tAny = t as any;
+        let newInviteCode: string | undefined;
+        if (input.isPublic === false && !tAny.inviteCode) {
+          newInviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        const { id, registrationStart, registrationEnd, startDate, endDate, checkInStart, checkInEnd, contactName, contactDiscord, contactDiscordServer, ...rest } = input;
+        // Build contactInfo JSON from individual fields
+        const existingContact = tAny.contactInfo ? JSON.parse(tAny.contactInfo) : {};
+        const contactInfo = JSON.stringify({
+          ...existingContact,
+          ...(contactName !== undefined ? { name: contactName } : {}),
+          ...(contactDiscord !== undefined ? { discord: contactDiscord } : {}),
+          ...(contactDiscordServer !== undefined ? { discordServer: contactDiscordServer } : {}),
+        });
         await updateTournament(id, {
           ...rest,
+          ...(newInviteCode ? { inviteCode: newInviteCode } : {}),
+          contactInfo,
           registrationStart: registrationStart ? new Date(registrationStart) : undefined,
           registrationEnd: registrationEnd ? new Date(registrationEnd) : undefined,
           startDate: startDate ? new Date(startDate) : undefined,
           endDate: endDate ? new Date(endDate) : undefined,
+          checkInStart: checkInStart ? new Date(checkInStart) : undefined,
+          checkInEnd: checkInEnd ? new Date(checkInEnd) : undefined,
         });
         // Invalidate caches so changes appear immediately
         cache.invalidatePrefix("tournaments:list:");
@@ -563,6 +598,65 @@ export const appRouter = router({
         await addTeamAchievement({ teamId: input.winnerId, title: `Campeón: ${t.name}`, tournamentId: input.tournamentId });
         // Resolve bets
         await resolveBets(input.tournamentId, input.winnerId);
+        // ── Distribuir premios en RLC Coins si el torneo tiene prizeAmount ──
+        try {
+          const tAny = t as any;
+          const prizeAmount = tAny.prizeAmount ?? 0;
+          if (prizeAmount > 0) {
+            const { addRlcTransaction } = await import("./db");
+            const db2 = await getDb();
+            if (db2) {
+              const { teams: teamsTable2 } = await import("../drizzle/schema");
+              const { eq: eq2 } = await import("drizzle-orm");
+              const [winnerTeamRow] = await db2.select({ captainId: teamsTable2.captainId, name: teamsTable2.name })
+                .from(teamsTable2).where(eq2(teamsTable2.id, input.winnerId)).limit(1);
+              if (winnerTeamRow?.captainId) {
+                await addRlcTransaction({
+                  userId: winnerTeamRow.captainId,
+                  type: "reward",
+                  amount: prizeAmount,
+                  description: `Premio por ganar el torneo "${t.name}"`,
+                  referenceId: input.tournamentId,
+                });
+                console.log(`[declareWinner] Distributed ${prizeAmount} RLC to captain ${winnerTeamRow.captainId} (team: ${winnerTeamRow.name})`);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("[declareWinner] Failed to distribute prize coins:", e);
+        }
+        // ── Notify all participants about tournament completion ──
+        try {
+          const { createNotification } = await import("./notifications");
+          const db = await getDb();
+          if (db) {
+            const { teams: teamsTable } = await import("../drizzle/schema");
+            const { inArray } = await import("drizzle-orm");
+            const teamIds = registrations.map((r) => r.teamId).filter(Boolean);
+            if (teamIds.length > 0) {
+              const teamRows = await db.select({ id: teamsTable.id, captainId: teamsTable.captainId, name: teamsTable.name })
+                .from(teamsTable).where(inArray(teamsTable.id, teamIds));
+              const winnerTeam = teamRows.find((tr) => tr.id === input.winnerId);
+              for (const team of teamRows) {
+                if (!team.captainId) continue;
+                const isWinner = team.id === input.winnerId;
+                await createNotification({
+                  userId: team.captainId,
+                  type: "general",
+                  title: isWinner ? `¡Felicidades, campeón!` : `Torneo finalizado`,
+                  message: isWinner
+                    ? `¡Tu equipo "${team.name}" ha ganado el torneo "${t.name}"!${(t as any).prizeAmount ? ` Se han acreditado ${(t as any).prizeAmount} RLC Coins a tu cuenta.` : ""} ¡Enhorabuena!`
+                    : `El torneo "${t.name}" ha finalizado. El campeón es "${winnerTeam?.name ?? 'Desconocido'}".`,
+                  link: `/tournaments/${input.tournamentId}`,
+                  referenceId: input.tournamentId,
+                  referenceType: "tournament",
+                });
+              }
+            }
+          }
+        } catch (e) {
+          console.error("[declareWinner] Failed to send notifications:", e);
+        }
         return { success: true };
       }),
 
@@ -983,12 +1077,23 @@ export const appRouter = router({
         tournamentId: z.number(),
         teamId: z.number(),
         teamMessage: z.string().optional(),
+        inviteCode: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
         if (t.status !== "registration_open") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Las inscripciones no están abiertas." });
+        }
+        // ── Validar código de invitación para torneos privados ──
+        const tAny2 = t as any;
+        if (!t.isPublic && tAny2.inviteCode) {
+          if (!input.inviteCode || input.inviteCode.trim().toUpperCase() !== tAny2.inviteCode.trim().toUpperCase()) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Este torneo es privado. Necesitas un código de invitación válido para inscribirte.",
+            });
+          }
         }
         const team = await getTeamById(input.teamId);
         if (!team) throw new TRPCError({ code: "NOT_FOUND", message: "Equipo no encontrado." });

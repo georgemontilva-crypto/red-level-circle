@@ -294,6 +294,8 @@ async function runCustomMigrations() {
     '  KEY `tfa_tournament_idx` (`tournamentId`),' +
     '  KEY `tfa_user_idx` (`userId`)' +
     ')',
+    // 0043: tournaments — invite code for private tournaments
+    'ALTER TABLE `tournaments` ADD COLUMN `inviteCode` VARCHAR(32) NULL',
   ];
   for (const sql of customMigrations) {
     try {
@@ -344,6 +346,69 @@ async function startServer() {
       createContext,
     })
   );
+  // ─── Exportación de torneos (CSV) ──────────────────────────────────────────────────────────────────────────────────────
+  app.get("/api/tournaments/:id/export", async (req, res) => {
+    try {
+      const { getDb } = await import("../db");
+      const { tournaments, tournamentRegistrations, tournamentMatches, teams } = await import("../../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return res.status(503).json({ error: "DB not available" });
+      const tournamentId = parseInt(req.params.id);
+      if (isNaN(tournamentId)) return res.status(400).json({ error: "Invalid tournament id" });
+      const [tournament] = await db.select().from(tournaments).where(eq(tournaments.id, tournamentId)).limit(1);
+      if (!tournament) return res.status(404).json({ error: "Tournament not found" });
+      const format = (req.query.format as string) || "csv";
+      // Fetch registrations with team names
+      const regs = await db
+        .select({
+          teamId: tournamentRegistrations.teamId,
+          status: tournamentRegistrations.status,
+          registeredAt: tournamentRegistrations.registeredAt,
+          teamName: teams.name,
+          teamTag: teams.tag,
+        })
+        .from(tournamentRegistrations)
+        .leftJoin(teams, eq(teams.id, tournamentRegistrations.teamId))
+        .where(eq(tournamentRegistrations.tournamentId, tournamentId));
+      // Fetch matches
+      const matches = await db.select().from(tournamentMatches).where(eq(tournamentMatches.tournamentId, tournamentId));
+      if (format === "json") {
+        res.setHeader("Content-Type", "application/json");
+        res.setHeader("Content-Disposition", `attachment; filename="torneo-${tournamentId}.json"`);
+        return res.json({ tournament: { id: tournament.id, name: tournament.name, status: tournament.status, game: tournament.game }, registrations: regs, matches: matches.map(m => ({ id: m.id, round: m.round, matchNumber: m.matchNumber, team1Name: m.team1Name, team2Name: m.team2Name, team1Score: m.team1Score, team2Score: m.team2Score, winnerId: m.winnerId, completedAt: m.completedAt })) });
+      }
+      // CSV format
+      const lines: string[] = [];
+      lines.push(`TORNEO: ${tournament.name}`);
+      lines.push(`Juego: ${tournament.game}`);
+      lines.push(`Estado: ${tournament.status}`);
+      lines.push(`Exportado: ${new Date().toLocaleString("es-ES")}`);
+      lines.push("");
+      lines.push("=== PARTICIPANTES ===");
+      lines.push("Equipo,Tag,Estado,Fecha Inscripción");
+      for (const r of regs) {
+        lines.push(`"${r.teamName ?? ""}","${r.teamTag ?? ""}","${r.status}","${r.registeredAt ? new Date(r.registeredAt).toLocaleString("es-ES") : ""}"`);
+      }
+      lines.push("");
+      lines.push("=== RESULTADOS ===");
+      lines.push("Ronda,Match,Equipo 1,Equipo 2,Score 1,Score 2,Ganador");
+      for (const m of matches) {
+        if (m.winnerId) {
+          const winner = m.winnerId === m.team1Id ? m.team1Name : m.team2Name;
+          lines.push(`${m.round ?? ""},${m.matchNumber ?? ""},"${m.team1Name ?? "TBD"}","${m.team2Name ?? "TBD"}",${m.team1Score ?? ""},${m.team2Score ?? ""},"${winner ?? ""}"`);
+        }
+      }
+      const csv = lines.join("\n");
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
+      res.setHeader("Content-Disposition", `attachment; filename="torneo-${tournamentId}.csv"`);
+      return res.send("\uFEFF" + csv); // BOM for Excel UTF-8
+    } catch (err) {
+      console.error("[Export] Error:", err);
+      return res.status(500).json({ error: "Export failed" });
+    }
+  });
+
   // Stream chat WebSocket server
   setupStreamChatWS(server);
 
