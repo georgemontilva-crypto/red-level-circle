@@ -688,7 +688,7 @@ export default function CreateTournament() {
 
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
-                  TIPO DE BRACKET <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
+                  ESTRUCTURA DEL TORNEO <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
                 </label>
                 <div className="space-y-3">
                   {BRACKET_TYPES.map((bt) => (
@@ -748,9 +748,9 @@ export default function CreateTournament() {
               {/* Formato de serie por defecto */}
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
-                  FORMATO DE SERIE <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
+                  PARTIDAS POR ENFRENTAMIENTO (BO) <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
                 </label>
-                <p className="text-xs text-zinc-500 mb-3">Define cuántos mapas se juegan por enfrentamiento. Se aplica a todos los matches del torneo (puedes cambiarlo por match individualmente).</p>
+                <p className="text-xs text-zinc-500 mb-3">Cuántas partidas se juegan en cada cruce. Gana quien primero alcance el número de victorias requerido. Se aplica a todos los matches (puedes cambiarlo por match individualmente).</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SERIES_FORMATS.map((sf) => (
                     <button
