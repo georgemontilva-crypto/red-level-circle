@@ -60,6 +60,9 @@ interface FormData {
   maxPlayersPerTeam: number;
   prizeDescription: string;
   prizeAmount: number;
+  prizeFirst: string;
+  prizeSecond: string;
+  prizeThird: string;
   registrationStart: string;
   registrationEnd: string;
   startDate: string;
@@ -92,6 +95,9 @@ const defaultForm: FormData = {
   maxPlayersPerTeam: 5,
   prizeDescription: "",
   prizeAmount: 0,
+  prizeFirst: "",
+  prizeSecond: "",
+  prizeThird: "",
   registrationStart: "",
   registrationEnd: "",
   startDate: "",
@@ -275,6 +281,9 @@ export default function CreateTournament() {
       maxPlayersPerTeam: form.maxPlayersPerTeam,
       prizeDescription: form.prizeDescription || undefined,
       prizeAmount: form.prizeAmount,
+      prizeFirst: form.prizeFirst || undefined,
+      prizeSecond: form.prizeSecond || undefined,
+      prizeThird: form.prizeThird || undefined,
       registrationStart: form.registrationStart ? new Date(form.registrationStart).getTime() : undefined,
       registrationEnd: form.registrationEnd ? new Date(form.registrationEnd).getTime() : undefined,
       startDate: form.startDate ? new Date(form.startDate).getTime() : undefined,
@@ -937,6 +946,26 @@ export default function CreateTournament() {
                     placeholder="Ej: Periféricos gaming, tarjetas de regalo, efectivo, etc."
                   />
                   <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                    <NeonInput
+                      label="🥇 1ER LUGAR"
+                      value={form.prizeFirst}
+                      onChange={set("prizeFirst")}
+                      placeholder="Ej: $100 USD"
+                    />
+                    <NeonInput
+                      label="🥈 2DO LUGAR"
+                      value={form.prizeSecond}
+                      onChange={set("prizeSecond")}
+                      placeholder="Ej: $50 USD"
+                    />
+                    <NeonInput
+                      label="🥉 3ER LUGAR"
+                      value={form.prizeThird}
+                      onChange={set("prizeThird")}
+                      placeholder="Ej: $25 USD"
+                    />
+                  </div>
                 </div>
               </div>
 

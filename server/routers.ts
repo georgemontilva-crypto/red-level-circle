@@ -379,6 +379,19 @@ export const appRouter = router({
         maxFreeAgents: z.number().int().min(0).max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // ── Validación de coherencia de fechas ──
+        if (input.registrationStart && input.registrationEnd && input.registrationStart >= input.registrationEnd) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La fecha de inicio de inscripciones debe ser anterior al cierre." });
+        }
+        if (input.registrationEnd && input.startDate && input.registrationEnd > input.startDate) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El cierre de inscripciones debe ser anterior o igual al inicio del torneo." });
+        }
+        if (input.startDate && input.endDate && input.startDate >= input.endDate) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "La fecha de inicio del torneo debe ser anterior a la fecha de fin." });
+        }
+        if (input.checkInStart && input.checkInEnd && input.checkInStart >= input.checkInEnd) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El inicio del check-in debe ser anterior al fin del check-in." });
+        }
         const id = await createTournament({
           ...input,
           creatorId: ctx.user.id,
@@ -986,7 +999,68 @@ export const appRouter = router({
         if (members.length < t.minPlayersPerTeam) {
           throw new TRPCError({ code: "BAD_REQUEST", message: `El equipo necesita al menos ${t.minPlayersPerTeam} jugador(es).` });
         }
-         const id = await createRegistration(input);
+
+        // ── Fix: Validar que no exista ya una inscripción activa del mismo equipo ──
+        const existingRegs = await getRegistrationsByTournament(input.tournamentId);
+        const alreadyRegistered = existingRegs.find(
+          (r) => r.teamId === input.teamId && (r.status === "Pendiente" || r.status === "Aprobado")
+        );
+        if (alreadyRegistered) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: alreadyRegistered.status === "Aprobado"
+              ? "Este equipo ya está inscrito en el torneo."
+              : "Este equipo ya tiene una solicitud de inscripción pendiente.",
+          });
+        }
+
+        // ── Fix: Validar cupo disponible (aprobados + pendientes vs maxTeams) ──
+        const tAny = t as any;
+        if (tAny.maxTeams) {
+          const approvedCount = existingRegs.filter((r) => r.status === "Aprobado").length;
+          if (approvedCount >= tAny.maxTeams) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "El torneo ya está lleno." });
+          }
+        }
+
+        // ── Fix: Validar cuenta Riot si el torneo lo requiere ──
+        if ((t as any).requireRiotAccount) {
+          const db = await getDb();
+          if (db) {
+            // Verificar que el capitán tenga cuenta Riot vinculada
+            const [captainData] = await db
+              .select({ riotPuuid: users.riotPuuid, riotRegion: users.riotRegion })
+              .from(users)
+              .where(eq(users.id, ctx.user.id))
+              .limit(1);
+            if (!captainData?.riotPuuid) {
+              throw new TRPCError({
+                code: "BAD_REQUEST",
+                message: "Este torneo requiere una cuenta de Riot vinculada. Ve a tu perfil y vincula tu cuenta antes de inscribirte.",
+              });
+            }
+            // Verificar región si el torneo tiene región configurada
+            const tournamentRegion = (t as any).region as string | null;
+            if (tournamentRegion && captainData.riotRegion) {
+              const REGION_MAP: Record<string, string[]> = {
+                "Latinoamérica Norte": ["la1", "LAN"],
+                "Latinoamérica Sur": ["la2", "LAS"],
+                "North America": ["na1", "NA"],
+                "Brazil": ["br1", "BR"],
+                "Europe": ["euw1", "EUW", "eun1", "EUNE"],
+              };
+              const allowedRegions = REGION_MAP[tournamentRegion];
+              if (allowedRegions && !allowedRegions.includes(captainData.riotRegion)) {
+                throw new TRPCError({
+                  code: "BAD_REQUEST",
+                  message: `Este torneo es para la región ${tournamentRegion}. Tu cuenta de Riot está registrada en la región ${captainData.riotRegion}.`,
+                });
+              }
+            }
+          }
+        }
+
+        const id = await createRegistration(input);
         // Notify tournament organizer (in-app) and platform owner
         try {
           const { createNotification } = await import("./notifications");

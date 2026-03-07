@@ -182,7 +182,7 @@ function ParticipantCard({
                 color: "oklch(0.65 0.22 25)",
               }}
             >
-              CAPTAIN
+              CAPITÁN
             </span>
             <span className="text-xs text-muted-foreground ml-1">{team.captainName}</span>
           </div>
@@ -1117,7 +1117,7 @@ export default function TournamentDetail() {
                     color: "oklch(0.65 0.22 25)",
                   }}
                 >
-                  Registered
+                  Inscritos
                 </span>
                 {checkins && checkins.length > 0 && (
                   <span
@@ -1128,12 +1128,12 @@ export default function TournamentDetail() {
                       color: "oklch(0.65 0.18 145)",
                     }}
                   >
-                    Checked In ({checkins.length})
+                    Con Check-in ({checkins.length})
                   </span>
                 )}
               </div>
               <div className="ml-auto text-sm text-muted-foreground font-mono">
-                {registeredTeams?.length ?? 0} TEAMS
+                {registeredTeams?.length ?? 0} EQUIPOS
               </div>
             </div>
 
@@ -1387,10 +1387,32 @@ export default function TournamentDetail() {
             <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-2">
               INSCRIBIR EQUIPO
             </h2>
-            <p className="text-muted-foreground text-sm mb-6">
+            <p className="text-muted-foreground text-sm mb-4">
               Selecciona el equipo que deseas inscribir en{" "}
               <span className="text-foreground font-semibold">{tournament.name}</span>
             </p>
+            {/* Aviso de cuenta Riot requerida */}
+            {(tAny.requireRiotAccount) && (
+              <div
+                className="flex items-start gap-2 rounded-lg p-3 mb-4"
+                style={{ background: "oklch(0.65 0.18 80 / 0.08)", border: "1px solid oklch(0.65 0.18 80 / 0.3)" }}
+              >
+                <Info size={14} className="mt-0.5 flex-shrink-0" style={{ color: "oklch(0.65 0.18 80)" }} />
+                <p className="text-xs" style={{ color: "oklch(0.65 0.18 80)" }}>
+                  Este torneo requiere una <strong>cuenta de Riot vinculada</strong>. Si no la tienes, ve a tu perfil y vincúlala antes de inscribirte.
+                  {tAny.region && <span> Región requerida: <strong>{tAny.region}</strong>.</span>}
+                </p>
+              </div>
+            )}
+            {/* Cupo disponible */}
+            {tAny.maxTeams && (
+              <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                <span>Cupo disponible</span>
+                <span className="font-display font-bold" style={{ color: (registeredTeams?.length ?? 0) >= tAny.maxTeams ? "oklch(0.65 0.22 25)" : "oklch(0.65 0.18 145)" }}>
+                  {registeredTeams?.length ?? 0} / {tAny.maxTeams} equipos aprobados
+                </span>
+              </div>
+            )}
             {!myTeams || myTeams.length === 0 ? (
               <div className="text-center py-6">
                 <Shield size={32} className="mx-auto mb-3 text-muted-foreground" />
