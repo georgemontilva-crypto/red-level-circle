@@ -151,14 +151,17 @@ export default function StreamDetail() {
         )}
       </div>
 
-      {/* CHAT: flujo normal, padding-top = altura del video + navbar */}
+      {/* CHAT: fixed desde debajo del video hasta el fondo.
+          Al abrir el teclado, el navegador reduce el viewport y el chat
+          se comprime — el input sube con el teclado y los mensajes del
+          historial quedan parcialmente detrás del video (z-index menor). */}
       <div
-        className="lg:hidden bg-[#0d0d0d]"
+        className="lg:hidden fixed z-30 bg-[#0d0d0d]"
         style={{
-          marginTop: `calc(env(safe-area-inset-top, 0px) + 56px + ${videoH}px)`,
-          height: `calc(100dvh - env(safe-area-inset-top, 0px) - 56px - ${videoH}px)`,
-          minHeight: "200px",
-          overflow: "hidden",
+          top: `calc(env(safe-area-inset-top, 0px) + 56px + ${videoH}px)`,
+          left: 0,
+          right: 0,
+          bottom: 0,
         }}
       >
         <RLCChat streamId={streamId} currentUser={currentUser} />
