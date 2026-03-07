@@ -32,6 +32,66 @@ import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 
+// ─── Roles por juego ────────────────────────────────────────────────────────
+const GAME_ROLES: Record<string, { value: string; label: string }[]> = {
+  "Valorant": [
+    { value: "Duelista", label: "Duelista" },
+    { value: "Iniciador", label: "Iniciador" },
+    { value: "Centinela", label: "Centinela" },
+    { value: "Controlador", label: "Controlador" },
+    { value: "Flex", label: "Flex" },
+    { value: "IGL", label: "IGL (In-Game Leader)" },
+  ],
+  "League of Legends": [
+    { value: "Top", label: "Top" },
+    { value: "Jungle", label: "Jungle" },
+    { value: "Mid", label: "Mid" },
+    { value: "ADC", label: "ADC" },
+    { value: "Support", label: "Support" },
+    { value: "Fill", label: "Fill" },
+  ],
+  "CS2": [
+    { value: "Rifler", label: "Rifler" },
+    { value: "AWPer", label: "AWPer" },
+    { value: "Entry Fragger", label: "Entry Fragger" },
+    { value: "IGL", label: "IGL (In-Game Leader)" },
+    { value: "Support", label: "Support" },
+    { value: "Lurker", label: "Lurker" },
+  ],
+  "Overwatch 2": [
+    { value: "Tank", label: "Tank" },
+    { value: "DPS", label: "DPS" },
+    { value: "Support", label: "Support" },
+    { value: "Flex", label: "Flex" },
+  ],
+  "Rocket League": [
+    { value: "Striker", label: "Striker" },
+    { value: "Midfielder", label: "Midfielder" },
+    { value: "Goalkeeper", label: "Goalkeeper" },
+    { value: "Flex", label: "Flex" },
+  ],
+  "Dota 2": [
+    { value: "Carry", label: "Carry" },
+    { value: "Mid", label: "Mid" },
+    { value: "Offlane", label: "Offlane" },
+    { value: "Soft Support", label: "Soft Support (4)" },
+    { value: "Hard Support", label: "Hard Support (5)" },
+  ],
+  "Apex Legends": [
+    { value: "Fragger", label: "Fragger" },
+    { value: "Support", label: "Support" },
+    { value: "Recon", label: "Recon" },
+    { value: "IGL", label: "IGL" },
+  ],
+};
+
+const DEFAULT_ROLES = [
+  { value: "Carry", label: "Carry" },
+  { value: "Support", label: "Support" },
+  { value: "Flex", label: "Flex" },
+  { value: "IGL", label: "IGL" },
+];
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 const BRACKET_LABELS: Record<string, string> = {
   single_elimination: "Eliminación Simple",
@@ -1634,13 +1694,13 @@ export default function TournamentDetail() {
       {showFreeAgentModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "oklch(0 0 0 / 0.8)" }}
+          style={{ background: "rgba(0,0,0,0.85)" }}
           onClick={() => setShowFreeAgentModal(false)}
         >
           <div
             className="w-full max-w-md rounded-2xl p-6"
             style={{
-              background: "var(--bg-card)",
+              background: "#16191f",
               border: "1px solid oklch(0.55 0.18 220 / 0.4)",
               boxShadow: "0 0 40px oklch(0.55 0.18 220 / 0.15)",
             }}
@@ -1661,18 +1721,15 @@ export default function TournamentDetail() {
                   onChange={(e) => setFreeAgentRole(e.target.value)}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                   style={{
-                    background: "oklch(0.12 0.005 0)",
+                    background: "#0e1015",
                     border: "1px solid oklch(0.25 0.01 0)",
                     color: "var(--text-primary)",
                   }}
                 >
                   <option value="">Seleccionar rol...</option>
-                  <option value="Top">Top</option>
-                  <option value="Jungle">Jungle</option>
-                  <option value="Mid">Mid</option>
-                  <option value="ADC">ADC</option>
-                  <option value="Support">Support</option>
-                  <option value="Fill">Fill</option>
+                  {(GAME_ROLES[tournament.game ?? ""] ?? DEFAULT_ROLES).map((r) => (
+                    <option key={r.value} value={r.value}>{r.label}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1685,7 +1742,7 @@ export default function TournamentDetail() {
                   maxLength={500}
                   className="w-full rounded-lg px-3 py-2 text-sm font-mono resize-none outline-none"
                   style={{
-                    background: "oklch(0.12 0.005 0)",
+                    background: "#0e1015",
                     border: "1px solid oklch(0.25 0.01 0)",
                     color: "var(--text-primary)",
                   }}
