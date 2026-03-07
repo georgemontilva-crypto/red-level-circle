@@ -128,7 +128,7 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
               </span>
             )}
             {region && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)" }}>
                 🌎 {region}
               </span>
             )}
@@ -170,7 +170,7 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
                     { value: rankLabel ?? "Sin clasificar", label: "RANGO SOLO", color: rankLabel ? tierColor.text : "rgba(255,255,255,0.3)" },
                     { value: winRate !== null ? `${winRate}%` : "—", label: "WIN RATE", color: winRateColor },
                     { value: total > 0 ? total : "—", label: "PARTIDAS", color: "#e0e0e0" },
-                    { value: "—", label: "KDA PROM.", color: "#5dade2" },
+                    { value: "—", label: "KDA PROM.", color: "rgba(255,255,255,0.4)" },
                   ].map((s, i) => (
                     <div key={i} style={{ borderRadius: "8px", padding: "10px 8px", textAlign: "center", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}>
                       <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "16px", fontWeight: 700, color: s.color, lineHeight: 1 }}>{s.value}</div>
@@ -442,7 +442,7 @@ function PlayerCardCompact({
             </span>
           )}
           {region && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", padding: "3px 8px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", padding: "3px 8px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)" }}>
               🌎 {region}
             </span>
           )}
@@ -531,7 +531,7 @@ function TeamOverview({ team, rankPos, tournamentHistory }: { team: any; rankPos
           { icon: <Trophy size={20} style={{ color: "#FFD700", opacity: 0.8 }} />, value: tournamentHistory.length, label: "TORNEOS JUGADOS", color: "#FFD700" },
           { icon: <Award size={20} style={{ color: "#c0392b", opacity: 0.8 }} />, value: wonTournaments.length, label: "TÍTULOS RLC", color: "#c0392b" },
           { icon: <Percent size={20} style={{ color: winRateColor, opacity: 0.8 }} />, value: teamWinRate !== null ? `${teamWinRate}%` : "—", label: "WIN RATE EQUIPO", color: winRateColor },
-          { icon: <Users size={20} style={{ color: "#5dade2", opacity: 0.8 }} />, value: members.length, label: "JUGADORES", color: "#5dade2" },
+          { icon: <Users size={20} style={{ color: "rgba(255,255,255,0.5)", opacity: 0.8 }} />, value: members.length, label: "JUGADORES", color: "rgba(255,255,255,0.7)" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#13161b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "18px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(192,57,43,0.5), transparent)" }} />
@@ -761,7 +761,7 @@ export default function TeamProfile() {
                 <Users size={11} /> {members.length} jugadores
               </span>
               {team.country && (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", fontFamily: "monospace", fontSize: "11px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", fontFamily: "monospace", fontSize: "11px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.55)" }}>
                   <Globe size={11} /> {team.country}
                 </span>
               )}
