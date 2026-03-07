@@ -174,7 +174,7 @@ import { validateImageMime } from "./mimeValidation";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, or, desc, isNotNull } from "drizzle-orm";
-import { sectionBanners, tournaments, teams, users, streams, tournamentMatches, tournamentAnnouncements, tournamentCheckins, tournamentFreeAgents } from "../drizzle/schema";
+import { sectionBanners, tournaments, teams, users, streams, tournamentMatches, tournamentAnnouncements, tournamentCheckins, tournamentFreeAgents, matchChatMessages, matchDisputes, matchResultConfirmations, tournamentActivityLog, matchCheckins } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification, notifyRlcReceived } from "./notifications";
 import { eventBus } from "./eventBus";
 import {
@@ -5018,6 +5018,331 @@ Genera el reporte de precio RLC para este producto.`;
           competitiveRegion: competitiveRegion ?? null,
           elo: elo ?? null,
         };
+      }),
+  }),
+
+  // ─── Match Page ──────────────────────────────────────────────────────────────
+  matchPage: router({
+    // Obtener datos completos de un match para la Match Page
+    get: publicProcedure
+      .input(z.object({ matchId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Match no encontrado" });
+        const tournament = await getTournamentById(match.tournamentId);
+        // Obtener equipos
+        let team1 = null, team2 = null;
+        if (match.team1Id) team1 = await getTeamById(match.team1Id);
+        if (match.team2Id) team2 = await getTeamById(match.team2Id);
+        // Obtener check-ins del match
+        const checkins = await db.select().from(matchCheckins).where(eq(matchCheckins.matchId, input.matchId));
+        // Obtener confirmaciones de resultado
+        const confirmations = await db.select().from(matchResultConfirmations).where(eq(matchResultConfirmations.matchId, input.matchId));
+        // Obtener disputas
+        const disputes = await db.select().from(matchDisputes).where(eq(matchDisputes.matchId, input.matchId));
+        // Parsear notes
+        let notes: any = {};
+        try { notes = match.notes ? JSON.parse(match.notes as string) : {}; } catch {}
+        return { match, tournament, team1, team2, checkins, confirmations, disputes, notes };
+      }),
+
+    // Chat del match
+    getChat: publicProcedure
+      .input(z.object({ matchId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        return db.select().from(matchChatMessages)
+          .where(eq(matchChatMessages.matchId, input.matchId))
+          .orderBy(matchChatMessages.createdAt);
+      }),
+
+    sendMessage: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        message: z.string().min(1).max(500),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        // Verificar que el match existe
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        // Obtener datos del usuario
+        const user = await getUserById(ctx.user.id);
+        // Obtener teamId del usuario en este match
+        let teamId: number | null = null;
+        if (match.team1Id) {
+          const members = await getTeamMembers(match.team1Id);
+          if (members.some((m: any) => m.userId === ctx.user.id)) teamId = match.team1Id;
+        }
+        if (!teamId && match.team2Id) {
+          const members = await getTeamMembers(match.team2Id);
+          if (members.some((m: any) => m.userId === ctx.user.id)) teamId = match.team2Id;
+        }
+        await db.insert(matchChatMessages).values({
+          matchId: input.matchId,
+          userId: ctx.user.id,
+          userName: user?.nickname || user?.name || "Usuario",
+          userAvatar: user?.avatar || null,
+          teamId,
+          message: input.message,
+          isSystem: false,
+        });
+        return { success: true };
+      }),
+
+    // Check-in del equipo en el match
+    checkIn: protectedProcedure
+      .input(z.object({ matchId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        // Determinar qué equipo es el usuario
+        let teamId: number | null = null;
+        if (match.team1Id) {
+          const members = await getTeamMembers(match.team1Id);
+          if (members.some((m: any) => m.userId === ctx.user.id)) teamId = match.team1Id;
+        }
+        if (!teamId && match.team2Id) {
+          const members = await getTeamMembers(match.team2Id);
+          if (members.some((m: any) => m.userId === ctx.user.id)) teamId = match.team2Id;
+        }
+        if (!teamId) throw new TRPCError({ code: "FORBIDDEN", message: "No eres parte de este match" });
+        // Verificar si ya hizo check-in
+        const existing = await db.select().from(matchCheckins)
+          .where(and(eq(matchCheckins.matchId, input.matchId), eq(matchCheckins.teamId, teamId)));
+        if (existing.length > 0) return { success: true, alreadyCheckedIn: true };
+        await db.insert(matchCheckins).values({ matchId: input.matchId, teamId, userId: ctx.user.id });
+        // Mensaje de sistema en el chat
+        const team = await getTeamById(teamId);
+        await db.insert(matchChatMessages).values({
+          matchId: input.matchId, userId: ctx.user.id,
+          userName: "Sistema", teamId, message: `✅ ${team?.name || "Equipo"} ha confirmado su presencia.`, isSystem: true,
+        });
+        // Log de actividad
+        await db.insert(tournamentActivityLog).values({
+          tournamentId: match.tournamentId, eventType: "match_checkin",
+          description: `${team?.name || "Equipo"} hizo check-in en el match`,
+          userId: ctx.user.id, teamId, matchId: input.matchId,
+        });
+        return { success: true, alreadyCheckedIn: false };
+      }),
+
+    // Reportar resultado (por el capitán del equipo ganador)
+    reportResult: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        winnerTeamId: z.number(),
+        score: z.string().optional(), // ej: "2-1"
+        screenshotUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        if (match.status === "completed") throw new TRPCError({ code: "BAD_REQUEST", message: "Este match ya está completado" });
+        // Verificar que el usuario es del equipo ganador
+        const members = await getTeamMembers(input.winnerTeamId);
+        if (!members.some((m: any) => m.userId === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "No eres miembro del equipo ganador" });
+        }
+        // Guardar la confirmación
+        await db.insert(matchResultConfirmations).values({
+          matchId: input.matchId, teamId: input.winnerTeamId,
+          userId: ctx.user.id, action_mrc: "confirmed",
+        });
+        // Actualizar el match con el resultado pendiente de confirmación
+        let notes: any = {};
+        try { notes = match.notes ? JSON.parse(match.notes as string) : {}; } catch {}
+        notes.pendingWinner = input.winnerTeamId;
+        notes.pendingScore = input.score || null;
+        notes.pendingScreenshot = input.screenshotUrl || null;
+        await db.update(tournamentMatches).set({ notes: JSON.stringify(notes) }).where(eq(tournamentMatches.id, input.matchId));
+        // Notificar al equipo rival
+        const rivalTeamId = match.team1Id === input.winnerTeamId ? match.team2Id : match.team1Id;
+        if (rivalTeamId) {
+          const rivalMembers = await getTeamMembers(rivalTeamId);
+          const winnerTeam = await getTeamById(input.winnerTeamId);
+          for (const m of rivalMembers) {
+            await createNotification(m.userId, "tournament", `${winnerTeam?.name} reportó que ganó el match. Confirma o disputa el resultado.`, `/match/${input.matchId}`);
+          }
+        }
+        // Log de actividad
+        await db.insert(tournamentActivityLog).values({
+          tournamentId: match.tournamentId, eventType: "result_reported",
+          description: `Resultado reportado para el match #${input.matchId}`,
+          userId: ctx.user.id, teamId: input.winnerTeamId, matchId: input.matchId,
+        });
+        return { success: true };
+      }),
+
+    // Confirmar resultado (por el equipo perdedor)
+    confirmResult: protectedProcedure
+      .input(z.object({ matchId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        let notes: any = {};
+        try { notes = match.notes ? JSON.parse(match.notes as string) : {}; } catch {}
+        if (!notes.pendingWinner) throw new TRPCError({ code: "BAD_REQUEST", message: "No hay resultado pendiente de confirmación" });
+        // Verificar que el usuario es del equipo perdedor
+        const loserTeamId = match.team1Id === notes.pendingWinner ? match.team2Id : match.team1Id;
+        if (!loserTeamId) throw new TRPCError({ code: "BAD_REQUEST" });
+        const members = await getTeamMembers(loserTeamId);
+        if (!members.some((m: any) => m.userId === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "No eres miembro del equipo perdedor" });
+        }
+        // Aplicar el resultado
+        await updateMatchResult(input.matchId, notes.pendingWinner);
+        await advanceRoundIfComplete(match.tournamentId, input.matchId);
+        // Log de actividad
+        await db.insert(tournamentActivityLog).values({
+          tournamentId: match.tournamentId, eventType: "result_confirmed",
+          description: `Resultado confirmado para el match #${input.matchId}`,
+          userId: ctx.user.id, teamId: loserTeamId, matchId: input.matchId,
+        });
+        return { success: true };
+      }),
+
+    // Disputar resultado
+    disputeResult: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        reason: z.string().min(10).max(1000),
+        screenshotUrl: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [match] = await db.select().from(tournamentMatches).where(eq(tournamentMatches.id, input.matchId));
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        // Verificar que el usuario es parte del match
+        let teamId: number | null = null;
+        if (match.team1Id) { const m = await getTeamMembers(match.team1Id); if (m.some((x: any) => x.userId === ctx.user.id)) teamId = match.team1Id; }
+        if (!teamId && match.team2Id) { const m = await getTeamMembers(match.team2Id); if (m.some((x: any) => x.userId === ctx.user.id)) teamId = match.team2Id; }
+        if (!teamId) throw new TRPCError({ code: "FORBIDDEN", message: "No eres parte de este match" });
+        await db.insert(matchDisputes).values({
+          matchId: input.matchId, tournamentId: match.tournamentId,
+          reportedBy: ctx.user.id, teamId, reason: input.reason,
+          screenshotUrl: input.screenshotUrl || null, status_md: "open",
+        });
+        // Notificar al organizador del torneo
+        const tournament = await getTournamentById(match.tournamentId);
+        if (tournament?.organizerId) {
+          await createNotification(tournament.organizerId, "tournament",
+            `⚠️ Disputa abierta en el match #${input.matchId}. Requiere tu atención.`,
+            `/tournaments/${match.tournamentId}/manage`);
+        }
+        // Log de actividad
+        await db.insert(tournamentActivityLog).values({
+          tournamentId: match.tournamentId, eventType: "result_disputed",
+          description: `Disputa abierta en el match #${input.matchId}`,
+          userId: ctx.user.id, teamId, matchId: input.matchId,
+        });
+        return { success: true };
+      }),
+
+    // Resolver disputa (solo organizador/admin)
+    resolveDispute: protectedProcedure
+      .input(z.object({
+        disputeId: z.number(),
+        action: z.enum(["resolved", "dismissed"]),
+        winnerTeamId: z.number().optional(),
+        resolution: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [dispute] = await db.select().from(matchDisputes).where(eq(matchDisputes.id, input.disputeId));
+        if (!dispute) throw new TRPCError({ code: "NOT_FOUND" });
+        const tournament = await getTournamentById(dispute.tournamentId);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.organizerId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el organizador puede resolver disputas" });
+        }
+        await db.update(matchDisputes).set({
+          status_md: input.action, resolvedBy: ctx.user.id,
+          resolution: input.resolution || null, resolvedAt: new Date(),
+        }).where(eq(matchDisputes.id, input.disputeId));
+        // Si se resuelve con ganador, aplicar resultado
+        if (input.action === "resolved" && input.winnerTeamId) {
+          await updateMatchResult(dispute.matchId, input.winnerTeamId);
+          await advanceRoundIfComplete(dispute.tournamentId, dispute.matchId);
+        }
+        return { success: true };
+      }),
+
+    // Log de actividad del torneo
+    getActivityLog: publicProcedure
+      .input(z.object({ tournamentId: z.number(), limit: z.number().default(50) }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        return db.select().from(tournamentActivityLog)
+          .where(eq(tournamentActivityLog.tournamentId, input.tournamentId))
+          .orderBy(desc(tournamentActivityLog.createdAt))
+          .limit(input.limit);
+      }),
+
+    // Listar disputas abiertas (para el organizador)
+    listDisputes: protectedProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const tournament = await getTournamentById(input.tournamentId);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.organizerId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const db = await getDb();
+        return db.select().from(matchDisputes)
+          .where(and(eq(matchDisputes.tournamentId, input.tournamentId), eq(matchDisputes.status_md, "open")))
+          .orderBy(desc(matchDisputes.createdAt));
+      }),
+  }),
+
+  // ─── Tournament Utils ─────────────────────────────────────────────────────
+  tournamentUtils: router({
+    // Clonar torneo
+    clone: protectedProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const tournament = await getTournamentById(input.tournamentId);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.organizerId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el organizador puede clonar este torneo" });
+        }
+        const { id, createdAt, updatedAt, status, winnerTeamId, inviteCode, ...rest } = tournament as any;
+        const newTournament = await createTournament({
+          ...rest,
+          name: `${tournament.name} (Copia)`,
+          status: "pending_approval",
+          organizerId: ctx.user.id,
+        });
+        return { success: true, tournamentId: newTournament };
+      }),
+
+    // Auto-seed: sembrar automáticamente por ranking
+    autoSeed: protectedProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const tournament = await getTournamentById(input.tournamentId);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.organizerId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        // Obtener equipos inscritos y aprobados
+        const registrations = await getRegistrationsByTournament(input.tournamentId);
+        const approved = registrations.filter((r: any) => r.status === "approved");
+        // Obtener ranking de cada equipo
+        const teamsWithRanking = await Promise.all(approved.map(async (r: any) => {
+          const ranking = await getTeamRanking(r.teamId);
+          return { teamId: r.teamId, points: (ranking as any)?.points ?? 0 };
+        }));
+        // Ordenar por puntos descendente
+        teamsWithRanking.sort((a, b) => b.points - a.points);
+        const seededOrder = teamsWithRanking.map(t => t.teamId);
+        // Generar bracket con seeding
+        await generateBracket(input.tournamentId, seededOrder);
+        return { success: true, seededOrder };
       }),
   }),
 });

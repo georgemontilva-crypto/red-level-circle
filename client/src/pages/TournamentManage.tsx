@@ -801,6 +801,17 @@ export default function TournamentManage() {
                                     {fetchRiotStatsMutation.isPending ? "..." : "STATS RIOT"}
                                   </button>
                                 )}
+                                {match.team1Id && match.team2Id && (
+                                  <a
+                                    href={`/match/${match.id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200"
+                                    style={{ background: "oklch(0.45 0.18 260 / 0.15)", border: "1px solid oklch(0.45 0.18 260 / 0.3)", color: "oklch(0.65 0.18 260)" }}
+                                  >
+                                    VER MATCH
+                                  </a>
+                                )}
                               </div>
                             </div>
                             {/* Códigos de sala Riot */}

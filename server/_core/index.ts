@@ -296,6 +296,70 @@ async function runCustomMigrations() {
     ')',
     // 0043: tournaments — invite code for private tournaments
     'ALTER TABLE `tournaments` ADD COLUMN `inviteCode` VARCHAR(32) NULL',
+    // 0044: match chat messages
+    'CREATE TABLE IF NOT EXISTS `match_chat_messages` (' +
+    '  `id`          INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `matchId`     INT          NOT NULL,' +
+    '  `userId`      INT          NOT NULL,' +
+    '  `userName`    VARCHAR(128) NOT NULL,' +
+    '  `userAvatar`  TEXT         NULL,' +
+    '  `teamId`      INT          NULL,' +
+    '  `message`     TEXT         NOT NULL,' +
+    '  `isSystem`    TINYINT(1)   NOT NULL DEFAULT 0,' +
+    '  `createdAt`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `mcm_match_idx` (`matchId`)' +
+    ')',
+    // 0045: match disputes
+    'CREATE TABLE IF NOT EXISTS `match_disputes` (' +
+    '  `id`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `matchId`       INT          NOT NULL,' +
+    '  `tournamentId`  INT          NOT NULL,' +
+    '  `reportedBy`    INT          NOT NULL,' +
+    '  `teamId`        INT          NOT NULL,' +
+    '  `reason`        TEXT         NOT NULL,' +
+    '  `screenshotUrl` TEXT         NULL,' +
+    '  `status_md`     VARCHAR(16)  NOT NULL DEFAULT \'open\',' +
+    '  `resolvedBy`    INT          NULL,' +
+    '  `resolution`    TEXT         NULL,' +
+    '  `resolvedAt`    TIMESTAMP    NULL,' +
+    '  `createdAt`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `md_match_idx` (`matchId`),' +
+    '  KEY `md_tournament_idx` (`tournamentId`)' +
+    ')',
+    // 0046: match result confirmations
+    'CREATE TABLE IF NOT EXISTS `match_result_confirmations` (' +
+    '  `id`         INT         NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `matchId`    INT         NOT NULL,' +
+    '  `teamId`     INT         NOT NULL,' +
+    '  `userId`     INT         NOT NULL,' +
+    '  `action_mrc` VARCHAR(16) NOT NULL,' +
+    '  `createdAt`  TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `mrc_match_idx` (`matchId`)' +
+    ')',
+    // 0047: tournament activity log
+    'CREATE TABLE IF NOT EXISTS `tournament_activity_log` (' +
+    '  `id`           INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId` INT          NOT NULL,' +
+    '  `eventType`    VARCHAR(64)  NOT NULL,' +
+    '  `description`  TEXT         NOT NULL,' +
+    '  `userId`       INT          NULL,' +
+    '  `teamId`       INT          NULL,' +
+    '  `matchId`      INT          NULL,' +
+    '  `metadata`     JSON         NULL,' +
+    '  `createdAt`    TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `tal_tournament_idx` (`tournamentId`)' +
+    ')',
+    // 0048: match check-ins
+    'CREATE TABLE IF NOT EXISTS `match_checkins` (' +
+    '  `id`          INT       NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `matchId`     INT       NOT NULL,' +
+    '  `teamId`      INT       NOT NULL,' +
+    '  `userId`      INT       NOT NULL,' +
+    '  `checkedInAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `mci_match_idx` (`matchId`)' +
+    ')',
+    // 0049: tournaments — swiss and round_robin bracket types
+    "ALTER TABLE `tournaments` MODIFY COLUMN `bracketType` ENUM('single_elimination','double_elimination','groups','swiss','round_robin') NOT NULL",
   ];
   for (const sql of customMigrations) {
     try {

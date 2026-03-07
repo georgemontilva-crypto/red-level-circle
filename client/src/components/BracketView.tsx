@@ -393,6 +393,18 @@ function MatchCard({
         <div className="h-px mx-3" style={{ background: "var(--bg-hover)" }} />
         <TeamRow teamId={match.team2Id} teamName={match.team2Name} score={match.team2Score} />
       </div>
+      {/* Link a Match Page */}
+      {!isDemo && match.team1Id && match.team2Id && (
+        <a
+          href={`/match/${match.id}`}
+          onClick={e => e.stopPropagation()}
+          className="absolute bottom-1 right-2 text-xs opacity-0 hover:opacity-100 group-hover:opacity-60 transition-opacity"
+          style={{ fontSize: 8, color: "oklch(0.55 0.22 220)" }}
+          title="Ver página del match"
+        >
+          Ver match →
+        </a>
+      )}
     </div>
   );
 }

@@ -1060,3 +1060,82 @@ export const tournamentFreeAgents = mysqlTable("tournament_free_agents", {
 ]);
 export type TournamentFreeAgent = typeof tournamentFreeAgents.$inferSelect;
 export type InsertTournamentFreeAgent = typeof tournamentFreeAgents.$inferInsert;
+
+// ─── Match Chat ───────────────────────────────────────────────────────────────
+export const matchChatMessages = mysqlTable("match_chat_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull(),
+  userId: int("userId").notNull(),
+  userName: varchar("userName", { length: 128 }).notNull(),
+  userAvatar: text("userAvatar"),
+  teamId: int("teamId"),
+  message: text("message").notNull(),
+  isSystem: boolean("isSystem").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("mcm_match_idx").on(t.matchId),
+]);
+export type MatchChatMessage = typeof matchChatMessages.$inferSelect;
+export type InsertMatchChatMessage = typeof matchChatMessages.$inferInsert;
+
+// ─── Match Disputes ───────────────────────────────────────────────────────────
+export const matchDisputes = mysqlTable("match_disputes", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull(),
+  tournamentId: int("tournamentId").notNull(),
+  reportedBy: int("reportedBy").notNull(),
+  teamId: int("teamId").notNull(),
+  reason: text("reason").notNull(),
+  screenshotUrl: text("screenshotUrl"),
+  status: mysqlEnum("status_md", ["open", "resolved", "dismissed"]).default("open").notNull(),
+  resolvedBy: int("resolvedBy"),
+  resolution: text("resolution"),
+  resolvedAt: timestamp("resolvedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("md_match_idx").on(t.matchId),
+  index("md_tournament_idx").on(t.tournamentId),
+]);
+export type MatchDispute = typeof matchDisputes.$inferSelect;
+export type InsertMatchDispute = typeof matchDisputes.$inferInsert;
+
+// ─── Match Result Confirmations ───────────────────────────────────────────────
+export const matchResultConfirmations = mysqlTable("match_result_confirmations", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull(),
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  action: mysqlEnum("action_mrc", ["confirmed", "disputed"]).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("mrc_match_idx").on(t.matchId),
+]);
+export type MatchResultConfirmation = typeof matchResultConfirmations.$inferSelect;
+
+// ─── Tournament Activity Log ──────────────────────────────────────────────────
+export const tournamentActivityLog = mysqlTable("tournament_activity_log", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  eventType: varchar("eventType", { length: 64 }).notNull(),
+  description: text("description").notNull(),
+  userId: int("userId"),
+  teamId: int("teamId"),
+  matchId: int("matchId"),
+  metadata: json("metadata"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("tal_tournament_idx").on(t.tournamentId),
+]);
+export type TournamentActivityLog = typeof tournamentActivityLog.$inferSelect;
+
+// ─── Match Check-in ───────────────────────────────────────────────────────────
+export const matchCheckins = mysqlTable("match_checkins", {
+  id: int("id").autoincrement().primaryKey(),
+  matchId: int("matchId").notNull(),
+  teamId: int("teamId").notNull(),
+  userId: int("userId").notNull(),
+  checkedInAt: timestamp("checkedInAt").defaultNow().notNull(),
+}, (t) => [
+  index("mci_match_idx").on(t.matchId),
+]);
+export type MatchCheckin = typeof matchCheckins.$inferSelect;

@@ -266,14 +266,25 @@ function ResultRow({
             </span>
           )}
         </div>
-        {match.completedAt && (
-          <span className="text-xs text-muted-foreground font-mono">
-            {new Date(match.completedAt).toLocaleDateString("es-ES", {
-              day: "numeric",
-              month: "short",
-            })}
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {match.completedAt && (
+            <span className="text-xs text-muted-foreground font-mono">
+              {new Date(match.completedAt).toLocaleDateString("es-ES", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+          )}
+          {match.team1Id && match.team2Id && (
+            <a
+              href={`/match/${match.id}`}
+              className="text-xs px-2 py-0.5 rounded transition-colors"
+              style={{ background: "oklch(0.45 0.18 260 / 0.1)", color: "oklch(0.65 0.18 260)", border: "1px solid oklch(0.45 0.18 260 / 0.2)" }}
+            >
+              Ver match
+            </a>
+          )}
+        </div>
       </div>
       <div className="space-y-2">
         {[

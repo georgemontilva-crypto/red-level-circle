@@ -48,6 +48,7 @@ const Missions        = lazy(() => import("./pages/Missions"));
 const CreatorMissions = lazy(() => import("./pages/CreatorMissions"));
 const Store           = lazy(() => import("./pages/Store"));
 const MyGallery       = lazy(() => import("./pages/MyGallery"));
+const MatchPageLazy   = lazy(() => import("./pages/MatchPage"));
 
 // Legal pages (very rarely visited)
 const Terminos     = lazy(() => import("./pages/legal/terminos"));
@@ -134,6 +135,7 @@ function Router() {
               <Route path="/" component={Home} />
               <Route path="/tournaments" component={Tournaments} />
               <Route path="/tournaments/:id" component={TournamentDetail} />
+              <Route path="/match/:matchId" component={MatchPageLazy} />
               <Route path="/ranking" component={Ranking} />
               <Route path="/news" component={NewsListLazy} />
               <Route path="/news/:slug" component={NewsArticleLazy} />
