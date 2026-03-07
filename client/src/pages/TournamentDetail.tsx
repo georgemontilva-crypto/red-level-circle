@@ -537,7 +537,7 @@ export default function TournamentDetail() {
         className="relative"
         style={{
           background: tournament.banner
-            ? `linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.85) 100%), url(${tournament.banner}) center/cover no-repeat`
+            ? `linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.92) 100%), url(${tournament.banner}) center/cover no-repeat`
             : "linear-gradient(135deg, oklch(0.12 0.03 25) 0%, oklch(0.07 0.005 0) 100%)",
         }}
       >
@@ -568,12 +568,12 @@ export default function TournamentDetail() {
 
           {/* Info cards row (Battlefy-style) */}
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 mb-4">
-            <InfoCard label="Game" value={tournament.game ?? "League of Legends"} />
+            <InfoCard label="Juego" value={tournament.game ?? "League of Legends"} />
             <InfoCard
-              label="Date & Time"
+              label="Fecha y Hora"
               value={
                 tournament.startDate
-                  ? new Date(tournament.startDate).toLocaleDateString("en-US", {
+                  ? new Date(tournament.startDate).toLocaleDateString("es-ES", {
                       weekday: "long",
                       month: "long",
                       day: "numeric",
@@ -591,7 +591,7 @@ export default function TournamentDetail() {
               }
             />
             <InfoCard
-              label="Format"
+              label="Formato"
               value={BRACKET_LABELS[tournament.bracketType] ?? tournament.bracketType}
               sub={
                 tournament.minPlayersPerTeam === tournament.maxPlayersPerTeam
@@ -600,7 +600,7 @@ export default function TournamentDetail() {
               }
             />
             <InfoCard
-              label="Game Map & Type"
+              label="Mapa y Tipo"
               value={tAny.gameMap ?? "Summoners Rift"}
               sub={DRAFT_LABELS[tAny.draftType ?? "tournament_draft"]}
             />
@@ -612,7 +612,7 @@ export default function TournamentDetail() {
                 border: "1px solid oklch(0.18 0.01 0)",
               }}
             >
-              <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">Organizer</div>
+              <div className="text-xs text-muted-foreground font-mono uppercase tracking-widest mb-2">Organizador</div>
               {tournament.creatorId ? (
                 <Link href={`/profile/${tournament.creatorId}`} className="flex items-center gap-2 group">
                   <div
