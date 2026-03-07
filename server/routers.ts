@@ -1546,6 +1546,196 @@ export const appRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Error al obtener stats de Riot: ${err.message}` });
         }
       }),
+
+    // Genera un código de sala Riot (TOURNAMENT-STUB-V5) para un match
+    generateRoomCode: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        tournamentId: z.number(), // ID del torneo en nuestra BD
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // Verificar que el usuario es organizador del torneo
+        const [tournament] = await db
+          .select()
+          .from(tournaments)
+          .where(eq(tournaments.id, input.tournamentId))
+          .limit(1);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.organizerId !== ctx.userId && ctx.userRole !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el organizador puede generar códigos de sala" });
+        }
+
+        // Obtener el match
+        const [match] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, input.matchId))
+          .limit(1);
+        if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Partida no encontrada" });
+
+        try {
+          const { registerTournamentProvider, createRiotTournament, generateTournamentCodes } = await import("./riotApi.js");
+
+          // Obtener o crear el riotTournamentId del torneo
+          const existingTournamentNotes = (() => { try { return JSON.parse((tournament as any).notes ?? "{}"); } catch { return {}; } })();
+          let riotTournamentId: number = existingTournamentNotes.riotTournamentId;
+          let riotProviderId: number = existingTournamentNotes.riotProviderId;
+
+          if (!riotProviderId) {
+            const callbackUrl = process.env.APP_URL ?? "https://redlevelcircle.com";
+            riotProviderId = await registerTournamentProvider(callbackUrl, tournament.region ?? "LA1");
+          }
+
+          if (!riotTournamentId) {
+            riotTournamentId = await createRiotTournament(`RLC - ${tournament.name}`, riotProviderId);
+            // Guardar en el torneo
+            await db.update(tournaments)
+              .set({ notes: JSON.stringify({ ...existingTournamentNotes, riotTournamentId, riotProviderId }) } as any)
+              .where(eq(tournaments.id, input.tournamentId));
+          }
+
+          // Determinar el formato de la serie
+          const matchNotes = (() => { try { return JSON.parse(match.notes ?? "{}"); } catch { return {}; } })();
+          const seriesFormat: string = matchNotes.seriesFormat ?? "BO1";
+          const gamesCount = seriesFormat === "BO5" ? 5 : seriesFormat === "BO3" ? 3 : 1;
+
+          // Generar los códigos (uno por juego posible en la serie)
+          const codes = await generateTournamentCodes(riotTournamentId, gamesCount, {
+            mapType: "SUMMONERS_RIFT",
+            pickType: tournament.mapType === "blind_pick" ? "BLIND_PICK" : "TOURNAMENT_DRAFT",
+            spectatorType: "ALL",
+            teamSize: 5,
+            metadata: `match:${input.matchId}`,
+          });
+
+          // Guardar los códigos en el match
+          const updatedNotes = JSON.stringify({
+            ...matchNotes,
+            riotRoomCodes: codes,
+            riotRoomCodesGeneratedAt: new Date().toISOString(),
+          });
+          await db.update(tournamentMatches)
+            .set({ notes: updatedNotes })
+            .where(eq(tournamentMatches.id, input.matchId));
+
+          cache.del(CacheKey.bracket(input.tournamentId));
+          return { success: true, codes, seriesFormat };
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Error al generar código de sala: ${err.message}` });
+        }
+      }),
+
+    // Detecta automáticamente el resultado de un match buscando la última partida de los jugadores
+    autoDetectResult: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        hoursBack: z.number().default(3),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        const [match] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, input.matchId))
+          .limit(1);
+        if (!match) throw new TRPCError({ code: "NOT_FOUND" });
+        if (!match.team1Id || !match.team2Id) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El match no tiene ambos equipos asignados" });
+        }
+
+        try {
+          const { getLastMatchInWindow, getMatchById } = await import("./riotApi.js");
+          const { teamMembers: teamMembersTable } = await import("../drizzle/schema.js");
+
+          // Obtener PUUIDs de ambos equipos
+          const allMembers = await db
+            .select({ riotPuuid: users.riotPuuid, riotRegion: users.riotRegion, teamId: teamMembersTable.teamId })
+            .from(teamMembersTable)
+            .innerJoin(users, eq(teamMembersTable.userId, users.id))
+            .where(and(
+              sql`${teamMembersTable.teamId} IN (${match.team1Id}, ${match.team2Id})`,
+              sql`${users.riotPuuid} IS NOT NULL`
+            ))
+            .limit(10);
+
+          if (allMembers.length === 0) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Ningún jugador tiene cuenta Riot vinculada" });
+          }
+
+          const region = allMembers[0].riotRegion ?? "la1";
+          const captain = allMembers[0];
+
+          // Buscar la última partida del capitán en la ventana de tiempo
+          const riotMatchId = await getLastMatchInWindow(captain.riotPuuid!, region, input.hoursBack);
+          if (!riotMatchId) {
+            throw new TRPCError({ code: "NOT_FOUND", message: `No se encontraron partidas en las últimas ${input.hoursBack} horas` });
+          }
+
+          // Obtener detalles de la partida
+          const matchData = await getMatchById(riotMatchId, region);
+          const participants = matchData.info?.participants ?? [];
+
+          // Determinar qué equipo ganó comparando PUUIDs
+          const team1Puuids = new Set(allMembers.filter(m => m.teamId === match.team1Id).map(m => m.riotPuuid));
+          const team2Puuids = new Set(allMembers.filter(m => m.teamId === match.team2Id).map(m => m.riotPuuid));
+
+          const team1Participants = participants.filter((p: any) => team1Puuids.has(p.puuid));
+          const team2Participants = participants.filter((p: any) => team2Puuids.has(p.puuid));
+
+          if (team1Participants.length === 0 && team2Participants.length === 0) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "No se encontraron jugadores de este match en la partida de Riot" });
+          }
+
+          // El ganador es el equipo con más jugadores en el lado ganador
+          const team1Wins = team1Participants.filter((p: any) => p.win).length;
+          const team2Wins = team2Participants.filter((p: any) => p.win).length;
+          const winnerId = team1Wins > team2Wins ? match.team1Id : match.team2Id;
+          const loserId = winnerId === match.team1Id ? match.team2Id : match.team1Id;
+
+          // Aplicar el resultado
+          await db.update(tournamentMatches)
+            .set({ winnerId, status: "completed" })
+            .where(eq(tournamentMatches.id, input.matchId));
+
+          // Guardar stats en notes
+          const existingNotes = (() => { try { return JSON.parse(match.notes ?? "{}"); } catch { return {}; } })();
+          const allStats = participants
+            .filter((p: any) => team1Puuids.has(p.puuid) || team2Puuids.has(p.puuid))
+            .map((p: any) => ({
+              puuid: p.puuid,
+              teamId: team1Puuids.has(p.puuid) ? match.team1Id : match.team2Id,
+              champion: p.championName,
+              kills: p.kills,
+              deaths: p.deaths,
+              assists: p.assists,
+              cs: p.totalMinionsKilled + (p.neutralMinionsKilled ?? 0),
+              damage: p.totalDamageDealtToChampions,
+              win: p.win,
+            }));
+
+          await db.update(tournamentMatches)
+            .set({ notes: JSON.stringify({ ...existingNotes, riotMatchId, autoDetected: true, riotStats: { gameDuration: matchData.info?.gameDuration, fetchedAt: new Date().toISOString(), allStats } }) })
+            .where(eq(tournamentMatches.id, input.matchId));
+
+          // Actualizar rankings
+          await syncTournamentRankings(match.tournamentId, winnerId, loserId, db);
+
+          // Avanzar ronda si corresponde
+          await advanceRoundIfComplete(match.tournamentId, db);
+
+          cache.del(CacheKey.bracket(match.tournamentId));
+          return { success: true, winnerId, riotMatchId, autoDetected: true };
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Error al detectar resultado: ${err.message}` });
+        }
+      }),
   }),
   // ─── Newss ──────────────────────────────────────────────────────────────────
   news: router({

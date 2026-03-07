@@ -140,6 +140,22 @@ export default function TournamentManage() {
     onError: (err) => toast.error(err.message),
   });
 
+  const generateRoomCodeMutation = trpc.matches.generateRoomCode.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Código(s) de sala generado(s): ${data.codes?.length ?? 0} código(s) para ${data.seriesFormat}`);
+      refetchMatches();
+    },
+    onError: (err) => toast.error(`Error al generar código: ${err.message}`),
+  });
+
+  const autoDetectResultMutation = trpc.matches.autoDetectResult.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Resultado detectado automáticamente vía Riot API`);
+      refetchMatches();
+    },
+    onError: (err) => toast.error(`No se pudo detectar: ${err.message}`),
+  });
+
   const declareWinnerMutation = trpc.tournaments.declareWinner.useMutation({
     onSuccess: () => {
       toast.success("¡Ganador declarado! El torneo ha finalizado.");
@@ -744,6 +760,28 @@ export default function TournamentManage() {
                                     {match.scheduledAt ? "REPROG." : "PROGRAMAR"}
                                   </button>
                                 )}
+                                {tournament.status === "in_progress" && !isCompleted && match.team1Id && match.team2Id && (
+                                  <button
+                                    onClick={() => generateRoomCodeMutation.mutate({ matchId: match.id, tournamentId: id })}
+                                    disabled={generateRoomCodeMutation.isPending}
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200 disabled:opacity-50"
+                                    style={{ background: "oklch(0.45 0.22 140 / 0.15)", border: "1px solid oklch(0.45 0.22 140 / 0.3)", color: "oklch(0.65 0.22 140)" }}
+                                    title="Genera códigos de sala Riot para esta partida"
+                                  >
+                                    {generateRoomCodeMutation.isPending ? "..." : "🎮 CÓDIGO SALA"}
+                                  </button>
+                                )}
+                                {tournament.status === "in_progress" && !isCompleted && match.team1Id && match.team2Id && (
+                                  <button
+                                    onClick={() => autoDetectResultMutation.mutate({ matchId: match.id })}
+                                    disabled={autoDetectResultMutation.isPending}
+                                    className="px-3 py-1.5 rounded-lg font-display text-xs tracking-wider transition-all duration-200 disabled:opacity-50"
+                                    style={{ background: "oklch(0.55 0.22 280 / 0.15)", border: "1px solid oklch(0.55 0.22 280 / 0.3)", color: "oklch(0.65 0.22 280)" }}
+                                    title="Detecta el resultado automáticamente buscando la última partida en Riot"
+                                  >
+                                    {autoDetectResultMutation.isPending ? "BUSCANDO..." : "⚡ AUTO-RESULTADO"}
+                                  </button>
+                                )}
                                 {tournament.status === "in_progress" && !isCompleted && (
                                   <button
                                     onClick={() => setResultModal({ matchId: match.id, team1Id: match.team1Id, team2Id: match.team2Id, team1Name: match.team1Name ?? `Equipo ${match.team1Id}`, team2Name: match.team2Name ?? `Equipo ${match.team2Id}` })}
@@ -765,6 +803,33 @@ export default function TournamentManage() {
                                 )}
                               </div>
                             </div>
+                            {/* Códigos de sala Riot */}
+                            {(() => {
+                              const matchNotes = (() => { try { return JSON.parse(match.notes ?? "{}"); } catch { return {}; } })();
+                              const codes: string[] = matchNotes.riotRoomCodes ?? [];
+                              if (codes.length === 0) return null;
+                              return (
+                                <div className="px-4 py-3" style={{ borderTop: "1px solid oklch(0.15 0.01 0)", background: "oklch(0.45 0.22 140 / 0.05)" }}>
+                                  <p className="text-xs font-display tracking-wider mb-2" style={{ color: "oklch(0.65 0.22 140)" }}>🎮 CÓDIGOS DE SALA RIOT</p>
+                                  <div className="flex flex-col gap-1">
+                                    {codes.map((code, i) => (
+                                      <div key={i} className="flex items-center gap-2">
+                                        <span className="text-xs" style={{ color: "oklch(0.5 0.01 0)" }}>Juego {i + 1}:</span>
+                                        <code className="text-xs px-2 py-1 rounded" style={{ background: "oklch(0.12 0.01 0)", color: "oklch(0.85 0.22 140)", fontFamily: "monospace" }}>{code}</code>
+                                        <button
+                                          onClick={() => { navigator.clipboard.writeText(code); toast.success(`Código ${i + 1} copiado`); }}
+                                          className="text-xs px-2 py-1 rounded transition-all"
+                                          style={{ background: "oklch(0.45 0.22 140 / 0.2)", color: "oklch(0.65 0.22 140)" }}
+                                        >
+                                          COPIAR
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <p className="text-xs mt-2" style={{ color: "oklch(0.4 0.01 0)" }}>Comparte estos códigos con los capitanes por Discord. Los jugadores los usan en LoL → Jugar → Personalizada → Unirse con código.</p>
+                                </div>
+                              );
+                            })()}
                             {/* Serie BOx — panel de mapas y apuestas */}
                             {match.team1Id && match.team2Id && tournament.status === "in_progress" && (
                               <div style={{ borderTop: "1px solid oklch(0.15 0.01 0)" }}>

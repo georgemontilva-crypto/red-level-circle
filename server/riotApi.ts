@@ -390,3 +390,115 @@ export function getWinRate(entry: LeagueEntry | null): number {
   if (total === 0) return 0;
   return Math.round((entry.wins / total) * 100);
 }
+
+// ─── Tournament STUB API (tournament-stub-v5) ─────────────────────────────────
+// Disponible con clave de desarrollo (24h). Permite generar códigos de sala
+// custom para partidas de torneo en League of Legends.
+
+export interface TournamentCodeParams {
+  allowedSummonerIds?: string[];
+  mapType: "SUMMONERS_RIFT" | "HOWLING_ABYSS";
+  pickType: "BLIND_PICK" | "DRAFT_MODE" | "ALL_RANDOM" | "TOURNAMENT_DRAFT";
+  spectatorType: "NONE" | "LOBBYONLY" | "ALL";
+  teamSize: number;
+  metadata?: string;
+}
+
+/**
+ * Registra un proveedor de torneos en Riot y devuelve el providerId.
+ * Solo necesita hacerse una vez por aplicación.
+ */
+export async function registerTournamentProvider(
+  callbackUrl: string,
+  region: string = "LA1"
+): Promise<number> {
+  const res = await fetch(
+    "https://americas.api.riotgames.com/lol/tournament-stub/v5/providers",
+    {
+      method: "POST",
+      headers: {
+        "X-Riot-Token": RIOT_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ region: region.toUpperCase(), url: callbackUrl }),
+    }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Riot Provider ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json() as Promise<number>;
+}
+
+/**
+ * Crea un torneo en Riot y devuelve el tournamentId.
+ */
+export async function createRiotTournament(
+  name: string,
+  providerId: number
+): Promise<number> {
+  const res = await fetch(
+    "https://americas.api.riotgames.com/lol/tournament-stub/v5/tournaments",
+    {
+      method: "POST",
+      headers: {
+        "X-Riot-Token": RIOT_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, providerId }),
+    }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Riot Tournament ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json() as Promise<number>;
+}
+
+/**
+ * Genera códigos de sala para un match de torneo.
+ * Devuelve un array de códigos (uno por partida en la serie).
+ */
+export async function generateTournamentCodes(
+  tournamentId: number,
+  count: number,
+  params: TournamentCodeParams
+): Promise<string[]> {
+  const res = await fetch(
+    `https://americas.api.riotgames.com/lol/tournament-stub/v5/codes?count=${count}&tournamentId=${tournamentId}`,
+    {
+      method: "POST",
+      headers: {
+        "X-Riot-Token": RIOT_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+    }
+  );
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Riot Codes ${res.status}: ${text.slice(0, 200)}`);
+  }
+  return res.json() as Promise<string[]>;
+}
+
+/**
+ * Busca la última partida jugada por un PUUID en las últimas N horas.
+ * Útil para detectar automáticamente el resultado de un match de torneo.
+ */
+export async function getLastMatchInWindow(
+  puuid: string,
+  region: string = "la1",
+  hoursBack: number = 3
+): Promise<string | null> {
+  const route = getRegionalRoute(region);
+  const startTime = Math.floor((Date.now() - hoursBack * 3600 * 1000) / 1000);
+  try {
+    const ids = await riotFetch<string[]>(
+      `https://${route}.api.riotgames.com/lol/match/v5/matches/by-puuid/${puuid}/ids?count=5&start=0&startTime=${startTime}`
+    );
+    return ids.length > 0 ? ids[0] : null;
+  } catch {
+    return null;
+  }
+}
