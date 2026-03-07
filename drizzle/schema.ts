@@ -128,6 +128,8 @@ export const tournaments = mysqlTable("tournaments", {
     "single_elimination",
     "double_elimination",
     "groups",
+    "swiss",
+    "round_robin",
   ]).notNull(),
   registrationType: mysqlEnum("registrationType", ["team", "player", "both"]).default("team").notNull(),
   maxTeams: int("maxTeams").default(16).notNull(),
@@ -172,6 +174,8 @@ export const tournaments = mysqlTable("tournaments", {
   gameMap: varchar("gameMap", { length: 64 }),
   // Tipo de draft
   draftType: mysqlEnum("draftType", ["tournament_draft", "blind_pick", "all_random", "captains_draft"]).default("tournament_draft"),
+  // Modo de juego específico (Valorant: standard, spike_rush; CS2: competitive, wingman; etc.)
+  gameMode: varchar("gameMode", { length: 64 }),
   // Check-in: ventana de tiempo antes del torneo
   checkInStart: timestamp("checkInStart"),
   checkInEnd: timestamp("checkInEnd"),

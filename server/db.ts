@@ -280,7 +280,7 @@ export async function createTournament(data: {
   game: string;
   description?: string;
   rules?: string;
-  bracketType: "single_elimination" | "double_elimination" | "groups";
+  bracketType: "single_elimination" | "double_elimination" | "groups" | "swiss" | "round_robin";
   maxTeams?: number;
   minPlayersPerTeam?: number;
   maxPlayersPerTeam?: number;
@@ -306,6 +306,7 @@ export async function createTournament(data: {
   // Nuevos campos Battlefy
   region?: string;
   gameMap?: string;
+  gameMode?: string;
   draftType?: string;
   checkInStart?: Date;
   checkInEnd?: Date;

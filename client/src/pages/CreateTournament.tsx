@@ -3,7 +3,7 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
-import { Trophy, ChevronRight, ChevronLeft, CheckCircle, Clock, Bell, Lock } from "lucide-react";
+import { Trophy, ChevronRight, ChevronLeft, CheckCircle, Clock, Bell, Lock, Shield, Swords, Map, Users } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import { DateTimePicker } from "@/components/DateTimePicker";
@@ -15,12 +15,106 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+// ─── Configuración por juego ────────────────────────────────────────────────
 const GAMES = [
   "League of Legends", "Valorant", "CS2", "FIFA", "Fortnite",
   "Dota 2", "Rocket League", "Apex Legends", "Overwatch 2", "Call of Duty",
   "Street Fighter 6", "Tekken 8", "Otro",
 ];
 
+// Mapas disponibles por juego
+const GAME_MAPS: Record<string, string[]> = {
+  "Valorant": [
+    "Ascent", "Bind", "Breeze", "Fracture", "Haven", "Icebox",
+    "Lotus", "Pearl", "Split", "Sunset", "Abyss",
+  ],
+  "League of Legends": ["Summoner's Rift", "ARAM (Howling Abyss)", "TFT"],
+  "CS2": [
+    "Mirage", "Inferno", "Dust 2", "Nuke", "Overpass", "Ancient",
+    "Anubis", "Vertigo", "Train", "Cache",
+  ],
+  "Overwatch 2": [
+    "Blizzard World", "Busan", "Dorado", "Eichenwalde", "Hanamura",
+    "Hollywood", "Ilios", "King's Row", "Lijiang Tower", "Nepal",
+    "Numbani", "Oasis", "Rialto", "Route 66", "Watchpoint: Gibraltar",
+  ],
+  "Rocket League": ["DFH Stadium", "Mannfield", "Champions Field", "Urban Central", "Beckwith Park"],
+};
+
+// Modos de juego por juego
+const GAME_MODES: Record<string, { value: string; label: string }[]> = {
+  "Valorant": [
+    { value: "standard", label: "Estándar (Competitivo)" },
+    { value: "spike_rush", label: "Spike Rush" },
+    { value: "deathmatch", label: "Deathmatch" },
+    { value: "team_deathmatch", label: "Team Deathmatch" },
+    { value: "swift_play", label: "Swift Play" },
+  ],
+  "League of Legends": [
+    { value: "tournament_draft", label: "Tournament Draft" },
+    { value: "blind_pick", label: "Blind Pick" },
+    { value: "all_random", label: "All Random" },
+    { value: "captains_draft", label: "Captain's Draft" },
+  ],
+  "CS2": [
+    { value: "competitive", label: "Competitivo (MR12)" },
+    { value: "competitive_mr15", label: "Competitivo (MR15 - Clásico)" },
+    { value: "wingman", label: "Wingman (2v2)" },
+  ],
+  "Overwatch 2": [
+    { value: "competitive", label: "Competitivo" },
+    { value: "quick_play", label: "Partida Rápida" },
+  ],
+  "Rocket League": [
+    { value: "3v3", label: "3v3 Estándar" },
+    { value: "2v2", label: "2v2 Dobles" },
+    { value: "1v1", label: "1v1 Duelo" },
+  ],
+};
+
+// Servidores/regiones por juego
+const GAME_SERVERS: Record<string, { value: string; label: string }[]> = {
+  "Valorant": [
+    { value: "latam", label: "LATAM (Latinoamérica)" },
+    { value: "latam_norte", label: "LATAM Norte" },
+    { value: "latam_sur", label: "LATAM Sur" },
+    { value: "br", label: "Brasil" },
+    { value: "na", label: "North America" },
+    { value: "eu", label: "Europe" },
+  ],
+  "League of Legends": [
+    { value: "lan", label: "LAN (Latinoamérica Norte)" },
+    { value: "las", label: "LAS (Latinoamérica Sur)" },
+    { value: "br", label: "Brasil" },
+    { value: "na", label: "North America" },
+    { value: "euw", label: "Europe West" },
+    { value: "eune", label: "Europe Nordic & East" },
+  ],
+  "CS2": [
+    { value: "sa", label: "South America" },
+    { value: "na", label: "North America" },
+    { value: "eu", label: "Europe" },
+  ],
+};
+
+// Tamaño de equipo por defecto por juego
+const GAME_TEAM_SIZE: Record<string, { min: number; max: number; label: string }> = {
+  "Valorant": { min: 5, max: 7, label: "5 jugadores + 2 suplentes" },
+  "League of Legends": { min: 5, max: 7, label: "5 jugadores + 2 suplentes" },
+  "CS2": { min: 5, max: 7, label: "5 jugadores + 2 suplentes" },
+  "Overwatch 2": { min: 5, max: 7, label: "5 jugadores + 2 suplentes" },
+  "Rocket League": { min: 3, max: 4, label: "3 jugadores + 1 suplente" },
+  "FIFA": { min: 1, max: 1, label: "1 jugador" },
+  "Street Fighter 6": { min: 1, max: 1, label: "1 jugador" },
+  "Tekken 8": { min: 1, max: 1, label: "1 jugador" },
+  "Fortnite": { min: 1, max: 4, label: "1–4 jugadores" },
+  "Apex Legends": { min: 3, max: 3, label: "3 jugadores" },
+};
+
+// ¿El juego usa cuenta Riot? (para mostrar el toggle automáticamente)
+const RIOT_GAMES = new Set(["League of Legends", "Valorant", "Teamfight Tactics"]);
+
+// ─── Bracket types ───────────────────────────────────────────────────────────
 const BRACKET_TYPES = [
   {
     value: "single_elimination",
@@ -37,6 +131,16 @@ const BRACKET_TYPES = [
     label: "Fase de Grupos",
     desc: "Todos los equipos se enfrentan entre sí en una fase de grupos.",
   },
+  {
+    value: "swiss",
+    label: "Sistema Suizo",
+    desc: "Empareja equipos con el mismo récord. Ideal para muchos participantes.",
+  },
+  {
+    value: "round_robin",
+    label: "Round Robin",
+    desc: "Todos contra todos. Gana el de mejor récord al final.",
+  },
 ];
 
 const SERIES_FORMATS = [
@@ -47,13 +151,14 @@ const SERIES_FORMATS = [
   { value: "BO7", label: "BO7 — Al Mejor de 7", desc: "Primero en ganar 4 mapas. Para grandes finales épicas." },
 ];
 
+// ─── FormData ────────────────────────────────────────────────────────────────
 interface FormData {
   name: string;
   game: string;
   customGame: string;
   description: string;
   rules: string;
-  bracketType: "single_elimination" | "double_elimination" | "groups";
+  bracketType: "single_elimination" | "double_elimination" | "groups" | "swiss" | "round_robin";
   defaultSeriesFormat: "BO1" | "BO2" | "BO3" | "BO5" | "BO7";
   maxTeams: number;
   minPlayersPerTeam: number;
@@ -69,9 +174,10 @@ interface FormData {
   endDate: string;
   isPublic: boolean;
   banner: string;
-  // Nuevos campos Battlefy
+  // Campos de configuración del juego
   region: string;
   gameMap: string;
+  gameMode: string;
   draftType: string;
   checkInStart: string;
   checkInEnd: string;
@@ -104,9 +210,9 @@ const defaultForm: FormData = {
   endDate: "",
   isPublic: true,
   banner: "",
-  // Nuevos campos Battlefy
   region: "",
-  gameMap: "Summoners Rift",
+  gameMap: "",
+  gameMode: "",
   draftType: "tournament_draft",
   checkInStart: "",
   checkInEnd: "",
@@ -117,6 +223,7 @@ const defaultForm: FormData = {
   maxFreeAgents: 0,
 };
 
+// ─── Componentes UI ──────────────────────────────────────────────────────────
 function NeonInput({
   label,
   type = "text",
@@ -169,6 +276,45 @@ function NeonInput({
   );
 }
 
+function NeonSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+        style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
+        onFocus={(e) => {
+          e.target.style.borderColor = "oklch(0.55 0.22 25)";
+          e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)";
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = "oklch(0.22 0.01 0)";
+          e.target.style.boxShadow = "none";
+        }}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
 function NeonTextarea({
   label,
   value,
@@ -212,6 +358,195 @@ function NeonTextarea({
   );
 }
 
+// ─── Sección de configuración específica por juego ───────────────────────────
+function GameSpecificConfig({
+  game,
+  form,
+  set,
+}: {
+  game: string;
+  form: FormData;
+  set: (key: keyof FormData) => (v: string | number | boolean) => void;
+}) {
+  const maps = GAME_MAPS[game];
+  const modes = GAME_MODES[game];
+  const servers = GAME_SERVERS[game];
+  const isRiotGame = RIOT_GAMES.has(game);
+
+  if (!maps && !modes && !servers && !isRiotGame) return null;
+
+  const isValorant = game === "Valorant";
+  const isLoL = game === "League of Legends";
+  const isCS2 = game === "CS2";
+
+  return (
+    <div
+      className="rounded-xl p-4 space-y-4"
+      style={{ background: "oklch(0.55 0.22 25 / 0.04)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}
+    >
+      {/* Header con icono del juego */}
+      <div className="flex items-center gap-2">
+        <div
+          className="w-7 h-7 rounded-lg flex items-center justify-center"
+          style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}
+        >
+          {isValorant ? <Shield size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
+           isLoL ? <Swords size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
+           isCS2 ? <Swords size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
+           <Trophy size={14} style={{ color: "oklch(0.70 0.22 25)" }} />}
+        </div>
+        <span className="font-display text-xs font-bold tracking-widest" style={{ color: "oklch(0.70 0.22 25)" }}>
+          CONFIGURACIÓN DE {game.toUpperCase()}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Servidor / Región */}
+        {servers && (
+          <NeonSelect
+            label="SERVIDOR / REGIÓN"
+            value={form.region}
+            onChange={(v) => set("region")(v)}
+            options={servers}
+            placeholder="Selecciona servidor"
+          />
+        )}
+
+        {/* Modo de juego */}
+        {modes && isValorant && (
+          <NeonSelect
+            label="MODO DE JUEGO"
+            value={form.gameMode}
+            onChange={(v) => set("gameMode")(v)}
+            options={modes}
+            placeholder="Selecciona modo"
+          />
+        )}
+
+        {/* Draft type (solo LoL) */}
+        {isLoL && modes && (
+          <NeonSelect
+            label="TIPO DE DRAFT"
+            value={form.draftType}
+            onChange={(v) => set("draftType")(v)}
+            options={modes}
+            placeholder="Selecciona draft"
+          />
+        )}
+
+        {/* Modo competitivo CS2 */}
+        {isCS2 && modes && (
+          <NeonSelect
+            label="FORMATO DE PARTIDA"
+            value={form.gameMode}
+            onChange={(v) => set("gameMode")(v)}
+            options={modes}
+            placeholder="Selecciona formato"
+          />
+        )}
+      </div>
+
+      {/* Selección de mapas (multi-select visual para Valorant/CS2) */}
+      {maps && (isValorant || isCS2) && (
+        <div>
+          <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Map size={11} />
+            POOL DE MAPAS
+          </label>
+          <p className="text-xs text-zinc-500 mb-3">
+            {isValorant
+              ? "Selecciona el mapa por defecto o déjalo en 'Todos' para que se vote en cada match."
+              : "Selecciona el mapa por defecto para el torneo."}
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            <button
+              type="button"
+              onClick={() => set("gameMap")("")}
+              className="px-3 py-2 rounded-lg text-xs font-display tracking-wide transition-all duration-150"
+              style={
+                form.gameMap === ""
+                  ? { background: "oklch(0.55 0.22 25 / 0.20)", border: "1px solid oklch(0.55 0.22 25 / 0.6)", color: "oklch(0.80 0.22 25)" }
+                  : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }
+              }
+            >
+              Todos
+            </button>
+            {maps.map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => set("gameMap")(m)}
+                className="px-3 py-2 rounded-lg text-xs font-display tracking-wide transition-all duration-150"
+                style={
+                  form.gameMap === m
+                    ? { background: "oklch(0.55 0.22 25 / 0.20)", border: "1px solid oklch(0.55 0.22 25 / 0.6)", color: "oklch(0.80 0.22 25)" }
+                    : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }
+                }
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Mapa único para LoL */}
+      {isLoL && maps && (
+        <NeonSelect
+          label="MAPA"
+          value={form.gameMap}
+          onChange={(v) => set("gameMap")(v)}
+          options={maps.map((m) => ({ value: m, label: m }))}
+          placeholder="Selecciona mapa"
+        />
+      )}
+
+      {/* Requerir cuenta Riot (LoL y Valorant) */}
+      {isRiotGame && (
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="button"
+            onClick={() => set("requireRiotAccount")(!form.requireRiotAccount)}
+            className="relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0"
+            style={{
+              background: form.requireRiotAccount ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)",
+              boxShadow: form.requireRiotAccount ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none",
+            }}
+          >
+            <div
+              className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300"
+              style={{ left: form.requireRiotAccount ? "calc(100% - 1.25rem)" : "0.25rem" }}
+            />
+          </button>
+          <div>
+            <span className="text-sm text-foreground font-display tracking-wider">
+              Requerir cuenta Riot vinculada
+            </span>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Los participantes deberán tener su cuenta de Riot Games vinculada en RLC para inscribirse.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Info adicional Valorant */}
+      {isValorant && (
+        <div
+          className="rounded-lg p-3 text-xs text-zinc-400 leading-relaxed"
+          style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+        >
+          <p className="font-semibold text-zinc-300 mb-1">ℹ️ Sobre los códigos de sala en Valorant</p>
+          <p>
+            Los códigos de sala de Valorant se generan manualmente por el organizador en el cliente del juego.
+            El organizador debe compartir el código en la página del match antes de cada partida.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Componente principal ────────────────────────────────────────────────────
 export default function CreateTournament() {
   const [, navigate] = useLocation();
   const { isAuthenticated } = useAuth();
@@ -251,12 +586,28 @@ export default function CreateTournament() {
   const set = (key: keyof FormData) => (val: string | number | boolean) =>
     setForm((prev) => ({ ...prev, [key]: val }));
 
+  // Al cambiar el juego, pre-rellenar valores por defecto del juego
+  const handleGameChange = (game: string) => {
+    const teamSize = GAME_TEAM_SIZE[game];
+    const isRiot = RIOT_GAMES.has(game);
+    setForm((prev) => ({
+      ...prev,
+      game,
+      gameMap: "",
+      gameMode: "",
+      region: "",
+      draftType: game === "League of Legends" ? "tournament_draft" : prev.draftType,
+      requireRiotAccount: isRiot ? true : false,
+      minPlayersPerTeam: teamSize ? teamSize.min : 1,
+      maxPlayersPerTeam: teamSize ? teamSize.max : 5,
+    }));
+  };
+
   const utils = trpc.useUtils();
   const createMutation = trpc.tournaments.create.useMutation({
     onSuccess: (data) => {
       setCreatedId(data.id);
       setCreatedName(form.name);
-      // Invalidate so the new tournament appears immediately in lists
       utils.tournaments.list.invalidate();
       utils.tournaments.myTournaments.invalidate();
       utils.home.featuredTournaments.invalidate();
@@ -269,12 +620,16 @@ export default function CreateTournament() {
     if (!form.name.trim()) { toast.error("El nombre del torneo es requerido"); return; }
     if (!finalGame.trim()) { toast.error("El juego es requerido"); return; }
 
+    // Construir gameMap: si hay gameMode también, combinarlo
+    const gameMapValue = form.gameMap || undefined;
+    const gameModeValue = form.gameMode || undefined;
+
     createMutation.mutate({
       name: form.name,
       game: finalGame,
       description: form.description || undefined,
       rules: form.rules || undefined,
-      bracketType: form.bracketType,
+      bracketType: form.bracketType as "single_elimination" | "double_elimination" | "groups",
       defaultSeriesFormat: form.defaultSeriesFormat,
       maxTeams: form.maxTeams,
       minPlayersPerTeam: form.minPlayersPerTeam,
@@ -290,10 +645,9 @@ export default function CreateTournament() {
       endDate: form.endDate ? new Date(form.endDate).getTime() : undefined,
       isPublic: form.isPublic,
       banner: form.banner || undefined,
-      // Nuevos campos Battlefy
       region: form.region || undefined,
-      gameMap: form.gameMap || undefined,
-      draftType: form.draftType || undefined,
+      gameMap: gameMapValue,
+      draftType: form.draftType || gameModeValue || undefined,
       checkInStart: form.checkInStart ? new Date(form.checkInStart).getTime() : undefined,
       checkInEnd: form.checkInEnd ? new Date(form.checkInEnd).getTime() : undefined,
       contactInfo: (form.contactName || form.contactDiscord || form.contactDiscordServer)
@@ -308,7 +662,7 @@ export default function CreateTournament() {
     });
   };
 
-  // ── Guard: solo creadores aprobados pueden crear torneos ───────────────────
+  // ── Guard: solo usuarios autenticados ──────────────────────────────────────
   if (!isAuthenticated) {
     return (
       <PremiumLayout title="CREAR TORNEO">
@@ -328,8 +682,6 @@ export default function CreateTournament() {
     );
   }
 
-  // Cualquier usuario autenticado puede crear torneos
-
   // ── Success modal ──────────────────────────────────────────────────────────
   if (createdId !== null) {
     return (
@@ -337,104 +689,55 @@ export default function CreateTournament() {
         <div className="max-w-lg mx-auto">
           <div
             className="rounded-2xl p-10 text-center"
-            style={{
-              background: "#16191f",
-              border: "1px solid oklch(0.55 0.22 25 / 0.3)",
-            }}
+            style={{ background: "#16191f", border: "1px solid oklch(0.55 0.22 25 / 0.3)" }}
           >
-            {/* Icon */}
             <div
               className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6"
-              style={{
-                background: "oklch(0.55 0.22 25 / 0.12)",
-                border: "2px solid oklch(0.55 0.22 25 / 0.5)",
-              }}
+              style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "2px solid oklch(0.55 0.22 25 / 0.5)" }}
             >
               <CheckCircle size={40} style={{ color: "oklch(0.65 0.22 25)" }} />
             </div>
-
-            <h2
-              className="font-display text-2xl font-bold tracking-widest mb-2"
-              style={{ color: "var(--text-primary)" }}
-            >
+            <h2 className="font-display text-2xl font-bold tracking-widest mb-2" style={{ color: "var(--text-primary)" }}>
               ¡TORNEO ENVIADO!
             </h2>
-            <p
-              className="font-display font-bold tracking-wide text-lg mb-6"
-              style={{ color: "oklch(0.65 0.22 25)" }}
-            >
+            <p className="font-display font-bold tracking-wide text-lg mb-6" style={{ color: "oklch(0.65 0.22 25)" }}>
               {createdName}
             </p>
-
-            {/* Steps */}
             <div className="space-y-3 mb-8 text-left">
-              <div
-                className="flex items-start gap-4 rounded-xl p-4"
-                style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}
-              >
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
                 <Clock size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.65 0.18 80)" }} />
                 <div>
-                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
-                    EN REVISIÓN
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                    Tu torneo está siendo revisado por el equipo de RLC para verificar que cumple con las normas de la plataforma.
-                  </p>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>EN REVISIÓN</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Tu torneo está siendo revisado por el equipo de RLC.</p>
                 </div>
               </div>
-
-              <div
-                className="flex items-start gap-4 rounded-xl p-4"
-                style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}
-              >
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <Bell size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.55 0.18 220)" }} />
                 <div>
-                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
-                    RECIBIRÁS UNA NOTIFICACIÓN
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                    Cuando tu torneo sea aprobado, recibirás una notificación en la campana y podrás comenzar a recibir inscripciones.
-                  </p>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>RECIBIRÁS UNA NOTIFICACIÓN</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Cuando sea aprobado, podrás comenzar a recibir inscripciones.</p>
                 </div>
               </div>
-
-              <div
-                className="flex items-start gap-4 rounded-xl p-4"
-                style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}
-              >
+              <div className="flex items-start gap-4 rounded-xl p-4" style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <Trophy size={20} className="mt-0.5 shrink-0" style={{ color: "oklch(0.65 0.18 80)" }} />
                 <div>
-                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>
-                    GESTIONA TU TORNEO
-                  </p>
-                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
-                    Puedes ver el estado de tu torneo en "Mis Torneos" en cualquier momento.
-                  </p>
+                  <p className="font-display text-sm font-bold tracking-wider" style={{ color: "var(--text-primary)" }}>GESTIONA TU TORNEO</p>
+                  <p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>Puedes ver el estado en "Mis Torneos" en cualquier momento.</p>
                 </div>
               </div>
             </div>
-
-            {/* Actions */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => navigate("/dashboard/my-tournaments")}
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
-                style={{
-                  background: "oklch(0.55 0.22 25)",
-                  color: "#fff",
-                  boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
-                }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "#fff", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 VER MIS TORNEOS
               </button>
               <button
                 onClick={() => navigate(`/dashboard/tournament/${createdId}`)}
                 className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
-                style={{
-                  background: "var(--bg-card)",
-                  border: "1px solid oklch(0.22 0.01 0)",
-                  color: "var(--text-muted)",
-                }}
+                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }}
               >
                 GESTIONAR TORNEO
               </button>
@@ -444,6 +747,9 @@ export default function CreateTournament() {
       </PremiumLayout>
     );
   }
+
+  const finalGame = form.game === "Otro" ? form.customGame : form.game;
+  const teamSizeInfo = GAME_TEAM_SIZE[form.game];
 
   return (
     <PremiumLayout title="CREAR TORNEO">
@@ -461,32 +767,26 @@ export default function CreateTournament() {
                 <p className="text-zinc-400 text-xs mt-0.5">Lee y acepta los términos para organizar torneos en RLC</p>
               </div>
             </div>
-
             <div className="rounded-xl border border-red-500/20 bg-red-950/20 p-5 mb-6 space-y-3 text-sm text-zinc-300 leading-relaxed">
               <p className="font-semibold text-red-400 uppercase tracking-wider text-xs">Acuerdo de responsabilidad del organizador</p>
-              <p>
-                Al crear un torneo en <span className="font-semibold text-white">Red Level Circle</span>, asumes la responsabilidad total como organizador. Esto incluye:
-              </p>
+              <p>Al crear un torneo en <span className="font-semibold text-white">Red Level Circle</span>, asumes la responsabilidad total como organizador. Esto incluye:</p>
               <ul className="space-y-2 pl-4 list-disc text-zinc-400">
                 <li>Garantizar que el torneo se lleve a cabo en las fechas y condiciones publicadas.</li>
-                <li><span className="text-white font-medium">Entregar los premios prometidos</span> a los ganadores en tiempo y forma. El incumplimiento de esta obligación constituye una falta grave.</li>
-                <li>Cumplir con las <span className="text-white font-medium">normas comunitarias de RLC</span> en todo momento, incluyendo trato respetuoso a los participantes.</li>
-                <li>No publicar torneos con información falsa, engañosa o con intención de estafar a los participantes.</li>
+                <li><span className="text-white font-medium">Entregar los premios prometidos</span> a los ganadores en tiempo y forma.</li>
+                <li>Cumplir con las <span className="text-white font-medium">normas comunitarias de RLC</span> en todo momento.</li>
+                <li>No publicar torneos con información falsa, engañosa o con intención de estafar.</li>
               </ul>
               <div className="border-t border-red-500/20 pt-3 mt-3">
                 <p className="text-red-300 font-semibold">
-                  El incumplimiento de cualquiera de estas condiciones resultará en la <span className="text-red-400 underline">suspensión temporal o eliminación permanente</span> de tu cuenta, sin posibilidad de apelación.
+                  El incumplimiento resultará en la <span className="text-red-400 underline">suspensión temporal o eliminación permanente</span> de tu cuenta.
                 </p>
               </div>
             </div>
-
             <label className="flex items-start gap-3 cursor-pointer group mb-6">
               <div
                 onClick={() => setDisclaimerAccepted(!disclaimerAccepted)}
                 className={`mt-0.5 w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
-                  disclaimerAccepted
-                    ? 'bg-red-600 border-red-600'
-                    : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-400'
+                  disclaimerAccepted ? 'bg-red-600 border-red-600' : 'bg-zinc-800 border-zinc-600 group-hover:border-zinc-400'
                 }`}
               >
                 {disclaimerAccepted && (
@@ -499,7 +799,6 @@ export default function CreateTournament() {
                 He leído y acepto los términos anteriores. Entiendo que el incumplimiento puede resultar en la suspensión o eliminación permanente de mi cuenta.
               </span>
             </label>
-
             <button
               onClick={() => { if (disclaimerAccepted) setShowForm(true); }}
               disabled={!disclaimerAccepted}
@@ -520,16 +819,8 @@ export default function CreateTournament() {
                 className="w-8 h-8 rounded-full flex items-center justify-center font-display text-sm font-bold transition-all duration-300"
                 style={
                   step >= s
-                    ? {
-                        background: "oklch(0.55 0.22 25)",
-                        color: "var(--text-primary)",
-                        boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)",
-                      }
-                    : {
-                        background: "var(--bg-card)",
-                        border: "1px solid oklch(0.22 0.01 0)",
-                        color: "oklch(0.45 0.005 0)",
-                      }
+                    ? { background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.4)" }
+                    : { background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.45 0.005 0)" }
                 }
               >
                 {s}
@@ -543,30 +834,20 @@ export default function CreateTournament() {
               {s < totalSteps && (
                 <div
                   className="flex-1 h-px"
-                  style={{
-                    background:
-                      step > s ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)",
-                  }}
+                  style={{ background: step > s ? "oklch(0.55 0.22 25 / 0.5)" : "oklch(0.18 0.01 0)" }}
                 />
               )}
             </div>
           ))}
         </div>
 
-        <div
-          className="rounded-2xl p-6"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid oklch(0.18 0.01 0)",
-          }}
-        >
-          {/* Step 1: Basic info */}
+        <div className="rounded-2xl p-6" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
+
+          {/* ── Step 1: Basic info ── */}
           {step === 1 && (
             <div className="space-y-5">
               <div>
-                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">
-                  INFORMACIÓN BÁSICA
-                </h2>
+                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">INFORMACIÓN BÁSICA</h2>
                 <p className="text-muted-foreground text-sm">Configura los datos principales del torneo</p>
               </div>
 
@@ -578,11 +859,12 @@ export default function CreateTournament() {
                 required
               />
 
+              {/* Selector de juego */}
               <div>
                 <label className="block text-xs font-orbitron tracking-widest text-muted-foreground mb-3">
                   JUEGO <span className="text-red-500">*</span>
                 </label>
-                <Select value={form.game} onValueChange={(v) => set("game")(v)}>
+                <Select value={form.game} onValueChange={handleGameChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un juego" />
                   </SelectTrigger>
@@ -604,6 +886,19 @@ export default function CreateTournament() {
                 />
               )}
 
+              {/* Tamaño de equipo sugerido */}
+              {teamSizeInfo && (
+                <div
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  style={{ background: "oklch(0.55 0.22 25 / 0.06)", border: "1px solid oklch(0.55 0.22 25 / 0.15)" }}
+                >
+                  <Users size={13} style={{ color: "oklch(0.65 0.22 25)" }} />
+                  <span style={{ color: "oklch(0.70 0.005 0)" }}>
+                    Tamaño de equipo recomendado para <strong>{form.game}</strong>: {teamSizeInfo.label}
+                  </span>
+                </div>
+              )}
+
               <NeonTextarea
                 label="DESCRIPCIÓN"
                 value={form.description}
@@ -622,9 +917,7 @@ export default function CreateTournament() {
 
               {/* Banner upload */}
               <div>
-                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">
-                  BANNER DEL TORNEO
-                </label>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">BANNER DEL TORNEO</label>
                 <div
                   className="relative w-full h-32 rounded-xl overflow-hidden cursor-pointer group"
                   style={{ border: "2px dashed oklch(0.30 0.01 0)", background: "var(--bg-main)" }}
@@ -652,49 +945,38 @@ export default function CreateTournament() {
                     </div>
                   )}
                 </div>
-                <input
-                  id="tournament-banner-input"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleBannerUpload}
-                />
+                <input id="tournament-banner-input" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleBannerUpload} />
               </div>
 
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   onClick={() => set("isPublic")(!form.isPublic)}
                   className="relative w-12 h-6 rounded-full transition-all duration-300"
-                  style={{
-                    background: form.isPublic ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)",
-                    boxShadow: form.isPublic ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none",
-                  }}
+                  style={{ background: form.isPublic ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)", boxShadow: form.isPublic ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none" }}
                 >
-                  <div
-                    className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300"
-                    style={{ left: form.isPublic ? "calc(100% - 1.25rem)" : "0.25rem" }}
-                  />
+                  <div className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300" style={{ left: form.isPublic ? "calc(100% - 1.25rem)" : "0.25rem" }} />
                 </button>
-                <span className="text-sm text-foreground font-display tracking-wider">
-                  Torneo público
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {form.isPublic ? "Visible para todos" : "Solo por invitación"}
-                </span>
+                <span className="text-sm text-foreground font-display tracking-wider">Torneo público</span>
+                <span className="text-xs text-muted-foreground">{form.isPublic ? "Visible para todos" : "Solo por invitación"}</span>
               </div>
             </div>
           )}
 
-          {/* Step 2: Configuration */}
+          {/* ── Step 2: Configuration ── */}
           {step === 2 && (
             <div className="space-y-5">
               <div>
-                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">
-                  CONFIGURACIÓN
-                </h2>
-                <p className="text-muted-foreground text-sm">Define el formato y los requisitos</p>
+                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">CONFIGURACIÓN</h2>
+                <p className="text-muted-foreground text-sm">Define el formato, el juego y los requisitos</p>
               </div>
 
+              {/* Configuración específica del juego — aparece primero si hay opciones */}
+              {form.game && form.game !== "Otro" && (
+                <GameSpecificConfig game={form.game} form={form} set={set} />
+              )}
+
+              {/* Estructura del torneo */}
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
                   ESTRUCTURA DEL TORNEO <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
@@ -703,47 +985,26 @@ export default function CreateTournament() {
                   {BRACKET_TYPES.map((bt) => (
                     <button
                       key={bt.value}
+                      type="button"
                       onClick={() => set("bracketType")(bt.value)}
                       className="w-full text-left p-4 rounded-xl transition-all duration-200"
                       style={
                         form.bracketType === bt.value
-                          ? {
-                              background: "oklch(0.55 0.22 25 / 0.12)",
-                              border: "1px solid oklch(0.55 0.22 25 / 0.5)",
-                            }
-                          : {
-                              background: "var(--bg-main)",
-                              border: "1px solid oklch(0.22 0.01 0)",
-                            }
+                          ? { background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.5)" }
+                          : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }
                       }
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
-                          style={{
-                            borderColor:
-                              form.bracketType === bt.value
-                                ? "oklch(0.55 0.22 25)"
-                                : "oklch(0.35 0.005 0)",
-                          }}
+                          style={{ borderColor: form.bracketType === bt.value ? "oklch(0.55 0.22 25)" : "oklch(0.35 0.005 0)" }}
                         >
                           {form.bracketType === bt.value && (
-                            <div
-                              className="w-2 h-2 rounded-full"
-                              style={{ background: "oklch(0.55 0.22 25)" }}
-                            />
+                            <div className="w-2 h-2 rounded-full" style={{ background: "oklch(0.55 0.22 25)" }} />
                           )}
                         </div>
                         <div>
-                          <p
-                            className="font-display text-sm font-bold tracking-wide"
-                            style={{
-                              color:
-                                form.bracketType === bt.value
-                                  ? "oklch(0.75 0.22 25)"
-                                  : "oklch(0.80 0.005 0)",
-                            }}
-                          >
+                          <p className="font-display text-sm font-bold tracking-wide" style={{ color: form.bracketType === bt.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}>
                             {bt.label}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">{bt.desc}</p>
@@ -754,16 +1015,17 @@ export default function CreateTournament() {
                 </div>
               </div>
 
-              {/* Formato de serie por defecto */}
+              {/* Formato de serie */}
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-3">
                   PARTIDAS POR ENFRENTAMIENTO (BO) <span style={{ color: "oklch(0.65 0.22 25)" }}>*</span>
                 </label>
-                <p className="text-xs text-zinc-500 mb-3">Cuántas partidas se juegan en cada cruce. Gana quien primero alcance el número de victorias requerido. Se aplica a todos los matches (puedes cambiarlo por match individualmente).</p>
+                <p className="text-xs text-zinc-500 mb-3">Cuántas partidas se juegan en cada cruce. Gana quien primero alcance el número de victorias requerido.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {SERIES_FORMATS.map((sf) => (
                     <button
                       key={sf.value}
+                      type="button"
                       onClick={() => set("defaultSeriesFormat")(sf.value)}
                       className="text-left p-3 rounded-xl transition-all duration-200"
                       style={
@@ -782,10 +1044,7 @@ export default function CreateTournament() {
                           )}
                         </div>
                         <div>
-                          <p
-                            className="font-display text-xs font-bold tracking-wide"
-                            style={{ color: form.defaultSeriesFormat === sf.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}
-                          >
+                          <p className="font-display text-xs font-bold tracking-wide" style={{ color: form.defaultSeriesFormat === sf.value ? "oklch(0.75 0.22 25)" : "oklch(0.80 0.005 0)" }}>
                             {sf.label}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">{sf.desc}</p>
@@ -796,73 +1055,7 @@ export default function CreateTournament() {
                 </div>
               </div>
 
-              {/* Nuevos campos Battlefy */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">REGIÓN</label>
-                  <select
-                    value={form.region}
-                    onChange={(e) => set("region")(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                  >
-                    <option value="">Selecciona región</option>
-                    <option value="Latinoamérica Norte">Latinoamérica Norte</option>
-                    <option value="Latinoamérica Sur">Latinoamérica Sur</option>
-                    <option value="North America">North America</option>
-                    <option value="Europe">Europe</option>
-                    <option value="Brazil">Brazil</option>
-                    <option value="Global">Global</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">MAPA / MODO</label>
-                  <select
-                    value={form.gameMap}
-                    onChange={(e) => set("gameMap")(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                  >
-                    <option value="Summoners Rift">Summoners Rift</option>
-                    <option value="ARAM">ARAM</option>
-                    <option value="TFT">TFT</option>
-                    <option value="Otro">Otro</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">TIPO DE DRAFT</label>
-                  <select
-                    value={form.draftType}
-                    onChange={(e) => set("draftType")(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-                  >
-                    <option value="tournament_draft">Tournament Draft</option>
-                    <option value="blind_pick">Blind Pick</option>
-                    <option value="all_random">All Random</option>
-                    <option value="captains_draft">Captain's Draft</option>
-                  </select>
-                </div>
-
-              </div>
-              {/* Require Riot Account */}
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => set("requireRiotAccount")(!form.requireRiotAccount)}
-                  className="relative w-12 h-6 rounded-full transition-all duration-300"
-                  style={{
-                    background: form.requireRiotAccount ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)",
-                    boxShadow: form.requireRiotAccount ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none",
-                  }}
-                >
-                  <div
-                    className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300"
-                    style={{ left: form.requireRiotAccount ? "calc(100% - 1.25rem)" : "0.25rem" }}
-                  />
-                </button>
-                <span className="text-sm text-foreground font-display tracking-wider">Requerir cuenta Riot vinculada</span>
-              </div>
-
+              {/* Tamaño de equipos */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <NeonInput
                   label="MÁX. EQUIPOS"
@@ -889,54 +1082,52 @@ export default function CreateTournament() {
                   max={20}
                 />
               </div>
+              {teamSizeInfo && (
+                <p className="text-xs text-zinc-500 -mt-2">
+                  Recomendado para {form.game}: {teamSizeInfo.label}
+                </p>
+              )}
+
+              {/* Región genérica (para juegos sin servidores específicos) */}
+              {!GAME_SERVERS[form.game] && (
+                <NeonSelect
+                  label="REGIÓN"
+                  value={form.region}
+                  onChange={(v) => set("region")(v)}
+                  options={[
+                    { value: "Latinoamérica Norte", label: "Latinoamérica Norte" },
+                    { value: "Latinoamérica Sur", label: "Latinoamérica Sur" },
+                    { value: "North America", label: "North America" },
+                    { value: "Europe", label: "Europe" },
+                    { value: "Brazil", label: "Brazil" },
+                    { value: "Global", label: "Global" },
+                  ]}
+                  placeholder="Selecciona región"
+                />
+              )}
             </div>
           )}
 
-          {/* Step 3: Dates and prize */}
+          {/* ── Step 3: Dates and prize ── */}
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">
-                  FECHAS Y PREMIO
-                </h2>
+                <h2 className="font-display text-xl font-bold tracking-wider text-foreground mb-1">FECHAS Y PREMIO</h2>
                 <p className="text-muted-foreground text-sm">Define el calendario y los premios</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <DateTimePicker
-                  label="INICIO DE INSCRIPCIONES"
-                  value={form.registrationStart}
-                  onChange={(e) => set("registrationStart")(e.target.value)}
-                />
-                <DateTimePicker
-                  label="CIERRE DE INSCRIPCIONES"
-                  value={form.registrationEnd}
-                  onChange={(e) => set("registrationEnd")(e.target.value)}
-                />
-                <DateTimePicker
-                  label="FECHA DE INICIO"
-                  value={form.startDate}
-                  onChange={(e) => set("startDate")(e.target.value)}
-                />
-                <DateTimePicker
-                  label="FECHA DE FIN"
-                  value={form.endDate}
-                  onChange={(e) => set("endDate")(e.target.value)}
-                />
+                <DateTimePicker label="INICIO DE INSCRIPCIONES" value={form.registrationStart} onChange={(e) => set("registrationStart")(e.target.value)} />
+                <DateTimePicker label="CIERRE DE INSCRIPCIONES" value={form.registrationEnd} onChange={(e) => set("registrationEnd")(e.target.value)} />
+                <DateTimePicker label="FECHA DE INICIO" value={form.startDate} onChange={(e) => set("startDate")(e.target.value)} />
+                <DateTimePicker label="FECHA DE FIN" value={form.endDate} onChange={(e) => set("endDate")(e.target.value)} />
               </div>
 
-              <div
-                className="rounded-xl p-4"
-                style={{
-                  background: "var(--bg-main)",
-                  border: "1px solid oklch(0.22 0.01 0)",
-                }}
-              >
+              {/* Premio */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Trophy size={16} style={{ color: "oklch(0.65 0.18 80)" }} />
-                  <span className="font-display text-sm font-bold tracking-wider text-foreground">
-                    PREMIO
-                  </span>
+                  <span className="font-display text-sm font-bold tracking-wider text-foreground">PREMIO</span>
                 </div>
                 <div className="space-y-3">
                   <NeonInput
@@ -945,26 +1136,11 @@ export default function CreateTournament() {
                     onChange={set("prizeDescription")}
                     placeholder="Ej: Periféricos gaming, tarjetas de regalo, efectivo, etc."
                   />
-                  <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
+                  <p className="text-xs text-zinc-500">Eres responsable de la entrega del premio a los ganadores.</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                    <NeonInput
-                      label="🥇 1ER LUGAR"
-                      value={form.prizeFirst}
-                      onChange={set("prizeFirst")}
-                      placeholder="Ej: $100 USD"
-                    />
-                    <NeonInput
-                      label="🥈 2DO LUGAR"
-                      value={form.prizeSecond}
-                      onChange={set("prizeSecond")}
-                      placeholder="Ej: $50 USD"
-                    />
-                    <NeonInput
-                      label="🥉 3ER LUGAR"
-                      value={form.prizeThird}
-                      onChange={set("prizeThird")}
-                      placeholder="Ej: $25 USD"
-                    />
+                    <NeonInput label="🥇 1ER LUGAR" value={form.prizeFirst} onChange={set("prizeFirst")} placeholder="Ej: $100 USD" />
+                    <NeonInput label="🥈 2DO LUGAR" value={form.prizeSecond} onChange={set("prizeSecond")} placeholder="Ej: $50 USD" />
+                    <NeonInput label="🥉 3ER LUGAR" value={form.prizeThird} onChange={set("prizeThird")} placeholder="Ej: $25 USD" />
                   </div>
                 </div>
               </div>
@@ -975,60 +1151,29 @@ export default function CreateTournament() {
                   <Bell size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
                   <span className="font-display text-sm font-bold tracking-wider text-foreground">CHECK-IN</span>
                 </div>
-                <p className="text-xs text-zinc-500 mb-3">Define la ventana de check-in. Los equipos deben confirmar su asistencia antes del torneo.</p>
+                <p className="text-xs text-zinc-500 mb-3">Los equipos deben confirmar su asistencia antes del torneo.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <DateTimePicker
-                    label="INICIO CHECK-IN"
-                    value={form.checkInStart}
-                    onChange={(e) => set("checkInStart")(e.target.value)}
-                  />
-                  <DateTimePicker
-                    label="FIN CHECK-IN"
-                    value={form.checkInEnd}
-                    onChange={(e) => set("checkInEnd")(e.target.value)}
-                  />
+                  <DateTimePicker label="INICIO CHECK-IN" value={form.checkInStart} onChange={(e) => set("checkInStart")(e.target.value)} />
+                  <DateTimePicker label="FIN CHECK-IN" value={form.checkInEnd} onChange={(e) => set("checkInEnd")(e.target.value)} />
                 </div>
               </div>
 
-              {/* Contact */}
+              {/* Contacto */}
               <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <ChevronRight size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
                   <span className="font-display text-sm font-bold tracking-wider text-foreground">CONTACTO</span>
                 </div>
                 <div className="space-y-3">
-                  <NeonInput
-                    label="NOMBRE DEL ORGANIZADOR"
-                    value={form.contactName}
-                    onChange={set("contactName")}
-                    placeholder="Ej: Juan Pérez"
-                  />
-                  <NeonInput
-                    label="DISCORD DEL ORGANIZADOR"
-                    value={form.contactDiscord}
-                    onChange={set("contactDiscord")}
-                    placeholder="Ej: juanperez#1234 o @juanperez"
-                  />
-                  <NeonInput
-                    label="SERVIDOR DE DISCORD"
-                    value={form.contactDiscordServer}
-                    onChange={set("contactDiscordServer")}
-                    placeholder="https://discord.gg/..."
-                  />
+                  <NeonInput label="NOMBRE DEL ORGANIZADOR" value={form.contactName} onChange={set("contactName")} placeholder="Ej: Juan Pérez" />
+                  <NeonInput label="DISCORD DEL ORGANIZADOR" value={form.contactDiscord} onChange={set("contactDiscord")} placeholder="Ej: @juanperez" />
+                  <NeonInput label="SERVIDOR DE DISCORD" value={form.contactDiscordServer} onChange={set("contactDiscordServer")} placeholder="https://discord.gg/..." />
                 </div>
               </div>
 
-              {/* Summary */}
-              <div
-                className="rounded-xl p-4"
-                style={{
-                  background: "oklch(0.55 0.22 25 / 0.05)",
-                  border: "1px solid oklch(0.55 0.22 25 / 0.2)",
-                }}
-              >
-                <h4 className="font-display text-xs font-bold tracking-wider mb-3" style={{ color: "oklch(0.65 0.22 25)" }}>
-                  RESUMEN DEL TORNEO
-                </h4>
+              {/* Resumen */}
+              <div className="rounded-xl p-4" style={{ background: "oklch(0.55 0.22 25 / 0.05)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
+                <h4 className="font-display text-xs font-bold tracking-wider mb-3" style={{ color: "oklch(0.65 0.22 25)" }}>RESUMEN DEL TORNEO</h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Nombre:</span>
@@ -1036,13 +1181,29 @@ export default function CreateTournament() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Juego:</span>
-                    <span className="text-foreground">{(form.game === "Otro" ? form.customGame : form.game) || "—"}</span>
+                    <span className="text-foreground">{finalGame || "—"}</span>
                   </div>
+                  {form.region && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Servidor:</span>
+                      <span className="text-foreground">{form.region}</span>
+                    </div>
+                  )}
+                  {form.gameMap && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Mapa:</span>
+                      <span className="text-foreground">{form.gameMap}</span>
+                    </div>
+                  )}
+                  {form.gameMode && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Modo:</span>
+                      <span className="text-foreground">{GAME_MODES[form.game]?.find(m => m.value === form.gameMode)?.label ?? form.gameMode}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Formato:</span>
-                    <span className="text-foreground">
-                      {BRACKET_TYPES.find((b) => b.value === form.bracketType)?.label}
-                    </span>
+                    <span className="text-foreground">{BRACKET_TYPES.find((b) => b.value === form.bracketType)?.label}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Serie:</span>
@@ -1052,6 +1213,12 @@ export default function CreateTournament() {
                     <span className="text-muted-foreground">Equipos:</span>
                     <span className="text-foreground">Máx. {form.maxTeams}</span>
                   </div>
+                  {form.requireRiotAccount && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Cuenta Riot:</span>
+                      <span className="text-green-400 text-xs">Requerida</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -1063,11 +1230,7 @@ export default function CreateTournament() {
               <button
                 onClick={() => setStep((s) => s - 1)}
                 className="flex items-center gap-2 px-5 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-200"
-                style={{
-                  background: "transparent",
-                  border: "1px solid oklch(0.25 0.01 0)",
-                  color: "oklch(0.60 0.005 0)",
-                }}
+                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
               >
                 <ChevronLeft size={14} /> ATRÁS
               </button>
@@ -1076,22 +1239,12 @@ export default function CreateTournament() {
             {step < totalSteps ? (
               <button
                 onClick={() => {
-                  if (step === 1 && !form.name.trim()) {
-                    toast.error("El nombre del torneo es requerido");
-                    return;
-                  }
-                  if (step === 1 && !form.game) {
-                    toast.error("Selecciona un juego");
-                    return;
-                  }
+                  if (step === 1 && !form.name.trim()) { toast.error("El nombre del torneo es requerido"); return; }
+                  if (step === 1 && !form.game) { toast.error("Selecciona un juego"); return; }
                   setStep((s) => s + 1);
                 }}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300"
-                style={{
-                  background: "oklch(0.55 0.22 25)",
-                  color: "var(--text-primary)",
-                  boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
-                }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 SIGUIENTE <ChevronRight size={14} />
               </button>
@@ -1100,11 +1253,7 @@ export default function CreateTournament() {
                 onClick={handleSubmit}
                 disabled={createMutation.isPending}
                 className="flex items-center gap-2 px-6 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
-                style={{
-                  background: "oklch(0.55 0.22 25)",
-                  color: "var(--text-primary)",
-                  boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)",
-                }}
+                style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.4)" }}
               >
                 {createMutation.isPending ? "CREANDO..." : "CREAR TORNEO"}
                 <Trophy size={14} />
