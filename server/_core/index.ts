@@ -360,6 +360,8 @@ async function runCustomMigrations() {
     ')',
     // 0049: tournaments — swiss and round_robin bracket types
     "ALTER TABLE `tournaments` MODIFY COLUMN `bracketType` ENUM('single_elimination','double_elimination','groups','swiss','round_robin') NOT NULL",
+    // 0050: content_creators — youtubeChannelId for stable embed URLs
+    'ALTER TABLE `content_creators` ADD COLUMN `youtubeChannelId` VARCHAR(64) NULL',
   ];
   for (const sql of customMigrations) {
     try {
