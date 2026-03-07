@@ -340,7 +340,7 @@ export const appRouter = router({
         return t;
       }),
 
-    create: premiumProcedure
+    create: protectedProcedure
       .input(z.object({
         name: z.string().min(3).max(256),
         game: z.string().min(1).max(64),
