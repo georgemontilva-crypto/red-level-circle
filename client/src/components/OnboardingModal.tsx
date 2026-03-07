@@ -43,7 +43,7 @@ export default function OnboardingModal({ onComplete, loginMethod }: OnboardingM
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/90 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.9)" }}>
       <div
         className="w-full max-w-md rounded-2xl overflow-hidden"
         style={{

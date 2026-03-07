@@ -99,9 +99,9 @@ function TeamSidePanel({ team, onClose }: { team: any; onClose: () => void }) {
   return (
     <>
       <div
-        className="fixed inset-0 z-40 bg-background/50 backdrop-blur-sm"
+        className="fixed inset-0 z-40"
         onClick={onClose}
-        style={{ animation: "fadeInOverlay 200ms ease" }}
+        style={{ background: "rgba(0,0,0,0.7)", animation: "fadeInOverlay 200ms ease" }}
       />
       <div
         className="fixed top-0 right-0 h-full z-50 flex flex-col overflow-hidden"

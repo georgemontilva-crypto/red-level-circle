@@ -58,8 +58,8 @@
   --background:          #0a0a0a;
   --foreground:          #FFFFFF;
 
-  /* bg-card: rgba semi-transparente sobre fondo oscuro */
-  --card:                rgba(255,255,255,0.03);
+  /* bg-card: color sólido oscuro para cards y modales */
+  --card:                #16191f;
   --card-foreground:     #FFFFFF;
 
   /* popover */
@@ -110,7 +110,7 @@
 
   /* ── Custom design tokens (used directly in components) ── */
   --bg-main:           #0a0a0a;
-  --bg-card:           rgba(255,255,255,0.03);
+  --bg-card:           #16191f;
   --bg-dropdown:       #1a1d24;  /* fondo sólido para dropdowns y paneles flotantes */
   --bg-hover:          rgba(255,255,255,0.06);
   --border-main:       transparent;
