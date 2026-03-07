@@ -1,10 +1,12 @@
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Link, useParams } from "wouter";
+import ImageCropperModal from "@/components/ImageCropperModal";
 import {
-  ChevronLeft, Shield, Trophy, Users, CheckCircle, Crown,
-  TrendingUp, Target, Calendar, Globe, Award, Hash,
+  ChevronLeft, Shield, Trophy, Users, CheckCircle,
+  TrendingUp, Globe, Award,
   Twitter, MessageSquare, Tv2, RefreshCw, ChevronDown, ChevronUp,
+  BarChart2, Star, Percent, Camera,
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
@@ -30,21 +32,18 @@ const REGION_LABELS: Record<string, string> = {
   tr1: "TR", ru: "RU", oc1: "OCE", sg2: "SEA",
 };
 
-const ROLE_ICONS: Record<string, string> = {
-  top: "🛡️", toplane: "🛡️",
-  jungle: "🌿", jungla: "🌿",
-  mid: "⚡", midlane: "⚡",
-  adc: "🏹", "bot lane": "🏹", bot: "🏹",
-  support: "✨", soporte: "✨",
-  duelist: "⚔️", duelista: "⚔️",
-  controller: "🎯",
-  sentinel: "🛡️",
-  initiator: "💥",
+const ROLE_SVG: Record<string, string> = {
+  top: "/role-top.svg", toplane: "/role-top.svg",
+  jungle: "/role-jungle.svg", jungla: "/role-jungle.svg",
+  mid: "/role-mid.svg", midlane: "/role-mid.svg",
+  adc: "/role-adc.svg", "bot lane": "/role-adc.svg", bot: "/role-adc.svg",
+  support: "/role-support.svg", soporte: "/role-support.svg",
 };
 
-function getRoleIcon(role?: string | null) {
-  if (!role) return "👤";
-  return ROLE_ICONS[role.toLowerCase()] ?? "👤";
+function RoleIcon({ role, size = 18, color = "currentColor" }: { role?: string | null; size?: number; color?: string }) {
+  const src = role ? (ROLE_SVG[role.toLowerCase()] ?? null) : null;
+  if (!src) return <Users size={size} style={{ color, opacity: 0.5 }} />;
+  return <img src={src} alt={role ?? ""} style={{ width: size, height: size, filter: "brightness(0) invert(1)", opacity: 0.85 }} />;
 }
 
 // ─── Componente: PlayerCardExpanded ──────────────────────────────────────────
@@ -113,7 +112,7 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
                 {member.gameRole && (
                   <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(192,57,43,0.12)", border: "1px solid rgba(192,57,43,0.3)", color: "#e74c3c" }}>
-                    {getRoleIcon(member.gameRole)} {member.gameRole}
+                    <RoleIcon role={member.gameRole} size={12} /> {member.gameRole}
                   </span>
                 )}
                 {region && (
@@ -256,12 +255,61 @@ function PlayerCardCompact({
   isCaptain,
   isExpanded,
   onToggle,
+  currentUserId,
+  isCaptainOfTeam,
+  onPhotoUpdated,
 }: {
   member: any;
   isCaptain: boolean;
   isExpanded: boolean;
   onToggle: () => void;
+  currentUserId?: number;
+  isCaptainOfTeam?: boolean;
+  onPhotoUpdated?: () => void;
 }) {
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [localPhotoUrl, setLocalPhotoUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadMutation = trpc.profile.uploadRosterCard.useMutation({
+    onSuccess: ({ url }) => {
+      // url es la card compuesta; pero queremos mostrar la foto original
+      // La foto original se guarda en rosterPhoto en el servidor
+      toast.success("Foto de ficha actualizada");
+      setUploading(false);
+      onPhotoUpdated?.();
+    },
+    onError: (err) => {
+      toast.error(err.message);
+      setUploading(false);
+    },
+  });
+
+  const handleFileSelect = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10MB"); return; }
+    const reader = new FileReader();
+    reader.onload = (e) => setCropSrc(e.target?.result as string);
+    reader.readAsDataURL(file);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }, []);
+
+  const handleCropConfirm = useCallback(async (blob: Blob) => {
+    setCropSrc(null);
+    setUploading(true);
+    // Mostrar preview inmediato
+    const previewUrl = URL.createObjectURL(blob);
+    setLocalPhotoUrl(previewUrl);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = (e.target?.result as string).split(",")[1];
+      await uploadMutation.mutateAsync({ base64, mimeType: "image/jpeg" });
+    };
+    reader.readAsDataURL(blob);
+  }, [uploadMutation]);
+
+  const canEditPhoto = currentUserId === member.userId || isCaptainOfTeam;
   const { data: riotProfile } = trpc.riot.getLolProfileByUserId.useQuery(
     { userId: member.userId },
     { enabled: !!member.userId, staleTime: 5 * 60 * 1000 }
@@ -277,23 +325,41 @@ function PlayerCardCompact({
     ? `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${(riotProfile as any).iconId}.png`
     : null;
 
-  const tier = rankedSolo ? (rankedSolo.tier ?? "").toUpperCase() : (member.elo ?? "").toUpperCase().split(" ")[0];
+  const tier = rankedSolo ? (rankedSolo.tier ?? "").toUpperCase() : "";
   const tierColor = TIER_COLORS[tier] ?? { text: "#aaa", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", emblem: "🎮" };
   const rankLabel = rankedSolo
     ? `${tier.charAt(0) + tier.slice(1).toLowerCase()} ${rankedSolo.rank ?? ""}`
-    : (member.elo ?? null);
+    : null;
   const wins = rankedSolo?.wins ?? 0;
   const losses = rankedSolo?.losses ?? 0;
   const total = wins + losses;
   const winRate = total > 0 ? Math.round((wins / total) * 100) : null;
   const winRateColor = winRate === null ? "#aaa" : winRate >= 55 ? "#2ecc71" : winRate >= 50 ? "#e67e22" : "#e74c3c";
 
-  const photoUrl = member.rosterImageUrl ?? member.rosterPhoto ?? riotIconUrl ?? member.avatar ?? null;
+  const photoUrl = localPhotoUrl ?? member.rosterPhoto ?? riotIconUrl ?? member.avatar ?? null;
   const region = riotRegion ?? member.competitiveRegion ?? null;
   const nickname = member.nickname ?? member.userName ?? member.username ?? "Jugador";
   const gameLabel = (member.mainGame ?? "").toLowerCase().includes("valorant") ? "VALORANT" : "LEAGUE OF LEGENDS";
 
   return (
+    <>
+      {/* Modal de recorte */}
+      {cropSrc && (
+        <ImageCropperModal
+          imageSrc={cropSrc}
+          aspect={2 / 3}
+          onConfirm={handleCropConfirm}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
+      {/* Input oculto para seleccionar archivo */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); }}
+      />
     <div
       onClick={onToggle}
       style={{
@@ -305,6 +371,7 @@ function PlayerCardCompact({
         transition: "all .25s",
         transform: isExpanded ? "none" : undefined,
         boxShadow: isExpanded ? "0 0 30px rgba(192,57,43,0.15)" : "none",
+        position: "relative",
       }}
       onMouseEnter={e => { if (!isExpanded) { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(192,57,43,0.35)"; (e.currentTarget as HTMLDivElement).style.transform = "translateY(-3px)"; } }}
       onMouseLeave={e => { if (!isExpanded) { (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.06)"; (e.currentTarget as HTMLDivElement).style.transform = "none"; } }}
@@ -324,21 +391,53 @@ function PlayerCardCompact({
         {isCaptain && (
           <div style={{ position: "absolute", top: "10px", right: "10px", background: "#d4a017", color: "#000", fontFamily: "'Orbitron', sans-serif", fontSize: "8px", fontWeight: 900, padding: "3px 8px", borderRadius: "999px", letterSpacing: ".08em" }}>👑 CAP</div>
         )}
-        {riotIconUrl && (
-          <div style={{ position: "absolute", bottom: "-14px", left: "12px", width: "36px", height: "36px", borderRadius: "50%", border: "2px solid rgba(192,57,43,0.6)", boxShadow: "0 0 10px rgba(192,57,43,0.3)", background: "#1a0f0f", overflow: "hidden", zIndex: 2 }}>
-            <img src={riotIconUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          </div>
+        {/* Botón cambiar foto — solo visible para el propio jugador o el capitán */}
+        {canEditPhoto && (
+          <button
+            onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+            disabled={uploading}
+            style={{
+              position: "absolute",
+              bottom: "10px",
+              right: "10px",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+              padding: "5px 10px",
+              borderRadius: "8px",
+              background: uploading ? "rgba(0,0,0,0.7)" : "rgba(192,57,43,0.85)",
+              border: "1px solid rgba(255,255,255,0.15)",
+              color: "#fff",
+              fontFamily: "monospace",
+              fontSize: "9px",
+              letterSpacing: ".08em",
+              cursor: uploading ? "not-allowed" : "pointer",
+              backdropFilter: "blur(4px)",
+              zIndex: 3,
+              transition: "all .2s",
+            }}
+          >
+            <Camera size={10} />
+            {uploading ? "SUBIENDO..." : "CAMBIAR FOTO"}
+          </button>
         )}
       </div>
 
       {/* Body */}
-      <div style={{ padding: riotIconUrl ? "22px 14px 12px" : "14px" }}>
-        <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "14px", fontWeight: 900, color: "#fff", marginBottom: "2px" }}>{nickname}</div>
+      <div style={{ padding: "14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "2px" }}>
+          {riotIconUrl && (
+            <div style={{ width: "28px", height: "28px", borderRadius: "50%", border: "2px solid rgba(192,57,43,0.6)", boxShadow: "0 0 8px rgba(192,57,43,0.3)", background: "#1a0f0f", overflow: "hidden", flexShrink: 0 }}>
+              <img src={riotIconUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            </div>
+          )}
+          <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "14px", fontWeight: 900, color: "#fff" }}>{nickname}</div>
+        </div>
         {riotId && <div style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "8px" }}>{riotId}</div>}
         <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginBottom: "10px" }}>
           {member.gameRole && (
             <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", padding: "3px 8px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(192,57,43,0.12)", border: "1px solid rgba(192,57,43,0.3)", color: "#e74c3c" }}>
-              {getRoleIcon(member.gameRole)} {member.gameRole}
+              <RoleIcon role={member.gameRole} size={12} /> {member.gameRole}
             </span>
           )}
           {region && (
@@ -358,6 +457,7 @@ function PlayerCardCompact({
         {isExpanded ? <><ChevronUp size={10} /> CERRAR FICHA</> : <><ChevronDown size={10} /> VER FICHA COMPLETA</>}
       </div>
     </div>
+    </>
   );
 }
 
@@ -427,14 +527,14 @@ function TeamOverview({ team, rankPos, tournamentHistory }: { team: any; rankPos
       {/* Stats rápidas */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "28px" }}>
         {[
-          { icon: "🏆", value: tournamentHistory.length, label: "TORNEOS JUGADOS", color: "#FFD700" },
-          { icon: "🥇", value: wonTournaments.length, label: "TÍTULOS RLC", color: "#c0392b" },
-          { icon: "📈", value: teamWinRate !== null ? `${teamWinRate}%` : "—", label: "WIN RATE EQUIPO", color: winRateColor },
-          { icon: "👥", value: members.length, label: "JUGADORES", color: "#5dade2" },
+          { icon: <Trophy size={20} style={{ color: "#FFD700", opacity: 0.8 }} />, value: tournamentHistory.length, label: "TORNEOS JUGADOS", color: "#FFD700" },
+          { icon: <Award size={20} style={{ color: "#c0392b", opacity: 0.8 }} />, value: wonTournaments.length, label: "TÍTULOS RLC", color: "#c0392b" },
+          { icon: <Percent size={20} style={{ color: winRateColor, opacity: 0.8 }} />, value: teamWinRate !== null ? `${teamWinRate}%` : "—", label: "WIN RATE EQUIPO", color: winRateColor },
+          { icon: <Users size={20} style={{ color: "#5dade2", opacity: 0.8 }} />, value: members.length, label: "JUGADORES", color: "#5dade2" },
         ].map((s, i) => (
           <div key={i} style={{ background: "#13161b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "18px", position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "2px", background: "linear-gradient(90deg, transparent, rgba(192,57,43,0.5), transparent)" }} />
-            <div style={{ fontSize: "20px", marginBottom: "8px", opacity: 0.7 }}>{s.icon}</div>
+            <div style={{ marginBottom: "8px" }}>{s.icon}</div>
             <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "26px", fontWeight: 900, color: s.color, lineHeight: 1, marginBottom: "4px" }}>{s.value}</div>
             <div style={{ fontFamily: "monospace", fontSize: "9px", color: "rgba(255,255,255,0.35)", letterSpacing: ".1em" }}>{s.label}</div>
           </div>
@@ -496,11 +596,11 @@ function TeamOverview({ team, rankPos, tournamentHistory }: { team: any; rankPos
           <div style={{ padding: "16px" }}>
             <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
               {[
-                { key: ["top", "toplane"], label: "TOP", icon: "🛡️" },
-                { key: ["jungle", "jungla"], label: "JUNGLE", icon: "🌿" },
-                { key: ["mid", "midlane"], label: "MID", icon: "⚡" },
-                { key: ["adc", "bot", "bot lane"], label: "ADC", icon: "🏹" },
-                { key: ["support", "soporte"], label: "SUPP", icon: "✨" },
+                { key: ["top", "toplane"], label: "TOP", roleKey: "top" },
+                { key: ["jungle", "jungla"], label: "JUNGLE", roleKey: "jungle" },
+                { key: ["mid", "midlane"], label: "MID", roleKey: "mid" },
+                { key: ["adc", "bot", "bot lane"], label: "ADC", roleKey: "adc" },
+                { key: ["support", "soporte"], label: "SUPP", roleKey: "support" },
               ].map(role => {
                 const player = members.find(m => role.key.includes((m.gameRole ?? "").toLowerCase()));
                 const playerRiot = player ? memberRiotData.find(d => d.member.userId === player.userId) : null;
@@ -508,7 +608,7 @@ function TeamOverview({ team, rankPos, tournamentHistory }: { team: any; rankPos
                 const ptc = TIER_COLORS[playerTier] ?? null;
                 return (
                   <div key={role.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", padding: "10px 6px", borderRadius: "10px", background: player ? "rgba(192,57,43,0.05)" : "rgba(0,0,0,0.2)", border: `1px solid ${player ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.04)"}`, opacity: player ? 1 : 0.45 }}>
-                    <div style={{ fontSize: "18px" }}>{role.icon}</div>
+                    <div style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center" }}><RoleIcon role={(role as any).roleKey} size={22} /></div>
                     <div style={{ fontFamily: "monospace", fontSize: "8px", color: "rgba(255,255,255,0.35)", letterSpacing: ".08em" }}>{role.label}</div>
                     <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "9px", fontWeight: 700, color: player ? "#fff" : "rgba(255,255,255,0.2)", textAlign: "center", lineHeight: 1.2 }}>
                       {player ? (player.nickname ?? player.userName ?? "—") : "—"}
@@ -643,7 +743,7 @@ export default function TeamProfile() {
         <div style={{ position: "relative", zIndex: 2, maxWidth: "1200px", margin: "0 auto", padding: "0 32px", height: "100%", display: "flex", alignItems: "flex-end", paddingBottom: "28px", gap: "24px" }}>
           {/* Logo */}
           <div style={{ position: "relative", flexShrink: 0 }}>
-            <div style={{ width: "90px", height: "90px", borderRadius: "18px", background: "linear-gradient(135deg, #1a0808, #2d0f0f)", border: "2px solid rgba(192,57,43,0.5)", boxShadow: "0 0 30px rgba(192,57,43,0.3), 0 8px 32px rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+            <div style={{ width: "90px", height: "90px", borderRadius: "50%", background: "linear-gradient(135deg, #1a0808, #2d0f0f)", border: "3px solid rgba(192,57,43,0.6)", boxShadow: "0 0 30px rgba(192,57,43,0.3), 0 8px 32px rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
               {team.logo ? <img src={team.logo} alt={team.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} /> : <Shield size={36} style={{ color: "rgba(192,57,43,0.5)" }} />}
             </div>
             <div style={{ position: "absolute", bottom: "-8px", right: "-8px", background: "#c0392b", borderRadius: "7px", padding: "3px 8px", fontFamily: "'Orbitron', sans-serif", fontSize: "8px", letterSpacing: ".1em", color: "#fff", border: "1px solid rgba(255,255,255,0.15)" }}>
@@ -657,16 +757,16 @@ export default function TeamProfile() {
             <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "32px", fontWeight: 900, color: "#fff", textShadow: "0 2px 20px rgba(0,0,0,0.8)", lineHeight: 1, marginBottom: "10px" }}>{team.name}</div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", fontFamily: "monospace", fontSize: "11px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
-                👥 {members.length} jugadores
+                <Users size={11} /> {members.length} jugadores
               </span>
               {team.country && (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", fontFamily: "monospace", fontSize: "11px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
-                  🌎 {team.country}
+                  <Globe size={11} /> {team.country}
                 </span>
               )}
               {rankPos && (
                 <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "4px 12px", borderRadius: "999px", fontFamily: "monospace", fontSize: "11px", background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.2)", color: "#FFD700" }}>
-                  # {rankPos.globalPosition} Global
+                  <TrendingUp size={11} /> # {rankPos.globalPosition} Global
                 </span>
               )}
               {activeTournaments.length > 0 && (
@@ -705,10 +805,10 @@ export default function TeamProfile() {
       <div style={{ background: "#0d0f14", borderBottom: "1px solid rgba(255,255,255,0.06)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 32px", display: "flex" }}>
           {([
-            { key: "overview", label: "OVERVIEW", icon: "📊" },
-            { key: "roster", label: "ALINEACIÓN", icon: "👥", count: members.length },
-            { key: "history", label: "TORNEOS", icon: "🏆", count: tournamentHistory?.length },
-            { key: "achievements", label: "LOGROS", icon: "🎖", count: team.achievements?.length },
+            { key: "overview", label: "OVERVIEW", icon: <BarChart2 size={13} /> },
+            { key: "roster", label: "ALINEACIÓN", icon: <Users size={13} />, count: members.length },
+            { key: "history", label: "TORNEOS", icon: <Trophy size={13} />, count: tournamentHistory?.length },
+            { key: "achievements", label: "LOGROS", icon: <Award size={13} />, count: team.achievements?.length },
           ] as const).map(tab => (
             <button
               key={tab.key}
@@ -777,6 +877,9 @@ export default function TeamProfile() {
                       isCaptain={m.userId === team.captainId}
                       isExpanded={expandedMemberId === m.userId}
                       onToggle={() => setExpandedMemberId(expandedMemberId === m.userId ? null : m.userId)}
+                      currentUserId={user?.id}
+                      isCaptainOfTeam={isCaptain}
+                      onPhotoUpdated={() => refetch()}
                     />
                     {expandedMemberId === m.userId && (
                       <div style={{ gridColumn: "1 / -1", marginTop: "12px" }}>
