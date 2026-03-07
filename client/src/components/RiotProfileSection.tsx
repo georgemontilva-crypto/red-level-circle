@@ -464,7 +464,7 @@ export function RiotProfileSection({ userId, isOwnProfile }: RiotProfileSectionP
   // ── No data (not linked or other user without linked account) ────────────
   if (!lolProfile) return null;
 
-  const { account, summoner, rankedSolo, rankedFlex, topChampions, recentMatches, profileIconUrl: iconUrl } = lolProfile as any;
+  const { account, summoner, rankedSolo, rankedFlex, topChampions, recentMatches, profileIconUrl: iconUrl, apiError, region } = lolProfile as any;
   const tierColors = getTierColor(rankedSolo?.tier ?? rankedFlex?.tier);
 
   return (
@@ -542,7 +542,7 @@ export function RiotProfileSection({ userId, isOwnProfile }: RiotProfileSectionP
                 className="text-[10px] font-mono px-2 py-0.5 rounded-full"
                 style={{ background: "oklch(0.22 0.01 0)", color: "oklch(0.55 0.005 0)" }}
               >
-                {REGION_LABELS[lolProfile.summoner?.puuid ? (linkedAccount?.region ?? "la1") : "la1"] ?? "—"}
+                {REGION_LABELS[region ?? linkedAccount?.region ?? "la1"] ?? "—"}
               </span>
               {rankedSolo && (
                 <span
@@ -556,11 +556,22 @@ export function RiotProfileSection({ userId, isOwnProfile }: RiotProfileSectionP
           </div>
         </div>
 
+        {/* ── API Error banner ── */}
+        {apiError && (
+          <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.20)" }}>
+            <RefreshCw className="w-3.5 h-3.5 shrink-0" style={{ color: "oklch(0.65 0.22 25)" }} />
+            <p className="text-xs font-mono" style={{ color: "oklch(0.60 0.005 0)" }}>
+              Datos de Riot temporalmente no disponibles. Presiona actualizar para reintentar.
+            </p>
+          </div>
+        )}
         {/* ── Ranked cards ── */}
+        {!apiError && (
         <div className="flex gap-3">
           <RankBadge entry={rankedSolo} label="RANKED SOLO/DUO" />
           <RankBadge entry={rankedFlex} label="RANKED FLEX" />
         </div>
+        )}
 
         {/* ── Top Champions ── */}
         {topChampions && topChampions.length > 0 && (
@@ -609,7 +620,7 @@ export function RiotProfileSection({ userId, isOwnProfile }: RiotProfileSectionP
         )}
 
         {/* No ranked data */}
-        {!rankedSolo && !rankedFlex && (
+        {!apiError && !rankedSolo && !rankedFlex && (
           <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "oklch(0.15 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}>
             <Target className="w-4 h-4 shrink-0" style={{ color: "oklch(0.45 0.005 0)" }} />
             <p className="text-xs font-mono" style={{ color: "oklch(0.45 0.005 0)" }}>

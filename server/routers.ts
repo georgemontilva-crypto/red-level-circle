@@ -4231,20 +4231,42 @@ Genera el reporte de precio RLC para este producto.`;
         const user = await getUserById(input.userId);
         if (!user) return null;
         const u = user as any;
-        if (!u.riotPuuid || !u.riotSummonerId) return null;
+        if (!u.riotPuuid) return null;
+        // Datos básicos guardados en BD (siempre disponibles)
+        const fallbackIconUrl = `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${u.riotIconId ?? 1}.png`;
+        const basicData = {
+          account: {
+            puuid: u.riotPuuid as string,
+            gameName: (u.riotGameName as string) ?? "",
+            tagLine: (u.riotTagLine as string) ?? "",
+          },
+          region: (u.riotRegion as string) ?? "la1",
+          iconId: u.riotIconId as number | null,
+          summoner: null as any,
+          rankedSolo: null as any,
+          rankedFlex: null as any,
+          topChampions: [] as any[],
+          recentMatches: [] as any[],
+          profileIconUrl: fallbackIconUrl,
+          apiError: false,
+        };
+        if (!u.riotSummonerId) {
+          // Vinculado pero sin summoner ID (cuenta sin LoL en esa región)
+          return basicData;
+        }
         const { getFullLolProfile, getRiotAccountByPuuid } = await import("./riotApi.js");
         try {
           const [profile, account] = await Promise.all([
             getFullLolProfile(u.riotPuuid, u.riotSummonerId, u.riotRegion ?? "la1"),
             getRiotAccountByPuuid(u.riotPuuid, u.riotRegion ?? "la1"),
           ]);
-          return { ...profile, account };
+          return { ...profile, account, region: u.riotRegion ?? "la1", apiError: false };
         } catch (err: any) {
           console.error("[riot] getLolProfileByUserId error:", err.message);
-          return null;
+          // Devolver datos básicos de BD en lugar de null para que el componente siempre se muestre
+          return { ...basicData, apiError: true };
         }
       }),
-
     /**
      * Devuelve los datos básicos de vinculación Riot del usuario autenticado.
      */
