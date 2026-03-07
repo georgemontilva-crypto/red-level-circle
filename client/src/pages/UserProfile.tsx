@@ -12,6 +12,7 @@ import { useState, useEffect, useRef } from "react";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
 import { getRolesForGame, getRanksForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
+import { RiotProfileSection } from "@/components/RiotProfileSection";
 import { RoleSelector } from "@/components/RoleSelector";
 import { RankSelector } from "@/components/RankSelector";
 import { GameDropdown, DropdownOption } from "@/components/GameDropdown";
@@ -604,6 +605,9 @@ export default function UserProfile() {
                   </div>
                 </div>
               )}
+
+              {/* Riot Games Section */}
+              <RiotProfileSection userId={userId} isOwnProfile={isOwnProfile} />
 
               {/* No activity placeholder */}
               <div

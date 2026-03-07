@@ -4128,6 +4128,142 @@ Genera el reporte de precio RLC para este producto.`;
         return { ok: true };
       }),
   }),
+
+  // ─── Riot Games ────────────────────────────────────────────────────────────
+  riot: router({
+    /**
+     * Vincula una cuenta de Riot al perfil del usuario.
+     * Recibe gameName, tagLine y region, busca el PUUID y guarda los datos.
+     */
+    linkAccount: protectedProcedure
+      .input(z.object({
+        gameName: z.string().min(1).max(64),
+        tagLine: z.string().min(1).max(16),
+        region: z.enum(["la1", "la2", "na1", "br1", "euw1", "eun1", "kr", "jp1", "oc1", "tr1", "ru"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getRiotAccountByRiotId, getSummonerByPuuid } = await import("./riotApi.js");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { users } = await import("../drizzle/schema.js");
+        // 1. Buscar cuenta en Riot
+        let account;
+        try {
+          account = await getRiotAccountByRiotId(input.gameName, input.tagLine, input.region);
+        } catch (err: any) {
+          if (err.message?.includes("404")) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "No se encontró ninguna cuenta de Riot con ese Riot ID. Verifica el nombre y el tag." });
+          }
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Error al conectar con Riot Games. Intenta de nuevo." });
+        }
+        // 2. Obtener datos del invocador
+        let summoner;
+        try {
+          summoner = await getSummonerByPuuid(account.puuid, input.region);
+        } catch (err: any) {
+          // Si no tiene cuenta de LoL en esa región, guardamos igual el PUUID
+          summoner = null;
+        }
+        // 3. Guardar en BD
+        await db.update(users).set({
+          riotPuuid: account.puuid,
+          riotGameName: account.gameName,
+          riotTagLine: account.tagLine,
+          riotRegion: input.region,
+          riotSummonerId: summoner?.id ?? null,
+          riotIconId: summoner?.profileIconId ?? null,
+        } as any).where(eq(users.id, ctx.user.id));
+        return {
+          ok: true,
+          gameName: account.gameName,
+          tagLine: account.tagLine,
+          region: input.region,
+          summonerLevel: summoner?.summonerLevel ?? null,
+          profileIconId: summoner?.profileIconId ?? null,
+        };
+      }),
+
+    /**
+     * Desvincula la cuenta de Riot del perfil del usuario.
+     */
+    unlinkAccount: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const { users } = await import("../drizzle/schema.js");
+        await db.update(users).set({
+          riotPuuid: null,
+          riotGameName: null,
+          riotTagLine: null,
+          riotRegion: null,
+          riotSummonerId: null,
+          riotIconId: null,
+        } as any).where(eq(users.id, ctx.user.id));
+        return { ok: true };
+      }),
+
+    /**
+     * Obtiene el perfil completo de LoL del usuario autenticado.
+     */
+    getMyLolProfile: protectedProcedure
+      .query(async ({ ctx }) => {
+        const user = await getUserById(ctx.user.id);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+        const u = user as any;
+        if (!u.riotPuuid || !u.riotSummonerId) {
+          return null; // No vinculado o sin cuenta de LoL
+        }
+        const { getFullLolProfile } = await import("./riotApi.js");
+        try {
+          return await getFullLolProfile(u.riotPuuid, u.riotSummonerId, u.riotRegion ?? "la1");
+        } catch (err: any) {
+          console.error("[riot] getMyLolProfile error:", err.message);
+          return null;
+        }
+      }),
+
+    /**
+     * Obtiene el perfil público de LoL de cualquier usuario por userId.
+     */
+    getLolProfileByUserId: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const user = await getUserById(input.userId);
+        if (!user) return null;
+        const u = user as any;
+        if (!u.riotPuuid || !u.riotSummonerId) return null;
+        const { getFullLolProfile, getRiotAccountByPuuid } = await import("./riotApi.js");
+        try {
+          const [profile, account] = await Promise.all([
+            getFullLolProfile(u.riotPuuid, u.riotSummonerId, u.riotRegion ?? "la1"),
+            getRiotAccountByPuuid(u.riotPuuid, u.riotRegion ?? "la1"),
+          ]);
+          return { ...profile, account };
+        } catch (err: any) {
+          console.error("[riot] getLolProfileByUserId error:", err.message);
+          return null;
+        }
+      }),
+
+    /**
+     * Devuelve los datos básicos de vinculación Riot del usuario autenticado.
+     */
+    getMyLinkedAccount: protectedProcedure
+      .query(async ({ ctx }) => {
+        const user = await getUserById(ctx.user.id);
+        if (!user) return null;
+        const u = user as any;
+        if (!u.riotPuuid) return null;
+        return {
+          gameName: u.riotGameName as string,
+          tagLine: u.riotTagLine as string,
+          region: u.riotRegion as string,
+          puuid: u.riotPuuid as string,
+          summonerId: u.riotSummonerId as string | null,
+          iconId: u.riotIconId as number | null,
+        };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;
 

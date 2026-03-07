@@ -43,6 +43,13 @@ export const users = mysqlTable("users", {
   isVerified: boolean("isVerified").default(false).notNull(),
   // Banner upload permission — granted by super admin to content creators, team captains, businesses
   canUploadBanner: boolean("canUploadBanner").default(false).notNull(),
+  // Riot Games account linking
+  riotPuuid: varchar("riotPuuid", { length: 78 }),
+  riotGameName: varchar("riotGameName", { length: 64 }),
+  riotTagLine: varchar("riotTagLine", { length: 16 }),
+  riotRegion: varchar("riotRegion", { length: 8 }), // la1, la2, na1, euw1, etc.
+  riotSummonerId: varchar("riotSummonerId", { length: 128 }),
+  riotIconId: int("riotIconId"),
   // RLC Coins wallet
   rlcBalance: int("rlcBalance").default(500).notNull(), // start with 500 coins
   createdAt: timestamp("createdAt").defaultNow().notNull(),
