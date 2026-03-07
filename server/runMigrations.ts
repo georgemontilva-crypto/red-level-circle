@@ -120,18 +120,7 @@ const MIGRATIONS: { id: string; up: string }[] = [
         ADD COLUMN IF NOT EXISTS \`youtubeChannelId\` VARCHAR(64) NULL AFTER \`youtube\`;
     `,
   },
-  {
-    id: "0014_riot_account_linking",
-    up: `
-      ALTER TABLE \`users\`
-        ADD COLUMN IF NOT EXISTS \`riotPuuid\`      VARCHAR(78)  NULL AFTER \`canUploadBanner\`,
-        ADD COLUMN IF NOT EXISTS \`riotGameName\`   VARCHAR(64)  NULL AFTER \`riotPuuid\`,
-        ADD COLUMN IF NOT EXISTS \`riotTagLine\`    VARCHAR(16)  NULL AFTER \`riotGameName\`,
-        ADD COLUMN IF NOT EXISTS \`riotRegion\`     VARCHAR(8)   NULL AFTER \`riotTagLine\`,
-        ADD COLUMN IF NOT EXISTS \`riotSummonerId\` VARCHAR(128) NULL AFTER \`riotRegion\`,
-        ADD COLUMN IF NOT EXISTS \`riotIconId\`     INT          NULL AFTER \`riotSummonerId\`
-    `,
-  },
+  // 0014 moved to customMigrations in index.ts (Railway does not support ADD COLUMN IF NOT EXISTS)
 ];
 
 export async function runMigrations() {

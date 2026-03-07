@@ -242,7 +242,14 @@ async function runCustomMigrations() {
     '  `message`      text         NOT NULL,' +
     '  `createdAt`    timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
     '  KEY `scm_stream_idx` (`streamId`)' +
-    ')'
+    ')',
+    // 0041: riot account linking columns
+    'ALTER TABLE `users` ADD COLUMN `riotPuuid`      VARCHAR(78)  NULL',
+    'ALTER TABLE `users` ADD COLUMN `riotGameName`   VARCHAR(64)  NULL',
+    'ALTER TABLE `users` ADD COLUMN `riotTagLine`    VARCHAR(16)  NULL',
+    'ALTER TABLE `users` ADD COLUMN `riotRegion`     VARCHAR(8)   NULL',
+    'ALTER TABLE `users` ADD COLUMN `riotSummonerId` VARCHAR(128) NULL',
+    'ALTER TABLE `users` ADD COLUMN `riotIconId`     INT          NULL',
   ];
   for (const sql of customMigrations) {
     try {
