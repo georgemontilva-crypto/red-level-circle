@@ -1277,7 +1277,11 @@ export const appRouter = router({
       }),
 
     generateBracketManual: protectedProcedure
-      .input(z.object({ tournamentId: z.number() }))
+      .input(z.object({
+        tournamentId: z.number(),
+        seededOrder: z.array(z.number()).optional(), // IDs de equipos en orden de seeding
+        forceRegenerate: z.boolean().optional(),     // Permite regenerar aunque ya exista bracket
+      }))
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
@@ -1288,8 +1292,18 @@ export const appRouter = router({
         if (registrations.length < 2) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Se necesitan al menos 2 equipos aprobados para generar el bracket." });
         }
+        // Validar seededOrder si se proporciona
         const teamIds = registrations.map((r) => r.teamId);
-        const matchCount = await generateBracket(input.tournamentId, teamIds);
+        let seededOrder: number[] | undefined;
+        if (input.seededOrder && input.seededOrder.length > 0) {
+          const validIds = new Set(teamIds);
+          const allValid = input.seededOrder.every((id) => validIds.has(id));
+          if (!allValid || input.seededOrder.length !== teamIds.length) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "El orden de seeding contiene equipos inválidos o incompletos." });
+          }
+          seededOrder = input.seededOrder;
+        }
+        const matchCount = await generateBracket(input.tournamentId, teamIds, seededOrder);
         return { success: true, matchCount };
       }),
     // Asignar fecha/hora y cierre de apuestas a un partido

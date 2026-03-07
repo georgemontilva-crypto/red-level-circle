@@ -21,6 +21,9 @@ import {
   Edit,
   Eye,
   CalendarClock,
+  GripVertical,
+  RefreshCw,
+  ListOrdered,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -67,6 +70,10 @@ export default function TournamentManage() {
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [betsCloseMinutes, setBetsCloseMinutes] = useState(30);
+  // Seeding manual
+  const [seedingModal, setSeedingModal] = useState(false);
+  const [seedingOrder, setSeedingOrder] = useState<number[]>([]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   const { data: tournament, refetch: refetchTournament } = trpc.tournaments.byId.useQuery({ id });
   const { data: registrations, refetch: refetchRegs } = trpc.registrations.byTournament.useQuery(
@@ -110,6 +117,17 @@ export default function TournamentManage() {
     onSuccess: () => {
       toast.success("¡Ganador declarado! El torneo ha finalizado.");
       setWinnerModal(false);
+      refetchTournament();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const generateBracketMutation = trpc.matches.generateBracketManual.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Bracket generado: ${data.matchCount} partidas creadas.`);
+      setSeedingModal(false);
+      setSeedingOrder([]);
+      refetchMatches();
       refetchTournament();
     },
     onError: (err) => toast.error(err.message),
@@ -238,17 +256,55 @@ export default function TournamentManage() {
                 )}
 
                 {canStart && (
+                  <>
+                    {/* Seeding manual */}
+                    <button
+                      onClick={() => {
+                        const ids = registrations?.map((r) => r.teamId) ?? [];
+                        setSeedingOrder(ids);
+                        setSeedingModal(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
+                      style={{
+                        background: "oklch(0.55 0.18 220 / 0.15)",
+                        border: "1px solid oklch(0.55 0.18 220 / 0.4)",
+                        color: "oklch(0.65 0.18 220)",
+                      }}
+                    >
+                      <ListOrdered size={14} /> SEEDING
+                    </button>
+                    {/* Generar bracket directo */}
+                    <button
+                      onClick={() => startMutation.mutate({ id })}
+                      disabled={startMutation.isPending}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                      style={{
+                        background: "oklch(0.55 0.22 25)",
+                        color: "var(--text-primary)",
+                        boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.3)",
+                      }}
+                    >
+                      <Swords size={14} /> GENERAR BRACKET
+                    </button>
+                  </>
+                )}
+
+                {/* Regenerar bracket cuando ya está en progreso */}
+                {tournament.status === "in_progress" && matches && matches.length > 0 && (
                   <button
-                    onClick={() => startMutation.mutate({ id })}
-                    disabled={startMutation.isPending}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                    onClick={() => {
+                      const ids = registrations?.map((r) => r.teamId) ?? [];
+                      setSeedingOrder(ids);
+                      setSeedingModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
                     style={{
-                      background: "oklch(0.55 0.22 25)",
-                      color: "var(--text-primary)",
-                      boxShadow: "0 0 10px oklch(0.55 0.22 25 / 0.3)",
+                      background: "oklch(0.55 0.18 220 / 0.10)",
+                      border: "1px solid oklch(0.55 0.18 220 / 0.3)",
+                      color: "oklch(0.55 0.18 220)",
                     }}
                   >
-                    <Swords size={14} /> GENERAR BRACKET
+                    <RefreshCw size={14} /> REGENERAR BRACKET
                   </button>
                 )}
 
@@ -935,6 +991,107 @@ export default function TournamentManage() {
                 }}
               >
                 {declareWinnerMutation.isPending ? "PROCESANDO..." : "CONFIRMAR"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Seeding Manual */}
+      {seedingModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "oklch(0 0 0 / 0.8)" }}
+          onClick={() => setSeedingModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid oklch(0.55 0.18 220 / 0.4)",
+              boxShadow: "0 0 40px oklch(0.55 0.18 220 / 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <ListOrdered size={18} style={{ color: "oklch(0.65 0.18 220)" }} />
+              <h3 className="font-display text-base font-bold tracking-wider text-foreground">SEEDING DE EQUIPOS</h3>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mb-4">
+              Arrastra los equipos para definir el orden del bracket. El #1 jugará contra el último, el #2 contra el penúltimo, etc.
+            </p>
+
+            <div className="space-y-2 mb-5 max-h-72 overflow-y-auto">
+              {seedingOrder.map((teamId, idx) => {
+                const reg = registrations?.find((r) => r.teamId === teamId);
+                return (
+                  <div
+                    key={teamId}
+                    draggable
+                    onDragStart={() => setDragIdx(idx)}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={() => {
+                      if (dragIdx === null || dragIdx === idx) return;
+                      const newOrder = [...seedingOrder];
+                      const [moved] = newOrder.splice(dragIdx, 1);
+                      newOrder.splice(idx, 0, moved);
+                      setSeedingOrder(newOrder);
+                      setDragIdx(null);
+                    }}
+                    className="flex items-center gap-3 p-3 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-150"
+                    style={{
+                      background: dragIdx === idx ? "oklch(0.55 0.18 220 / 0.12)" : "var(--bg-card)",
+                      border: dragIdx === idx
+                        ? "1px solid oklch(0.55 0.18 220 / 0.5)"
+                        : "1px solid oklch(0.20 0.01 0)",
+                    }}
+                  >
+                    <GripVertical size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
+                    <span
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.65 0.18 220)" }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+                    >
+                      {reg?.teamName?.charAt(0)?.toUpperCase() ?? "?"}
+                    </div>
+                    <span className="text-sm font-display tracking-wide text-foreground truncate flex-1">
+                      {reg?.teamName ?? `Equipo #${teamId}`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setSeedingModal(false); setSeedingOrder([]); }}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => {
+                  generateBracketMutation.mutate({
+                    tournamentId: id,
+                    seededOrder: seedingOrder,
+                    forceRegenerate: true,
+                  });
+                }}
+                disabled={generateBracketMutation.isPending}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                style={{
+                  background: "oklch(0.55 0.18 220)",
+                  color: "var(--text-primary)",
+                  boxShadow: "0 0 12px oklch(0.55 0.18 220 / 0.4)",
+                }}
+              >
+                {generateBracketMutation.isPending ? "GENERANDO..." : "CONFIRMAR SEEDING"}
               </button>
             </div>
           </div>

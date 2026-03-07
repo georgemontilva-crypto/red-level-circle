@@ -792,29 +792,54 @@ export async function updateMatchResult(
 
 /**
  * Genera el bracket con sorteo aleatorio (Fisher-Yates).
- * Soporta bye: equipo impar avanza automáticamente (status=completed, winnerId=team1Id).
- * Crea placeholders para rondas siguientes.
+ * Soporta:
+ *   - single_elimination: eliminación directa con byes automáticos
+ *   - double_elimination: bracket de ganadores + bracket de perdedores + gran final
+ *   - groups: todos contra todos en una sola fase + playoff final
+ * El defaultSeriesFormat del torneo se guarda en el campo notes de cada match como JSON.
+ * Acepta un orden de equipos opcional (seeding manual); si no se pasa, se sortea aleatoriamente.
  */
-export async function generateBracket(tournamentId: number, approvedTeamIds: number[]) {
+export async function generateBracket(
+  tournamentId: number,
+  approvedTeamIds: number[],
+  seededOrder?: number[]
+) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(tournamentMatches).where(eq(tournamentMatches.tournamentId, tournamentId));
   const tournament = await getTournamentById(tournamentId);
   if (!tournament) throw new Error("Tournament not found");
-  // Fisher-Yates shuffle
-  const shuffled = [...approvedTeamIds];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+
+  const seriesFormat = (tournament as any).defaultSeriesFormat ?? "BO1";
+
+  // Orden de equipos: seeding manual o Fisher-Yates shuffle
+  let ordered: number[];
+  if (seededOrder && seededOrder.length === approvedTeamIds.length) {
+    ordered = seededOrder;
+  } else {
+    ordered = [...approvedTeamIds];
+    for (let i = ordered.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [ordered[i], ordered[j]] = [ordered[j], ordered[i]];
+    }
   }
+
   const matchesToInsert: typeof tournamentMatches.$inferInsert[] = [];
-  if (tournament.bracketType === "single_elimination" || tournament.bracketType === "double_elimination") {
-    const totalRounds = Math.ceil(Math.log2(shuffled.length));
+
+  // Helper: notas de match con seriesFormat
+  const matchNotes = (extra?: string) => {
+    const base = JSON.stringify({ seriesFormat });
+    if (!extra) return base;
+    return JSON.stringify({ seriesFormat, info: extra });
+  };
+
+  if (tournament.bracketType === "single_elimination") {
+    // ── SINGLE ELIMINATION ──────────────────────────────────────────────────────
+    const totalRounds = Math.ceil(Math.log2(ordered.length));
     let matchNum = 1;
-    // Round 1: pair teams, handle bye
-    for (let i = 0; i < shuffled.length; i += 2) {
-      const team1Id = shuffled[i];
-      const team2Id = shuffled[i + 1] ?? null;
+    for (let i = 0; i < ordered.length; i += 2) {
+      const team1Id = ordered[i];
+      const team2Id = ordered[i + 1] ?? null;
       const isBye = team2Id === null;
       matchesToInsert.push({
         tournamentId,
@@ -825,11 +850,10 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
         winnerId: isBye ? team1Id : null,
         status: isBye ? "completed" : "pending",
         completedAt: isBye ? new Date() : null,
-        notes: isBye ? "BYE" : null,
-        bracketPosition: { round: 1, position: Math.ceil(matchNum / 2) },
+        notes: isBye ? matchNotes("BYE") : matchNotes(),
+        bracketPosition: { round: 1, position: Math.ceil(matchNum / 2), side: "winners" },
       });
     }
-    // Placeholder matches for subsequent rounds
     for (let r = 2; r <= totalRounds; r++) {
       const prevCount = matchesToInsert.filter((m) => m.round === r - 1).length;
       const thisCount = Math.ceil(prevCount / 2);
@@ -841,26 +865,180 @@ export async function generateBracket(tournamentId: number, approvedTeamIds: num
           team1Id: null,
           team2Id: null,
           status: "pending",
-          bracketPosition: { round: r, position: p + 1 },
+          notes: matchNotes(),
+          bracketPosition: { round: r, position: p + 1, side: "winners" },
         });
       }
     }
-  } else if (tournament.bracketType === "groups") {
+
+  } else if (tournament.bracketType === "double_elimination") {
+    // ── DOUBLE ELIMINATION ──────────────────────────────────────────────────────
+    // Winners bracket (W) + Losers bracket (L) + Grand Final (GF)
+    //
+    // Rondas W: W1, W2, ..., WN  (N = ceil(log2(n)))
+    // Rondas L: L1, L2, ..., L(2N-2)
+    // Gran Final: GF (round = W_rounds + L_rounds + 1)
+    //
+    // Codificación de rounds:
+    //   1..wRounds           → Winners bracket
+    //   wRounds+1..wRounds+lRounds → Losers bracket
+    //   wRounds+lRounds+1    → Grand Final
+    //
+    // bracketPosition.side = "winners" | "losers" | "grand_final"
+
+    const n = ordered.length;
+    const wRounds = Math.ceil(Math.log2(n));
+    // Losers bracket has 2*(wRounds-1) rounds
+    const lRounds = 2 * (wRounds - 1);
     let matchNum = 1;
-    for (let i = 0; i < shuffled.length; i++) {
-      for (let j = i + 1; j < shuffled.length; j++) {
+
+    // ── Winners Round 1 ──
+    const wR1Matches: typeof tournamentMatches.$inferInsert[] = [];
+    for (let i = 0; i < ordered.length; i += 2) {
+      const team1Id = ordered[i];
+      const team2Id = ordered[i + 1] ?? null;
+      const isBye = team2Id === null;
+      const m: typeof tournamentMatches.$inferInsert = {
+        tournamentId,
+        round: 1,
+        matchNumber: matchNum++,
+        team1Id,
+        team2Id,
+        winnerId: isBye ? team1Id : null,
+        status: isBye ? "completed" : "pending",
+        completedAt: isBye ? new Date() : null,
+        notes: isBye ? matchNotes("BYE") : matchNotes(),
+        bracketPosition: { round: 1, position: wR1Matches.length + 1, side: "winners" },
+      };
+      wR1Matches.push(m);
+      matchesToInsert.push(m);
+    }
+
+    // ── Winners Rounds 2..wRounds ──
+    for (let r = 2; r <= wRounds; r++) {
+      const prevCount = matchesToInsert.filter((m) => m.round === r - 1 && (m.bracketPosition as any)?.side === "winners").length;
+      const thisCount = Math.ceil(prevCount / 2);
+      for (let p = 0; p < thisCount; p++) {
+        matchesToInsert.push({
+          tournamentId,
+          round: r,
+          matchNumber: matchNum++,
+          team1Id: null,
+          team2Id: null,
+          status: "pending",
+          notes: matchNotes(),
+          bracketPosition: { round: r, position: p + 1, side: "winners" },
+        });
+      }
+    }
+
+    // ── Losers Bracket ──
+    // L1: losers from W1 (n/2 teams → n/4 matches)
+    // L2: winners of L1 vs winners of L1 (consolidation)
+    // L3: losers from W2 drop in
+    // ... alternating "drop-in" and "consolidation" rounds
+    let lossersFromW1 = Math.floor(wR1Matches.length); // number of losers from W1
+    let lRoundBase = wRounds + 1; // first losers round number
+
+    let prevLCount = lossersFromW1;
+    for (let lr = 1; lr <= lRounds; lr++) {
+      const roundNum = lRoundBase + lr - 1;
+      // Odd losers rounds: drop-in from winners (prevLCount teams play)
+      // Even losers rounds: consolidation (prevLCount/2 matches)
+      let thisCount: number;
+      if (lr % 2 === 1) {
+        // Drop-in round: prevLCount losers from winners + prevLCount survivors from L
+        thisCount = Math.ceil(prevLCount / 2);
+      } else {
+        // Consolidation round
+        thisCount = Math.ceil(prevLCount / 2);
+      }
+      if (thisCount < 1) thisCount = 1;
+      for (let p = 0; p < thisCount; p++) {
+        matchesToInsert.push({
+          tournamentId,
+          round: roundNum,
+          matchNumber: matchNum++,
+          team1Id: null,
+          team2Id: null,
+          status: "pending",
+          notes: matchNotes(),
+          bracketPosition: { round: roundNum, position: p + 1, side: "losers" },
+        });
+      }
+      prevLCount = thisCount;
+    }
+
+    // ── Grand Final ──
+    const gfRound = lRoundBase + lRounds;
+    matchesToInsert.push({
+      tournamentId,
+      round: gfRound,
+      matchNumber: matchNum++,
+      team1Id: null,
+      team2Id: null,
+      status: "pending",
+      notes: matchNotes("GRAND_FINAL"),
+      bracketPosition: { round: gfRound, position: 1, side: "grand_final" },
+    });
+
+    // Optional bracket reset (if losers winner beats winners bracket champion)
+    matchesToInsert.push({
+      tournamentId,
+      round: gfRound + 1,
+      matchNumber: matchNum++,
+      team1Id: null,
+      team2Id: null,
+      status: "pending",
+      notes: matchNotes("BRACKET_RESET"),
+      bracketPosition: { round: gfRound + 1, position: 1, side: "grand_final" },
+    });
+
+  } else if (tournament.bracketType === "groups") {
+    // ── GROUPS (todos contra todos) + PLAYOFF FINAL ──────────────────────────
+    let matchNum = 1;
+    // Round 1: todos contra todos
+    for (let i = 0; i < ordered.length; i++) {
+      for (let j = i + 1; j < ordered.length; j++) {
         matchesToInsert.push({
           tournamentId,
           round: 1,
           matchNumber: matchNum++,
-          team1Id: shuffled[i],
-          team2Id: shuffled[j],
+          team1Id: ordered[i],
+          team2Id: ordered[j],
           status: "pending",
-          bracketPosition: { round: 1, position: matchNum },
+          notes: matchNotes(),
+          bracketPosition: { round: 1, position: matchNum, side: "groups" },
         });
       }
     }
+    // Round 2: Semifinales (top 4 clasificados — placeholders)
+    const semifinalCount = Math.min(2, Math.floor(ordered.length / 2));
+    for (let p = 0; p < semifinalCount; p++) {
+      matchesToInsert.push({
+        tournamentId,
+        round: 2,
+        matchNumber: matchNum++,
+        team1Id: null,
+        team2Id: null,
+        status: "pending",
+        notes: matchNotes("SEMIFINAL"),
+        bracketPosition: { round: 2, position: p + 1, side: "playoffs" },
+      });
+    }
+    // Round 3: Final
+    matchesToInsert.push({
+      tournamentId,
+      round: 3,
+      matchNumber: matchNum++,
+      team1Id: null,
+      team2Id: null,
+      status: "pending",
+      notes: matchNotes("FINAL"),
+      bracketPosition: { round: 3, position: 1, side: "playoffs" },
+    });
   }
+
   if (matchesToInsert.length > 0) {
     await db.insert(tournamentMatches).values(matchesToInsert);
   }

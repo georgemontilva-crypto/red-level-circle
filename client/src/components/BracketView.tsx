@@ -1,7 +1,7 @@
 /**
  * BracketView — Visualización interactiva de brackets de torneo.
- * Muestra las rondas en columnas con líneas conectoras SVG.
- * El organizador puede registrar el resultado (scoreA/scoreB) haciendo clic en la tarjeta.
+ * Soporta single_elimination, double_elimination (con secciones W/L/GF) y groups+playoffs.
+ * El seriesFormat se lee del campo notes (JSON) de cada match.
  */
 import { useState } from "react";
 import { Trophy, Swords, Loader2, CheckCircle, AlertCircle } from "lucide-react";
@@ -18,28 +18,26 @@ export interface BracketMatch {
   team2Score?: number | null;
   winnerId?: number | null;
   status: string;
+  notes?: string | null;
+  bracketPosition?: { round: number; position: number; side?: string } | null;
   /** Formato de la serie si ya fue configurada (BO1/BO2/BO3/BO5/BO7) */
   seriesFormat?: string | null;
-  /** Marcador de la serie (mapas ganados por cada equipo) */
   seriesScore1?: number | null;
   seriesScore2?: number | null;
 }
 
 interface BracketViewProps {
   matches: BracketMatch[];
-  /** Called when the organizer submits scores */
   onDeclareWinner?: (matchId: number, team1Score: number, team2Score: number) => Promise<void>;
   canEditResults?: boolean;
-  /** Show a demo/example bracket when no matches exist */
   showDemo?: boolean;
-  /** Formato de serie por defecto del torneo (BO1/BO2/BO3/BO5/BO7) */
   defaultSeriesFormat?: string;
 }
 
-const CARD_H = 90;   // height of each match card
-const CARD_W = 240;  // width of each match card
-const COL_GAP = 88;  // horizontal gap between rounds
-const ROW_GAP = 28;  // vertical gap between cards in the same round
+const CARD_H = 90;
+const CARD_W = 240;
+const COL_GAP = 88;
+const ROW_GAP = 28;
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
 const DEMO_MATCHES: BracketMatch[] = [
@@ -61,15 +59,50 @@ function roundLabel(roundIndex: number, totalRounds: number): string {
   return `RONDA ${roundIndex + 1}`;
 }
 
+function getSeriesFormat(match: BracketMatch, defaultFmt?: string): string | null {
+  // Priority: match.seriesFormat > notes JSON > defaultFmt
+  if (match.seriesFormat) return match.seriesFormat;
+  if (match.notes) {
+    try {
+      const parsed = JSON.parse(match.notes);
+      if (parsed?.seriesFormat) return parsed.seriesFormat;
+    } catch {
+      // notes is plain text (e.g. "BYE")
+    }
+  }
+  return defaultFmt ?? null;
+}
+
+function getMatchSide(match: BracketMatch): string {
+  if (match.bracketPosition && typeof match.bracketPosition === "object") {
+    return (match.bracketPosition as any).side ?? "winners";
+  }
+  return "winners";
+}
+
+function getMatchInfo(match: BracketMatch): string | null {
+  if (match.notes) {
+    try {
+      const parsed = JSON.parse(match.notes);
+      return parsed?.info ?? null;
+    } catch {
+      return match.notes === "BYE" ? "BYE" : null;
+    }
+  }
+  return null;
+}
+
 // ─── Score Modal ──────────────────────────────────────────────────────────────
 function ScoreModal({
   match,
   onClose,
   onSubmit,
+  defaultSeriesFormat,
 }: {
   match: BracketMatch;
   onClose: () => void;
   onSubmit: (matchId: number, s1: number, s2: number) => Promise<void>;
+  defaultSeriesFormat?: string;
 }) {
   const [s1, setS1] = useState("");
   const [s2, setS2] = useState("");
@@ -82,6 +115,8 @@ function ScoreModal({
   const predictedWinner = valid && !isDraw
     ? (n1 > n2 ? match.team1Name : match.team2Name)
     : null;
+
+  const fmt = getSeriesFormat(match, defaultSeriesFormat);
 
   const handleSubmit = async () => {
     if (!valid || isDraw) return;
@@ -106,95 +141,65 @@ function ScoreModal({
           background: "var(--bg-card)",
           border: "1px solid oklch(0.55 0.22 25 / 0.35)",
           boxShadow: "0 0 40px oklch(0.55 0.22 25 / 0.18)",
-          animation: "fadeInScale 0.18s ease-out",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 mb-5">
-          <Swords size={17} style={{ color: "oklch(0.55 0.22 25)" }} />
-          <h3 className="font-display text-sm font-bold tracking-widest text-foreground">
+        <div className="flex items-center gap-2 mb-1">
+          <Swords size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+          <h3 className="font-display text-base font-bold tracking-wider text-foreground">
             REGISTRAR RESULTADO
           </h3>
-          <span className="ml-auto text-xs font-mono text-muted-foreground">
-            #{match.matchNumber}
-          </span>
+          {fmt && (
+            <span
+              className="ml-auto text-xs font-mono font-bold px-2 py-0.5 rounded"
+              style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+            >
+              {fmt}
+            </span>
+          )}
         </div>
+        <p className="text-xs text-muted-foreground font-mono mb-5">
+          #{match.matchNumber} · {match.team1Name ?? "TBD"} vs {match.team2Name ?? "TBD"}
+        </p>
 
         <div className="space-y-3 mb-4">
-          {/* Team 1 */}
-          <div className="flex items-center gap-3">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
-            >
-              {(match.team1Name ?? "?").charAt(0).toUpperCase()}
+          {[
+            { name: match.team1Name, val: s1, set: setS1, score: n1, other: n2 },
+            { name: match.team2Name, val: s2, set: setS2, score: n2, other: n1 },
+          ].map((team, idx) => (
+            <div key={idx} className="flex items-center gap-3">
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+              >
+                {(team.name ?? "?").charAt(0).toUpperCase()}
+              </div>
+              <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
+                {team.name ?? "TBD"}
+              </span>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={team.val}
+                onChange={(e) => team.set(e.target.value)}
+                placeholder="0"
+                className="w-16 px-2 py-2 rounded-lg text-center text-lg font-mono font-bold transition-all duration-200"
+                style={{
+                  background: "var(--bg-main)",
+                  border: valid && !isDraw && team.score > team.other
+                    ? "1px solid oklch(0.65 0.18 145 / 0.7)"
+                    : "1px solid oklch(0.22 0.01 0)",
+                  color: valid && !isDraw && team.score > team.other
+                    ? "oklch(0.75 0.18 145)"
+                    : "oklch(0.90 0.005 0)",
+                  outline: "none",
+                }}
+              />
             </div>
-            <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
-              {match.team1Name ?? "Equipo 1"}
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={99}
-              value={s1}
-              onChange={(e) => setS1(e.target.value)}
-              placeholder="0"
-              autoFocus
-              className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
-              style={{
-                background: "var(--bg-main)",
-                border: valid && !isDraw && n1 > n2
-                  ? "1px solid oklch(0.65 0.18 145 / 0.7)"
-                  : "1px solid oklch(0.25 0.01 0)",
-                color: valid && !isDraw && n1 > n2
-                  ? "oklch(0.72 0.18 145)"
-                  : "oklch(0.90 0.005 0)",
-                outline: "none",
-              }}
-            />
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center gap-2 px-1">
-            <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
-            <span className="text-xs font-mono text-zinc-700">VS</span>
-            <div className="flex-1 h-px" style={{ background: "var(--bg-hover)" }} />
-          </div>
-
-          {/* Team 2 */}
-          <div className="flex items-center gap-3">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-              style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
-            >
-              {(match.team2Name ?? "?").charAt(0).toUpperCase()}
-            </div>
-            <span className="flex-1 text-sm font-display tracking-wide text-foreground truncate">
-              {match.team2Name ?? "Equipo 2"}
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={99}
-              value={s2}
-              onChange={(e) => setS2(e.target.value)}
-              placeholder="0"
-              className="w-14 px-2 py-1.5 rounded-lg text-center text-xl font-mono font-black transition-all duration-200"
-              style={{
-                background: "var(--bg-main)",
-                border: valid && !isDraw && n2 > n1
-                  ? "1px solid oklch(0.65 0.18 145 / 0.7)"
-                  : "1px solid oklch(0.25 0.01 0)",
-                color: valid && !isDraw && n2 > n1
-                  ? "oklch(0.72 0.18 145)"
-                  : "oklch(0.90 0.005 0)",
-                outline: "none",
-              }}
-            />
-          </div>
+          ))}
         </div>
 
-        {/* Live preview */}
         {predictedWinner && (
           <div
             className="flex items-center gap-2 px-3 py-2 rounded-lg mb-4"
@@ -222,11 +227,7 @@ function ScoreModal({
           <button
             onClick={onClose}
             className="flex-1 py-2.5 rounded-xl font-display text-xs tracking-widest"
-            style={{
-              background: "transparent",
-              border: "1px solid oklch(0.22 0.01 0)",
-              color: "var(--text-muted)",
-            }}
+            style={{ background: "transparent", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }}
           >
             CANCELAR
           </button>
@@ -234,11 +235,7 @@ function ScoreModal({
             onClick={handleSubmit}
             disabled={!valid || isDraw || saving}
             className="flex-1 py-2.5 rounded-xl font-display text-xs tracking-widest transition-all duration-200 disabled:opacity-40"
-            style={{
-              background: "oklch(0.55 0.22 25)",
-              color: "var(--text-primary)",
-              boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.35)",
-            }}
+            style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", boxShadow: "0 0 12px oklch(0.55 0.22 25 / 0.35)" }}
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "GUARDAR"}
           </button>
@@ -254,22 +251,32 @@ function MatchCard({
   canEdit,
   onOpenScoreModal,
   isDemo,
+  defaultSeriesFormat,
 }: {
   match: BracketMatch;
   canEdit?: boolean;
   onOpenScoreModal?: (match: BracketMatch) => void;
   isDemo?: boolean;
+  defaultSeriesFormat?: string;
 }) {
   const isPending = match.status === "pending";
   const isCompleted = match.status === "completed";
   const hasBothTeams = match.team1Id !== null && match.team2Id !== null;
   const canDeclare = canEdit && isPending && hasBothTeams && !isDemo;
+  const fmt = getSeriesFormat(match, defaultSeriesFormat);
+  const info = getMatchInfo(match);
+  const isGrandFinal = info === "GRAND_FINAL";
+  const isBracketReset = info === "BRACKET_RESET";
 
-  const borderColor = isCompleted
+  const borderColor = isGrandFinal
+    ? "oklch(0.65 0.18 80 / 0.6)"
+    : isCompleted
     ? "oklch(0.65 0.18 145 / 0.45)"
     : "oklch(0.20 0.01 0)";
 
-  const glowShadow = isCompleted
+  const glowShadow = isGrandFinal
+    ? "0 0 20px oklch(0.65 0.18 80 / 0.25)"
+    : isCompleted
     ? "0 0 12px oklch(0.65 0.18 145 / 0.12)"
     : undefined;
 
@@ -287,10 +294,7 @@ function MatchCard({
 
     return (
       <div className="flex items-center gap-1.5 px-3 py-1.5">
-        {/* Winner trophy */}
         {isWinner && <Trophy className="w-3 h-3 text-yellow-400 flex-shrink-0" />}
-
-        {/* Team name */}
         <span
           className={`text-xs font-bold font-mono truncate flex-1 ${
             isWinner
@@ -304,16 +308,10 @@ function MatchCard({
         >
           {teamName ?? (teamId ? `Equipo ${teamId}` : "TBD")}
         </span>
-
-        {/* Score — always show when completed, dash when pending */}
         <span
           className={`text-sm font-black font-mono w-5 text-right flex-shrink-0 ${
             isCompleted
-              ? isWinner
-                ? "text-green-400"
-                : isLoser
-                ? "text-muted-foreground"
-                : "text-muted-foreground"
+              ? isWinner ? "text-green-400" : "text-muted-foreground"
               : "text-zinc-700"
           }`}
           style={
@@ -336,25 +334,26 @@ function MatchCard({
       style={{
         width: CARD_W,
         height: CARD_H,
-        background: isDemo ? "oklch(0.09 0.005 0)" : "oklch(0.10 0.005 0)",
+        background: isGrandFinal
+          ? "oklch(0.65 0.18 80 / 0.06)"
+          : isDemo ? "oklch(0.09 0.005 0)" : "oklch(0.10 0.005 0)",
         border: `1px solid ${borderColor}`,
         boxShadow: glowShadow,
-        opacity: isDemo && match.team1Id === null ? 0.5 : 1,
+        opacity: isDemo && match.team1Id === null ? 0.5 : isBracketReset && match.team1Id === null ? 0.4 : 1,
       }}
       onClick={() => canDeclare && onOpenScoreModal?.(match)}
     >
-      {/* Match number */}
       <div className="absolute top-1 left-2 text-xs font-mono opacity-30" style={{ fontSize: 9 }}>
         #{match.matchNumber}
       </div>
 
       {/* Badge de formato de serie */}
-      {match.seriesFormat && !isDemo && (
+      {fmt && !isDemo && (
         <div
           className="absolute top-1 right-2 text-xs font-mono font-bold"
-          style={{ fontSize: 8, color: "oklch(0.65 0.22 25)", opacity: 0.85 }}
+          style={{ fontSize: 8, color: isGrandFinal ? "oklch(0.65 0.18 80)" : "oklch(0.65 0.22 25)", opacity: 0.85 }}
         >
-          {match.seriesFormat}
+          {fmt}
           {match.seriesScore1 != null && match.seriesScore2 != null && (
             <span style={{ color: "oklch(0.80 0.005 0)" }}>
               {" "}{match.seriesScore1}-{match.seriesScore2}
@@ -363,14 +362,12 @@ function MatchCard({
         </div>
       )}
 
-      {/* Demo badge */}
       {isDemo && (
         <div className="absolute top-1 right-2 text-xs font-mono opacity-40" style={{ fontSize: 8, color: "oklch(0.55 0.22 25)" }}>
           EJEMPLO
         </div>
       )}
 
-      {/* Click hint for editable pending matches */}
       {canDeclare && (
         <div
           className="absolute top-1 right-2 text-xs font-mono opacity-50"
@@ -380,11 +377,152 @@ function MatchCard({
         </div>
       )}
 
-      {/* Teams */}
+      {isGrandFinal && (
+        <div className="absolute bottom-1 left-2 text-xs font-mono font-bold" style={{ fontSize: 8, color: "oklch(0.65 0.18 80)", opacity: 0.8 }}>
+          GRAN FINAL
+        </div>
+      )}
+      {isBracketReset && (
+        <div className="absolute bottom-1 left-2 text-xs font-mono font-bold" style={{ fontSize: 8, color: "oklch(0.55 0.18 220)", opacity: 0.7 }}>
+          BRACKET RESET
+        </div>
+      )}
+
       <div className="flex flex-col justify-center h-full pt-3 gap-0">
         <TeamRow teamId={match.team1Id} teamName={match.team1Name} score={match.team1Score} />
         <div className="h-px mx-3" style={{ background: "var(--bg-hover)" }} />
         <TeamRow teamId={match.team2Id} teamName={match.team2Name} score={match.team2Score} />
+      </div>
+    </div>
+  );
+}
+
+// ─── SingleBracketSection ─────────────────────────────────────────────────────
+function SingleBracketSection({
+  sectionMatches,
+  sectionLabel,
+  sectionColor,
+  canEditResults,
+  onOpenScoreModal,
+  isDemo,
+  defaultSeriesFormat,
+}: {
+  sectionMatches: BracketMatch[];
+  sectionLabel?: string;
+  sectionColor?: string;
+  canEditResults?: boolean;
+  onOpenScoreModal?: (m: BracketMatch) => void;
+  isDemo?: boolean;
+  defaultSeriesFormat?: string;
+}) {
+  const rounds = Array.from(new Set(sectionMatches.map((m) => m.round))).sort((a, b) => a - b);
+  const matchesByRound = rounds.map((r) => sectionMatches.filter((m) => m.round === r));
+  const firstRoundCount = matchesByRound[0]?.length ?? 1;
+  const slotH = CARD_H + ROW_GAP;
+  const totalH = Math.max(firstRoundCount * slotH, CARD_H + ROW_GAP);
+
+  const roundPositions: number[][] = rounds.map((_, ri) => {
+    const count = matchesByRound[ri].length;
+    const step = totalH / count;
+    return Array.from({ length: count }, (_, i) => step * i + step / 2);
+  });
+
+  const connectors: { x1: number; y1: number; x2: number; y2: number; done: boolean }[] = [];
+  for (let ri = 0; ri < rounds.length - 1; ri++) {
+    const srcPositions = roundPositions[ri];
+    const dstPositions = roundPositions[ri + 1];
+    const srcX = ri * (CARD_W + COL_GAP) + CARD_W;
+    const dstX = (ri + 1) * (CARD_W + COL_GAP);
+    for (let di = 0; di < dstPositions.length; di++) {
+      const src1 = srcPositions[di * 2];
+      const src2 = srcPositions[di * 2 + 1];
+      const dst = dstPositions[di];
+      const srcMatch1 = matchesByRound[ri][di * 2];
+      const srcMatch2 = matchesByRound[ri][di * 2 + 1];
+      if (src1 !== undefined) connectors.push({ x1: srcX, y1: src1, x2: dstX, y2: dst, done: srcMatch1?.status === "completed" });
+      if (src2 !== undefined) connectors.push({ x1: srcX, y1: src2, x2: dstX, y2: dst, done: srcMatch2?.status === "completed" });
+    }
+  }
+
+  const totalW = rounds.length * (CARD_W + COL_GAP) - COL_GAP;
+  const svgPadding = 20;
+  const color = sectionColor ?? "oklch(0.55 0.22 25)";
+
+  return (
+    <div className="mb-8">
+      {sectionLabel && (
+        <div className="flex items-center gap-3 mb-3">
+          <div className="h-px flex-1" style={{ background: `${color}30` }} />
+          <span
+            className="text-xs font-display tracking-widest px-3 py-1 rounded-full font-bold"
+            style={{ color, background: `${color}15`, border: `1px solid ${color}30` }}
+          >
+            {sectionLabel}
+          </span>
+          <div className="h-px flex-1" style={{ background: `${color}30` }} />
+        </div>
+      )}
+      <div className="overflow-x-auto pb-4">
+        <div style={{ position: "relative", width: totalW + svgPadding * 2, minWidth: totalW + svgPadding * 2 }}>
+          {/* Round labels */}
+          <div className="flex" style={{ paddingLeft: svgPadding }}>
+            {rounds.map((_, ri) => (
+              <div
+                key={ri}
+                style={{ width: CARD_W, marginRight: ri < rounds.length - 1 ? COL_GAP : 0 }}
+                className="text-center mb-3"
+              >
+                <span
+                  className="text-xs font-mono tracking-widest px-3 py-1 rounded-full"
+                  style={{ color, background: `${color}08`, border: `1px solid ${color}20` }}
+                >
+                  {roundLabel(ri, rounds.length)}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* SVG connectors */}
+          <svg
+            style={{ position: "absolute", top: 36, left: svgPadding, width: totalW, height: totalH, pointerEvents: "none", overflow: "visible" }}
+          >
+            {connectors.map((c, i) => {
+              const midX = (c.x1 + c.x2) / 2;
+              return (
+                <path
+                  key={i}
+                  d={`M ${c.x1} ${c.y1} C ${midX} ${c.y1}, ${midX} ${c.y2}, ${c.x2} ${c.y2}`}
+                  fill="none"
+                  stroke={c.done ? "oklch(0.65 0.18 145 / 0.35)" : "oklch(0.22 0.01 0)"}
+                  strokeWidth={c.done ? 2 : 1.5}
+                  strokeDasharray={c.done ? undefined : "4 3"}
+                />
+              );
+            })}
+          </svg>
+
+          {/* Match cards */}
+          <div style={{ position: "relative", height: totalH + 8, paddingLeft: svgPadding, paddingTop: 8 }}>
+            {rounds.map((_, ri) => (
+              <div key={ri} style={{ position: "absolute", left: svgPadding + ri * (CARD_W + COL_GAP) }}>
+                {matchesByRound[ri].map((match, mi) => {
+                  const yCenter = roundPositions[ri][mi];
+                  return (
+                    <div key={match.id} style={{ position: "absolute", top: yCenter - CARD_H / 2, left: 0 }}>
+                      <MatchCard
+                        match={match}
+                        canEdit={canEditResults}
+                        onOpenScoreModal={onOpenScoreModal}
+                        isDemo={isDemo}
+                        defaultSeriesFormat={defaultSeriesFormat}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -396,6 +534,7 @@ export default function BracketView({
   onDeclareWinner,
   canEditResults,
   showDemo = false,
+  defaultSeriesFormat,
 }: BracketViewProps) {
   const [scoreModal, setScoreModal] = useState<BracketMatch | null>(null);
 
@@ -414,46 +553,11 @@ export default function BracketView({
     );
   }
 
-  // Group matches by round
-  const rounds = Array.from(new Set(effectiveMatches.map((m) => m.round))).sort((a, b) => a - b);
-  const matchesByRound = rounds.map((r) => effectiveMatches.filter((m) => m.round === r));
-
-  const firstRoundCount = matchesByRound[0]?.length ?? 1;
-  const slotH = CARD_H + ROW_GAP;
-  const totalH = firstRoundCount * slotH;
-
-  // Y-center positions per round
-  const roundPositions: number[][] = rounds.map((_, ri) => {
-    const count = matchesByRound[ri].length;
-    const step = totalH / count;
-    return Array.from({ length: count }, (_, i) => step * i + step / 2);
-  });
-
-  // SVG connector lines
-  const connectors: { x1: number; y1: number; x2: number; y2: number; done: boolean }[] = [];
-  for (let ri = 0; ri < rounds.length - 1; ri++) {
-    const srcPositions = roundPositions[ri];
-    const dstPositions = roundPositions[ri + 1];
-    const srcX = ri * (CARD_W + COL_GAP) + CARD_W;
-    const dstX = (ri + 1) * (CARD_W + COL_GAP);
-
-    for (let di = 0; di < dstPositions.length; di++) {
-      const src1 = srcPositions[di * 2];
-      const src2 = srcPositions[di * 2 + 1];
-      const dst = dstPositions[di];
-      const srcMatch1 = matchesByRound[ri][di * 2];
-      const srcMatch2 = matchesByRound[ri][di * 2 + 1];
-      if (src1 !== undefined) {
-        connectors.push({ x1: srcX, y1: src1, x2: dstX, y2: dst, done: srcMatch1?.status === "completed" });
-      }
-      if (src2 !== undefined) {
-        connectors.push({ x1: srcX, y1: src2, x2: dstX, y2: dst, done: srcMatch2?.status === "completed" });
-      }
-    }
-  }
-
-  const totalW = rounds.length * (CARD_W + COL_GAP) - COL_GAP;
-  const svgPadding = 20;
+  // Detect if this is a double elimination bracket
+  const sides = new Set(effectiveMatches.map((m) => getMatchSide(m)));
+  const isDoubleElim = sides.has("losers") || sides.has("grand_final");
+  const hasGroups = sides.has("groups");
+  const hasPlayoffs = sides.has("playoffs");
 
   return (
     <>
@@ -461,106 +565,86 @@ export default function BracketView({
         {isDemo && (
           <div
             className="mb-4 px-4 py-2.5 rounded-lg text-xs font-mono flex items-center gap-2"
-            style={{
-              background: "oklch(0.55 0.22 25 / 0.08)",
-              border: "1px solid oklch(0.55 0.22 25 / 0.25)",
-              color: "oklch(0.65 0.22 25)",
-            }}
+            style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.65 0.22 25)" }}
           >
             <Trophy className="w-3.5 h-3.5 flex-shrink-0" />
             Vista previa — Este es un ejemplo de cómo se verá el bracket cuando el torneo esté en curso.
           </div>
         )}
 
-        <div className="overflow-x-auto pb-4">
-          <div
-            style={{
-              position: "relative",
-              width: totalW + svgPadding * 2,
-              minWidth: totalW + svgPadding * 2,
-            }}
-          >
-            {/* Round labels */}
-            <div className="flex" style={{ paddingLeft: svgPadding }}>
-              {rounds.map((_, ri) => (
-                <div
-                  key={ri}
-                  style={{ width: CARD_W, marginRight: ri < rounds.length - 1 ? COL_GAP : 0 }}
-                  className="text-center mb-3"
-                >
-                  <span
-                    className="text-xs font-mono tracking-widest px-3 py-1 rounded-full"
-                    style={{
-                      color: "oklch(0.55 0.22 25)",
-                      background: "oklch(0.55 0.22 25 / 0.08)",
-                      border: "1px solid oklch(0.55 0.22 25 / 0.2)",
-                    }}
-                  >
-                    {roundLabel(ri, rounds.length)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* SVG connectors */}
-            <svg
-              style={{
-                position: "absolute",
-                top: 36,
-                left: svgPadding,
-                width: totalW,
-                height: totalH,
-                pointerEvents: "none",
-                overflow: "visible",
-              }}
-            >
-              {connectors.map((c, i) => {
-                const midX = (c.x1 + c.x2) / 2;
-                return (
-                  <path
-                    key={i}
-                    d={`M ${c.x1} ${c.y1} C ${midX} ${c.y1}, ${midX} ${c.y2}, ${c.x2} ${c.y2}`}
-                    fill="none"
-                    stroke={c.done ? "oklch(0.65 0.18 145 / 0.35)" : "oklch(0.22 0.01 0)"}
-                    strokeWidth={c.done ? 2 : 1.5}
-                    strokeDasharray={c.done ? undefined : "4 3"}
-                  />
-                );
-              })}
-            </svg>
-
-            {/* Match cards */}
-            <div style={{ position: "relative", height: totalH + 8, paddingLeft: svgPadding, paddingTop: 8 }}>
-              {rounds.map((_, ri) => (
-                <div key={ri} style={{ position: "absolute", left: svgPadding + ri * (CARD_W + COL_GAP) }}>
-                  {matchesByRound[ri].map((match, mi) => {
-                    const yCenter = roundPositions[ri][mi];
-                    return (
-                      <div
-                        key={match.id}
-                        style={{
-                          position: "absolute",
-                          top: yCenter - CARD_H / 2,
-                          left: 0,
-                        }}
-                      >
-                        <MatchCard
-                          match={match}
-                          canEdit={canEditResults}
-                          onOpenScoreModal={setScoreModal}
-                          isDemo={isDemo}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {isDoubleElim ? (
+          // ── DOUBLE ELIMINATION VIEW ──────────────────────────────────────────
+          <>
+            <SingleBracketSection
+              sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "winners")}
+              sectionLabel="BRACKET DE GANADORES"
+              sectionColor="oklch(0.65 0.18 145)"
+              canEditResults={canEditResults}
+              onOpenScoreModal={setScoreModal}
+              isDemo={isDemo}
+              defaultSeriesFormat={defaultSeriesFormat}
+            />
+            {effectiveMatches.some((m) => getMatchSide(m) === "losers") && (
+              <SingleBracketSection
+                sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "losers")}
+                sectionLabel="BRACKET DE PERDEDORES"
+                sectionColor="oklch(0.55 0.22 25)"
+                canEditResults={canEditResults}
+                onOpenScoreModal={setScoreModal}
+                isDemo={isDemo}
+                defaultSeriesFormat={defaultSeriesFormat}
+              />
+            )}
+            {effectiveMatches.some((m) => getMatchSide(m) === "grand_final") && (
+              <SingleBracketSection
+                sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "grand_final")}
+                sectionLabel="GRAN FINAL"
+                sectionColor="oklch(0.65 0.18 80)"
+                canEditResults={canEditResults}
+                onOpenScoreModal={setScoreModal}
+                isDemo={isDemo}
+                defaultSeriesFormat={defaultSeriesFormat}
+              />
+            )}
+          </>
+        ) : hasGroups || hasPlayoffs ? (
+          // ── GROUPS + PLAYOFFS VIEW ───────────────────────────────────────────
+          <>
+            {effectiveMatches.some((m) => getMatchSide(m) === "groups") && (
+              <SingleBracketSection
+                sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "groups")}
+                sectionLabel="FASE DE GRUPOS"
+                sectionColor="oklch(0.55 0.18 220)"
+                canEditResults={canEditResults}
+                onOpenScoreModal={setScoreModal}
+                isDemo={isDemo}
+                defaultSeriesFormat={defaultSeriesFormat}
+              />
+            )}
+            {effectiveMatches.some((m) => getMatchSide(m) === "playoffs") && (
+              <SingleBracketSection
+                sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "playoffs")}
+                sectionLabel="PLAYOFFS"
+                sectionColor="oklch(0.65 0.18 80)"
+                canEditResults={canEditResults}
+                onOpenScoreModal={setScoreModal}
+                isDemo={isDemo}
+                defaultSeriesFormat={defaultSeriesFormat}
+              />
+            )}
+          </>
+        ) : (
+          // ── SINGLE ELIMINATION VIEW ──────────────────────────────────────────
+          <SingleBracketSection
+            sectionMatches={effectiveMatches}
+            canEditResults={canEditResults}
+            onOpenScoreModal={setScoreModal}
+            isDemo={isDemo}
+            defaultSeriesFormat={defaultSeriesFormat}
+          />
+        )}
       </div>
 
-      {/* Score Modal */}
       {scoreModal && (
         <ScoreModal
           match={scoreModal}
@@ -569,6 +653,7 @@ export default function BracketView({
             await onDeclareWinner?.(matchId, s1, s2);
             setScoreModal(null);
           }}
+          defaultSeriesFormat={defaultSeriesFormat}
         />
       )}
     </>
