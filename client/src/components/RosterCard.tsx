@@ -43,6 +43,8 @@ export interface RosterCardProps {
   stats?: { wins?: number; losses?: number; kda?: number };
   userId?: number;
   isCaptain?: boolean;
+  /** Colores del tier pre-calculados desde Riot (opcional, sobreescribe el cálculo interno) */
+  eloTierColors?: { text: string; bg: string; border: string };
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -59,8 +61,9 @@ export default function RosterCard({
   stats,
   userId,
   isCaptain = false,
+  eloTierColors,
 }: RosterCardProps) {
-  const tierColors = getTierColors(elo);
+  const tierColors = eloTierColors ?? getTierColors(elo);
   const eloLabel = elo ? (elo.charAt(0).toUpperCase() + elo.slice(1).toLowerCase()) : null;
   const isValorant = game === "Valorant";
   const gameLabel = game

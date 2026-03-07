@@ -287,6 +287,120 @@ function TournamentRow({ reg, accent, teamId }: { reg: any; accent: string; team
   );
 }
 
+// ─── Mapeo de región Riot a label legible ───────────────────────────────────
+const REGION_LABELS_TEAM: Record<string, string> = {
+  la1: "LAN", la2: "LAS", na1: "NA", br1: "BR",
+  euw1: "EUW", eun1: "EUNE", kr: "KR", jp1: "JP",
+  tr1: "TR", ru: "RU", oc1: "OCE", sg2: "SEA",
+};
+
+// ─── Tier colors ─────────────────────────────────────────────────────────────
+const TIER_COLORS_TEAM: Record<string, { text: string; bg: string; border: string }> = {
+  IRON:        { text: "#9E9E9E", bg: "rgba(158,158,158,0.12)", border: "rgba(158,158,158,0.30)" },
+  BRONZE:      { text: "#CD7F32", bg: "rgba(205,127,50,0.12)",  border: "rgba(205,127,50,0.30)"  },
+  SILVER:      { text: "#C0C0C0", bg: "rgba(192,192,192,0.12)", border: "rgba(192,192,192,0.30)" },
+  GOLD:        { text: "#FFD700", bg: "rgba(255,215,0,0.12)",   border: "rgba(255,215,0,0.30)"   },
+  PLATINUM:    { text: "#00B4D8", bg: "rgba(0,180,216,0.12)",   border: "rgba(0,180,216,0.30)"   },
+  EMERALD:     { text: "#50C878", bg: "rgba(80,200,120,0.12)",  border: "rgba(80,200,120,0.30)"  },
+  DIAMOND:     { text: "#B9F2FF", bg: "rgba(185,242,255,0.12)", border: "rgba(185,242,255,0.30)" },
+  MASTER:      { text: "#9B59B6", bg: "rgba(155,89,182,0.12)",  border: "rgba(155,89,182,0.30)"  },
+  GRANDMASTER: { text: "#E74C3C", bg: "rgba(231,76,60,0.12)",   border: "rgba(231,76,60,0.30)"   },
+  CHALLENGER:  { text: "#F1C40F", bg: "rgba(241,196,15,0.12)",  border: "rgba(241,196,15,0.30)"  },
+  IMMORTAL:    { text: "#E74C3C", bg: "rgba(231,76,60,0.12)",   border: "rgba(231,76,60,0.30)"   },
+};
+
+/**
+ * RosterCardWithRiot — Carga datos de Riot en tiempo real para cada miembro.
+ * Muestra skeleton mientras carga, luego pasa los datos reales al RosterCard.
+ */
+function RosterCardWithRiot({
+  member,
+  teamName,
+  teamLogo,
+  isCaptain,
+}: {
+  member: any;
+  teamName?: string;
+  teamLogo?: string | null;
+  isCaptain: boolean;
+}) {
+  const { data: riotProfile, isLoading } = trpc.riot.getLolProfileByUserId.useQuery(
+    { userId: member.userId },
+    { enabled: !!member.userId, staleTime: 5 * 60 * 1000 }
+  );
+
+  if (isLoading) {
+    return (
+      <div
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: "linear-gradient(160deg, #160a0a 0%, #2a0d0d 45%, #120808 100%)",
+          border: "1px solid rgba(255,255,255,0.07)",
+        }}
+      >
+        <div style={{ height: "200px", background: "rgba(0,0,0,0.3)", animation: "pulse 1.5s ease-in-out infinite" }} />
+        <div className="p-4 space-y-3">
+          {["60%", "40%", "100%", "70%"].map((w, i) => (
+            <div key={i} style={{ height: i === 2 ? "1px" : "12px", width: w, background: "rgba(255,255,255,0.05)", borderRadius: "4px", animation: "pulse 1.5s ease-in-out infinite" }} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Datos de Riot o fallback al perfil manual
+  const hasRiot = !!riotProfile;
+  const riotRegion = hasRiot ? (REGION_LABELS_TEAM[riotProfile.region ?? ""] ?? riotProfile.region ?? "") : null;
+  const riotId = hasRiot && riotProfile.account?.gameName
+    ? `${riotProfile.account.gameName}#${riotProfile.account.tagLine ?? ""}`
+    : null;
+  const rankedSolo = hasRiot ? riotProfile.rankedSolo : null;
+  const riotIconUrl = hasRiot && (riotProfile as any).iconId
+    ? `https://ddragon.leagueoflegends.com/cdn/14.24.1/img/profileicon/${(riotProfile as any).iconId}.png`
+    : null;
+
+  let eloLabel: string | null = null;
+  let eloTier: string | null = null;
+  let wins: number | undefined;
+  let losses: number | undefined;
+
+  if (rankedSolo) {
+    const tier = (rankedSolo.tier ?? "").toUpperCase();
+    const rank = rankedSolo.rank ?? "";
+    const lp = rankedSolo.leaguePoints ?? 0;
+    eloLabel = `${tier.charAt(0) + tier.slice(1).toLowerCase()} ${rank} · ${lp} LP`;
+    eloTier = tier;
+    wins = rankedSolo.wins;
+    losses = rankedSolo.losses;
+  } else if (member.elo) {
+    eloLabel = member.elo;
+    eloTier = member.elo.toUpperCase().split(" ")[0];
+  }
+
+  const photoUrl = member.rosterImageUrl ?? member.rosterPhoto ?? riotIconUrl ?? member.avatar ?? null;
+  const region = riotRegion ?? member.competitiveRegion ?? member.country ?? undefined;
+  const realName = riotId ?? (member.nickname ? (member.userName ?? undefined) : undefined);
+  const tierColors = eloTier ? (TIER_COLORS_TEAM[eloTier] ?? undefined) : undefined;
+
+  return (
+    <RosterCard
+      playerName={member.nickname ?? member.userName ?? member.username ?? member.name ?? "Jugador"}
+      realName={realName ?? undefined}
+      role={member.gameRole ?? undefined}
+      region={region}
+      game={member.mainGame ?? undefined}
+      elo={eloLabel}
+      eloTierColors={tierColors}
+      photoUrl={photoUrl}
+      team={teamName}
+      teamLogo={teamLogo ?? undefined}
+      stats={wins !== undefined ? { wins, losses } : undefined}
+      userId={member.userId}
+      isCaptain={isCaptain}
+    />
+  );
+}
+
 export default function TeamProfile() {
   const { id } = useParams<{ id: string }>();
   const teamId = parseInt(id ?? "0");
@@ -549,18 +663,12 @@ export default function TeamProfile() {
               ) : (
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
                   {Array.from(new Map(team.members.map((m: any) => [m.userId, m])).values()).map((m: any) => (
-                    <RosterCard
-                      key={m.id}
-                      playerName={m.nickname ?? m.userName ?? m.username ?? m.name ?? "Jugador"}
-                      realName={m.nickname ? (m.userName ?? undefined) : undefined}
-                      role={m.gameRole ?? m.role ?? undefined}
-                      region={m.competitiveRegion ?? m.country ?? undefined}
-                      game={m.mainGame ?? undefined}
-                      elo={m.elo ?? null}
-                      photoUrl={m.rosterImageUrl ?? m.rosterPhoto ?? m.avatar ?? m.photoUrl ?? null}
-                      team={team.name ?? undefined}
+                    <RosterCardWithRiot
+                      key={m.userId}
+                      member={m}
+                      teamName={team.name ?? undefined}
+                      teamLogo={team.logo ?? null}
                       isCaptain={m.userId === team.captainId}
-                      userId={m.userId}
                     />
                   ))}
                 </div>
