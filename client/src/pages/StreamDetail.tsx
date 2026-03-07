@@ -1,6 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useParams, Link } from "wouter";
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
   Radio, Eye, ExternalLink, Tv, ArrowLeft, ChevronRight,
 } from "lucide-react";
@@ -23,60 +23,30 @@ function formatViewers(n: number): string {
 
 
 /**
- * En iOS/Android, al abrir el teclado el viewport se reduce y los elementos
- * fixed con bottom:0 se redimensionan, haciendo que el video suba.
+ * En Android/iOS, al abrir el teclado el navegador hace scroll del viewport
+ * hacia arriba para mostrar el input, lo que empuja el video fuera de la pantalla.
  *
- * Estrategia: capturar la altura INICIAL del viewport (antes del teclado) y
- * fijarla como height del contenedor. Solo actualizar si la pantalla CRECE
- * (rotación, cierre del teclado), nunca si se reduce (apertura del teclado).
+ * Solución: el video se fija con position:fixed en la parte superior (debajo del
+ * navbar). El chat ocupa el resto de la pantalla con padding-top igual a la altura
+ * del video, de modo que el input del chat siempre queda visible sin mover el video.
+ *
+ * Este hook calcula la altura del video (56.25vw = 16:9) y la aplica como
+ * padding-top al contenedor del chat para que no quede tapado por el video.
  */
-function useMobileContainerHeight(ref: React.RefObject<HTMLDivElement | null>) {
+function useMobileVideoHeight(): number {
+  const [videoH, setVideoH] = useState(() => Math.round(window.innerWidth * 9 / 16));
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    // Calcular el top del contenedor (navbar + safe-area)
-    const getTop = () => {
-      const safeTop = parseInt(
-        getComputedStyle(document.documentElement)
-          .getPropertyValue("--sat") || "0",
-        10
-      ) || 0;
-      return 56 + safeTop;
-    };
-
-    // Altura máxima conocida del viewport (solo crece en rotación/cierre teclado)
-    let maxHeight = (window.visualViewport?.height ?? window.innerHeight);
-
-    const applyHeight = () => {
-      const currentH = window.visualViewport?.height ?? window.innerHeight;
-      // Solo actualizar si el viewport CRECIÓ (rotación o cierre de teclado)
-      if (currentH > maxHeight) {
-        maxHeight = currentH;
-      }
-      const top = getTop();
-      el.style.height = `${maxHeight - top}px`;
-      el.style.bottom = "auto";
-    };
-
-    applyHeight();
-
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener("resize", applyHeight);
-      return () => vv.removeEventListener("resize", applyHeight);
-    } else {
-      window.addEventListener("resize", applyHeight);
-      return () => window.removeEventListener("resize", applyHeight);
-    }
-  }, [ref]);
+    const update = () => setVideoH(Math.round(window.innerWidth * 9 / 16));
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return videoH;
 }
 
 export default function StreamDetail() {
   const { id } = useParams<{ id: string }>();
   const streamId = parseInt(id ?? "0", 10);
-  const mobileContainerRef = useRef<HTMLDivElement>(null);
-  useMobileContainerHeight(mobileContainerRef);
+  const videoH = useMobileVideoHeight();
 
   const { data: stream, isLoading } = trpc.streams.byId.useQuery(
     { id: streamId },
@@ -146,49 +116,52 @@ export default function StreamDetail() {
     <>
       {/*
        * ─────────────────────────────────────────────────────────────────────
-       * MOBILE (<lg): layout fijo debajo del navbar, sin scroll.
-       * top = 56px navbar + safe-area-inset-top (notch/Dynamic Island en iOS).
+       * MOBILE (<lg): video fijo en la parte superior (position:fixed),
+       * chat en flujo normal con padding-top = altura del video.
+       *
+       * Al abrir el teclado, el navegador hace scroll del documento hacia arriba
+       * para mostrar el input. Como el video es position:fixed, NO se mueve con
+       * el scroll — siempre queda visible en la parte superior de la pantalla.
+       * El chat queda debajo con padding-top para no quedar tapado por el video.
        * ─────────────────────────────────────────────────────────────────────
        */}
+
+      {/* VIDEO: position fixed, siempre visible aunque el teclado suba */}
       <div
-        ref={mobileContainerRef}
-        className="lg:hidden fixed z-40 flex flex-col bg-black"
+        className="lg:hidden fixed z-40 bg-black"
         style={{
           top: "calc(env(safe-area-inset-top, 0px) + 56px)",
           left: 0,
           right: 0,
-          bottom: 0,
-          // El hook useMobileContainerHeight sobreescribe bottom con height
-          // para que el contenedor no se redimensione cuando aparece el teclado en iOS
+          height: `${videoH}px`,
         }}
       >
-        {/* Video: altura fija = 56.25vw (16:9), no cambia cuando sube el teclado */}
         {resolvedEmbedUrl ? (
-          <div
-            className="w-full flex-shrink-0 bg-black"
-            style={{ height: "calc(100vw * 9 / 16)" }}
-          >
-            <iframe
-              src={resolvedEmbedUrl}
-              className="w-full h-full border-0"
-              allowFullScreen
-              allow="autoplay; encrypted-media; fullscreen; clipboard-write"
-              title={stream.title}
-            />
-          </div>
+          <iframe
+            src={resolvedEmbedUrl}
+            className="w-full h-full border-0"
+            allowFullScreen
+            allow="autoplay; encrypted-media; fullscreen; clipboard-write"
+            title={stream.title}
+          />
         ) : (
-          <div
-            className="w-full flex-shrink-0 bg-zinc-900 flex items-center justify-center"
-            style={{ height: "calc(100vw * 9 / 16)" }}
-          >
+          <div className="w-full h-full bg-zinc-900 flex items-center justify-center">
             <Tv className="w-10 h-10 text-zinc-600" />
           </div>
         )}
+      </div>
 
-        {/* Chat: ocupa el resto y se comprime cuando sube el teclado */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <RLCChat streamId={streamId} currentUser={currentUser} />
-        </div>
+      {/* CHAT: flujo normal, padding-top = altura del video + navbar */}
+      <div
+        className="lg:hidden bg-[#0d0d0d]"
+        style={{
+          marginTop: `calc(env(safe-area-inset-top, 0px) + 56px + ${videoH}px)`,
+          height: `calc(100dvh - env(safe-area-inset-top, 0px) - 56px - ${videoH}px)`,
+          minHeight: "200px",
+          overflow: "hidden",
+        }}
+      >
+        <RLCChat streamId={streamId} currentUser={currentUser} />
       </div>
 
       {/*
