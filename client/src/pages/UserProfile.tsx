@@ -131,6 +131,12 @@ export default function UserProfile() {
     { enabled: !!userId }
   );
 
+  // ── Riot profile (para sincronizar etiquetas del header y bloque de juego) ──
+  const { data: lolProfile } = trpc.riot.getLolProfileByUserId.useQuery(
+    { userId },
+    { enabled: !!userId, staleTime: 5 * 60 * 1000 }
+  );
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -293,57 +299,96 @@ export default function UserProfile() {
             <p className="mt-3 text-secondary-foreground text-sm leading-relaxed">{profile.bio}</p>
           )}
 
-          {/* Meta info row */}
-          <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
-            {profile.mainGame && (
-              <span className="flex items-center gap-1">
-                <Gamepad2 className="w-3.5 h-3.5 text-white" />
-                {profile.mainGame}
-              </span>
-            )}
-            {(profile as { gameRole?: string | null }).gameRole && (() => {
-              const _vGameSlug = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
-              const _vRoles = getRolesForGame(_vGameSlug);
-              const _vRoleData = _vRoles.find((r) => r.value === (profile as { gameRole?: string | null }).gameRole);
-              return (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-                  style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
-                  {_vRoleData?.svgPath ? (
-                    <img src={_vRoleData.svgPath} alt={_vRoleData.label} className="w-3.5 h-3.5" style={{ filter: "invert(1) sepia(1) saturate(2) hue-rotate(320deg)" }} />
-                  ) : <Gamepad2 className="w-3.5 h-3.5" />}
-                  {_vRoleData?.label ?? (profile as { gameRole?: string | null }).gameRole}
+          {/* Meta info row — sincronizado con Riot cuando aplica */}
+          {(() => {
+            const isRiotGame = profile.mainGame === "League of Legends" || profile.mainGame === "Valorant";
+            const riotLinked = !!(lolProfile as any)?.account;
+            const riotRankedSolo = (lolProfile as any)?.rankedSolo;
+            const riotRegion = (lolProfile as any)?.region;
+            // Tier colors para el badge de rango de Riot
+            const RIOT_TIER_COLORS: Record<string, { text: string; border: string; bg: string }> = {
+              IRON:        { text: "#9E9E9E", bg: "rgba(158,158,158,0.12)", border: "rgba(158,158,158,0.30)" },
+              BRONZE:      { text: "#CD7F32", bg: "rgba(205,127,50,0.12)",  border: "rgba(205,127,50,0.30)" },
+              SILVER:      { text: "#C0C0C0", bg: "rgba(192,192,192,0.12)", border: "rgba(192,192,192,0.30)" },
+              GOLD:        { text: "#FFD700", bg: "rgba(255,215,0,0.12)",   border: "rgba(255,215,0,0.30)" },
+              PLATINUM:    { text: "#00B4D8", bg: "rgba(0,180,216,0.12)",   border: "rgba(0,180,216,0.30)" },
+              EMERALD:     { text: "#50C878", bg: "rgba(80,200,120,0.12)",  border: "rgba(80,200,120,0.30)" },
+              DIAMOND:     { text: "#B9F2FF", bg: "rgba(185,242,255,0.12)", border: "rgba(185,242,255,0.30)" },
+              MASTER:      { text: "#9B59B6", bg: "rgba(155,89,182,0.12)",  border: "rgba(155,89,182,0.30)" },
+              GRANDMASTER: { text: "#E74C3C", bg: "rgba(231,76,60,0.12)",   border: "rgba(231,76,60,0.30)" },
+              CHALLENGER:  { text: "#F1C40F", bg: "rgba(241,196,15,0.12)",  border: "rgba(241,196,15,0.30)" },
+            };
+            const RIOT_REGION_LABELS: Record<string, string> = {
+              la1: "LAN", la2: "LAS", na1: "NA", br1: "BR",
+              euw1: "EUW", eun1: "EUNE", kr: "KR", jp1: "JP",
+              oc1: "OCE", tr1: "TR", ru: "RU",
+            };
+            const gameSlug = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
+            const roles = getRolesForGame(gameSlug);
+            const roleData = roles.find((r) => r.value === (profile as any).gameRole);
+            const ranks = getRanksForGame(gameSlug);
+            const rankData = ranks.find((r) => r.value === (profile as any).elo);
+            // Determinar el badge de rango: si es Riot game y tiene Riot vinculado con rango real, usarlo
+            const riotTierColor = riotRankedSolo?.tier ? RIOT_TIER_COLORS[riotRankedSolo.tier] : null;
+            const riotRankLabel = riotRankedSolo?.tier
+              ? `${riotRankedSolo.tier.charAt(0) + riotRankedSolo.tier.slice(1).toLowerCase()} ${riotRankedSolo.rank ?? ""}`
+              : null;
+            // Determinar la región: si Riot vinculado, usar la región de Riot; si no, usar competitiveRegion del perfil
+            const displayRegion = isRiotGame && riotLinked && riotRegion
+              ? (RIOT_REGION_LABELS[riotRegion] ?? riotRegion.toUpperCase())
+              : (profile as any).competitiveRegion ?? null;
+            return (
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
+                {profile.mainGame && (
+                  <span className="flex items-center gap-1">
+                    <Gamepad2 className="w-3.5 h-3.5 text-white" />
+                    {profile.mainGame}
+                  </span>
+                )}
+                {/* Rol — siempre del perfil manual */}
+                {roleData && (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
+                    {roleData.svgPath ? (
+                      <img src={roleData.svgPath} alt={roleData.label} className="w-3.5 h-3.5" style={{ filter: "invert(1) sepia(1) saturate(2) hue-rotate(320deg)" }} />
+                    ) : <Gamepad2 className="w-3.5 h-3.5" />}
+                    {roleData.label}
+                  </span>
+                )}
+                {/* Rango — si Riot game + vinculado: usar tier real de Riot; si no: usar elo del perfil */}
+                {isRiotGame && riotLinked && riotRankLabel ? (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                    style={riotTierColor
+                      ? { background: riotTierColor.bg, border: `1px solid ${riotTierColor.border}`, color: riotTierColor.text }
+                      : { background: "oklch(0.65 0.18 80 / 0.12)", border: "1px solid oklch(0.65 0.18 80 / 0.25)", color: "oklch(0.75 0.18 80)" }
+                    }>
+                    {riotTierColor && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: riotTierColor.text }} />}
+                    {riotRankLabel.trim()}
+                  </span>
+                ) : rankData ? (
+                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
+                    style={{ background: `${rankData.color}18`, border: `1px solid ${rankData.color}44`, color: rankData.color }}>
+                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: rankData.color }} />
+                    {rankData.label}
+                  </span>
+                ) : null}
+                {/* Región — si Riot vinculado: región de la cuenta Riot; si no: competitiveRegion del perfil */}
+                {displayRegion && (
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
+                    style={{ background: "oklch(0.45 0.15 220 / 0.12)", border: "1px solid oklch(0.45 0.15 220 / 0.25)", color: "oklch(0.70 0.15 220)" }}>
+                    <Globe className="w-3 h-3" /> {displayRegion}
+                  </span>
+                )}
+                {profile.country && (
+                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {profile.country}</span>
+                )}
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  Desde {new Date(profile.createdAt).toLocaleDateString("es", { year: "numeric", month: "long" })}
                 </span>
-              );
-            })()}
-            {(profile as { elo?: string | null }).elo && (() => {
-              const _vGameSlug2 = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
-              const _vRanks = getRanksForGame(_vGameSlug2);
-              const _vRankData = _vRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
-              return (
-                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
-                  style={_vRankData
-                    ? { background: `${_vRankData.color}18`, border: `1px solid ${_vRankData.color}44`, color: _vRankData.color }
-                    : { background: "oklch(0.65 0.18 80 / 0.12)", border: "1px solid oklch(0.65 0.18 80 / 0.25)", color: "oklch(0.75 0.18 80)" }
-                  }>
-                  {_vRankData && <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: _vRankData.color }} />}
-                  {_vRankData?.label ?? (profile as { elo?: string | null }).elo}
-                </span>
-              );
-            })()}
-            {(profile as { competitiveRegion?: string | null }).competitiveRegion && (
-              <span className="flex items-center gap-1 px-2 py-0.5 rounded-full"
-                style={{ background: "oklch(0.45 0.15 220 / 0.12)", border: "1px solid oklch(0.45 0.15 220 / 0.25)", color: "oklch(0.70 0.15 220)" }}>
-                <Globe className="w-3 h-3" /> {(profile as { competitiveRegion?: string | null }).competitiveRegion}
-              </span>
-            )}
-            {profile.country && (
-              <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {profile.country}</span>
-            )}
-            <span className="flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              Desde {new Date(profile.createdAt).toLocaleDateString("es", { year: "numeric", month: "long" })}
-            </span>
-          </div>
+              </div>
+            );
+          })()}
 
           {/* Followers / Following counters */}
           <div className="flex items-center gap-5 mt-4">
@@ -432,191 +477,190 @@ export default function UserProfile() {
         </div>
 
         {/* Tab content */}
-        <div className="mt-4 space-y-4">
-          {/* Overview tab */}
+        <div className="mt-4">
+          {/* Overview tab — Masonry Layout */}
           {activeTab === "overview" && (
-            <div className="space-y-4">
-              {/* Stats grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
-                  { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: "coins" },
-                  { label: "Seguidores", value: profile.followerCount ?? 0, icon: "users" },
-                  { label: "Siguiendo", value: profile.followingCount ?? 0, icon: "userplus" },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="rounded-xl p-4 text-center"
-                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-                  >
-                    <div className="flex justify-center mb-1" style={{ color: "oklch(0.55 0.22 25)" }}>
-                      {stat.icon === "coins" && <Coins size={22} />}
-                      {stat.icon === "users" && <Users size={22} />}
-                      {stat.icon === "userplus" && <UserPlus size={22} />}
-                    </div>
-                    <div className="font-mono font-bold text-white text-lg">{stat.value.toLocaleString()}</div>
-                    <div className="text-xs text-muted-foreground font-mono mt-0.5">{stat.label}</div>
-                  </div>
-          ))}
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-[5fr_8fr] gap-3 items-start">
 
-              {/* Team memberships */}
-              {teamMemberships && teamMemberships.length > 0 && (
+              {/* ── COLUMNA IZQUIERDA ── */}
+              <div className="flex flex-col gap-3">
+
+                {/* Stats */}
                 <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
                   <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
-                    <Shield className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-                    <span className="text-xs font-display tracking-wider text-foreground">EQUIPOS</span>
+                    <Star className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                    <span className="text-xs font-display tracking-wider text-foreground">ESTADÍSTICAS</span>
                   </div>
-                  <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
-                    {teamMemberships.map((m: any) => (
-                      <Link key={m.teamId} href={`/teams/${m.teamId}`}>
-                        <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
-                          {m.teamLogo ? (
-                            <img src={m.teamLogo} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" style={{ border: "1px solid oklch(0.55 0.22 25 / 0.3)" }} />
+                  <div className="p-3 grid grid-cols-3 gap-2">
+                    {[
+                      { label: "RLC Coins", value: profile.rlcBalance ?? 0, icon: "coins" },
+                      { label: "Seguidores", value: profile.followerCount ?? 0, icon: "users" },
+                      { label: "Torneos", value: 0, icon: "trophy" },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-lg p-2.5 text-center" style={{ background: "oklch(0.10 0.005 0)", border: "1px solid oklch(0.15 0.005 0)" }}>
+                        <div className="flex justify-center mb-1" style={{ color: "oklch(0.55 0.22 25)" }}>
+                          {stat.icon === "coins" && <Coins size={18} />}
+                          {stat.icon === "users" && <Users size={18} />}
+                          {stat.icon === "trophy" && <Trophy size={18} />}
+                        </div>
+                        <div className="font-mono font-bold text-white text-base">{stat.value.toLocaleString()}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono mt-0.5">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Equipos */}
+                {teamMemberships && teamMemberships.length > 0 && (
+                  <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                    <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                      <Shield className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                      <span className="text-xs font-display tracking-wider text-foreground">EQUIPOS</span>
+                    </div>
+                    <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
+                      {teamMemberships.map((m: any) => (
+                        <Link key={m.teamId} href={`/teams/${m.teamId}`}>
+                          <div className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                            {m.teamLogo ? (
+                              <img src={m.teamLogo} alt="" className="w-10 h-10 rounded-xl object-cover shrink-0" style={{ border: "1px solid oklch(0.55 0.22 25 / 0.3)" }} />
+                            ) : (
+                              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                                <Shield size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground truncate">{m.teamName}</p>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                {m.teamGame && <span className="text-xs text-muted-foreground">{m.teamGame}</span>}
+                                <span className="text-xs font-display tracking-wider px-1.5 py-0.5 rounded"
+                                  style={m.role === "captain"
+                                    ? { background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)" }
+                                    : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
+                                  }>
+                                  {m.role === "captain" ? "Capitán" : m.role === "substitute" ? "Suplente" : m.role === "coach" ? "Entrenador" : "Jugador"}
+                                </span>
+                              </div>
+                            </div>
+                            {m.teamTag && (
+                              <span className="text-xs font-mono shrink-0" style={{ color: "var(--text-muted)" }}>[{m.teamTag}]</span>
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Apuestas */}
+                {betStats && betStats.total > 0 && (
+                  <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                    <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                      <Coins className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                      <span className="text-xs font-display tracking-wider text-foreground">APUESTAS</span>
+                    </div>
+                    <div className="p-4 space-y-3">
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs text-muted-foreground font-mono">% ACIERTO</span>
+                          <span className="text-sm font-orbitron" style={{ color: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>{betStats.winRate}%</span>
+                        </div>
+                        <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-hover)" }}>
+                          <div className="h-full rounded-full transition-all duration-700"
+                            style={{ width: `${betStats.winRate}%`, background: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg p-2 text-center" style={{ background: "var(--bg-card)" }}>
+                          <p className="text-base font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>{betStats.won}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">GANADAS</p>
+                        </div>
+                        <div className="rounded-lg p-2 text-center" style={{ background: "var(--bg-card)" }}>
+                          <p className="text-base font-orbitron" style={{ color: "oklch(0.65 0.22 25)" }}>{betStats.lost}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">PERDIDAS</p>
+                        </div>
+                        <div className="rounded-lg p-2 text-center" style={{ background: "var(--bg-card)" }}>
+                          <p className="text-base font-orbitron text-foreground">{betStats.pending}</p>
+                          <p className="text-[10px] text-muted-foreground font-mono">PENDIENTES</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
+                          <p className="text-[10px] text-muted-foreground font-mono mb-0.5">VOLUMEN</p>
+                          <p className="text-xs font-mono text-foreground">{betStats.totalWagered.toLocaleString()} RLC</p>
+                        </div>
+                        <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
+                          <p className="text-[10px] text-muted-foreground font-mono mb-0.5">BENEFICIO NETO</p>
+                          <p className="text-xs font-mono" style={{ color: betStats.netProfit >= 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
+                            {betStats.netProfit >= 0 ? "+" : ""}{betStats.netProfit.toLocaleString()} RLC
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>{/* /col-left */}
+
+              {/* ── COLUMNA DERECHA ── */}
+              <div className="flex flex-col gap-3">
+
+                {/* Bloque de juego principal (dinámico) */}
+                <RiotProfileSection userId={userId} isOwnProfile={isOwnProfile} />
+
+                {/* Streams */}
+                {(streamHistory as any[]).length > 0 && (
+                  <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                    <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
+                      <Tv2 className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+                      <span className="text-xs font-display tracking-wider text-foreground">STREAMS</span>
+                    </div>
+                    <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
+                      {(streamHistory as any[]).map((s) => (
+                        <a key={s.id} href={s.url ?? undefined} target="_blank" rel="noreferrer"
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer">
+                          {s.thumbnailUrl ? (
+                            <img src={s.thumbnailUrl} alt="" className="w-16 h-9 rounded object-cover shrink-0" style={{ border: "1px solid oklch(0.22 0.01 0)" }} />
                           ) : (
-                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
-                              <Shield size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+                            <div className="w-16 h-9 rounded flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                              <Tv2 size={14} style={{ color: "oklch(0.40 0.005 0)" }} />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground truncate">{m.teamName}</p>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {m.teamGame && <span className="text-xs text-muted-foreground">{m.teamGame}</span>}
-                              <span
-                                className="text-xs font-display tracking-wider px-1.5 py-0.5 rounded"
-                                style={m.role === "captain"
-                                  ? { background: "oklch(0.65 0.18 80 / 0.15)", color: "oklch(0.65 0.18 80)" }
-                                  : { background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }
-                                }
-                              >
-                                {m.role === "captain" ? "Capitán" : m.role === "substitute" ? "Suplente" : m.role === "coach" ? "Entrenador" : "Jugador"}
-                              </span>
+                            <p className="text-sm font-semibold text-foreground truncate">{s.title ?? "Sin título"}</p>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              {s.game && <span className="text-xs text-muted-foreground truncate">{s.game}</span>}
+                              {s.viewerCount ? (
+                                <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Eye className="w-3 h-3" />{s.viewerCount.toLocaleString()}
+                                </span>
+                              ) : null}
                             </div>
                           </div>
-                          {m.teamTag && (
-                            <span className="text-xs font-mono shrink-0" style={{ color: "var(--text-muted)" }}>[{m.teamTag}]</span>
-                          )}
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-
-              {/* Stream history */}
-              {(streamHistory as any[]).length > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
-                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
-                    <Tv2 className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-                    <span className="text-xs font-display tracking-wider text-foreground">STREAMS</span>
-                  </div>
-                  <div className="divide-y" style={{ borderColor: "var(--border-main)" }}>
-                    {(streamHistory as any[]).map((s) => (
-                      <a
-                        key={s.id}
-                        href={s.url ?? undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors cursor-pointer"
-                      >
-                        {s.thumbnailUrl ? (
-                          <img src={s.thumbnailUrl} alt="" className="w-16 h-9 rounded object-cover shrink-0" style={{ border: "1px solid oklch(0.22 0.01 0)" }} />
-                        ) : (
-                          <div className="w-16 h-9 rounded flex items-center justify-center shrink-0" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)" }}>
-                            <Tv2 size={14} style={{ color: "oklch(0.40 0.005 0)" }} />
-                          </div>
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">{s.title ?? "Sin título"}</p>
-                          <div className="flex items-center gap-3 mt-0.5">
-                            {s.game && <span className="text-xs text-muted-foreground truncate">{s.game}</span>}
-                            {s.viewerCount ? (
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            {s.isLive ? (
+                              <span className="px-1.5 py-0.5 rounded text-xs font-mono animate-pulse" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.75 0.22 25)" }}>EN VIVO</span>
+                            ) : (
                               <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Eye className="w-3 h-3" />{s.viewerCount.toLocaleString()}
+                                <Clock className="w-3 h-3" />
+                                {new Date(s.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                               </span>
-                            ) : null}
+                            )}
+                            <span className="text-xs font-mono capitalize" style={{ color: "var(--text-muted)" }}>{s.platform ?? ""}</span>
                           </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-1 shrink-0">
-                          {s.isLive ? (
-                            <span className="px-1.5 py-0.5 rounded text-xs font-mono animate-pulse" style={{ background: "oklch(0.55 0.22 25 / 0.2)", color: "oklch(0.75 0.22 25)" }}>EN VIVO</span>
-                          ) : (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <Clock className="w-3 h-3" />
-                              {new Date(s.updatedAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
-                            </span>
-                          )}
-                          <span className="text-xs font-mono capitalize" style={{ color: "var(--text-muted)" }}>{s.platform ?? ""}</span>
-                        </div>
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {/* Bet Stats */}
-              {betStats && betStats.total > 0 && (
-                <div className="rounded-xl overflow-hidden" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
-                  <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
-                    <Coins className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-                    <span className="text-xs font-display tracking-wider text-foreground">APUESTAS</span>
-                  </div>
-                  <div className="p-4 space-y-4">
-                    {/* Win rate bar */}
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs text-muted-foreground font-mono">% ACIERTO</span>
-                        <span className="text-sm font-orbitron" style={{ color: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>{betStats.winRate}%</span>
-                      </div>
-                      <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-hover)" }}>
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${betStats.winRate}%`, background: betStats.winRate >= 50 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}
-                        />
-                      </div>
-                    </div>
-                    {/* Stats grid */}
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
-                        <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.18 145)" }}>{betStats.won}</p>
-                        <p className="text-xs text-muted-foreground font-mono">GANADAS</p>
-                      </div>
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
-                        <p className="text-lg font-orbitron" style={{ color: "oklch(0.65 0.22 25)" }}>{betStats.lost}</p>
-                        <p className="text-xs text-muted-foreground font-mono">PERDIDAS</p>
-                      </div>
-                      <div className="rounded-lg p-2.5 text-center" style={{ background: "var(--bg-card)" }}>
-                        <p className="text-lg font-orbitron text-foreground">{betStats.pending}</p>
-                        <p className="text-xs text-muted-foreground font-mono">PENDIENTES</p>
-                      </div>
-                    </div>
-                    {/* Volume + profit */}
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
-                        <p className="text-xs text-muted-foreground font-mono mb-0.5">VOLUMEN</p>
-                        <p className="text-sm font-mono text-foreground">{betStats.totalWagered.toLocaleString()} RLC</p>
-                      </div>
-                      <div className="rounded-lg p-2.5" style={{ background: "var(--bg-card)" }}>
-                        <p className="text-xs text-muted-foreground font-mono mb-0.5">BENEFICIO NETO</p>
-                        <p className="text-sm font-mono" style={{ color: betStats.netProfit >= 0 ? "oklch(0.65 0.18 145)" : "oklch(0.65 0.22 25)" }}>
-                          {betStats.netProfit >= 0 ? "+" : ""}{betStats.netProfit.toLocaleString()} RLC
-                        </p>
-                      </div>
+                        </a>
+                      ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Riot Games Section */}
-              <RiotProfileSection userId={userId} isOwnProfile={isOwnProfile} />
+                {/* Historial de torneos */}
+                <div className="rounded-xl p-6 text-center" style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}>
+                  <Trophy className="w-8 h-8 text-white/30 mx-auto mb-2" />
+                  <p className="text-muted-foreground text-sm font-mono">Historial de torneos próximamente</p>
+                </div>
 
-              {/* No activity placeholder */}
-              <div
-                className="rounded-xl p-6 text-center"
-                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-              >
-                <Trophy className="w-8 h-8 text-white/30 mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm font-mono">Historial de torneos próximamente</p>
-              </div>
+              </div>{/* /col-right */}
+
             </div>
           )}
 

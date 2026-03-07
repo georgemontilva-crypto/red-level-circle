@@ -2132,6 +2132,12 @@ export async function getUserPublicProfile(userId: number) {
       createdAt: users.createdAt,
       isVerified: users.isVerified,
       canUploadBanner: users.canUploadBanner,
+      // Riot fields (public — no PUUID expuesto)
+      riotGameName: users.riotGameName,
+      riotTagLine: users.riotTagLine,
+      riotRegion: users.riotRegion,
+      riotIconId: users.riotIconId,
+      hasRiotLinked: sql<boolean>`(${users.riotPuuid} IS NOT NULL)`,
     })
     .from(users)
     .where(eq(users.id, userId))
