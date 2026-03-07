@@ -373,7 +373,7 @@ export default function TournamentDetail() {
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
   const [teamMessage, setTeamMessage] = useState("");
-  const [activeTab, setActiveTab] = useState<"overview" | "participants" | "brackets" | "stats" | "announcements">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "participants" | "brackets" | "stats" | "announcements" | "freeagents">("overview");
   const [newAnnouncement, setNewAnnouncement] = useState("");
   const [showCheckInModal, setShowCheckInModal] = useState(false);
   const [checkInTeamId, setCheckInTeamId] = useState<number | null>(null);
@@ -386,6 +386,21 @@ export default function TournamentDetail() {
   const { data: upcomingMatches } = trpc.ranking.upcomingMatches.useQuery({ tournamentId: id, limit: 6 });
   const { data: announcements, refetch: refetchAnnouncements } = trpc.tournaments.announcements.useQuery({ tournamentId: id });
   const { data: checkins, refetch: refetchCheckins } = trpc.tournaments.getCheckins.useQuery({ tournamentId: id });
+  const { data: freeAgents, refetch: refetchFreeAgents } = trpc.tournaments.getFreeAgents.useQuery({ tournamentId: id });
+  const [showFreeAgentModal, setShowFreeAgentModal] = useState(false);
+  const [freeAgentRole, setFreeAgentRole] = useState("");
+  const [freeAgentMessage, setFreeAgentMessage] = useState("");
+
+  const registerFreeAgentMutation = trpc.tournaments.registerFreeAgent.useMutation({
+    onSuccess: () => {
+      toast.success("¡Te registraste como agente libre! Los capitanes de equipo podrán contactarte.");
+      setShowFreeAgentModal(false);
+      setFreeAgentRole("");
+      setFreeAgentMessage("");
+      refetchFreeAgents();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const updateResultMutation = trpc.matches.updateResult.useMutation({
     onSuccess: () => {
@@ -528,6 +543,11 @@ export default function TournamentDetail() {
       label: "ANUNCIOS",
       icon: <Megaphone size={14} />,
       count: announcements?.length ?? 0,
+    },
+    {
+      id: "freeagents" as const,
+      label: "AGENTES LIBRES",
+      icon: <UserPlus size={14} />,
     },
   ];
 
@@ -1366,7 +1386,188 @@ export default function TournamentDetail() {
             )}
           </div>
         )}
+
+        {/* ─── FREE AGENTS TAB ───────────────────────────────────────────────────── */}
+        {activeTab === "freeagents" && (
+          <div className="space-y-4">
+            {/* Header + botón de registrarse */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-display text-sm font-bold tracking-wider text-foreground">AGENTES LIBRES</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Jugadores sin equipo buscando equipo para este torneo.
+                </p>
+              </div>
+              {isAuthenticated && tournament.status === "registration_open" && (
+                <button
+                  onClick={() => setShowFreeAgentModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
+                  style={{
+                    background: "oklch(0.55 0.18 220 / 0.15)",
+                    border: "1px solid oklch(0.55 0.18 220 / 0.4)",
+                    color: "oklch(0.65 0.18 220)",
+                  }}
+                >
+                  <UserPlus size={14} /> REGISTRARME
+                </button>
+              )}
+            </div>
+
+            {!freeAgents || freeAgents.length === 0 ? (
+              <div
+                className="rounded-xl p-12 text-center"
+                style={{ background: "var(--bg-card)", border: "1px dashed oklch(0.22 0.01 0)" }}
+              >
+                <UserPlus size={40} className="mx-auto mb-4 opacity-30" />
+                <p className="font-display text-sm tracking-wider text-muted-foreground">
+                  No hay agentes libres registrados
+                </p>
+                {!isAuthenticated && (
+                  <p className="text-xs text-muted-foreground mt-2">Inicia sesión para registrarte como agente libre</p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {(freeAgents as any[]).map((agent) => (
+                  <div
+                    key={agent.id}
+                    className="flex items-start gap-3 p-4 rounded-xl"
+                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+                  >
+                    {/* Avatar */}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden"
+                      style={{ background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.65 0.18 220)" }}
+                    >
+                      {agent.userAvatar
+                        ? <img src={agent.userAvatar} alt="" className="w-full h-full object-cover" />
+                        : (agent.userNickname ?? agent.userName ?? "?").charAt(0).toUpperCase()
+                      }
+                    </div>
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-display text-sm font-bold text-foreground truncate">
+                          {agent.userNickname ?? agent.userName}
+                        </span>
+                        {agent.role && (
+                          <span
+                            className="px-2 py-0.5 rounded-full font-display text-xs tracking-wider"
+                            style={{ background: "oklch(0.55 0.22 25 / 0.15)", color: "oklch(0.65 0.22 25)" }}
+                          >
+                            {agent.role}
+                          </span>
+                        )}
+                      </div>
+                      {agent.riotGameName && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {agent.riotGameName}#{agent.riotTagLine} · {agent.riotRegion?.toUpperCase()}
+                        </p>
+                      )}
+                      {agent.message && (
+                        <p className="text-xs text-foreground/70 mt-1 leading-relaxed line-clamp-2">{agent.message}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* ─── FREE AGENT MODAL ───────────────────────────────────────────────────── */}
+      {showFreeAgentModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "oklch(0 0 0 / 0.8)" }}
+          onClick={() => setShowFreeAgentModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl p-6"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid oklch(0.55 0.18 220 / 0.4)",
+              boxShadow: "0 0 40px oklch(0.55 0.18 220 / 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <UserPlus size={18} style={{ color: "oklch(0.65 0.18 220)" }} />
+              <h3 className="font-display text-base font-bold tracking-wider text-foreground">REGISTRARSE COMO AGENTE LIBRE</h3>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mb-4">
+              Tu perfil será visible para los capitanes de equipo que busquen jugadores para este torneo.
+            </p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">ROL PRINCIPAL</label>
+                <select
+                  value={freeAgentRole}
+                  onChange={(e) => setFreeAgentRole(e.target.value)}
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{
+                    background: "oklch(0.12 0.005 0)",
+                    border: "1px solid oklch(0.25 0.01 0)",
+                    color: "var(--text-primary)",
+                  }}
+                >
+                  <option value="">Seleccionar rol...</option>
+                  <option value="Top">Top</option>
+                  <option value="Jungle">Jungle</option>
+                  <option value="Mid">Mid</option>
+                  <option value="ADC">ADC</option>
+                  <option value="Support">Support</option>
+                  <option value="Fill">Fill</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">MENSAJE (opcional)</label>
+                <textarea
+                  value={freeAgentMessage}
+                  onChange={(e) => setFreeAgentMessage(e.target.value)}
+                  placeholder="Ej: Platino 1, main mid, busco equipo serio..."
+                  rows={3}
+                  maxLength={500}
+                  className="w-full rounded-lg px-3 py-2 text-sm font-mono resize-none outline-none"
+                  style={{
+                    background: "oklch(0.12 0.005 0)",
+                    border: "1px solid oklch(0.25 0.01 0)",
+                    color: "var(--text-primary)",
+                  }}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setShowFreeAgentModal(false)}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => {
+                  registerFreeAgentMutation.mutate({
+                    tournamentId: id,
+                    role: freeAgentRole || undefined,
+                    message: freeAgentMessage || undefined,
+                  });
+                }}
+                disabled={registerFreeAgentMutation.isPending}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50"
+                style={{
+                  background: "oklch(0.55 0.18 220)",
+                  color: "var(--text-primary)",
+                  boxShadow: "0 0 12px oklch(0.55 0.18 220 / 0.4)",
+                }}
+              >
+                {registerFreeAgentMutation.isPending ? "REGISTRANDO..." : "CONFIRMAR"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── REGISTER MODAL ───────────────────────────────────────────────────── */}
       {showRegisterModal && (

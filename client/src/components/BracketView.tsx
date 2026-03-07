@@ -595,17 +595,36 @@ export default function BracketView({
                 defaultSeriesFormat={defaultSeriesFormat}
               />
             )}
-            {effectiveMatches.some((m) => getMatchSide(m) === "grand_final") && (
-              <SingleBracketSection
-                sectionMatches={effectiveMatches.filter((m) => getMatchSide(m) === "grand_final")}
-                sectionLabel="GRAN FINAL"
-                sectionColor="oklch(0.65 0.18 80)"
-                canEditResults={canEditResults}
-                onOpenScoreModal={setScoreModal}
-                isDemo={isDemo}
-                defaultSeriesFormat={defaultSeriesFormat}
-              />
-            )}
+            {effectiveMatches.some((m) => getMatchSide(m) === "grand_final") && (() => {
+              const gfMatches = effectiveMatches.filter((m) => getMatchSide(m) === "grand_final");
+              // Separar Gran Final del Bracket Reset
+              const sortedGf = [...gfMatches].sort((a, b) => (a.round ?? 0) - (b.round ?? 0));
+              const grandFinalMatch = sortedGf[0];
+              const bracketResetMatch = sortedGf[1];
+
+              // Ocultar bracket reset si la gran final ya fue ganada por el campeón de ganadores (team1)
+              // o si el match de reset fue marcado como BRACKET_RESET_NOT_NEEDED
+              const showBracketReset = bracketResetMatch && (() => {
+                const notes = (() => { try { return JSON.parse(bracketResetMatch.notes ?? "{}"); } catch { return {}; } })();
+                if (notes.info === "BRACKET_RESET_NOT_NEEDED") return false;
+                // Si la gran final está completada y el ganador es team1 (campeón de ganadores), no mostrar reset
+                if (grandFinalMatch?.status === "completed" && grandFinalMatch?.winnerId === grandFinalMatch?.team1Id) return false;
+                return true;
+              })();
+
+              const visibleGfMatches = showBracketReset ? gfMatches : (grandFinalMatch ? [grandFinalMatch] : []);
+              return (
+                <SingleBracketSection
+                  sectionMatches={visibleGfMatches}
+                  sectionLabel={showBracketReset ? "GRAN FINAL + BRACKET RESET" : "GRAN FINAL"}
+                  sectionColor="oklch(0.65 0.18 80)"
+                  canEditResults={canEditResults}
+                  onOpenScoreModal={setScoreModal}
+                  isDemo={isDemo}
+                  defaultSeriesFormat={defaultSeriesFormat}
+                />
+              );
+            })()}
           </>
         ) : hasGroups || hasPlayoffs ? (
           // ── GROUPS + PLAYOFFS VIEW ───────────────────────────────────────────

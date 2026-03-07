@@ -1228,6 +1228,20 @@ export const appRouter = router({
                 await updateTeamMatchStats(winnerId, loserId);
                 eventBus.emit("tournament.match_finished", { matchId, tournamentId, winnerId, loserId });
               }
+              // Sync tournament rankings (Fix #2: también para torneos sin series BOx)
+              try {
+                const { syncTournamentRankings } = await import("./orchestrator.js");
+                await syncTournamentRankings({
+                  tournamentId,
+                  team1Id: existingMatch.team1Id!,
+                  team2Id: existingMatch.team2Id!,
+                  seriesWinnerId: winnerId,
+                  isDraw: false,
+                  mapsWonTeam1: input.team1Score,
+                  mapsWonTeam2: input.team2Score,
+                });
+                cache.del(CacheKey.rankings(tournamentId));
+              } catch (rankErr) { console.error("[Rankings] Error syncing rankings:", rankErr); }
               // Auto-advance to next round if all matches in this round are done
               const roundBefore = match.round ?? 1;
               await advanceRoundIfComplete(tournamentId, roundBefore);
@@ -1332,6 +1346,100 @@ export const appRouter = router({
           });
         } catch (_) { /* non-critical */ }
         return { success: true, scheduledAt: scheduledDate, betsCloseAt: betsCloseDate };
+      }),
+
+    fetchRiotMatchStats: protectedProcedure
+      .input(z.object({
+        matchId: z.number(),
+        riotMatchId: z.string().optional(), // ID de la partida en Riot (LA1_XXXX)
+      }))
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+
+        // Obtener el match del torneo
+        const [match] = await db
+          .select()
+          .from(tournamentMatches)
+          .where(eq(tournamentMatches.id, input.matchId))
+          .limit(1);
+        if (!match) throw new TRPCError({ code: "NOT_FOUND", message: "Partida no encontrada" });
+        if (!match.winnerId) throw new TRPCError({ code: "BAD_REQUEST", message: "La partida no tiene ganador registrado" });
+
+        try {
+          const { getMatchIds, getMatchById } = await import("./riotApi.js");
+
+          // Obtener PUUIDs de los miembros del equipo ganador
+          const { teamMembers: teamMembersTable } = await import("../drizzle/schema.js");
+          const winnerMembers = await db
+            .select({ riotPuuid: users.riotPuuid, riotRegion: users.riotRegion, userName: users.name })
+            .from(teamMembersTable)
+            .innerJoin(users, eq(teamMembersTable.userId, users.id))
+            .where(and(eq(teamMembersTable.teamId, match.winnerId), sql`${users.riotPuuid} IS NOT NULL`))
+            .limit(5);
+
+          if (winnerMembers.length === 0) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Los miembros del equipo ganador no tienen cuenta Riot vinculada" });
+          }
+
+          // Usar el primer miembro con PUUID para buscar la partida
+          const captain = winnerMembers[0];
+          const region = captain.riotRegion ?? "la1";
+
+          let riotMatchId = input.riotMatchId;
+          if (!riotMatchId) {
+            // Buscar la partida más reciente del capitán
+            const recentIds = await getMatchIds(captain.riotPuuid!, region, 1, 420); // 420 = ranked solo
+            if (recentIds.length === 0) {
+              throw new TRPCError({ code: "NOT_FOUND", message: "No se encontraron partidas recientes en Riot" });
+            }
+            riotMatchId = recentIds[0];
+          }
+
+          // Obtener detalles de la partida
+          const matchData = await getMatchById(riotMatchId, region);
+          const participants = matchData.info?.participants ?? [];
+
+          // Filtrar solo los jugadores del equipo ganador
+          const winnerPuuids = new Set(winnerMembers.map((m) => m.riotPuuid));
+          const teamStats = participants
+            .filter((p: any) => winnerPuuids.has(p.puuid))
+            .map((p: any) => ({
+              puuid: p.puuid,
+              summonerName: p.summonerName ?? p.riotIdGameName,
+              champion: p.championName,
+              kills: p.kills,
+              deaths: p.deaths,
+              assists: p.assists,
+              cs: p.totalMinionsKilled + (p.neutralMinionsKilled ?? 0),
+              damage: p.totalDamageDealtToChampions,
+              win: p.win,
+              position: p.teamPosition,
+            }));
+
+          // Guardar en notes del match
+          const existingNotes = (() => { try { return JSON.parse(match.notes ?? "{}"); } catch { return {}; } })();
+          const updatedNotes = JSON.stringify({
+            ...existingNotes,
+            riotMatchId,
+            riotStats: {
+              gameDuration: matchData.info?.gameDuration,
+              gameMode: matchData.info?.gameMode,
+              fetchedAt: new Date().toISOString(),
+              winnerTeamStats: teamStats,
+            },
+          });
+
+          await db.update(tournamentMatches)
+            .set({ notes: updatedNotes })
+            .where(eq(tournamentMatches.id, input.matchId));
+
+          cache.del(CacheKey.bracket(match.tournamentId));
+          return { success: true, riotMatchId, playerCount: teamStats.length };
+        } catch (err: any) {
+          if (err instanceof TRPCError) throw err;
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Error al obtener stats de Riot: ${err.message}` });
+        }
       }),
   }),
   // ─── Newss ──────────────────────────────────────────────────────────────────

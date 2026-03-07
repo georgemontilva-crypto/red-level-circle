@@ -24,6 +24,10 @@ import {
   GripVertical,
   RefreshCw,
   ListOrdered,
+  Megaphone,
+  UserCheck,
+  Send,
+  CheckSquare,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -74,6 +78,11 @@ export default function TournamentManage() {
   const [seedingModal, setSeedingModal] = useState(false);
   const [seedingOrder, setSeedingOrder] = useState<number[]>([]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  // Anuncios
+  const [announcementModal, setAnnouncementModal] = useState(false);
+  const [announcementText, setAnnouncementText] = useState("");
+  // Check-in panel
+  const [showCheckinPanel, setShowCheckinPanel] = useState(false);
 
   const { data: tournament, refetch: refetchTournament } = trpc.tournaments.byId.useQuery({ id });
   const { data: registrations, refetch: refetchRegs } = trpc.registrations.byTournament.useQuery(
@@ -85,6 +94,11 @@ export default function TournamentManage() {
     { enabled: !!tournament }
   );
   const { data: matches, refetch: refetchMatches } = trpc.matches.byTournament.useQuery({ tournamentId: id });
+  const { data: announcements, refetch: refetchAnnouncements } = trpc.tournaments.announcements.useQuery({ tournamentId: id });
+  const { data: checkins } = trpc.tournaments.getCheckins.useQuery(
+    { tournamentId: id },
+    { enabled: !!tournament }
+  );
 
   const updateStatusMutation = trpc.tournaments.updateStatus.useMutation({
     onSuccess: () => { toast.success("Estado actualizado"); refetchTournament(); },
@@ -129,6 +143,16 @@ export default function TournamentManage() {
       setSeedingOrder([]);
       refetchMatches();
       refetchTournament();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const createAnnouncementMutation = trpc.tournaments.createAnnouncement.useMutation({
+    onSuccess: () => {
+      toast.success("Anuncio publicado");
+      setAnnouncementModal(false);
+      setAnnouncementText("");
+      refetchAnnouncements();
     },
     onError: (err) => toast.error(err.message),
   });
@@ -308,6 +332,42 @@ export default function TournamentManage() {
                   </button>
                 )}
 
+                {/* Botón de Anuncios - siempre visible */}
+                <button
+                  onClick={() => setAnnouncementModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
+                  style={{
+                    background: "oklch(0.55 0.18 280 / 0.15)",
+                    border: "1px solid oklch(0.55 0.18 280 / 0.4)",
+                    color: "oklch(0.65 0.18 280)",
+                  }}
+                >
+                  <Megaphone size={14} /> ANUNCIAR
+                </button>
+
+                {/* Botón de Check-in */}
+                {(tournament.status === "registration_open" || tournament.status === "registration_closed" || tournament.status === "in_progress") && (
+                  <button
+                    onClick={() => setShowCheckinPanel((v) => !v)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg font-display text-xs tracking-widest transition-all duration-200"
+                    style={{
+                      background: showCheckinPanel ? "oklch(0.55 0.18 145 / 0.25)" : "oklch(0.55 0.18 145 / 0.10)",
+                      border: `1px solid oklch(0.55 0.18 145 / ${showCheckinPanel ? "0.6" : "0.3"})`,
+                      color: "oklch(0.65 0.18 145)",
+                    }}
+                  >
+                    <UserCheck size={14} /> CHECK-IN
+                    {checkins && checkins.length > 0 && (
+                      <span
+                        className="ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold"
+                        style={{ background: "oklch(0.55 0.18 145 / 0.25)", color: "oklch(0.65 0.18 145)" }}
+                      >
+                        {checkins.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+
                 {tournament.status === "in_progress" && (
                   <button
                     onClick={() => setWinnerModal(true)}
@@ -347,6 +407,91 @@ export default function TournamentManage() {
             </div>
           </div>
         </div>
+
+        {/* Panel de Check-in */}
+        {showCheckinPanel && (
+          <div
+            className="rounded-xl p-5"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid oklch(0.55 0.18 145 / 0.3)",
+              boxShadow: "0 0 20px oklch(0.55 0.18 145 / 0.08)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-sm font-bold tracking-wider text-foreground flex items-center gap-2">
+                <UserCheck size={16} style={{ color: "oklch(0.65 0.18 145)" }} />
+                CHECK-IN CONFIRMADOS ({checkins?.length ?? 0} / {registrations?.length ?? 0})
+              </h2>
+            </div>
+            {!checkins || checkins.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-4">Ningún equipo ha hecho check-in todavía</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {registrations?.map((reg) => {
+                  const hasCheckin = checkins.some((c: any) => c.teamId === reg.teamId);
+                  return (
+                    <div
+                      key={reg.id}
+                      className="flex items-center gap-2 p-3 rounded-lg"
+                      style={{
+                        background: hasCheckin ? "oklch(0.55 0.18 145 / 0.08)" : "var(--bg-card)",
+                        border: `1px solid ${hasCheckin ? "oklch(0.55 0.18 145 / 0.4)" : "oklch(0.20 0.01 0)"}`,
+                      }}
+                    >
+                      {hasCheckin
+                        ? <CheckSquare size={14} style={{ color: "oklch(0.65 0.18 145)", flexShrink: 0 }} />
+                        : <Circle size={14} style={{ color: "oklch(0.35 0.005 0)", flexShrink: 0 }} />
+                      }
+                      <span className="text-xs font-display tracking-wide truncate" style={{ color: hasCheckin ? "oklch(0.65 0.18 145)" : "oklch(0.45 0.005 0)" }}>
+                        {reg.teamName ?? `Equipo #${reg.teamId}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Panel de Anuncios recientes */}
+        {announcements && announcements.length > 0 && (
+          <div
+            className="rounded-xl p-5"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid oklch(0.55 0.18 280 / 0.25)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-sm font-bold tracking-wider text-foreground flex items-center gap-2">
+                <Megaphone size={16} style={{ color: "oklch(0.65 0.18 280)" }} />
+                ANUNCIOS RECIENTES
+              </h2>
+              <button
+                onClick={() => setAnnouncementModal(true)}
+                className="text-xs font-display tracking-wider"
+                style={{ color: "oklch(0.65 0.18 280)" }}
+              >
+                + NUEVO
+              </button>
+            </div>
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {announcements.slice(0, 5).map((ann: any) => (
+                <div
+                  key={ann.id}
+                  className="p-3 rounded-lg"
+                  style={{ background: "oklch(0.55 0.18 280 / 0.06)", border: "1px solid oklch(0.55 0.18 280 / 0.15)" }}
+                >
+                  <p className="text-xs text-foreground leading-relaxed">{ann.message}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {ann.authorName} · {new Date(ann.createdAt).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Approved teams */}
         <div
@@ -1024,6 +1169,18 @@ export default function TournamentManage() {
             <div className="space-y-2 mb-5 max-h-72 overflow-y-auto">
               {seedingOrder.map((teamId, idx) => {
                 const reg = registrations?.find((r) => r.teamId === teamId);
+                const moveUp = () => {
+                  if (idx === 0) return;
+                  const newOrder = [...seedingOrder];
+                  [newOrder[idx - 1], newOrder[idx]] = [newOrder[idx], newOrder[idx - 1]];
+                  setSeedingOrder(newOrder);
+                };
+                const moveDown = () => {
+                  if (idx === seedingOrder.length - 1) return;
+                  const newOrder = [...seedingOrder];
+                  [newOrder[idx + 1], newOrder[idx]] = [newOrder[idx], newOrder[idx + 1]];
+                  setSeedingOrder(newOrder);
+                };
                 return (
                   <div
                     key={teamId}
@@ -1038,7 +1195,7 @@ export default function TournamentManage() {
                       setSeedingOrder(newOrder);
                       setDragIdx(null);
                     }}
-                    className="flex items-center gap-3 p-3 rounded-xl cursor-grab active:cursor-grabbing transition-all duration-150"
+                    className="flex items-center gap-3 p-3 rounded-xl transition-all duration-150"
                     style={{
                       background: dragIdx === idx ? "oklch(0.55 0.18 220 / 0.12)" : "var(--bg-card)",
                       border: dragIdx === idx
@@ -1046,7 +1203,27 @@ export default function TournamentManage() {
                         : "1px solid oklch(0.20 0.01 0)",
                     }}
                   >
-                    <GripVertical size={14} style={{ color: "oklch(0.45 0.005 0)" }} />
+                    {/* Botones de mover - funcionan en mobile y desktop */}
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={moveUp}
+                        disabled={idx === 0}
+                        className="w-5 h-5 flex items-center justify-center rounded text-xs disabled:opacity-20 transition-opacity"
+                        style={{ color: "oklch(0.65 0.18 220)" }}
+                        title="Subir"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        onClick={moveDown}
+                        disabled={idx === seedingOrder.length - 1}
+                        className="w-5 h-5 flex items-center justify-center rounded text-xs disabled:opacity-20 transition-opacity"
+                        style={{ color: "oklch(0.65 0.18 220)" }}
+                        title="Bajar"
+                      >
+                        ▼
+                      </button>
+                    </div>
                     <span
                       className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                       style={{ background: "oklch(0.55 0.18 220 / 0.15)", color: "oklch(0.65 0.18 220)" }}
@@ -1062,6 +1239,7 @@ export default function TournamentManage() {
                     <span className="text-sm font-display tracking-wide text-foreground truncate flex-1">
                       {reg?.teamName ?? `Equipo #${teamId}`}
                     </span>
+                    <GripVertical size={14} className="hidden sm:block" style={{ color: "oklch(0.35 0.005 0)" }} />
                   </div>
                 );
               })}
@@ -1092,6 +1270,74 @@ export default function TournamentManage() {
                 }}
               >
                 {generateBracketMutation.isPending ? "GENERANDO..." : "CONFIRMAR SEEDING"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Crear Anuncio */}
+      {announcementModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "oklch(0 0 0 / 0.8)" }}
+          onClick={() => setAnnouncementModal(false)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl p-6"
+            style={{
+              background: "var(--bg-card)",
+              border: "1px solid oklch(0.55 0.18 280 / 0.4)",
+              boxShadow: "0 0 40px oklch(0.55 0.18 280 / 0.15)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <Megaphone size={18} style={{ color: "oklch(0.65 0.18 280)" }} />
+              <h3 className="font-display text-base font-bold tracking-wider text-foreground">NUEVO ANUNCIO</h3>
+            </div>
+            <p className="text-xs text-muted-foreground font-mono mb-3">
+              El anuncio será visible para todos los participantes del torneo en la pestaña de Anuncios.
+            </p>
+            <textarea
+              value={announcementText}
+              onChange={(e) => setAnnouncementText(e.target.value)}
+              placeholder="Escribe el anuncio aquí..."
+              rows={5}
+              maxLength={2000}
+              className="w-full rounded-xl p-3 text-sm font-mono resize-none outline-none"
+              style={{
+                background: "oklch(0.12 0.005 0)",
+                border: "1px solid oklch(0.25 0.01 0)",
+                color: "var(--text-primary)",
+              }}
+            />
+            <div className="flex justify-between items-center mt-1 mb-4">
+              <span className="text-xs text-muted-foreground">{announcementText.length}/2000</span>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setAnnouncementModal(false); setAnnouncementText(""); }}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest"
+                style={{ background: "transparent", border: "1px solid oklch(0.25 0.01 0)", color: "oklch(0.60 0.005 0)" }}
+              >
+                CANCELAR
+              </button>
+              <button
+                onClick={() => {
+                  if (!announcementText.trim()) { toast.error("El anuncio no puede estar vacío"); return; }
+                  createAnnouncementMutation.mutate({ tournamentId: id, message: announcementText.trim() });
+                }}
+                disabled={createAnnouncementMutation.isPending || !announcementText.trim()}
+                className="flex-1 py-3 rounded-xl font-display text-xs tracking-widest transition-all duration-300 disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{
+                  background: "oklch(0.55 0.18 280)",
+                  color: "var(--text-primary)",
+                  boxShadow: "0 0 12px oklch(0.55 0.18 280 / 0.4)",
+                }}
+              >
+                <Send size={14} />
+                {createAnnouncementMutation.isPending ? "PUBLICANDO..." : "PUBLICAR"}
               </button>
             </div>
           </div>

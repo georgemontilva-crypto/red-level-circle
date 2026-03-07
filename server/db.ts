@@ -1053,14 +1053,17 @@ export async function generateBracket(
  * Llamar después de cada updateMatchResult.
  */
 export async function advanceRoundIfComplete(tournamentId: number, round: number, _depth = 0) {
-  // FIX ALTO #9: Prevent infinite recursion if bracket data is corrupted.
-  // Max depth = 10 rounds is more than enough for any realistic bracket size.
-  if (_depth > 10) {
-    console.error(`[advanceRoundIfComplete] Max recursion depth reached for tournament #${tournamentId}, round ${round}. Possible bracket data corruption.`);
+  if (_depth > 20) {
+    console.error(`[advanceRoundIfComplete] Max recursion depth reached for tournament #${tournamentId}, round ${round}.`);
     return;
   }
   const db = await getDb();
   if (!db) return;
+
+  // ── Fetch tournament to know bracket type ──────────────────────────────────
+  const tournament = await getTournamentById(tournamentId);
+  if (!tournament) return;
+
   const roundMatches = await db
     .select()
     .from(tournamentMatches)
@@ -1069,6 +1072,20 @@ export async function advanceRoundIfComplete(tournamentId: number, round: number
   if (roundMatches.length === 0) return;
   const allDone = roundMatches.every((m) => m.status === "completed" && m.winnerId !== null);
   if (!allDone) return;
+
+  // ── DOUBLE ELIMINATION: route winners AND losers ───────────────────────────
+  if ((tournament as any).bracketType === "double_elimination") {
+    await _advanceDoubleElim(db, tournamentId, round, roundMatches, _depth);
+    return;
+  }
+
+  // ── GROUPS: auto-seed playoffs when group stage is done ───────────────────
+  if ((tournament as any).bracketType === "groups" && round === 1) {
+    await _advanceGroupsToPlayoffs(db, tournamentId);
+    return;
+  }
+
+  // ── SINGLE ELIMINATION (and playoff rounds of groups) ─────────────────────
   const nextRoundMatches = await db
     .select()
     .from(tournamentMatches)
@@ -1087,11 +1104,257 @@ export async function advanceRoundIfComplete(tournamentId: number, round: number
       winnerId: isBye ? team1Id : null,
       status: isBye ? "completed" : "pending",
       completedAt: isBye ? new Date() : null,
-      notes: isBye ? "BYE" : null,
+      notes: isBye ? JSON.stringify({ seriesFormat: "BO1", info: "BYE" }) : nextMatch.notes,
     }).where(eq(tournamentMatches.id, nextMatch.id));
   }
-  // Recursively advance if next round is also complete
   await advanceRoundIfComplete(tournamentId, round + 1, _depth + 1);
+}
+
+/**
+ * Avance de ronda para double elimination.
+ * - Ganadores de ronda W_r → siguiente ronda de ganadores
+ * - Perdedores de ronda W_r → primera ronda disponible del losers bracket
+ * - Ganadores de ronda L_r → siguiente ronda de losers
+ * - Ganador de GF: si viene del losers bracket → activar bracket reset
+ */
+async function _advanceDoubleElim(
+  db: Awaited<ReturnType<typeof getDb>>,
+  tournamentId: number,
+  round: number,
+  roundMatches: Awaited<ReturnType<typeof getDb>> extends null ? never : any[],
+  _depth: number
+) {
+  if (!db) return;
+
+  // Fetch ALL matches for this tournament to understand bracket structure
+  const allMatches = await db
+    .select()
+    .from(tournamentMatches)
+    .where(eq(tournamentMatches.tournamentId, tournamentId))
+    .orderBy(tournamentMatches.round, tournamentMatches.matchNumber);
+
+  const side = (roundMatches[0]?.bracketPosition as any)?.side ?? "winners";
+  const winners = roundMatches.map((m: any) => m.winnerId!).filter(Boolean);
+  const losers = roundMatches.map((m: any) => {
+    const loser = m.team1Id === m.winnerId ? m.team2Id : m.team1Id;
+    return loser;
+  }).filter(Boolean);
+
+  // Determine wRounds from bracket structure
+  const wMatches = allMatches.filter((m: any) => (m.bracketPosition as any)?.side === "winners");
+  const wRounds = wMatches.length > 0 ? Math.max(...wMatches.map((m: any) => (m.bracketPosition as any)?.round ?? 0)) : 0;
+  const lMatches = allMatches.filter((m: any) => (m.bracketPosition as any)?.side === "losers");
+  const lRoundNums = lMatches.map((m: any) => (m.bracketPosition as any)?.round ?? 0);
+  const lRoundBase = wRounds + 1;
+  const lRoundMax = lRoundNums.length > 0 ? Math.max(...lRoundNums) : lRoundBase;
+  const gfRound = lRoundMax + 1;
+
+  if (side === "winners") {
+    // 1. Route winners to next winners round
+    const nextWinners = allMatches.filter((m: any) =>
+      (m.bracketPosition as any)?.side === "winners" &&
+      (m.bracketPosition as any)?.round === round + 1
+    ).sort((a: any, b: any) => a.matchNumber - b.matchNumber);
+
+    for (let i = 0; i < nextWinners.length; i++) {
+      const nm = nextWinners[i];
+      const t1 = winners[i * 2] ?? null;
+      const t2 = winners[i * 2 + 1] ?? null;
+      const isBye = t1 !== null && t2 === null;
+      await db.update(tournamentMatches).set({
+        team1Id: t1, team2Id: t2,
+        winnerId: isBye ? t1 : null,
+        status: isBye ? "completed" : "pending",
+        completedAt: isBye ? new Date() : null,
+      }).where(eq(tournamentMatches.id, nm.id));
+    }
+
+    // 2. Route losers to the corresponding losers drop-in round
+    // W1 losers → L round lRoundBase (L1)
+    // W2 losers → L round lRoundBase+2 (L3), etc.
+    const wRoundIndex = round; // 1-based
+    const targetLRound = lRoundBase + (wRoundIndex - 1) * 2;
+    const targetLMatches = allMatches.filter((m: any) =>
+      (m.bracketPosition as any)?.side === "losers" &&
+      (m.bracketPosition as any)?.round === targetLRound &&
+      m.team1Id === null
+    ).sort((a: any, b: any) => a.matchNumber - b.matchNumber);
+
+    for (let i = 0; i < targetLMatches.length && i < losers.length; i++) {
+      const lm = targetLMatches[i];
+      // Fill team1Id slot (team2Id comes from previous losers round winner)
+      const currentLm = allMatches.find((m: any) => m.id === lm.id);
+      if (currentLm && currentLm.team1Id === null) {
+        await db.update(tournamentMatches).set({ team1Id: losers[i] })
+          .where(eq(tournamentMatches.id, lm.id));
+      } else if (currentLm && currentLm.team2Id === null) {
+        await db.update(tournamentMatches).set({ team2Id: losers[i] })
+          .where(eq(tournamentMatches.id, lm.id));
+      }
+    }
+
+    // Check if winners bracket is now done (final winners round)
+    if (round === wRounds) {
+      // Winners champion goes to Grand Final as team1
+      const gfMatch = allMatches.find((m: any) =>
+        (m.bracketPosition as any)?.side === "grand_final" &&
+        (m.bracketPosition as any)?.round === gfRound
+      );
+      if (gfMatch && winners[0]) {
+        await db.update(tournamentMatches).set({ team1Id: winners[0] })
+          .where(eq(tournamentMatches.id, gfMatch.id));
+      }
+    }
+
+  } else if (side === "losers") {
+    // Route losers bracket winners to next losers round
+    const nextLRound = round + 1;
+    const nextLMatches = allMatches.filter((m: any) =>
+      (m.bracketPosition as any)?.side === "losers" &&
+      (m.bracketPosition as any)?.round === nextLRound
+    ).sort((a: any, b: any) => a.matchNumber - b.matchNumber);
+
+    if (nextLMatches.length > 0) {
+      for (let i = 0; i < nextLMatches.length; i++) {
+        const nm = nextLMatches[i];
+        const t1 = winners[i * 2] ?? null;
+        const t2 = winners[i * 2 + 1] ?? null;
+        const isBye = t1 !== null && t2 === null;
+        await db.update(tournamentMatches).set({
+          team1Id: t1, team2Id: t2,
+          winnerId: isBye ? t1 : null,
+          status: isBye ? "completed" : "pending",
+          completedAt: isBye ? new Date() : null,
+        }).where(eq(tournamentMatches.id, nm.id));
+      }
+    } else {
+      // Losers bracket is done — route winner to Grand Final as team2
+      const gfMatch = allMatches.find((m: any) =>
+        (m.bracketPosition as any)?.side === "grand_final" &&
+        (m.bracketPosition as any)?.round === gfRound
+      );
+      if (gfMatch && winners[0]) {
+        await db.update(tournamentMatches).set({ team2Id: winners[0] })
+          .where(eq(tournamentMatches.id, gfMatch.id));
+        // Check if team1 is already set — if so, mark as pending (ready to play)
+        const refreshed = allMatches.find((m: any) => m.id === gfMatch.id);
+        if (refreshed?.team1Id) {
+          await db.update(tournamentMatches).set({ status: "pending" })
+            .where(eq(tournamentMatches.id, gfMatch.id));
+        }
+      }
+    }
+
+  } else if (side === "grand_final") {
+    // Grand Final completed
+    const gfMatch = roundMatches[0];
+    if (!gfMatch) return;
+    const gfWinner = gfMatch.winnerId;
+    const gfLoser = gfMatch.team1Id === gfWinner ? gfMatch.team2Id : gfMatch.team1Id;
+
+    // Determine if the winner came from losers bracket (team2 in GF = losers champion)
+    // If losers champion (team2) wins → bracket reset needed
+    const losersChampion = gfMatch.team2Id; // team2 is always the losers bracket champion
+    const bracketReset = allMatches.find((m: any) =>
+      (m.bracketPosition as any)?.side === "grand_final" &&
+      (m.bracketPosition as any)?.round === gfRound + 1
+    );
+
+    if (bracketReset) {
+      if (gfWinner === losersChampion) {
+        // Losers champion won → activate bracket reset
+        await db.update(tournamentMatches).set({
+          team1Id: gfLoser,   // winners champion
+          team2Id: gfWinner,  // losers champion
+          status: "pending",
+        }).where(eq(tournamentMatches.id, bracketReset.id));
+      } else {
+        // Winners champion won → cancel bracket reset
+        await db.update(tournamentMatches).set({
+          status: "completed",
+          winnerId: gfWinner,
+          notes: JSON.stringify({ seriesFormat: "BO1", info: "BRACKET_RESET_NOT_NEEDED" }),
+          completedAt: new Date(),
+        }).where(eq(tournamentMatches.id, bracketReset.id));
+      }
+    }
+  }
+
+  // Recurse for next round if it's now complete
+  await advanceRoundIfComplete(tournamentId, round + 1, _depth + 1);
+}
+
+/**
+ * Cuando termina la fase de grupos (round 1), toma los top clasificados
+ * de tournament_rankings y los asigna a las semifinales y final.
+ */
+async function _advanceGroupsToPlayoffs(db: Awaited<ReturnType<typeof getDb>>, tournamentId: number) {
+  if (!db) return;
+  const { tournamentRankings } = await import("../drizzle/schema.js");
+  const { desc } = await import("drizzle-orm");
+
+  // Get top 4 classified teams ordered by points
+  const rankings = await db
+    .select()
+    .from(tournamentRankings)
+    .where(eq(tournamentRankings.tournamentId, tournamentId))
+    .orderBy(
+      desc(tournamentRankings.points),
+      desc(tournamentRankings.seriesWon),
+      desc(tournamentRankings.mapDiff),
+      desc(tournamentRankings.mapsWon)
+    )
+    .limit(4);
+
+  if (rankings.length < 2) return; // Not enough teams to seed playoffs
+
+  // Get playoff matches
+  const playoffMatches = await db
+    .select()
+    .from(tournamentMatches)
+    .where(and(
+      eq(tournamentMatches.tournamentId, tournamentId),
+      eq(tournamentMatches.round, 2)
+    ))
+    .orderBy(tournamentMatches.matchNumber);
+
+  // Seed semifinals: 1st vs 4th, 2nd vs 3rd (classic bracket seeding)
+  const seedings = [
+    [rankings[0]?.teamId, rankings[3]?.teamId ?? rankings[1]?.teamId],
+    [rankings[1]?.teamId, rankings[2]?.teamId ?? rankings[0]?.teamId],
+  ];
+
+  for (let i = 0; i < playoffMatches.length && i < seedings.length; i++) {
+    const [t1, t2] = seedings[i];
+    if (!t1) continue;
+    const isBye = t1 && !t2;
+    await db.update(tournamentMatches).set({
+      team1Id: t1 ?? null,
+      team2Id: t2 ?? null,
+      winnerId: isBye ? t1 : null,
+      status: isBye ? "completed" : "pending",
+      completedAt: isBye ? new Date() : null,
+    }).where(eq(tournamentMatches.id, playoffMatches[i].id));
+  }
+
+  // If only 2 teams, seed the final directly
+  if (rankings.length === 2) {
+    const finalMatch = await db
+      .select()
+      .from(tournamentMatches)
+      .where(and(
+        eq(tournamentMatches.tournamentId, tournamentId),
+        eq(tournamentMatches.round, 3)
+      ))
+      .limit(1);
+    if (finalMatch[0]) {
+      await db.update(tournamentMatches).set({
+        team1Id: rankings[0].teamId,
+        team2Id: rankings[1].teamId,
+        status: "pending",
+      }).where(eq(tournamentMatches.id, finalMatch[0].id));
+    }
+  }
 }
 
 /**
