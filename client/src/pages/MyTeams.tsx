@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
+import CustomSelect from "@/components/CustomSelect";
 import {
   Users, PlusCircle, UserPlus, Shield, Gamepad2, Camera, Loader2, Plus,
   ExternalLink, Trophy, CheckCircle, Search, X, Trash2, Crown, UserMinus,
@@ -115,16 +116,12 @@ function PlayerSearch({ teamId, onAdded }: { teamId: number; onAdded: () => void
             onBlur={(e) => { e.target.style.borderColor = "oklch(0.22 0.01 0)"; }}
           />
         </div>
-        <select
+        <CustomSelect
           value={selectedRole}
-          onChange={(e) => setSelectedRole(e.target.value as any)}
-          className="px-3 py-2.5 rounded-xl text-xs font-display tracking-wider"
-          style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)", outline: "none" }}
-        >
-          {(["player", "substitute", "coach"] as const).map((r) => (
-            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-          ))}
-        </select>
+          onChange={(v) => setSelectedRole(v as "player" | "substitute" | "coach")}
+          options={(["player", "substitute", "coach"] as const).map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+          size="sm"
+        />
       </div>
 
       {/* Results */}

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
+import CustomSelect from "@/components/CustomSelect";
 import {
   Radio, StopCircle, Twitch, Youtube, ExternalLink,
   CheckCircle, Loader2, Users, Gamepad2, Globe, Disc3, ChevronDown,
@@ -312,20 +313,19 @@ export function CreatorStreamPanel({ creatorApp }: CreatorStreamPanelProps) {
         <label className="block text-[11px] font-semibold text-zinc-400 uppercase tracking-wider mb-1.5">
           Juego <span className="text-red-500">*</span>
         </label>
-        <NeonSelect
+        <CustomSelect
           value={form.gameSlug}
           onChange={v => {
-            const selected = games?.find((g: { slug: string; name: string }) => g.slug === v);
+            const selected = (games ?? []).find((g: { slug: string; name: string }) => g.slug === v);
             setForm(f => ({ ...f, game: selected?.name ?? v, gameSlug: v }));
           }}
-        >
-          <option value="" style={{ background: "#1a1d24", color: "#9ca3af" }}>Selecciona un juego…</option>
-          {(games ?? []).map((g: { slug: string; name: string }) => (
-            <option key={g.slug} value={g.slug} style={{ background: "#1a1d24", color: "#fff" }}>
-              {g.name}
-            </option>
-          ))}
-        </NeonSelect>
+          options={[
+            { value: "", label: "Selecciona un juego…" },
+            ...(games ?? []).map((g: { slug: string; name: string }) => ({ value: g.slug, label: g.name })),
+          ]}
+          placeholder="Selecciona un juego…"
+          size="md"
+        />
       </div>
 
       {/* Platform selector */}

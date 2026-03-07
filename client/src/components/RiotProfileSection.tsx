@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import CustomSelect from "@/components/CustomSelect";
 import {
   Sword, Link2, Link2Off, RefreshCw, ChevronRight,
   Loader2, Trophy, Zap, Target, Shield,
@@ -332,24 +333,13 @@ function LinkAccountForm({ onSuccess }: { onSuccess: () => void }) {
 
       {/* Region selector */}
       <div>
-        <label className="block text-[10px] font-mono tracking-widest mb-1.5" style={{ color: "oklch(0.50 0.005 0)" }}>
-          SERVIDOR
-        </label>
-        <select
+        <CustomSelect
+          label="SERVIDOR"
           value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          className="w-full px-3 py-2.5 rounded-lg text-sm font-mono text-white outline-none transition-all cursor-pointer"
-          style={{
-            background: "var(--bg-hover)",
-            border: "1px solid oklch(0.22 0.01 0)",
-          }}
-        >
-          {REGIONS.map((r) => (
-            <option key={r.value} value={r.value} style={{ background: "#1a1a1a" }}>
-              {r.label}
-            </option>
-          ))}
-        </select>
+          onChange={(v) => setRegion(v)}
+          options={REGIONS}
+          size="md"
+        />
       </div>
 
       <button

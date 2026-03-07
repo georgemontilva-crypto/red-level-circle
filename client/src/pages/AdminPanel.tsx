@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import CustomSelect from "@/components/CustomSelect";
 import { Button } from "@/components/ui/button";
 import { UserAvatar } from "@/components/UserAvatar";
 import { Badge } from "@/components/ui/badge";
@@ -655,23 +656,24 @@ function ShopTab() {
                           placeholder="Ej: ES123456789ES"
                           className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm placeholder:text-muted-foreground focus:border-orange-500 focus:outline-none font-mono"
                         />
-                        <label className="text-xs text-muted-foreground font-mono block">EMPRESA DE TRANSPORTE</label>
-                        <select
+                        <CustomSelect
+                          label="EMPRESA DE TRANSPORTE"
                           value={shippingCarriers[order.id] ?? ""}
-                          onChange={e => setShippingCarriers(d => ({...d, [order.id]: e.target.value}))}
-                          className="w-full px-3 py-2 rounded-lg bg-secondary border border-white/10 text-white text-sm focus:border-orange-500 focus:outline-none"
-                        >
-                          <option value="">Seleccionar empresa...</option>
-                          <option value="Correos">Correos</option>
-                          <option value="DHL">DHL</option>
-                          <option value="FedEx">FedEx</option>
-                          <option value="UPS">UPS</option>
-                          <option value="MRW">MRW</option>
-                          <option value="SEUR">SEUR</option>
-                          <option value="GLS">GLS</option>
-                          <option value="Amazon Logistics">Amazon Logistics</option>
-                          <option value="Otra">Otra</option>
-                        </select>
+                          onChange={v => setShippingCarriers(d => ({...d, [order.id]: v}))}
+                          options={[
+                            { value: "Correos", label: "Correos" },
+                            { value: "DHL", label: "DHL" },
+                            { value: "FedEx", label: "FedEx" },
+                            { value: "UPS", label: "UPS" },
+                            { value: "MRW", label: "MRW" },
+                            { value: "SEUR", label: "SEUR" },
+                            { value: "GLS", label: "GLS" },
+                            { value: "Amazon Logistics", label: "Amazon Logistics" },
+                            { value: "Otra", label: "Otra" },
+                          ]}
+                          placeholder="Seleccionar empresa..."
+                          size="md"
+                        />
                         <p className="text-xs text-muted-foreground">La guía y empresa serán visibles para el usuario en su historial de pedidos.</p>
                       </div>
                     )}

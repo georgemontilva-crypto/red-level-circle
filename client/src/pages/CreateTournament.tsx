@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import PremiumLayout from "@/components/PremiumLayout";
+import CustomSelect from "@/components/CustomSelect";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -306,28 +307,14 @@ function NeonSelect({
   placeholder?: string;
 }) {
   return (
-    <div>
-      <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">{label}</label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
-        style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
-        onFocus={(e) => {
-          e.target.style.borderColor = "oklch(0.55 0.22 25)";
-          e.target.style.boxShadow = "0 0 8px oklch(0.55 0.22 25 / 0.3)";
-        }}
-        onBlur={(e) => {
-          e.target.style.borderColor = "oklch(0.22 0.01 0)";
-          e.target.style.boxShadow = "none";
-        }}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>{o.label}</option>
-        ))}
-      </select>
-    </div>
+    <CustomSelect
+      label={label}
+      value={value}
+      onChange={onChange}
+      options={options}
+      placeholder={placeholder}
+      size="md"
+    />
   );
 }
 

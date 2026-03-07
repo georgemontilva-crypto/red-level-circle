@@ -1,6 +1,7 @@
 import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import BracketView from "@/components/BracketView";
+import CustomSelect from "@/components/CustomSelect";
 import {
   Trophy,
   Calendar,
@@ -1730,22 +1731,14 @@ export default function TournamentDetail() {
             </p>
             <div className="space-y-3">
               <div>
-                <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">ROL PRINCIPAL</label>
-                <select
+                <CustomSelect
+                  label="ROL PRINCIPAL"
                   value={freeAgentRole}
-                  onChange={(e) => setFreeAgentRole(e.target.value)}
-                  className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                  style={{
-                    background: "#0e1015",
-                    border: "1px solid oklch(0.25 0.01 0)",
-                    color: "var(--text-primary)",
-                  }}
-                >
-                  <option value="">Seleccionar rol...</option>
-                  {(GAME_ROLES[tournament.game ?? ""] ?? DEFAULT_ROLES).map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+                  onChange={(v) => setFreeAgentRole(v)}
+                  options={GAME_ROLES[tournament.game ?? ""] ?? DEFAULT_ROLES}
+                  placeholder="Seleccionar rol..."
+                  size="md"
+                />
               </div>
               <div>
                 <label className="block text-xs font-display tracking-wider text-muted-foreground mb-1">MENSAJE (opcional)</label>
