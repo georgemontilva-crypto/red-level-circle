@@ -46,12 +46,12 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "oklch(0.40 0.005 0)",
 };
 const STATUS_LABELS: Record<string, string> = {
-  registration_open: "REGISTRATION OPEN",
-  in_progress: "IN PROGRESS",
-  completed: "COMPLETED",
-  draft: "COMING SOON",
-  registration_closed: "REGISTRATION CLOSED",
-  cancelled: "CANCELLED",
+  registration_open: "INSCRIPCIONES ABIERTAS",
+  in_progress: "EN CURSO",
+  completed: "FINALIZADO",
+  draft: "PRÓXIMAMENTE",
+  registration_closed: "INSCRIPCIONES CERRADAS",
+  cancelled: "CANCELADO",
 };
 const DRAFT_LABELS: Record<string, string> = {
   tournament_draft: "Tournament Draft",
@@ -501,10 +501,10 @@ export default function TournamentDetail() {
 
   // Tabs
   const tabs = [
-    { id: "overview" as const, label: "OVERVIEW", icon: <LayoutList size={14} /> },
+    { id: "overview" as const, label: "GENERAL", icon: <LayoutList size={14} /> },
     {
       id: "participants" as const,
-      label: "PARTICIPANTS",
+      label: "PARTICIPANTES",
       icon: <Users size={14} />,
       count: registeredTeams?.length,
     },
@@ -518,13 +518,13 @@ export default function TournamentDetail() {
     },
     {
       id: "stats" as const,
-      label: "STATS",
+      label: "ESTADÍSTICAS",
       icon: <BarChart2 size={14} />,
       count: completedResults.length > 0 ? completedResults.length : undefined,
     },
     {
       id: "announcements" as const,
-      label: "ANNOUNCEMENTS",
+      label: "ANUNCIOS",
       icon: <Megaphone size={14} />,
       count: announcements?.length ?? 0,
     },
@@ -712,7 +712,7 @@ export default function TournamentDetail() {
                   {statusLabel}
                 </span>
                 <span className="text-sm text-muted-foreground font-mono">
-                  {registeredTeams?.length ?? 0} / {tournament.maxTeams} TEAMS REGISTERED
+                  {registeredTeams?.length ?? 0} / {tournament.maxTeams} EQUIPOS REGISTRADOS
                 </span>
                 {checkInActive && (
                   <span
@@ -736,7 +736,7 @@ export default function TournamentDetail() {
                 >
                   <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-3 flex items-center gap-2">
                     <Info size={14} style={{ color: "oklch(0.55 0.22 25)" }} />
-                    DETAILS
+                    DETALLES
                   </h2>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
                     {tournament.description}
@@ -750,7 +750,7 @@ export default function TournamentDetail() {
                   className="rounded-xl p-6"
                   style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
                 >
-                  <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-3">RULES</h2>
+                  <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-3">REGLAMENTO</h2>
                   <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
                     {tournament.rules}
                   </p>
@@ -765,7 +765,7 @@ export default function TournamentDetail() {
                 >
                   <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
                     <Trophy size={14} style={{ color: "oklch(0.65 0.18 80)" }} />
-                    PRIZES
+                    PREMIOS
                   </h2>
                   {tournament.prizeDescription && !tournament.prizeFirst && (
                     <p className="text-muted-foreground text-sm">{tournament.prizeDescription}</p>
@@ -778,7 +778,7 @@ export default function TournamentDetail() {
                       >
                         <Crown size={18} style={{ color: "oklch(0.65 0.18 80)" }} />
                         <div>
-                          <div className="text-xs text-muted-foreground font-mono">1st PLACE</div>
+                          <div className="text-xs text-muted-foreground font-mono">1er LUGAR</div>
                           <div className="font-display text-sm font-bold text-foreground">{tournament.prizeFirst}</div>
                         </div>
                       </div>
@@ -790,7 +790,7 @@ export default function TournamentDetail() {
                       >
                         <Star size={18} style={{ color: "oklch(0.75 0.005 0)" }} />
                         <div>
-                          <div className="text-xs text-muted-foreground font-mono">2nd PLACE</div>
+                          <div className="text-xs text-muted-foreground font-mono">2do LUGAR</div>
                           <div className="font-display text-sm font-bold text-foreground">{tournament.prizeSecond}</div>
                         </div>
                       </div>
@@ -802,7 +802,7 @@ export default function TournamentDetail() {
                       >
                         <Star size={18} style={{ color: "oklch(0.55 0.18 50)" }} />
                         <div>
-                          <div className="text-xs text-muted-foreground font-mono">3rd PLACE</div>
+                          <div className="text-xs text-muted-foreground font-mono">3er LUGAR</div>
                           <div className="font-display text-sm font-bold text-foreground">{tournament.prizeThird}</div>
                         </div>
                       </div>
@@ -819,7 +819,7 @@ export default function TournamentDetail() {
                 >
                   <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-4 flex items-center gap-2">
                     <Calendar size={14} style={{ color: "oklch(0.55 0.22 25)" }} />
-                    SCHEDULE
+                    CALENDARIO
                   </h2>
                   <div className="space-y-3">
                     {schedule.map((s, i) => (
@@ -849,7 +849,7 @@ export default function TournamentDetail() {
                   className="rounded-xl p-6"
                   style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
                 >
-                  <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-4">CONTACT</h2>
+                  <h2 className="font-display text-sm font-bold tracking-wider text-foreground mb-4">CONTACTO</h2>
                   <div className="space-y-2">
                     {contactInfo.name && (
                       <p className="text-sm text-secondary-foreground">{contactInfo.name}</p>
@@ -932,9 +932,9 @@ export default function TournamentDetail() {
                 className="rounded-xl p-5"
                 style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
               >
-                <div className="text-xs font-display tracking-widest text-muted-foreground mb-3">1. JOIN</div>
+                <div className="text-xs font-display tracking-widest text-muted-foreground mb-3">INSCRIPCIÓN</div>
                 <div className="flex items-center justify-between mb-3">
-                  <span className="font-display text-sm font-bold text-foreground">1 REGISTER TEAM</span>
+                  <span className="font-display text-sm font-bold text-foreground">REGISTRAR EQUIPO</span>
                 </div>
                 {tournament.status === "registration_open" ? (
                   isAuthenticated ? (
@@ -947,7 +947,7 @@ export default function TournamentDetail() {
                         boxShadow: "0 0 15px oklch(0.55 0.22 25 / 0.4)",
                       }}
                     >
-                      Join as Team
+                      Inscribir Equipo
                     </button>
                   ) : (
                     <button
