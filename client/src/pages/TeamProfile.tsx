@@ -65,11 +65,11 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
   const topChampions: any[] = hasRiot ? (riotProfile.topChampions ?? []) : [];
   const recentMatches: any[] = hasRiot ? (riotProfile.recentMatches ?? []) : [];
 
-  const tier = rankedSolo ? (rankedSolo.tier ?? "").toUpperCase() : (member.elo ?? "").toUpperCase().split(" ")[0];
+  const tier = rankedSolo ? (rankedSolo.tier ?? "").toUpperCase() : "";
   const tierColor = TIER_COLORS[tier] ?? { text: "#aaa", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)", emblem: "🎮" };
   const rankLabel = rankedSolo
     ? `${tier.charAt(0) + tier.slice(1).toLowerCase()} ${rankedSolo.rank ?? ""}`
-    : (member.elo ?? "Sin clasificar");
+    : null;
   const lp = rankedSolo?.leaguePoints ?? 0;
   const wins = rankedSolo?.wins ?? 0;
   const losses = rankedSolo?.losses ?? 0;
@@ -123,9 +123,9 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
               </div>
               {/* Rank bar */}
               <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, background: tierColor.bg, border: `2px solid ${tierColor.border}` }}>{tierColor.emblem}</div>
+                <div style={{ width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, background: rankLabel ? tierColor.bg : "rgba(255,255,255,0.04)", border: `2px solid ${rankLabel ? tierColor.border : "rgba(255,255,255,0.08)"}` }}>{rankLabel ? tierColor.emblem : "—"}</div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "12px", fontWeight: 700, color: tierColor.text }}>{rankLabel}</div>
+                  <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "12px", fontWeight: 700, color: rankLabel ? tierColor.text : "rgba(255,255,255,0.3)" }}>{rankLabel ?? "Sin clasificar"}</div>
                   {rankedSolo && <div style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{lp} LP · {wins}W {losses}L</div>}
                 </div>
                 {winRate !== null && (
@@ -165,7 +165,7 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
                 </div>
                 <div style={{ padding: "14px", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
                   {[
-                    { value: rankLabel, label: "RANGO SOLO", color: tierColor.text },
+                    { value: rankLabel ?? "Sin clasificar", label: "RANGO SOLO", color: rankLabel ? tierColor.text : "rgba(255,255,255,0.3)" },
                     { value: winRate !== null ? `${winRate}%` : "—", label: "WIN RATE", color: winRateColor },
                     { value: total > 0 ? total : "—", label: "PARTIDAS", color: "#e0e0e0" },
                     { value: "—", label: "KDA PROM.", color: "#5dade2" },
@@ -604,7 +604,7 @@ function TeamOverview({ team, rankPos, tournamentHistory }: { team: any; rankPos
               ].map(role => {
                 const player = members.find(m => role.key.includes((m.gameRole ?? "").toLowerCase()));
                 const playerRiot = player ? memberRiotData.find(d => d.member.userId === player.userId) : null;
-                const playerTier = playerRiot?.riot?.rankedSolo?.tier?.toUpperCase() ?? (player?.elo ?? "").toUpperCase().split(" ")[0];
+                const playerTier = playerRiot?.riot?.rankedSolo?.tier?.toUpperCase() ?? "";
                 const ptc = TIER_COLORS[playerTier] ?? null;
                 return (
                   <div key={role.label} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "6px", padding: "10px 6px", borderRadius: "10px", background: player ? "rgba(192,57,43,0.05)" : "rgba(0,0,0,0.2)", border: `1px solid ${player ? "rgba(192,57,43,0.2)" : "rgba(255,255,255,0.04)"}`, opacity: player ? 1 : 0.45 }}>
