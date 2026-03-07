@@ -30,6 +30,7 @@ import {
 import { useState, useRef } from "react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const BRACKET_LABELS: Record<string, string> = {
@@ -367,7 +368,7 @@ function AnnouncementRow({
 export default function TournamentDetail() {
   const { id: idStr } = useParams<{ id: string }>();
   const id = parseInt(idStr ?? "0");
-  const { data: user, isAuthenticated } = trpc.auth.me.useQuery() as any;
+  const { user, isAuthenticated } = useAuth();
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [selectedTeamId, setSelectedTeamId] = useState<number | null>(null);
