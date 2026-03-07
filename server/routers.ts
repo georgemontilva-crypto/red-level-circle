@@ -1373,12 +1373,25 @@ export const appRouter = router({
     liveCreators: publicProcedure
       .query(async () => {
         const db = await getDb();
-        if (!db) return [] as number[];
+        if (!db) return [] as { userId: number; streamId: number; embedUrl: string | null }[];
+        // Use a subquery to get the latest stream per user
         const rows = await db
-          .selectDistinct({ userId: streams.userId })
+          .select({
+            userId: streams.userId,
+            streamId: streams.id,
+            embedUrl: streams.embedUrl,
+          })
           .from(streams)
-          .where(and(eq(streams.isLive, true), isNotNull(streams.userId)));
-        return rows.map((r: { userId: number | null }) => r.userId).filter((id: number | null): id is number => id !== null);
+          .where(and(eq(streams.isLive, true), isNotNull(streams.userId)))
+          .orderBy(streams.id);
+        // Deduplicate: keep only the latest stream per userId
+        const seen = new Map<number, { userId: number; streamId: number; embedUrl: string | null }>();
+        for (const r of rows) {
+          if (r.userId !== null) {
+            seen.set(r.userId, { userId: r.userId, streamId: r.streamId, embedUrl: r.embedUrl });
+          }
+        }
+        return Array.from(seen.values());
       }),
     /** Admin: force a sync cycle right now and return a status report */
     forceSyncNow: adminProcedure

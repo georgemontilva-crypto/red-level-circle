@@ -23,40 +23,48 @@ function formatViewers(n: number): string {
 
 
 /**
- * En iOS Safari, al abrir el teclado el viewport se reduce y los elementos
+ * En iOS/Android, al abrir el teclado el viewport se reduce y los elementos
  * fixed con bottom:0 se redimensionan, haciendo que el video suba.
- * Solución: fijar la altura del contenedor mobile al valor inicial del viewport
- * (antes de que aparezca el teclado) usando visualViewport API.
- * Cuando el teclado aparece, el contenedor mantiene su altura original y
- * solo el chat (flex-1 overflow-hidden) se comprime internamente.
+ *
+ * Estrategia: capturar la altura INICIAL del viewport (antes del teclado) y
+ * fijarla como height del contenedor. Solo actualizar si la pantalla CRECE
+ * (rotación, cierre del teclado), nunca si se reduce (apertura del teclado).
  */
 function useMobileContainerHeight(ref: React.RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
-    const vv = window.visualViewport;
+    // Calcular el top del contenedor (navbar + safe-area)
+    const getTop = () => {
+      const safeTop = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue("--sat") || "0",
+        10
+      ) || 0;
+      return 56 + safeTop;
+    };
+
+    // Altura máxima conocida del viewport (solo crece en rotación/cierre teclado)
+    let maxHeight = (window.visualViewport?.height ?? window.innerHeight);
 
     const applyHeight = () => {
-      // Usar visualViewport.height si está disponible (iOS Safari)
-      // De lo contrario usar window.innerHeight
-      const h = vv ? vv.height + vv.offsetTop : window.innerHeight;
-      const top = parseFloat(el.style.top || "56");
-      // No tocar el top, solo ajustar el bottom para que el contenedor
-      // mantenga la altura del viewport visible actual
-      el.style.height = `${h - top}px`;
+      const currentH = window.visualViewport?.height ?? window.innerHeight;
+      // Solo actualizar si el viewport CRECIÓ (rotación o cierre de teclado)
+      if (currentH > maxHeight) {
+        maxHeight = currentH;
+      }
+      const top = getTop();
+      el.style.height = `${maxHeight - top}px`;
       el.style.bottom = "auto";
     };
 
     applyHeight();
 
+    const vv = window.visualViewport;
     if (vv) {
       vv.addEventListener("resize", applyHeight);
-      vv.addEventListener("scroll", applyHeight);
-      return () => {
-        vv.removeEventListener("resize", applyHeight);
-        vv.removeEventListener("scroll", applyHeight);
-      };
+      return () => vv.removeEventListener("resize", applyHeight);
     } else {
       window.addEventListener("resize", applyHeight);
       return () => window.removeEventListener("resize", applyHeight);

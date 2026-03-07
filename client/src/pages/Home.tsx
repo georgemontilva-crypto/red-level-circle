@@ -888,9 +888,10 @@ export default function Home() {
   const { data: missions } = trpc.missions.list.useQuery();
   const { data: sideAds } = trpc.ads.list.useQuery();
   const { data: featuredAllies } = trpc.allies.list.useQuery({ featuredOnly: true });
-  const { data: liveUserIds } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
-  const liveSet = new Set(liveUserIds ?? []);
-  const liveCreatorsList = (creators ?? []).filter((c: any) => liveSet.has(c.userId));
+  const { data: liveData } = trpc.streams.liveCreators.useQuery(undefined, { refetchInterval: 60_000 });
+  // liveData is now [{ userId, streamId, embedUrl }]
+  const liveMap = new Map((liveData ?? []).map((l: any) => [l.userId, l]));
+  const liveCreatorsList = (creators ?? []).filter((c: any) => liveMap.has(c.userId));
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
@@ -910,47 +911,62 @@ export default function Home() {
         {liveCreatorsList.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                Creadores en Vivo Ahora
-                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.5)" }}>
+              <h2 className="font-orbitron font-bold text-foreground text-lg flex items-center gap-2 min-w-0 flex-1 mr-3">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0" />
+                <span className="truncate">Creadores en Vivo Ahora</span>
+                <span className="shrink-0 px-2 py-0.5 rounded-full text-xs font-mono font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.5)" }}>
                   {liveCreatorsList.length}
                 </span>
               </h2>
-              <Link href="/creators?filter=live" className="flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
+              <Link href="/creators?filter=live" className="shrink-0 flex items-center gap-1 text-xs font-mono text-red-400 hover:text-red-300 transition-colors">
                 Ver todos <ArrowRight size={13} />
               </Link>
             </div>
             <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
-              {liveCreatorsList.map((c: any) => (
-                <Link key={c.id} href={`/profile/${c.userId}`}>
-                  <div
-                    className="shrink-0 w-52 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
-                    style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", boxShadow: "0 0 16px oklch(0.55 0.22 25 / 0.2)" }}
-                  >
-                    <div className="relative h-32 overflow-hidden">
-                      {c.banner ? (
-                        <img src={c.banner} alt={c.nickname ?? c.userName ?? "Creador"} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-red-950/40 to-zinc-900" />
-                      )}
-                      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 60%)" }} />
-                      {/* EN VIVO badge */}
-                      <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.6)" }}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-                        EN VIVO
+              {liveCreatorsList.map((c: any) => {
+                const liveInfo = liveMap.get(c.userId);
+                const streamId = liveInfo?.streamId;
+                const embedUrl = liveInfo?.embedUrl;
+                return (
+                  <Link key={c.id} href={streamId ? `/streams/${streamId}` : `/profile/${c.userId}`}>
+                    <div
+                      className="shrink-0 w-52 rounded-2xl overflow-hidden cursor-pointer group transition-all duration-300 hover:-translate-y-1"
+                      style={{ background: "var(--bg-card)", border: "1px solid oklch(0.55 0.22 25 / 0.5)", boxShadow: "0 0 16px oklch(0.55 0.22 25 / 0.2)" }}
+                    >
+                      {/* Preview del live: iframe si hay embedUrl, sino banner */}
+                      <div className="relative overflow-hidden" style={{ height: "117px" }}>
+                        {embedUrl ? (
+                          <iframe
+                            src={embedUrl}
+                            className="w-full h-full border-0 pointer-events-none"
+                            allow="autoplay; encrypted-media"
+                            title={c.nickname ?? c.userName ?? "Live"}
+                            loading="lazy"
+                          />
+                        ) : c.banner ? (
+                          <img src={c.banner} alt={c.nickname ?? c.userName ?? "Creador"} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-red-950/40 to-zinc-900" />
+                        )}
+                        {/* Overlay semitransparente para que el click vaya al link */}
+                        <div className="absolute inset-0" />
+                        {/* EN VIVO badge */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-foreground" style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 8px oklch(0.50 0.22 25 / 0.6)" }}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                          EN VIVO
+                        </div>
+                      </div>
+                      <div className="p-3 flex items-center gap-2.5">
+                        <UserAvatar avatar={c.avatar} name={c.nickname ?? c.userName ?? "Creador"} size="sm" />
+                        <div className="min-w-0">
+                          <p className="text-foreground text-sm font-bold truncate">{c.nickname ?? c.userName ?? "Creador"}</p>
+                          <p className="text-muted-foreground text-xs truncate">{c.category ?? "Creador"}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="p-3 flex items-center gap-2.5">
-                      <UserAvatar avatar={c.avatar} name={c.nickname ?? c.userName ?? "Creador"} size="sm" />
-                      <div className="min-w-0">
-                        <p className="text-foreground text-sm font-bold truncate">{c.nickname ?? c.userName ?? "Creador"}</p>
-                        <p className="text-muted-foreground text-xs truncate">{c.category ?? "Creador"}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}
