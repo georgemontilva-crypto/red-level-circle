@@ -17,7 +17,7 @@ import {
 
 // ─── Configuración por juego ────────────────────────────────────────────────
 const GAMES = [
-  "League of Legends", "Valorant", "CS2", "FIFA", "Fortnite",
+  "League of Legends", "Valorant", "Honor of Kings", "CS2", "FIFA", "Fortnite",
   "Dota 2", "Rocket League", "Apex Legends", "Overwatch 2", "Call of Duty",
   "Street Fighter 6", "Tekken 8", "Otro",
 ];
@@ -39,6 +39,7 @@ const GAME_MAPS: Record<string, string[]> = {
     "Numbani", "Oasis", "Rialto", "Route 66", "Watchpoint: Gibraltar",
   ],
   "Rocket League": ["DFH Stadium", "Mannfield", "Champions Field", "Urban Central", "Beckwith Park"],
+  // Honor of Kings: el mapa se elige en el cliente del juego, no aplica selección de mapa
 };
 
 // Modos de juego por juego
@@ -70,6 +71,12 @@ const GAME_MODES: Record<string, { value: string; label: string }[]> = {
     { value: "2v2", label: "2v2 Dobles" },
     { value: "1v1", label: "1v1 Duelo" },
   ],
+  "Honor of Kings": [
+    { value: "tournament_5v5", label: "Modo Torneo 5v5 (Clásico)" },
+    { value: "ranked_5v5", label: "Clasificatoria 5v5" },
+    { value: "brawl_3v3", label: "Brawl 3v3" },
+    { value: "duel_1v1", label: "Duelo 1v1" },
+  ],
 };
 
 // Servidores/regiones por juego
@@ -95,6 +102,14 @@ const GAME_SERVERS: Record<string, { value: string; label: string }[]> = {
     { value: "na", label: "North America" },
     { value: "eu", label: "Europe" },
   ],
+  "Honor of Kings": [
+    { value: "latam", label: "LATAM" },
+    { value: "latam_norte", label: "LATAM Norte" },
+    { value: "latam_sur", label: "LATAM Sur" },
+    { value: "br", label: "Brasil" },
+    { value: "sea", label: "Southeast Asia" },
+    { value: "global", label: "Global" },
+  ],
 };
 
 // Tamaño de equipo por defecto por juego
@@ -109,6 +124,7 @@ const GAME_TEAM_SIZE: Record<string, { min: number; max: number; label: string }
   "Tekken 8": { min: 1, max: 1, label: "1 jugador" },
   "Fortnite": { min: 1, max: 4, label: "1–4 jugadores" },
   "Apex Legends": { min: 3, max: 3, label: "3 jugadores" },
+  "Honor of Kings": { min: 5, max: 7, label: "5 jugadores + 2 suplentes" },
 };
 
 // ¿El juego usa cuenta Riot? (para mostrar el toggle automáticamente)
@@ -378,6 +394,7 @@ function GameSpecificConfig({
   const isValorant = game === "Valorant";
   const isLoL = game === "League of Legends";
   const isCS2 = game === "CS2";
+  const isHoK = game === "Honor of Kings";
 
   return (
     <div
@@ -393,6 +410,7 @@ function GameSpecificConfig({
           {isValorant ? <Shield size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
            isLoL ? <Swords size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
            isCS2 ? <Swords size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
+           isHoK ? <Swords size={14} style={{ color: "oklch(0.70 0.22 25)" }} /> :
            <Trophy size={14} style={{ color: "oklch(0.70 0.22 25)" }} />}
         </div>
         <span className="font-display text-xs font-bold tracking-widest" style={{ color: "oklch(0.70 0.22 25)" }}>
@@ -412,8 +430,8 @@ function GameSpecificConfig({
           />
         )}
 
-        {/* Modo de juego */}
-        {modes && isValorant && (
+        {/* Modo de juego — Valorant, Rocket League, Overwatch 2, Honor of Kings */}
+        {modes && (isValorant || isHoK || game === "Rocket League" || game === "Overwatch 2") && (
           <NeonSelect
             label="MODO DE JUEGO"
             value={form.gameMode}
@@ -434,7 +452,7 @@ function GameSpecificConfig({
           />
         )}
 
-        {/* Modo competitivo CS2 */}
+        {/* Formato de partida CS2 */}
         {isCS2 && modes && (
           <NeonSelect
             label="FORMATO DE PARTIDA"
@@ -529,6 +547,53 @@ function GameSpecificConfig({
         </div>
       )}
 
+      {/* Draft de héroes Honor of Kings */}
+      {isHoK && (
+        <div>
+          <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Swords size={11} />
+            SISTEMA DE DRAFT
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { value: "ban_pick", label: "Ban/Pick (Torneo)" },
+              { value: "blind_pick", label: "Blind Pick" },
+              { value: "all_random", label: "All Random" },
+              { value: "captains_mode", label: "Captain's Mode" },
+            ].map((d) => (
+              <button
+                key={d.value}
+                type="button"
+                onClick={() => set("draftType")(d.value)}
+                className="px-3 py-2 rounded-lg text-xs font-display tracking-wide transition-all duration-150 text-left"
+                style={
+                  form.draftType === d.value
+                    ? { background: "oklch(0.55 0.22 25 / 0.20)", border: "1px solid oklch(0.55 0.22 25 / 0.6)", color: "oklch(0.80 0.22 25)" }
+                    : { background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-muted)" }
+                }
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Info adicional Honor of Kings */}
+      {isHoK && (
+        <div
+          className="rounded-lg p-3 text-xs text-zinc-400 leading-relaxed"
+          style={{ background: "oklch(0.14 0.01 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+        >
+          <p className="font-semibold text-zinc-300 mb-1">ℹ️ Sobre las salas en Honor of Kings</p>
+          <p>
+            Las salas personalizadas en Honor of Kings se crean desde el menú del juego.
+            El organizador debe compartir el código de sala en la página del match antes de cada partida.
+            El modo <strong>Torneo 5v5</strong> habilita el sistema de ban/pick de héroes.
+          </p>
+        </div>
+      )}
+
       {/* Info adicional Valorant */}
       {isValorant && (
         <div
@@ -596,7 +661,7 @@ export default function CreateTournament() {
       gameMap: "",
       gameMode: "",
       region: "",
-      draftType: game === "League of Legends" ? "tournament_draft" : prev.draftType,
+      draftType: game === "League of Legends" ? "tournament_draft" : game === "Honor of Kings" ? "ban_pick" : prev.draftType,
       requireRiotAccount: isRiot ? true : false,
       minPlayersPerTeam: teamSize ? teamSize.min : 1,
       maxPlayersPerTeam: teamSize ? teamSize.max : 5,
@@ -1213,6 +1278,18 @@ export default function CreateTournament() {
                     <span className="text-muted-foreground">Equipos:</span>
                     <span className="text-foreground">Máx. {form.maxTeams}</span>
                   </div>
+                  {(form.draftType && form.draftType !== "tournament_draft" || form.game === "Honor of Kings") && form.draftType && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Draft:</span>
+                      <span className="text-foreground">
+                        {form.game === "League of Legends"
+                          ? (GAME_MODES["League of Legends"]?.find(m => m.value === form.draftType)?.label ?? form.draftType)
+                          : form.game === "Honor of Kings"
+                          ? ([{value:"ban_pick",label:"Ban/Pick (Torneo)"},{value:"blind_pick",label:"Blind Pick"},{value:"all_random",label:"All Random"},{value:"captains_mode",label:"Captain's Mode"}].find(d => d.value === form.draftType)?.label ?? form.draftType)
+                          : form.draftType}
+                      </span>
+                    </div>
+                  )}
                   {form.requireRiotAccount && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Cuenta Riot:</span>

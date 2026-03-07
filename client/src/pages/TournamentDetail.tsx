@@ -83,6 +83,16 @@ const GAME_ROLES: Record<string, { value: string; label: string }[]> = {
     { value: "Recon", label: "Recon" },
     { value: "IGL", label: "IGL" },
   ],
+  "Honor of Kings": [
+    { value: "Guerrero", label: "Guerrero (Fighter)" },
+    { value: "Tanque", label: "Tanque (Tank)" },
+    { value: "Asesino", label: "Asesino (Assassin)" },
+    { value: "Mago", label: "Mago (Mage)" },
+    { value: "Tirador", label: "Tirador (Marksman)" },
+    { value: "Soporte", label: "Soporte (Support)" },
+    { value: "IGL", label: "IGL (In-Game Leader)" },
+    { value: "Flex", label: "Flex" },
+  ],
 };
 
 const DEFAULT_ROLES = [
@@ -97,6 +107,8 @@ const BRACKET_LABELS: Record<string, string> = {
   single_elimination: "Eliminación Simple",
   double_elimination: "Doble Eliminación",
   groups: "Fase de Grupos",
+  swiss: "Sistema Suizo",
+  round_robin: "Round Robin",
 };
 const STATUS_COLORS: Record<string, string> = {
   registration_open: "oklch(0.65 0.18 145)",
@@ -119,6 +131,9 @@ const DRAFT_LABELS: Record<string, string> = {
   blind_pick: "Blind Pick",
   all_random: "All Random",
   captains_draft: "Captain's Draft",
+  // Honor of Kings
+  ban_pick: "Ban/Pick (Torneo)",
+  captains_mode: "Captain's Mode",
 };
 
 function getRoundLabel(round: number, totalRounds: number): string {
