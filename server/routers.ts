@@ -3271,7 +3271,9 @@ Genera el reporte de precio RLC para este producto.`;
       if (!db) return { totalUsers: 0, totalTeams: 0, totalTournaments: 0, activeTournaments: 0 };
       const [totalUsers] = await db.select({ count: sql<number>`count(*)` }).from(users);
       const [totalTeams] = await db.select({ count: sql<number>`count(*)` }).from(teams);
-      const [totalTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments);
+      const PUBLIC_STATUSES = ["registration_open", "registration_closed", "in_progress", "completed"] as const;
+      const [totalTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments)
+        .where(inArray(tournaments.status, PUBLIC_STATUSES));
       const [activeTournaments] = await db.select({ count: sql<number>`count(*)` }).from(tournaments)
         .where(inArray(tournaments.status, ["registration_open", "in_progress"]));
       return {
