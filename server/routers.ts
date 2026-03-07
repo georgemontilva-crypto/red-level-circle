@@ -394,11 +394,16 @@ export const appRouter = router({
         cache.invalidatePrefix("tournaments:list:");
         // Broadcast SSE so all clients update tournament lists immediately
         sseBroadcast("tournament", { action: "created", id });
-        // Generate news article for new tournament (non-blocking)
-        const { handleTournamentCreated } = await import("./newsGenerator");
-        handleTournamentCreated(id).catch((err: Error) =>
-          console.error("[NewsGenerator] Error generating tournament news:", err)
-        );
+        // Notificar al creador que su torneo está pendiente de aprobación
+        try {
+          await createNotification({
+            userId: ctx.user.id,
+            type: "general",
+            title: "⏳ Torneo enviado para revisión",
+            message: `Tu torneo ha sido enviado. Un administrador lo revisará pronto.`,
+            link: `/dashboard/tournament/${id}`,
+          });
+        } catch (e) { console.error("[CreateTournament] Notification error:", e); }
         return { id };
       }),
 
@@ -2386,6 +2391,13 @@ Genera el reporte de precio RLC para este producto.`;
             });
           } catch (e) { console.error("[ApproveTournament] Notification error:", e); }
         }
+        // Generar noticia ahora que el torneo fue aprobado (no bloqueante)
+        try {
+          const { handleTournamentCreated } = await import("./newsGenerator");
+          handleTournamentCreated(input.id).catch((err: Error) =>
+            console.error("[NewsGenerator] Error generating tournament news on approval:", err)
+          );
+        } catch (e) { console.error("[ApproveTournament] NewsGenerator import error:", e); }
         // Emit status change for news generator
         try {
           eventBus.emit("tournament.status_changed", {
