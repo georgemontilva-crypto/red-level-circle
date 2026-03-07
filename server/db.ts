@@ -2950,11 +2950,12 @@ export async function getRecentUsers(limit = 10) {
       avatar: users.avatar,
       role: users.role,
       createdAt: users.createdAt,
-      activeFrameImage: cosmetics.frameImage,
+      activeFrameImage: sql<string | null>`MAX(${cosmetics.frameImage})`,
     })
     .from(users)
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
+    .groupBy(users.id, users.name, users.nickname, users.avatar, users.role, users.createdAt)
     .orderBy(desc(users.createdAt))
     .limit(limit);
 }
@@ -2972,12 +2973,13 @@ export async function getSuggestedUsers(currentUserId: number, limit = 10) {
       avatar: users.avatar,
       role: users.role,
       createdAt: users.createdAt,
-      activeFrameImage: cosmetics.frameImage,
+      activeFrameImage: sql<string | null>`MAX(${cosmetics.frameImage})`,
     })
     .from(users)
     .leftJoin(equippedCosmetic, and(eq(equippedCosmetic.userId, users.id), eq(equippedCosmetic.isEquipped, true)))
     .leftJoin(cosmetics, eq(cosmetics.id, equippedCosmetic.cosmeticId))
     .where(sql`${users.id} != ${currentUserId}`)
+    .groupBy(users.id, users.name, users.nickname, users.avatar, users.role, users.createdAt)
     .orderBy(desc(users.createdAt))
     .limit(limit);
 }
