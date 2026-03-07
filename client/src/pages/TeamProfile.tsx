@@ -88,68 +88,70 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
         background: "#0f1218",
         border: "1px solid rgba(192,57,43,0.3)",
         boxShadow: "0 0 40px rgba(192,57,43,0.08)",
+        width: "100%",
       }}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr" }}>
-        {/* Columna izquierda: player card */}
-        <div style={{ background: "linear-gradient(160deg, #160a0a 0%, #1a0d0d 100%)", borderRight: "1px solid rgba(255,255,255,0.05)", padding: "20px" }}>
-          {/* Foto */}
-          <div style={{ borderRadius: "14px", overflow: "hidden", background: "linear-gradient(135deg, #1a0808, #2d0f0f)", border: "1px solid rgba(192,57,43,0.2)", marginBottom: "16px" }}>
-            <div style={{ position: "relative", height: "180px" }}>
-              {photoUrl ? (
-                <img src={photoUrl} alt={nickname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
-              ) : (
-                <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "56px", color: "rgba(255,255,255,0.06)" }}>👤</div>
-              )}
-              <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: "60%", background: "linear-gradient(to top, #1a0808 0%, transparent 100%)" }} />
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "linear-gradient(90deg, rgba(192,57,43,0.08) 0%, transparent 100%)" }}>
+        <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "11px", letterSpacing: ".15em", color: "rgba(255,255,255,0.5)" }}>FICHA COMPETITIVA</div>
+        <button
+          onClick={onClose}
+          style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", padding: "5px 12px", borderRadius: "8px", fontFamily: "monospace", fontSize: "10px", cursor: "pointer" }}
+        >
+          ✕ CERRAR
+        </button>
+      </div>
+
+      {/* Player identity row */}
+      <div style={{ display: "flex", gap: "16px", padding: "16px 18px", alignItems: "flex-start", background: "linear-gradient(160deg, #160a0a 0%, #1a0d0d 100%)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        {/* Foto */}
+        <div style={{ flexShrink: 0, width: "90px", height: "110px", borderRadius: "12px", overflow: "hidden", background: "linear-gradient(135deg, #1a0808, #2d0f0f)", border: "1px solid rgba(192,57,43,0.25)" }}>
+          {photoUrl ? (
+            <img src={photoUrl} alt={nickname} style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }} />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "36px", color: "rgba(255,255,255,0.06)" }}>👤</div>
+          )}
+        </div>
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+            {riotIconUrl && (
+              <img src={riotIconUrl} alt="icon" style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid rgba(192,57,43,0.6)", flexShrink: 0 }} />
+            )}
+            <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "16px", fontWeight: 900, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nickname}</div>
+          </div>
+          {riotId && <div style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginBottom: "8px" }}>{riotId}</div>}
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" }}>
+            {member.gameRole && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(192,57,43,0.12)", border: "1px solid rgba(192,57,43,0.3)", color: "#e74c3c" }}>
+                <RoleIcon role={member.gameRole} size={12} /> {member.gameRole}
+              </span>
+            )}
+            {region && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
+                🌎 {region}
+              </span>
+            )}
+          </div>
+          {/* Rank bar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ width: "28px", height: "28px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", flexShrink: 0, background: rankLabel ? tierColor.bg : "rgba(255,255,255,0.04)", border: `2px solid ${rankLabel ? tierColor.border : "rgba(255,255,255,0.08)"}` }}>{rankLabel ? tierColor.emblem : "—"}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "11px", fontWeight: 700, color: rankLabel ? tierColor.text : "rgba(255,255,255,0.3)" }}>{rankLabel ?? "Sin clasificar"}</div>
+              {rankedSolo && <div style={{ fontFamily: "monospace", fontSize: "9px", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{lp} LP · {wins}W {losses}L</div>}
             </div>
-            <div style={{ padding: "14px" }}>
-              {riotIconUrl && (
-                <img src={riotIconUrl} alt="icon" style={{ width: "44px", height: "44px", borderRadius: "50%", border: "2px solid rgba(192,57,43,0.6)", boxShadow: "0 0 12px rgba(192,57,43,0.3)", marginBottom: "10px", background: "#1a0f0f" }} />
-              )}
-              <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "17px", fontWeight: 900, color: "#fff", marginBottom: "2px" }}>{nickname}</div>
-              {riotId && <div style={{ fontFamily: "monospace", fontSize: "11px", color: "rgba(255,255,255,0.35)", marginBottom: "10px" }}>{riotId}</div>}
-              <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "12px" }}>
-                {member.gameRole && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(192,57,43,0.12)", border: "1px solid rgba(192,57,43,0.3)", color: "#e74c3c" }}>
-                    <RoleIcon role={member.gameRole} size={12} /> {member.gameRole}
-                  </span>
-                )}
-                {region && (
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "3px 9px", borderRadius: "999px", fontFamily: "monospace", fontSize: "10px", background: "rgba(52,152,219,0.1)", border: "1px solid rgba(52,152,219,0.25)", color: "#5dade2" }}>
-                    🌎 {region}
-                  </span>
-                )}
+            {winRate !== null && (
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "12px", fontWeight: 700, color: winRateColor }}>{winRate}%</div>
+                <div style={{ fontFamily: "monospace", fontSize: "8px", color: "rgba(255,255,255,0.3)" }}>WIN RATE</div>
               </div>
-              {/* Rank bar */}
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", padding: "8px 10px", borderRadius: "10px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)" }}>
-                <div style={{ width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", flexShrink: 0, background: rankLabel ? tierColor.bg : "rgba(255,255,255,0.04)", border: `2px solid ${rankLabel ? tierColor.border : "rgba(255,255,255,0.08)"}` }}>{rankLabel ? tierColor.emblem : "—"}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "12px", fontWeight: 700, color: rankLabel ? tierColor.text : "rgba(255,255,255,0.3)" }}>{rankLabel ?? "Sin clasificar"}</div>
-                  {rankedSolo && <div style={{ fontFamily: "monospace", fontSize: "10px", color: "rgba(255,255,255,0.35)", marginTop: "1px" }}>{lp} LP · {wins}W {losses}L</div>}
-                </div>
-                {winRate !== null && (
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "13px", fontWeight: 700, color: winRateColor }}>{winRate}%</div>
-                    <div style={{ fontFamily: "monospace", fontSize: "9px", color: "rgba(255,255,255,0.3)" }}>WIN RATE</div>
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </div>
         </div>
+      </div>
 
-        {/* Columna derecha: stats */}
-        <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <div style={{ fontFamily: "'Orbitron', sans-serif", fontSize: "12px", letterSpacing: ".15em", color: "rgba(255,255,255,0.5)" }}>FICHA COMPETITIVA</div>
-            <button
-              onClick={onClose}
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", padding: "5px 12px", borderRadius: "8px", fontFamily: "monospace", fontSize: "10px", cursor: "pointer" }}
-            >
-              ✕ CERRAR
-            </button>
-          </div>
+      {/* Stats body */}
+      <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: "14px" }}>
 
           {isLoading ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
@@ -243,7 +245,6 @@ function PlayerCardExpanded({ member, onClose }: { member: any; onClose: () => v
               )}
             </>
           )}
-        </div>
       </div>
     </div>
   );
