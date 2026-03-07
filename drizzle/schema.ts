@@ -165,10 +165,27 @@ export const tournaments = mysqlTable("tournaments", {
   defaultSeriesFormat: mysqlEnum("defaultSeriesFormat", ["BO1", "BO2", "BO3", "BO5", "BO7"]).default("BO1").notNull(),
   isLive: boolean("isLive").default(false).notNull(),
   viewCount: int("viewCount").default(0).notNull(),
+  // ─── Campos nuevos (inspirados en Battlefy) ───────────────────────────────
+  // Región del torneo (LAN, LAS, NA, BR, EUW, etc.)
+  region: varchar("region", { length: 32 }),
+  // Mapa del juego (Summoners Rift, ARAM, Howling Abyss, etc.)
+  gameMap: varchar("gameMap", { length: 64 }),
+  // Tipo de draft
+  draftType: mysqlEnum("draftType", ["tournament_draft", "blind_pick", "all_random", "captains_draft"]).default("tournament_draft"),
+  // Check-in: ventana de tiempo antes del torneo
+  checkInStart: timestamp("checkInStart"),
+  checkInEnd: timestamp("checkInEnd"),
+  // Información de contacto del organizador (JSON: { name, discord, email, discordServer })
+  contactInfo: text("contactInfo"),
+  // Cronograma de rondas (JSON array: [{ round, date, time, description }])
+  schedule: text("schedule"),
+  // Si se requiere cuenta Riot vinculada para registrarse
+  requireRiotAccount: boolean("requireRiotAccount").default(false).notNull(),
+  // Máximo de agentes libres permitidos
+  maxFreeAgents: int("maxFreeAgents").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
-
 export type Tournament = typeof tournaments.$inferSelect;
 export type InsertTournament = typeof tournaments.$inferInsert;
 
@@ -992,3 +1009,52 @@ export const streamChatMessages = mysqlTable("stream_chat_messages", {
 }, (t) => [index("scm_stream_idx").on(t.streamId)]);
 export type StreamChatMessage = typeof streamChatMessages.$inferSelect;
 export type InsertStreamChatMessage = typeof streamChatMessages.$inferInsert;
+
+// ─── Tournament Checkins ──────────────────────────────────────────────────────────────────────────────
+// Registra qué equipos hicieron check-in antes del inicio del torneo
+export const tournamentCheckins = mysqlTable("tournament_checkins", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  teamId: int("teamId").notNull(),
+  checkedInAt: timestamp("checkedInAt").defaultNow().notNull(),
+  checkedInBy: int("checkedInBy").notNull(), // userId del capitán o admin
+}, (t) => [
+  index("tc_tournament_idx").on(t.tournamentId),
+  index("tc_team_idx").on(t.teamId),
+]);
+export type TournamentCheckin = typeof tournamentCheckins.$inferSelect;
+export type InsertTournamentCheckin = typeof tournamentCheckins.$inferInsert;
+
+// ─── Tournament Announcements ──────────────────────────────────────────────────────────────────────────────
+// Anuncios del organizador y mensajes automáticos del sistema (como Battlebot en Battlefy)
+export const tournamentAnnouncements = mysqlTable("tournament_announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  authorId: int("authorId"),          // null = sistema automático
+  authorName: varchar("authorName", { length: 128 }).default("Sistema"),
+  message: text("message").notNull(),
+  isSystem: boolean("isSystem").default(false).notNull(), // true = generado automáticamente
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("ta_tournament_idx").on(t.tournamentId),
+]);
+export type TournamentAnnouncement = typeof tournamentAnnouncements.$inferSelect;
+export type InsertTournamentAnnouncement = typeof tournamentAnnouncements.$inferInsert;
+
+// ─── Tournament Free Agents ──────────────────────────────────────────────────────────────────────────────
+// Jugadores que se inscriben individualmente (sin equipo) para ser reclutados
+export const tournamentFreeAgents = mysqlTable("tournament_free_agents", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  userId: int("userId").notNull(),
+  role: varchar("role", { length: 32 }),     // "top", "jungle", "mid", "adc", "support"
+  riotId: varchar("riotId", { length: 128 }), // gameName#tagLine
+  message: text("message"),                   // mensaje del jugador
+  status: mysqlEnum("status_fa", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("tfa_tournament_idx").on(t.tournamentId),
+  index("tfa_user_idx").on(t.userId),
+]);
+export type TournamentFreeAgent = typeof tournamentFreeAgents.$inferSelect;
+export type InsertTournamentFreeAgent = typeof tournamentFreeAgents.$inferInsert;

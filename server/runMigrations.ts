@@ -121,6 +121,59 @@ const MIGRATIONS: { id: string; up: string }[] = [
     `,
   },
   // 0014 moved to customMigrations in index.ts (Railway does not support ADD COLUMN IF NOT EXISTS)
+  {
+    id: "0015_battlefy_tournament_features",
+    up: `
+      -- Nuevos campos en tournaments (inspirados en Battlefy)
+      ALTER TABLE \`tournaments\`
+        ADD COLUMN IF NOT EXISTS \`region\`              VARCHAR(32)  NULL AFTER \`isLive\`,
+        ADD COLUMN IF NOT EXISTS \`gameMap\`             VARCHAR(64)  NULL AFTER \`region\`,
+        ADD COLUMN IF NOT EXISTS \`draftType\`           ENUM('tournament_draft','blind_pick','all_random','captains_draft') NULL DEFAULT 'tournament_draft' AFTER \`gameMap\`,
+        ADD COLUMN IF NOT EXISTS \`checkInStart\`        TIMESTAMP    NULL AFTER \`draftType\`,
+        ADD COLUMN IF NOT EXISTS \`checkInEnd\`          TIMESTAMP    NULL AFTER \`checkInStart\`,
+        ADD COLUMN IF NOT EXISTS \`contactInfo\`         TEXT         NULL AFTER \`checkInEnd\`,
+        ADD COLUMN IF NOT EXISTS \`schedule\`            TEXT         NULL AFTER \`contactInfo\`,
+        ADD COLUMN IF NOT EXISTS \`requireRiotAccount\`  TINYINT(1)   NOT NULL DEFAULT 0 AFTER \`schedule\`,
+        ADD COLUMN IF NOT EXISTS \`maxFreeAgents\`       INT          NOT NULL DEFAULT 0 AFTER \`requireRiotAccount\`;
+
+      -- Tabla de check-ins de torneos
+      CREATE TABLE IF NOT EXISTS \`tournament_checkins\` (
+        \`id\`            INT       NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`tournamentId\`  INT       NOT NULL,
+        \`teamId\`        INT       NOT NULL,
+        \`checkedInAt\`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`checkedInBy\`   INT       NOT NULL,
+        INDEX \`tc_tournament_idx\` (\`tournamentId\`),
+        INDEX \`tc_team_idx\` (\`teamId\`)
+      );
+
+      -- Tabla de anuncios de torneos
+      CREATE TABLE IF NOT EXISTS \`tournament_announcements\` (
+        \`id\`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`tournamentId\`  INT          NOT NULL,
+        \`authorId\`      INT          NULL,
+        \`authorName\`    VARCHAR(128) NULL DEFAULT 'Sistema',
+        \`message\`       TEXT         NOT NULL,
+        \`isSystem\`      TINYINT(1)   NOT NULL DEFAULT 0,
+        \`createdAt\`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`ta_tournament_idx\` (\`tournamentId\`)
+      );
+
+      -- Tabla de agentes libres de torneos
+      CREATE TABLE IF NOT EXISTS \`tournament_free_agents\` (
+        \`id\`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,
+        \`tournamentId\`  INT          NOT NULL,
+        \`userId\`        INT          NOT NULL,
+        \`role\`          VARCHAR(32)  NULL,
+        \`riotId\`        VARCHAR(128) NULL,
+        \`message\`       TEXT         NULL,
+        \`status_fa\`     ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        \`createdAt\`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`tfa_tournament_idx\` (\`tournamentId\`),
+        INDEX \`tfa_user_idx\` (\`userId\`)
+      );
+    `,
+  },
 ];
 
 export async function runMigrations() {

@@ -303,6 +303,17 @@ export async function createTournament(data: {
   isPublic?: boolean;
   status?: "draft" | "pending_approval" | "registration_open" | "registration_closed" | "in_progress" | "completed" | "cancelled";
   adminNote?: string;
+  // Nuevos campos Battlefy
+  region?: string;
+  gameMap?: string;
+  draftType?: string;
+  checkInStart?: Date;
+  checkInEnd?: Date;
+  contactInfo?: string;
+  schedule?: string;
+  requireRiotAccount?: boolean;
+  maxFreeAgents?: number;
+  defaultSeriesFormat?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
@@ -421,6 +432,16 @@ export async function getTournamentById(id: number) {
       createdAt: tournaments.createdAt,
       updatedAt: tournaments.updatedAt,
       creatorName: users.name,
+      // Nuevos campos Battlefy
+      region: tournaments.region,
+      gameMap: tournaments.gameMap,
+      draftType: tournaments.draftType,
+      checkInStart: tournaments.checkInStart,
+      checkInEnd: tournaments.checkInEnd,
+      contactInfo: tournaments.contactInfo,
+      schedule: tournaments.schedule,
+      requireRiotAccount: tournaments.requireRiotAccount,
+      maxFreeAgents: tournaments.maxFreeAgents,
     })
     .from(tournaments)
     .leftJoin(users, eq(tournaments.creatorId, users.id))

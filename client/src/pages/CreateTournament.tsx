@@ -66,6 +66,17 @@ interface FormData {
   endDate: string;
   isPublic: boolean;
   banner: string;
+  // Nuevos campos Battlefy
+  region: string;
+  gameMap: string;
+  draftType: string;
+  checkInStart: string;
+  checkInEnd: string;
+  contactName: string;
+  contactDiscord: string;
+  contactDiscordServer: string;
+  requireRiotAccount: boolean;
+  maxFreeAgents: number;
 }
 
 const defaultForm: FormData = {
@@ -87,6 +98,17 @@ const defaultForm: FormData = {
   endDate: "",
   isPublic: true,
   banner: "",
+  // Nuevos campos Battlefy
+  region: "",
+  gameMap: "Summoners Rift",
+  draftType: "tournament_draft",
+  checkInStart: "",
+  checkInEnd: "",
+  contactName: "",
+  contactDiscord: "",
+  contactDiscordServer: "",
+  requireRiotAccount: false,
+  maxFreeAgents: 0,
 };
 
 function NeonInput({
@@ -265,6 +287,21 @@ export default function CreateTournament() {
       endDate: form.endDate ? new Date(form.endDate).getTime() : undefined,
       isPublic: form.isPublic,
       banner: form.banner || undefined,
+      // Nuevos campos Battlefy
+      region: form.region || undefined,
+      gameMap: form.gameMap || undefined,
+      draftType: form.draftType || undefined,
+      checkInStart: form.checkInStart ? new Date(form.checkInStart).getTime() : undefined,
+      checkInEnd: form.checkInEnd ? new Date(form.checkInEnd).getTime() : undefined,
+      contactInfo: (form.contactName || form.contactDiscord || form.contactDiscordServer)
+        ? JSON.stringify({
+            name: form.contactName || undefined,
+            discord: form.contactDiscord || undefined,
+            discordServer: form.contactDiscordServer || undefined,
+          })
+        : undefined,
+      requireRiotAccount: form.requireRiotAccount || undefined,
+      maxFreeAgents: form.maxFreeAgents > 0 ? form.maxFreeAgents : undefined,
     });
   };
 
@@ -798,6 +835,83 @@ export default function CreateTournament() {
                 </div>
               </div>
 
+              {/* Nuevos campos Battlefy */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">REGIÓN</label>
+                  <select
+                    value={form.region}
+                    onChange={(e) => set("region")(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
+                  >
+                    <option value="">Selecciona región</option>
+                    <option value="Latinoamérica Norte">Latinoamérica Norte</option>
+                    <option value="Latinoamérica Sur">Latinoamérica Sur</option>
+                    <option value="North America">North America</option>
+                    <option value="Europe">Europe</option>
+                    <option value="Brazil">Brazil</option>
+                    <option value="Global">Global</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">MAPA / MODO</label>
+                  <select
+                    value={form.gameMap}
+                    onChange={(e) => set("gameMap")(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
+                  >
+                    <option value="Summoners Rift">Summoners Rift</option>
+                    <option value="ARAM">ARAM</option>
+                    <option value="TFT">TFT</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">TIPO DE DRAFT</label>
+                  <select
+                    value={form.draftType}
+                    onChange={(e) => set("draftType")(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
+                  >
+                    <option value="tournament_draft">Tournament Draft</option>
+                    <option value="blind_pick">Blind Pick</option>
+                    <option value="all_random">All Random</option>
+                    <option value="captains_draft">Captain's Draft</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-display tracking-wider text-muted-foreground mb-2">AGENTES LIBRES (MÁX.)</label>
+                  <input
+                    type="number"
+                    value={form.maxFreeAgents}
+                    onChange={(e) => set("maxFreeAgents")(parseInt(e.target.value) || 0)}
+                    min={0} max={100}
+                    className="w-full px-4 py-3 rounded-xl text-sm transition-all duration-200"
+                    style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)", color: "var(--text-primary)", outline: "none" }}
+                  />
+                </div>
+              </div>
+              {/* Require Riot Account */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => set("requireRiotAccount")(!form.requireRiotAccount)}
+                  className="relative w-12 h-6 rounded-full transition-all duration-300"
+                  style={{
+                    background: form.requireRiotAccount ? "oklch(0.55 0.22 25)" : "oklch(0.18 0.01 0)",
+                    boxShadow: form.requireRiotAccount ? "0 0 8px oklch(0.55 0.22 25 / 0.4)" : "none",
+                  }}
+                >
+                  <div
+                    className="absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300"
+                    style={{ left: form.requireRiotAccount ? "calc(100% - 1.25rem)" : "0.25rem" }}
+                  />
+                </button>
+                <span className="text-sm text-foreground font-display tracking-wider">Requerir cuenta Riot vinculada</span>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <NeonInput
                   label="MÁX. EQUIPOS"
@@ -881,6 +995,55 @@ export default function CreateTournament() {
                     placeholder="Ej: Periféricos gaming, tarjetas de regalo, efectivo, etc."
                   />
                   <p className="text-xs text-zinc-500 mt-1">Describe el premio y cómo será entregado a los ganadores. Eres responsable de su entrega.</p>
+                </div>
+              </div>
+
+              {/* Check-in */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Bell size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
+                  <span className="font-display text-sm font-bold tracking-wider text-foreground">CHECK-IN (Battlefy-style)</span>
+                </div>
+                <p className="text-xs text-zinc-500 mb-3">Define la ventana de check-in. Los equipos deben confirmar su asistencia antes del torneo.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <DateTimePicker
+                    label="INICIO CHECK-IN"
+                    value={form.checkInStart}
+                    onChange={(e) => set("checkInStart")(e.target.value)}
+                  />
+                  <DateTimePicker
+                    label="FIN CHECK-IN"
+                    value={form.checkInEnd}
+                    onChange={(e) => set("checkInEnd")(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Contact */}
+              <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <ChevronRight size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
+                  <span className="font-display text-sm font-bold tracking-wider text-foreground">CONTACTO</span>
+                </div>
+                <div className="space-y-3">
+                  <NeonInput
+                    label="NOMBRE DEL ORGANIZADOR"
+                    value={form.contactName}
+                    onChange={set("contactName")}
+                    placeholder="Ej: Juan Pérez"
+                  />
+                  <NeonInput
+                    label="DISCORD DEL ORGANIZADOR"
+                    value={form.contactDiscord}
+                    onChange={set("contactDiscord")}
+                    placeholder="Ej: juanperez#1234 o @juanperez"
+                  />
+                  <NeonInput
+                    label="SERVIDOR DE DISCORD"
+                    value={form.contactDiscordServer}
+                    onChange={set("contactDiscordServer")}
+                    placeholder="https://discord.gg/..."
+                  />
                 </div>
               </div>
 

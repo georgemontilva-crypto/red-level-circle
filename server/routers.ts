@@ -174,7 +174,7 @@ import { validateImageMime } from "./mimeValidation";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, or, desc, isNotNull } from "drizzle-orm";
-import { sectionBanners, tournaments, teams, users, streams, tournamentMatches } from "../drizzle/schema";
+import { sectionBanners, tournaments, teams, users, streams, tournamentMatches, tournamentAnnouncements, tournamentCheckins, tournamentFreeAgents } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification, notifyRlcReceived } from "./notifications";
 import { eventBus } from "./eventBus";
 import {
@@ -367,6 +367,16 @@ export const appRouter = router({
         streamUrl: z.string().optional(),
         streamPlatform: z.enum(["twitch", "youtube", "discord", "other"]).optional(),
         defaultSeriesFormat: z.enum(["BO1", "BO2", "BO3", "BO5", "BO7"]).default("BO1"),
+        // Nuevos campos Battlefy
+        region: z.string().max(64).optional(),
+        gameMap: z.string().max(64).optional(),
+        draftType: z.string().max(64).optional(),
+        checkInStart: z.number().optional(),
+        checkInEnd: z.number().optional(),
+        contactInfo: z.string().max(1000).optional(),
+        schedule: z.string().max(5000).optional(),
+        requireRiotAccount: z.boolean().optional(),
+        maxFreeAgents: z.number().int().min(0).max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const id = await createTournament({
@@ -377,6 +387,8 @@ export const appRouter = router({
           registrationEnd: input.registrationEnd ? new Date(input.registrationEnd) : undefined,
           startDate: input.startDate ? new Date(input.startDate) : undefined,
           endDate: input.endDate ? new Date(input.endDate) : undefined,
+          checkInStart: input.checkInStart ? new Date(input.checkInStart) : undefined,
+          checkInEnd: input.checkInEnd ? new Date(input.checkInEnd) : undefined,
         });
         // Invalidate tournament list cache so changes appear immediately
         cache.invalidatePrefix("tournaments:list:");
@@ -541,6 +553,169 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return getTournamentRegisteredTeams(input.tournamentId);
       }),
+
+    // ─── Announcements (Battlefy-style) ───────────────────────────────────────
+    announcements: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select()
+          .from(tournamentAnnouncements)
+          .where(eq(tournamentAnnouncements.tournamentId, input.tournamentId))
+          .orderBy(desc(tournamentAnnouncements.createdAt));
+      }),
+
+    createAnnouncement: protectedProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        message: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const user = await getUserById(ctx.user.id);
+        await db.insert(tournamentAnnouncements).values({
+          tournamentId: input.tournamentId,
+          authorId: ctx.user.id,
+          authorName: user?.nickname ?? user?.name ?? "Organizador",
+          message: input.message,
+          isSystem: false,
+        });
+        sseBroadcast("tournament", { action: "announcement", tournamentId: input.tournamentId });
+        return { success: true };
+      }),
+
+    // ─── Check-in (Battlefy-style) ────────────────────────────────────────────
+    checkIn: protectedProcedure
+      .input(z.object({ tournamentId: z.number(), teamId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        // Verificar que el torneo está en ventana de check-in
+        const now = new Date();
+        const tAny = t as any;
+        if (tAny.checkInStart && tAny.checkInEnd) {
+          const start = new Date(tAny.checkInStart);
+          const end = new Date(tAny.checkInEnd);
+          if (now < start || now > end) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "El check-in no está disponible en este momento." });
+          }
+        }
+        // Verificar que el equipo está registrado y aprobado
+        const regs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const reg = regs.find((r: any) => r.teamId === input.teamId);
+        if (!reg) throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo no está registrado en este torneo." });
+        // Verificar que el usuario es capitán del equipo
+        const team = await getTeamById(input.teamId);
+        if (!team) throw new TRPCError({ code: "NOT_FOUND" });
+        if (team.captainId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el capitán puede hacer check-in." });
+        }
+        // Verificar que no haya hecho check-in ya
+        const existing = await db
+          .select()
+          .from(tournamentCheckins)
+          .where(and(
+            eq(tournamentCheckins.tournamentId, input.tournamentId),
+            eq(tournamentCheckins.teamId, input.teamId)
+          ))
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ya hizo check-in." });
+        }
+        await db.insert(tournamentCheckins).values({
+          tournamentId: input.tournamentId,
+          teamId: input.teamId,
+          checkedInBy: ctx.user.id,
+        });
+        return { success: true };
+      }),
+
+    getCheckins: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        return db
+          .select()
+          .from(tournamentCheckins)
+          .where(eq(tournamentCheckins.tournamentId, input.tournamentId));
+      }),
+
+    // ─── Free Agents (Battlefy-style) ─────────────────────────────────────────
+    registerFreeAgent: protectedProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        role: z.string().optional(),
+        riotId: z.string().optional(),
+        message: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR" });
+        const t = await getTournamentById(input.tournamentId);
+        if (!t) throw new TRPCError({ code: "NOT_FOUND" });
+        // Verificar que no esté ya registrado
+        const existing = await db
+          .select()
+          .from(tournamentFreeAgents)
+          .where(and(
+            eq(tournamentFreeAgents.tournamentId, input.tournamentId),
+            eq(tournamentFreeAgents.userId, ctx.user.id)
+          ))
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ya estás registrado como agente libre en este torneo." });
+        }
+        await db.insert(tournamentFreeAgents).values({
+          tournamentId: input.tournamentId,
+          userId: ctx.user.id,
+          role: input.role ?? null,
+          riotId: input.riotId ?? null,
+          message: input.message ?? null,
+        });
+        return { success: true };
+      }),
+
+    getFreeAgents: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) return [];
+        const agents = await db
+          .select({
+            id: tournamentFreeAgents.id,
+            tournamentId: tournamentFreeAgents.tournamentId,
+            userId: tournamentFreeAgents.userId,
+            role: tournamentFreeAgents.role,
+            riotId: tournamentFreeAgents.riotId,
+            message: tournamentFreeAgents.message,
+            status: tournamentFreeAgents.status,
+            createdAt: tournamentFreeAgents.createdAt,
+            userName: users.name,
+            userNickname: users.nickname,
+            userAvatar: users.avatar,
+            riotGameName: users.riotGameName,
+            riotTagLine: users.riotTagLine,
+            riotRegion: users.riotRegion,
+            riotIconId: users.riotIconId,
+          })
+          .from(tournamentFreeAgents)
+          .leftJoin(users, eq(tournamentFreeAgents.userId, users.id))
+          .where(eq(tournamentFreeAgents.tournamentId, input.tournamentId))
+          .orderBy(desc(tournamentFreeAgents.createdAt));
+        return agents;
+      }),
+
   }),
   // ─── Teams ──────────────────────────────────────────────────────────────────
   teams: router({
