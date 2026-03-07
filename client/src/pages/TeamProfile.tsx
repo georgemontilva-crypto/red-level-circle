@@ -547,7 +547,7 @@ export default function TeamProfile() {
                   <p className="text-sm text-muted-foreground">Sin roster registrado aún</p>
                 </div>
               ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "12px" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
                   {team.members.map((m: any) => (
                     <RosterCard
                       key={m.id}
@@ -556,6 +556,7 @@ export default function TeamProfile() {
                       role={m.gameRole ?? m.role ?? undefined}
                       region={m.competitiveRegion ?? m.country ?? undefined}
                       game={m.mainGame ?? undefined}
+                      elo={m.elo ?? null}
                       photoUrl={m.rosterImageUrl ?? m.rosterPhoto ?? m.avatar ?? m.photoUrl ?? null}
                       team={team.name ?? undefined}
                       isCaptain={m.userId === team.captainId}
