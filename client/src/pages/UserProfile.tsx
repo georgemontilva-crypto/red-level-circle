@@ -5,7 +5,7 @@ import {
   User, Trophy, Gamepad2, Twitter, MessageSquare, Tv2,
   Settings, Crown, Swords, Shield, Calendar, Users, UserPlus, UserMinus,
   Loader2, BadgeCheck, Camera, Save, Star, Radio, Clock, Eye,
-  Coins, Globe, MapPin, Palette, CheckCircle2,
+  Coins, Globe, MapPin, Palette, CheckCircle2, RefreshCw, Link2,
 } from "lucide-react";
 import { useParams, Link, useSearch } from "wouter";
 import { useState, useEffect, useRef } from "react";
@@ -669,6 +669,8 @@ export default function UserProfile() {
             <RosterTab
               profile={profile as any}
               isOwnProfile={isOwnProfile}
+              lolProfile={lolProfile as any}
+              teamMemberships={teamMemberships as any}
               onUpdate={() => {
                 // Invalidate profile query to refresh data
               }}
@@ -862,6 +864,43 @@ function UserList({ users, emptyText }: { users: { id: number; name: string | nu
   );
 }
 
+// ─── Tier colors para la player card ────────────────────────────────────────
+const PC_TIER_COLORS: Record<string, { text: string; bg: string; border: string; glow: string }> = {
+  IRON:        { text: "#9E9E9E", bg: "rgba(158,158,158,0.12)", border: "rgba(158,158,158,0.30)", glow: "rgba(158,158,158,0.15)" },
+  BRONZE:      { text: "#CD7F32", bg: "rgba(205,127,50,0.12)",  border: "rgba(205,127,50,0.30)",  glow: "rgba(205,127,50,0.15)" },
+  SILVER:      { text: "#C0C0C0", bg: "rgba(192,192,192,0.12)", border: "rgba(192,192,192,0.30)", glow: "rgba(192,192,192,0.15)" },
+  GOLD:        { text: "#FFD700", bg: "rgba(255,215,0,0.12)",   border: "rgba(255,215,0,0.30)",   glow: "rgba(255,215,0,0.20)" },
+  PLATINUM:    { text: "#00B4D8", bg: "rgba(0,180,216,0.12)",   border: "rgba(0,180,216,0.30)",   glow: "rgba(0,180,216,0.15)" },
+  EMERALD:     { text: "#50C878", bg: "rgba(80,200,120,0.12)",  border: "rgba(80,200,120,0.30)",  glow: "rgba(80,200,120,0.15)" },
+  DIAMOND:     { text: "#B9F2FF", bg: "rgba(185,242,255,0.12)", border: "rgba(185,242,255,0.30)", glow: "rgba(185,242,255,0.15)" },
+  MASTER:      { text: "#9B59B6", bg: "rgba(155,89,182,0.12)",  border: "rgba(155,89,182,0.30)",  glow: "rgba(155,89,182,0.15)" },
+  GRANDMASTER: { text: "#E74C3C", bg: "rgba(231,76,60,0.12)",   border: "rgba(231,76,60,0.30)",   glow: "rgba(231,76,60,0.15)" },
+  CHALLENGER:  { text: "#F1C40F", bg: "rgba(241,196,15,0.12)",  border: "rgba(241,196,15,0.30)",  glow: "rgba(241,196,15,0.20)" },
+  RADIANT:     { text: "#FFFDE7", bg: "rgba(255,253,231,0.12)", border: "rgba(255,253,231,0.30)", glow: "rgba(255,253,231,0.15)" },
+  IMMORTAL:    { text: "#E74C3C", bg: "rgba(231,76,60,0.12)",   border: "rgba(231,76,60,0.30)",   glow: "rgba(231,76,60,0.15)" },
+  ASCENDANT:   { text: "#50C878", bg: "rgba(80,200,120,0.12)",  border: "rgba(80,200,120,0.30)",  glow: "rgba(80,200,120,0.15)" },
+  UNRANKED:    { text: "#6B7280", bg: "rgba(107,114,128,0.12)", border: "rgba(107,114,128,0.30)", glow: "rgba(107,114,128,0.10)" },
+};
+const PC_REGION_MAP: Record<string, string> = {
+  la1: "LAN", la2: "LAS", na1: "NA", br1: "BR",
+  euw1: "EUW", eun1: "EUNE", kr: "KR", jp1: "JP",
+  oc1: "OCE", tr1: "TR", ru: "RU",
+};
+function getTierColors(tier?: string | null) {
+  return PC_TIER_COLORS[(tier ?? "").toUpperCase()] ?? PC_TIER_COLORS.UNRANKED;
+}
+function formatRankLabel(entry: { tier: string; rank: string; leaguePoints: number } | null): string {
+  if (!entry) return "Sin clasificar";
+  const apex = ["MASTER", "GRANDMASTER", "CHALLENGER"];
+  if (apex.includes(entry.tier)) return `${entry.tier.charAt(0) + entry.tier.slice(1).toLowerCase()} ${entry.leaguePoints} LP`;
+  return `${entry.tier.charAt(0) + entry.tier.slice(1).toLowerCase()} ${entry.rank}`;
+}
+function calcWinRate(wins: number, losses: number): number {
+  const total = wins + losses;
+  if (total === 0) return 0;
+  return Math.round((wins / total) * 100);
+}
+
 // ─── RosterTab ────────────────────────────────────────────────────────────────
 interface RosterTabProps {
   profile: {
@@ -879,390 +918,413 @@ interface RosterTabProps {
     rosterPhoto?: string | null;
   };
   isOwnProfile: boolean;
+  lolProfile?: any;
+  teamMemberships?: any[];
   onUpdate: () => void;
 }
 
-function RosterTab({ profile, isOwnProfile }: RosterTabProps) {
+function RosterTab({ profile, isOwnProfile, lolProfile, teamMemberships }: RosterTabProps) {
   const utils = trpc.useUtils();
+  const [syncing, setSyncing] = useState(false);
 
-  // ── Competitive form state (only for own profile) ──
-  const [form, setForm] = useState({
-    mainGame: profile.mainGame ?? "",
-    gameRole: profile.gameRole ?? "",
-    elo: profile.elo ?? "",
-    competitiveRegion: profile.competitiveRegion ?? "",
-    gameId: profile.gameId ?? "",
-    competitiveScore: profile.competitiveScore ?? 0,
-  });
-  const [saving, setSaving] = useState(false);
-  const [cardUrl, setCardUrl] = useState<string | null>(null);
-  const [uploadingCard, setUploadingCard] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
+  // ── Datos de Riot ──
+  const riotLinked = !!(lolProfile as any)?.account;
+  const account = (lolProfile as any)?.account;
+  const rankedSolo = (lolProfile as any)?.rankedSolo ?? null;
+  const rankedFlex = (lolProfile as any)?.rankedFlex ?? null;
+  const topChampions: any[] = (lolProfile as any)?.topChampions ?? [];
+  const recentMatches: any[] = (lolProfile as any)?.recentMatches ?? [];
+  const profileIconUrl = (lolProfile as any)?.profileIconUrl ?? null;
+  const region = (lolProfile as any)?.region ?? null;
+  const regionLabel = region ? (PC_REGION_MAP[region] ?? region.toUpperCase()) : null;
+  const isLol = !profile.mainGame || profile.mainGame === "League of Legends";
+  const isValorant = profile.mainGame === "Valorant";
+  const isRiotGame = isLol || isValorant;
 
-  // Sync form when profile changes
-  useEffect(() => {
-    setForm({
-      mainGame: profile.mainGame ?? "",
-      gameRole: profile.gameRole ?? "",
-      elo: profile.elo ?? "",
-      competitiveRegion: profile.competitiveRegion ?? "",
-      gameId: profile.gameId ?? "",
-      competitiveScore: profile.competitiveScore ?? 0,
-    });
-  }, [profile.id]);
-
-  const updateMutation = trpc.profile.updateMine.useMutation({
-    onSuccess: () => {
-      toast.success("Perfil competitivo actualizado");
-      setSaving(false);
-      utils.profile.getWithStats.invalidate({ userId: profile.id });
-    },
-    onError: (e) => { toast.error(e.message); setSaving(false); },
-  });
-
-  const uploadCardMutation = trpc.profile.uploadRosterCard.useMutation({
-    onSuccess: ({ url }) => {
-      setCardUrl(url);
-      toast.success("Ficha competitiva generada");
-      setUploadingCard(false);
-      utils.profile.getWithStats.invalidate({ userId: profile.id });
-    },
-    onError: (e) => { toast.error(e.message); setUploadingCard(false); },
-  });
-
-  const { data: hasApproved } = trpc.profile.hasApprovedTeam.useQuery(
-    undefined,
-    { enabled: isOwnProfile }
-  );
-
-  const handleSave = () => {
-    setSaving(true);
-    updateMutation.mutate({
-      mainGame: form.mainGame || undefined,
-      gameRole: form.gameRole || undefined,
-      elo: form.elo || undefined,
-      competitiveRegion: form.competitiveRegion || undefined,
-      gameId: form.gameId || null,
-      competitiveScore: form.competitiveScore || null,
-    });
-  };
-
-  const handleFileUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) { toast.error("Solo se permiten imágenes"); return; }
-    if (file.size > 10 * 1024 * 1024) { toast.error("La imagen no puede superar 10MB"); return; }
-    setUploadingCard(true);
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = (e.target?.result as string).split(",")[1];
-      const mimeType = file.type as "image/jpeg" | "image/png" | "image/webp";
-      await uploadCardMutation.mutateAsync({ base64, mimeType });
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Resolve displayed card URL
-  const displayCardUrl = cardUrl ?? profile.rosterImageUrl ?? profile.rosterPhoto;
-
-  // Resolve role label with icon
-  const gameSlug = GAME_SLUG_MAP[form.mainGame] ?? null;
+  // Rol del perfil
+  const gameSlug = isValorant ? "valorant" : "league-of-legends";
   const roles = getRolesForGame(gameSlug);
-  const roleData = roles.find((r) => r.value === form.gameRole);
-  const ranks = getRanksForGame(gameSlug);
-  const rankData = ranks.find((r) => r.value === form.elo);
-  // View-only: resolve from profile
-  const viewGameSlug = GAME_SLUG_MAP[profile.mainGame ?? ""] ?? null;
-  const viewRoles = getRolesForGame(viewGameSlug);
-  const viewRoleData = viewRoles.find((r) => r.value === profile.gameRole);
-  const viewRanks = getRanksForGame(viewGameSlug);
-  const viewRankData = viewRanks.find((r) => r.value === (profile as { elo?: string | null }).elo);
+  const roleData = roles.find((r) => r.value === profile.gameRole);
 
-  const inputClass = "w-full bg-card/80 border border-red-700/50 rounded-full px-4 py-2.5 text-white text-sm font-mono tracking-wide focus:outline-none focus:border-red-500 focus:shadow-[0_0_0_3px_rgba(239,68,68,0.15)] transition-all duration-200 placeholder-white/30";
-  const labelClass = "block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest";
+  // Equipo principal
+  const mainTeam = teamMemberships?.[0] ?? null;
 
-  return (
-    <div className="space-y-6 pb-8">
-      {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Swords className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
-          <span className="font-orbitron text-sm tracking-widest text-secondary-foreground uppercase">Perfil Competitivo</span>
-        </div>
-        {isOwnProfile && (
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all"
-            style={{ background: "oklch(0.55 0.22 25)", color: "var(--text-primary)", opacity: saving ? 0.6 : 1 }}
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? "GUARDANDO..." : "GUARDAR"}
-          </button>
-        )}
-      </div>
+  // Rango principal
+  const mainRank = rankedSolo ?? rankedFlex;
+  const tierColors = getTierColors(mainRank?.tier);
+  const rankLabel = formatRankLabel(mainRank);
+  const winRate = mainRank ? calcWinRate(mainRank.wins, mainRank.losses) : 0;
+  const totalGames = mainRank ? (mainRank.wins + mainRank.losses) : 0;
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left: Roster Card ── */}
-        <div className="flex flex-col items-center gap-4">
-          {/* Card preview */}
+  // Mutación para sincronizar
+  const syncMutation = trpc.riot.syncToProfile.useMutation({
+    onSuccess: () => {
+      toast.success("Ficha sincronizada con Riot Games");
+      setSyncing(false);
+      utils.profile.getWithStats.invalidate({ userId: profile.id });
+    },
+    onError: (e) => { toast.error(e.message); setSyncing(false); },
+  });
+
+  const handleSync = () => {
+    setSyncing(true);
+    syncMutation.mutate();
+  };
+
+  // ── Estado: sin Riot vinculado ──
+  if (!riotLinked) {
+    return (
+      <div className="pb-8">
+        <div
+          className="rounded-2xl p-10 flex flex-col items-center justify-center gap-5 text-center"
+          style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+        >
           <div
-            className="relative rounded-2xl overflow-hidden shadow-2xl"
-            style={{
-              width: "180px",
-              aspectRatio: "2/3",
-              border: "2px solid oklch(0.55 0.22 25 / 0.5)",
-              boxShadow: "0 0 30px oklch(0.55 0.22 25 / 0.15)",
-            }}
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{ background: "oklch(0.55 0.22 25 / 0.10)", border: "1px solid oklch(0.55 0.22 25 / 0.25)" }}
           >
-            {displayCardUrl ? (
-              <img src={displayCardUrl} alt="Roster card" className="w-full h-full object-cover" />
-            ) : (
-              <div
-                className="w-full h-full flex flex-col items-center justify-center gap-3"
-                style={{ background: "linear-gradient(180deg, oklch(0.12 0.01 0) 0%, oklch(0.08 0.005 0) 100%)" }}
-              >
-                <Shield className="w-10 h-10" style={{ color: "oklch(0.30 0.01 0)" }} />
-                <span className="text-xs font-mono text-center px-3" style={{ color: "oklch(0.35 0.005 0)" }}>Sin ficha generada</span>
-              </div>
-            )}
-            {/* Role info shown in right panel — no overlay on the photo */}
+            <Swords className="w-7 h-7" style={{ color: "oklch(0.65 0.22 25)" }} />
           </div>
-
-          {/* Upload button (own profile + has team) */}
+          <div>
+            <p className="font-orbitron text-base font-bold text-foreground mb-2">Sin cuenta Riot vinculada</p>
+            <p className="text-sm text-muted-foreground max-w-xs">
+              Vincula tu cuenta de Riot Games para generar tu ficha competitiva automáticamente con tus datos reales de League of Legends o Valorant.
+            </p>
+          </div>
           {isOwnProfile && (
-            <>
-              {hasApproved?.canUpload ? (
-                <button
-                  onClick={() => inputRef.current?.click()}
-                  disabled={uploadingCard}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-mono font-bold transition-all w-full justify-center"
-                  style={{
-                    background: uploadingCard ? "oklch(0.18 0.01 0)" : "oklch(0.14 0.01 0)",
-                    border: "1px solid oklch(0.55 0.22 25 / 0.4)",
-                    color: "oklch(0.65 0.22 25)",
-                  }}
-                >
-                  {uploadingCard ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Camera className="w-3.5 h-3.5" />}
-                  {uploadingCard ? "GENERANDO..." : displayCardUrl ? "ACTUALIZAR FOTO" : "SUBIR FOTO"}
-                </button>
-              ) : (
-                <div
-                  className="flex items-start gap-2 px-3 py-2.5 rounded-lg w-full"
-                  style={{ background: "var(--bg-card)", border: "1px solid oklch(0.20 0.01 0)" }}
-                >
-                  <Shield className="w-4 h-4 shrink-0 mt-0.5" style={{ color: "oklch(0.40 0.005 0)" }} />
-                  <p className="text-xs font-mono" style={{ color: "oklch(0.45 0.005 0)" }}>
-                    Debes pertenecer a un equipo para generar tu ficha.
-                  </p>
-                </div>
-              )}
-              <input
-                ref={inputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
-              />
-              <p className="text-[10px] font-mono text-muted-foreground text-center">
-                Tu foto se recorta a 2:3 automáticamente.<br />El sistema añade nick, rol y logo del equipo.
-              </p>
-            </>
+            <Link href="/settings">
+              <button
+                className="flex items-center gap-2 px-6 py-2.5 rounded-full font-orbitron text-xs tracking-widest font-bold transition-all"
+                style={{ background: "oklch(0.55 0.22 25)", color: "#fff" }}
+              >
+                <Link2 className="w-4 h-4" /> VINCULAR CUENTA RIOT
+              </button>
+            </Link>
           )}
         </div>
+      </div>
+    );
+  }
 
-        {/* ── Right: Competitive fields ── */}
-        <div className="lg:col-span-2 space-y-5">
-          {isOwnProfile ? (
-            /* ── Edit mode ── */
-            <>
-              {/* Game + Role */}
-              <div
-                className="rounded-xl p-4 space-y-4"
-                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-              >
-                <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Gamepad2 className="w-3.5 h-3.5" /> JUEGO Y ROL
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>JUEGO PRINCIPAL</label>
-                    <GameDropdown
-                      options={GAMES.map((g): DropdownOption => ({ value: g, label: g }))}
-                      value={form.mainGame}
-                      onChange={(v) => setForm((f) => ({ ...f, mainGame: v, gameRole: "", elo: "" }))}
-                      placeholder="Seleccionar juego"
-                      ariaLabel="Seleccionar juego principal"
-                      minPanelWidth="220px"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>ROL PRINCIPAL</label>
-                    <RoleSelector
-                      roles={roles}
-                      value={form.gameRole}
-                      onChange={(v) => setForm((f) => ({ ...f, gameRole: v }))}
-                      disabled={!form.mainGame}
-                      placeholder={form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Rank + Region + GameID + Score */}
-              <div
-                className="rounded-xl p-4 space-y-4"
-                style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
-              >
-                <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground flex items-center gap-2">
-                  <Star className="w-3.5 h-3.5 text-white" /> RANGO Y ESTADÍSTICAS
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>ELO / RANGO</label>
-                    <RankSelector
-                      ranks={ranks}
-                      value={form.elo}
-                      onChange={(v) => setForm((f) => ({ ...f, elo: v }))}
-                      disabled={!form.mainGame}
-                      placeholder={form.mainGame ? "Seleccionar rango" : "Elige un juego primero"}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>REGIÓN COMPETITIVA</label>
-                    <GameDropdown
-                      options={COMPETITIVE_REGIONS.map((r): DropdownOption => ({
-                        value: r.value,
-                        label: r.value,
-                        hint: r.label.replace(`${r.value} — `, ""),
-                      }))}
-                      value={form.competitiveRegion}
-                      onChange={(v) => setForm((f) => ({ ...f, competitiveRegion: v }))}
-                      placeholder="Seleccionar región"
-                      ariaLabel="Seleccionar región competitiva"
-                      minPanelWidth="220px"
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>ID EN EL JUEGO</label>
-                    <input
-                      type="text"
-                      value={form.gameId}
-                      onChange={(e) => setForm((f) => ({ ...f, gameId: e.target.value }))}
-                      placeholder="Ej: SummonerName#EUW"
-                      maxLength={128}
-                      className={inputClass}
-                    />
-                    <p className="text-[10px] text-muted-foreground font-mono mt-1">Tu nombre de usuario en el juego</p>
-                  </div>
-                  <div>
-                    <label className={labelClass}>PUNTAJE COMPETITIVO</label>
-                    <div
-                      className="w-full flex items-center gap-2 px-4 py-2.5 rounded-full bg-card/40 border border-white/8 text-sm font-mono tracking-wide text-white/40 cursor-not-allowed select-none"
-                    >
-                      <Trophy className="w-3.5 h-3.5 text-white/20 flex-shrink-0" />
-                      <span>{form.competitiveScore > 0 ? `${form.competitiveScore.toLocaleString()} pts` : "Auto-calculado"}</span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-1">Puntos RLC acumulados en torneos</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            /* ── View mode ── */
-            <div
-              className="rounded-xl p-5 space-y-4"
-              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+  // ── Layout principal: player card + panel de stats ──
+  return (
+    <div className="pb-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-2">
+          <Swords className="w-4 h-4" style={{ color: "oklch(0.55 0.22 25)" }} />
+          <span className="font-orbitron text-sm tracking-widest text-secondary-foreground uppercase">Ficha Competitiva</span>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Sync badge */}
+          <div
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
+            style={{ background: "rgba(46,204,113,0.08)", border: "1px solid rgba(46,204,113,0.2)" }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+            <span className="font-mono text-[10px] tracking-widest" style={{ color: "#2ecc71" }}>SINCRONIZADO</span>
+          </div>
+          {isOwnProfile && (
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-mono transition-all"
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.22 0.01 0)", color: "rgba(255,255,255,0.5)", opacity: syncing ? 0.6 : 1 }}
             >
-              {/* Role badge — source of truth, no duplicate text */}
-              {profile.gameRole && (
-                <div className="flex items-center gap-3 pb-4" style={{ borderBottom: "1px solid oklch(0.15 0.005 0)" }}>
-                  {viewRoleData ? (
-                    <span
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-base font-mono font-bold"
-                      style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.35)", color: "oklch(0.80 0.15 25)" }}
-                    >
-                      {viewRoleData.svgPath ? (
-                        <img src={viewRoleData.svgPath} alt={viewRoleData.label} className="w-5 h-5 object-contain" style={{ filter: "invert(1)" }} />
-                      ) : null}
-                      {viewRoleData.label}
-                    </span>
-                  ) : (
-                    <span
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-base font-mono font-bold"
-                      style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.35)", color: "oklch(0.80 0.15 25)" }}
-                    >
-                      <Gamepad2 className="w-4 h-4" /> {profile.gameRole}
-                    </span>
-                  )}
-                  {profile.mainGame && (
-                    <span className="text-sm text-muted-foreground font-mono">{profile.mainGame}</span>
-                  )}
-                </div>
-              )}
+              <RefreshCw className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "SINCRONIZANDO..." : "ACTUALIZAR"}
+            </button>
+          )}
+        </div>
+      </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {(profile as { elo?: string | null }).elo && (
-                  <div>
-                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">ELO / Rango</p>
-                    <span
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                      style={viewRankData
-                        ? { background: `${viewRankData.color}22`, border: `1px solid ${viewRankData.color}55`, color: viewRankData.color }
-                        : { background: "oklch(0.65 0.18 80 / 0.15)", border: "1px solid oklch(0.65 0.18 80 / 0.3)", color: "oklch(0.75 0.18 80)" }
-                      }
-                    >
-                      {viewRankData && (
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: viewRankData.color }} />
-                      )}
-                      {viewRankData?.label ?? (profile as { elo?: string | null }).elo}
-                    </span>
-                  </div>
-                )}
-                {profile.competitiveRegion && (
-                  <div>
-                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">Región</p>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                      style={{ background: "oklch(0.45 0.15 220 / 0.15)", border: "1px solid oklch(0.45 0.15 220 / 0.3)", color: "oklch(0.70 0.15 220)" }}
-                    >
-                      <Globe className="w-4 h-4" /> {profile.competitiveRegion}
-                    </span>
-                  </div>
-                )}
-                {profile.gameId && (
-                  <div>
-                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">ID en el juego</p>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono"
-                      style={{ background: "var(--bg-hover)", border: "1px solid oklch(0.22 0.01 0)", color: "oklch(0.70 0.005 0)" }}
-                    >
-                      <Gamepad2 className="w-3.5 h-3.5 text-white" /> {profile.gameId}
-                    </span>
-                  </div>
-                )}
-                {(profile.competitiveScore ?? 0) > 0 && (
-                  <div>
-                    <p className="text-muted-foreground text-xs font-mono uppercase tracking-wider mb-1.5">Puntaje RLC</p>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-mono font-bold"
-                      style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.3)", color: "oklch(0.65 0.22 25)" }}
-                    >
-                      <Trophy className="w-4 h-4" /> {profile.competitiveScore?.toLocaleString()} pts
-                    </span>
+      <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6 items-start">
+
+        {/* ─── PLAYER CARD ─── */}
+        <div
+          className="relative rounded-2xl overflow-hidden"
+          style={{
+            aspectRatio: "2/3",
+            maxWidth: "300px",
+            width: "100%",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: `0 0 60px rgba(192,57,43,0.20), 0 20px 60px rgba(0,0,0,0.6)`,
+          }}
+        >
+          {/* BG */}
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(160deg, #160a0a 0%, #2a0d0d 40%, #120808 100%)" }}
+          />
+          {/* Hex pattern */}
+          <div
+            className="absolute inset-0"
+            style={{
+              opacity: 0.04,
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49' viewBox='0 0 28 49'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69v2.3zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+            }}
+          />
+          {/* Accent line top */}
+          <div
+            className="absolute top-0 left-0 right-0 z-10"
+            style={{ height: "3px", background: "linear-gradient(90deg, transparent, #c0392b, #ff6b6b, #c0392b, transparent)" }}
+          />
+
+          {/* Team top-left */}
+          <div className="absolute top-3.5 left-4 z-10 flex items-center gap-2">
+            {mainTeam?.teamLogo ? (
+              <img src={mainTeam.teamLogo} alt="" className="w-7 h-7 rounded-md object-cover" style={{ border: "1px solid rgba(255,255,255,0.15)" }} />
+            ) : (
+              <div className="w-7 h-7 rounded-md flex items-center justify-center" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                <Shield className="w-3.5 h-3.5" style={{ color: "rgba(255,255,255,0.25)" }} />
+              </div>
+            )}
+            {mainTeam?.teamTag && (
+              <span className="font-orbitron text-[11px] font-bold tracking-wider" style={{ color: "rgba(255,255,255,0.7)" }}>[{mainTeam.teamTag}]</span>
+            )}
+          </div>
+
+          {/* Game label top-right */}
+          <div className="absolute top-4 right-4 z-10 text-right">
+            <span className="font-orbitron text-[9px] tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+              {isValorant ? "VALORANT" : "LEAGUE OF LEGENDS"}
+            </span>
+          </div>
+
+          {/* Photo placeholder area */}
+          <div className="absolute inset-0 flex items-end justify-center" style={{ zIndex: 2 }}>
+            <div className="w-28 h-28 rounded-full mb-32 flex items-center justify-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+              <User className="w-12 h-12" style={{ color: "rgba(255,255,255,0.10)" }} />
+            </div>
+          </div>
+
+          {/* Gradient over bottom */}
+          <div
+            className="absolute bottom-0 left-0 right-0"
+            style={{ height: "65%", zIndex: 3, background: "linear-gradient(to top, rgba(18,8,8,1) 0%, rgba(18,8,8,0.85) 30%, transparent 100%)" }}
+          />
+
+          {/* Bottom content */}
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-5 pb-5">
+            {/* LoL profile icon */}
+            {profileIconUrl && (
+              <img
+                src={profileIconUrl}
+                alt="icon"
+                className="w-12 h-12 rounded-full mb-2.5 block"
+                style={{ border: "2px solid rgba(192,57,43,0.7)", boxShadow: "0 0 14px rgba(192,57,43,0.4)", background: "#1a0f0f" }}
+              />
+            )}
+
+            {/* Nickname */}
+            <div className="font-orbitron text-xl font-black text-white leading-none mb-1" style={{ textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>
+              {profile.nickname ?? profile.name ?? "Jugador"}
+            </div>
+            {/* Riot ID */}
+            {account && (
+              <div className="font-mono text-[11px] mb-3" style={{ color: "rgba(255,255,255,0.40)" }}>
+                {account.gameName}#{account.tagLine}
+              </div>
+            )}
+
+            {/* Badges */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {roleData && (
+                <span
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono text-[11px] font-bold"
+                  style={{ background: "rgba(192,57,43,0.15)", border: "1px solid rgba(192,57,43,0.40)", color: "#e74c3c" }}
+                >
+                  {roleData.svgPath && <img src={roleData.svgPath} alt="" className="w-3 h-3" style={{ filter: "invert(1)" }} />}
+                  {roleData.label}
+                </span>
+              )}
+              {regionLabel && (
+                <span
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-mono text-[11px] font-bold"
+                  style={{ background: "rgba(52,152,219,0.12)", border: "1px solid rgba(52,152,219,0.30)", color: "#5dade2" }}
+                >
+                  <Globe className="w-3 h-3" /> {regionLabel}
+                </span>
+              )}
+            </div>
+
+            {/* Rank bar */}
+            <div
+              className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+              style={{ background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.07)", backdropFilter: "blur(4px)" }}
+            >
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-lg flex-shrink-0"
+                style={{ background: tierColors.bg, border: `2px solid ${tierColors.border}` }}
+              >
+                {mainRank ? "🏅" : "🛡"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="font-orbitron text-[13px] font-bold leading-none" style={{ color: tierColors.text }}>
+                  {rankLabel}
+                </div>
+                {mainRank && (
+                  <div className="font-mono text-[10px] mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>
+                    {mainRank.leaguePoints} LP · {mainRank.wins}W {mainRank.losses}L
                   </div>
                 )}
               </div>
-
-              {/* Empty state */}
-              {!profile.gameRole && !profile.elo && !profile.gameId && (
-                <div className="text-center py-8">
-                  <Swords className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.25 0.01 0)" }} />
-                  <p className="text-xs font-mono" style={{ color: "oklch(0.35 0.005 0)" }}>
-                    Este jugador aún no ha configurado su perfil competitivo.
-                  </p>
+              {mainRank && totalGames > 0 && (
+                <div className="text-right flex-shrink-0">
+                  <div className="font-orbitron text-[13px] font-bold" style={{ color: winRate >= 50 ? "#2ecc71" : "#e74c3c" }}>
+                    {winRate}%
+                  </div>
+                  <div className="font-mono text-[9px]" style={{ color: "rgba(255,255,255,0.30)" }}>WIN RATE</div>
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* ─── PANEL DERECHO ─── */}
+        <div className="flex flex-col gap-4">
+
+          {/* Stats grid */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+          >
+            <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.55 0.22 25)" }} />
+              <span className="font-orbitron text-[10px] tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>ESTADÍSTICAS DE TEMPORADA</span>
+            </div>
+            <div className="p-4 grid grid-cols-3 gap-3">
+              {[
+                { value: rankLabel, color: tierColors.text, label: "RANGO SOLO" },
+                { value: totalGames > 0 ? `${winRate}%` : "—", color: winRate >= 50 ? "#2ecc71" : winRate > 0 ? "#e74c3c" : "#6B7280", label: "WIN RATE" },
+                { value: totalGames > 0 ? String(totalGames) : "—", color: "#e0e0e0", label: "PARTIDAS" },
+                { value: regionLabel ?? "—", color: "#5dade2", label: "REGIÓN" },
+                { value: mainRank ? String(mainRank.leaguePoints) : "—", color: "#e0e0e0", label: isValorant ? "RR" : "LP" },
+                { value: profile.competitiveScore && profile.competitiveScore > 0 ? `${profile.competitiveScore.toLocaleString()}` : "—", color: "oklch(0.65 0.22 25)", label: "PTS RLC" },
+              ].map((s, i) => (
+                <div key={i} className="rounded-lg p-3 text-center" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.05)" }}>
+                  <div className="font-orbitron text-base font-bold leading-none" style={{ color: s.color }}>{s.value}</div>
+                  <div className="font-mono text-[9px] mt-1 tracking-wider" style={{ color: "rgba(255,255,255,0.30)" }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Top Champions / Agentes */}
+          {topChampions.length > 0 && (
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+            >
+              <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.55 0.22 25)" }} />
+                <span className="font-orbitron text-[10px] tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>
+                  {isValorant ? "AGENTES PRINCIPALES" : "CAMPEONES PRINCIPALES"}
+                </span>
+              </div>
+              <div className="p-4">
+                <div className="flex gap-3">
+                  {topChampions.slice(0, 5).map((champ: any, i: number) => (
+                    <div key={i} className="flex flex-col items-center gap-1.5 flex-1">
+                      <div className="relative w-12 h-12 rounded-xl overflow-hidden" style={{ border: "2px solid rgba(255,255,255,0.08)", background: "#1a1e25" }}>
+                        <img
+                          src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${champ.championName ?? champ.name ?? "Teemo"}.png`}
+                          alt={champ.championName ?? champ.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                        {champ.championLevel && (
+                          <div
+                            className="absolute bottom-0 right-0 font-mono text-[8px] px-1 py-0.5 leading-none"
+                            style={{ background: "oklch(0.55 0.22 25)", color: "#fff", borderRadius: "4px 0 0 0" }}
+                          >
+                            M{champ.championLevel}
+                          </div>
+                        )}
+                      </div>
+                      <div className="font-mono text-[10px] text-center" style={{ color: "rgba(255,255,255,0.55)" }}>
+                        {(champ.championName ?? champ.name ?? "").slice(0, 8)}
+                      </div>
+                      {champ.championPoints && (
+                        <div className="font-orbitron text-[9px]" style={{ color: "rgba(255,255,255,0.25)" }}>
+                          {champ.championPoints >= 1000 ? `${Math.round(champ.championPoints / 1000)}k` : champ.championPoints}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           )}
+
+          {/* Partidas recientes */}
+          {recentMatches.length > 0 && (
+            <div
+              className="rounded-xl overflow-hidden"
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+            >
+              <div className="px-4 py-3 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.55 0.22 25)" }} />
+                <span className="font-orbitron text-[10px] tracking-widest" style={{ color: "rgba(255,255,255,0.35)" }}>PARTIDAS RECIENTES</span>
+              </div>
+              <div className="p-3 flex flex-col gap-2">
+                {recentMatches.slice(0, 5).map((match: any, i: number) => {
+                  const kda = match.deaths === 0
+                    ? "Perfect"
+                    : (((match.kills + match.assists) / match.deaths)).toFixed(1);
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 px-3 py-2 rounded-lg"
+                      style={{ background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <div
+                        className="w-1 h-9 rounded-full flex-shrink-0"
+                        style={{ background: match.win ? "#2ecc71" : "#e74c3c" }}
+                      />
+                      <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0" style={{ background: "#1a1e25", border: "1px solid rgba(255,255,255,0.08)" }}>
+                        <img
+                          src={`https://ddragon.leagueoflegends.com/cdn/14.24.1/img/champion/${match.championName ?? "Teemo"}.png`}
+                          alt={match.championName}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div
+                          className="font-orbitron text-[13px] font-bold"
+                          style={{ color: match.win ? "#2ecc71" : "#e74c3c" }}
+                        >
+                          {match.kills}/{match.deaths}/{match.assists}
+                        </div>
+                        <div className="font-mono text-[10px]" style={{ color: "rgba(255,255,255,0.30)" }}>
+                          KDA · {kda} ratio
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="font-mono text-[10px]" style={{ color: "rgba(255,255,255,0.30)" }}>
+                          {match.queueType?.includes("RANKED_SOLO") ? "SOLO" : match.queueType?.includes("RANKED_FLEX") ? "FLEX" : "NORMAL"}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Sin datos de ranked */}
+          {!mainRank && topChampions.length === 0 && recentMatches.length === 0 && (
+            <div
+              className="rounded-xl p-8 text-center"
+              style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+            >
+              <Shield className="w-8 h-8 mx-auto mb-2" style={{ color: "oklch(0.25 0.01 0)" }} />
+              <p className="font-orbitron text-xs" style={{ color: "oklch(0.40 0.005 0)" }}>Sin partidas clasificatorias esta temporada</p>
+              <p className="font-mono text-[11px] mt-1" style={{ color: "oklch(0.30 0.005 0)" }}>Los datos se actualizan automáticamente desde Riot Games</p>
+            </div>
+          )}
+
         </div>
       </div>
     </div>

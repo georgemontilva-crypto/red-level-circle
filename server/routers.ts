@@ -4285,6 +4285,60 @@ Genera el reporte de precio RLC para este producto.`;
           iconId: u.riotIconId as number | null,
         };
       }),
+    /**
+     * Sincroniza los datos de Riot (rango, región, gameId) al perfil competitivo del usuario.
+     * Solo funciona si el usuario tiene una cuenta Riot vinculada.
+     */
+    syncToProfile: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        const user = await getUserById(ctx.user.id);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND", message: "Usuario no encontrado" });
+        const u = user as any;
+        if (!u.riotPuuid) throw new TRPCError({ code: "BAD_REQUEST", message: "No tienes una cuenta de Riot vinculada" });
+        // Mapeo de región Riot → valor de COMPETITIVE_REGIONS
+        const RIOT_TO_REGION: Record<string, string> = {
+          la1: "LAN", la2: "LAS", na1: "NA", br1: "BR",
+          euw1: "EU", eun1: "EUNE", kr: "KR", jp1: "JP",
+          oc1: "OCE", tr1: "TR", ru: "RU",
+        };
+        // Datos básicos siempre disponibles desde BD
+        const gameId = u.riotGameName && u.riotTagLine
+          ? `${u.riotGameName}#${u.riotTagLine}`
+          : null;
+        const competitiveRegion = u.riotRegion
+          ? (RIOT_TO_REGION[u.riotRegion] ?? u.riotRegion.toUpperCase())
+          : null;
+        let elo: string | null = null;
+        // Intentar obtener el rango real desde la API de Riot
+        if (u.riotSummonerId && u.riotRegion) {
+          try {
+            const { getFullLolProfile } = await import("./riotApi.js");
+            const profile = await getFullLolProfile(u.riotPuuid, u.riotSummonerId, u.riotRegion);
+            if (profile.rankedSolo?.tier) {
+              elo = profile.rankedSolo.tier.toLowerCase(); // ej: "GOLD" → "gold"
+            } else if (profile.rankedFlex?.tier) {
+              elo = profile.rankedFlex.tier.toLowerCase();
+            }
+          } catch (err: any) {
+            console.warn("[riot.syncToProfile] No se pudo obtener rango desde API:", err.message);
+            // Continuar sin rango — igual se sincronizan gameId y región
+          }
+        }
+        // Actualizar el perfil del usuario
+        const updates: Record<string, any> = {};
+        if (gameId) updates.gameId = gameId;
+        if (competitiveRegion) updates.competitiveRegion = competitiveRegion;
+        if (elo) updates.elo = elo;
+        if (Object.keys(updates).length > 0) {
+          await updateUserProfile(ctx.user.id, updates);
+        }
+        return {
+          synced: true,
+          gameId: gameId ?? null,
+          competitiveRegion: competitiveRegion ?? null,
+          elo: elo ?? null,
+        };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
