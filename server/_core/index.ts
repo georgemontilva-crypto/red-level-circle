@@ -495,18 +495,22 @@ async function startServer() {
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
   });
-}
 
-// Register event-driven notification listeners
-registerNotificationListeners();
-// Register auto-news generation listeners (GPT-powered)
-registerNewsGeneratorListeners();
-// Start Twitch stream sync job (polls every 30s, auto-creates/closes streams)
-startTwitchSyncJob();
-// Start bets closing job (checks every 60s for expired betting windows)
-startBetsClosingJob();
-// Start series cron job: regla 60/5 (abrir/bloquear apuestas, transiciones de estado)
-startSeriesCronJob();
+  // ─── Background jobs ─────────────────────────────────────────────────────────
+  // Se inician DESPUÉS de runCustomMigrations() para garantizar que todas las
+  // columnas existen antes del primer ciclo de sync (evita warnings de columnas
+  // no disponibles como youtubeChannelId en el arranque).
+  // Register event-driven notification listeners
+  registerNotificationListeners();
+  // Register auto-news generation listeners (GPT-powered)
+  registerNewsGeneratorListeners();
+  // Start Twitch stream sync job (polls every 30s, auto-creates/closes streams)
+  startTwitchSyncJob();
+  // Start bets closing job (checks every 60s for expired betting windows)
+  startBetsClosingJob();
+  // Start series cron job: regla 60/5 (abrir/bloquear apuestas, transiciones de estado)
+  startSeriesCronJob();
+}
 
 // ─── Graceful Shutdown ───────────────────────────────────────────────────────────────
 //
