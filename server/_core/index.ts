@@ -250,6 +250,50 @@ async function runCustomMigrations() {
     'ALTER TABLE `users` ADD COLUMN `riotRegion`     VARCHAR(8)   NULL',
     'ALTER TABLE `users` ADD COLUMN `riotSummonerId` VARCHAR(128) NULL',
     'ALTER TABLE `users` ADD COLUMN `riotIconId`     INT          NULL',
+    // 0042: tournament Battlefy-style fields
+    'ALTER TABLE `tournaments` ADD COLUMN `region`             VARCHAR(32)  NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `gameMap`            VARCHAR(64)  NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `draftType`          VARCHAR(32)  NULL DEFAULT \'tournament_draft\'',
+    'ALTER TABLE `tournaments` ADD COLUMN `checkInStart`       TIMESTAMP    NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `checkInEnd`         TIMESTAMP    NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `contactInfo`        TEXT         NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `schedule`           TEXT         NULL',
+    'ALTER TABLE `tournaments` ADD COLUMN `requireRiotAccount` TINYINT(1)   NOT NULL DEFAULT 0',
+    'ALTER TABLE `tournaments` ADD COLUMN `maxFreeAgents`      INT          NOT NULL DEFAULT 0',
+    // 0042b: tournament_checkins table
+    'CREATE TABLE IF NOT EXISTS `tournament_checkins` (' +
+    '  `id`            INT       NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId`  INT       NOT NULL,' +
+    '  `teamId`        INT       NOT NULL,' +
+    '  `checkedInAt`   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  `checkedInBy`   INT       NOT NULL,' +
+    '  KEY `tc_tournament_idx` (`tournamentId`),' +
+    '  KEY `tc_team_idx` (`teamId`)' +
+    ')',
+    // 0042c: tournament_announcements table
+    'CREATE TABLE IF NOT EXISTS `tournament_announcements` (' +
+    '  `id`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId`  INT          NOT NULL,' +
+    '  `authorId`      INT          NULL,' +
+    '  `authorName`    VARCHAR(128) NULL DEFAULT \'Sistema\',' +
+    '  `message`       TEXT         NOT NULL,' +
+    '  `isSystem`      TINYINT(1)   NOT NULL DEFAULT 0,' +
+    '  `createdAt`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `ta_tournament_idx` (`tournamentId`)' +
+    ')',
+    // 0042d: tournament_free_agents table
+    'CREATE TABLE IF NOT EXISTS `tournament_free_agents` (' +
+    '  `id`            INT          NOT NULL AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId`  INT          NOT NULL,' +
+    '  `userId`        INT          NOT NULL,' +
+    '  `role`          VARCHAR(32)  NULL,' +
+    '  `riotId`        VARCHAR(128) NULL,' +
+    '  `message`       TEXT         NULL,' +
+    '  `status_fa`     VARCHAR(16)  NOT NULL DEFAULT \'pending\',' +
+    '  `createdAt`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  KEY `tfa_tournament_idx` (`tournamentId`),' +
+    '  KEY `tfa_user_idx` (`userId`)' +
+    ')',
   ];
   for (const sql of customMigrations) {
     try {
