@@ -944,7 +944,7 @@ export default function CreateTournament() {
               <div className="rounded-xl p-4" style={{ background: "var(--bg-main)", border: "1px solid oklch(0.22 0.01 0)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Bell size={16} style={{ color: "oklch(0.65 0.22 25)" }} />
-                  <span className="font-display text-sm font-bold tracking-wider text-foreground">CHECK-IN (Battlefy-style)</span>
+                  <span className="font-display text-sm font-bold tracking-wider text-foreground">CHECK-IN</span>
                 </div>
                 <p className="text-xs text-zinc-500 mb-3">Define la ventana de check-in. Los equipos deben confirmar su asistencia antes del torneo.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
