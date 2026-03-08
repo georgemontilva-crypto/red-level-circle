@@ -297,13 +297,13 @@ export function AlliesPage() {
             />
           </div>
           {/* CTA — outline rojo, misma altura que el search */}
-          <button
-            onClick={() => user ? setShowForm(true) : setShowLoginPrompt(true)}
+          <a
+            href="/apply/ally"
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-red-500 text-red-500 hover:bg-red-500/10 text-sm font-semibold transition-colors flex-shrink-0"
           >
             <Plus className="w-4 h-4" />
             Ser Aliado
-          </button>
+          </a>
         </div>
         {/* Filtros de país/ciudad — centrados entre search y título */}
         <div className="flex flex-wrap gap-2">
@@ -405,26 +405,15 @@ export function AlliesPage() {
                 ? "Prueba con otros filtros o limpia la búsqueda."
                 : "Sé el primero en unirte al directorio de aliados de Red Level Circle."}
             </p>
-            <Button onClick={() => setShowForm(true)} className="bg-red-600 hover:bg-red-700 text-white">
-              <Plus className="w-4 h-4 mr-2" />
+            <a href="/apply/ally" className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold text-sm transition-colors">
+              <Plus className="w-4 h-4" />
               Ser el primer Aliado
-            </Button>
+            </a>
           </div>
         )}
       </div>
 
-      {/* Submit form modal */}
-      {showForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.75)", backdropFilter: "blur(4px)" }}
-          onClick={e => { if (e.target === e.currentTarget) setShowForm(false); }}
-        >
-          <div className="w-full max-w-lg bg-zinc-900 border border-white/10 rounded-2xl overflow-y-auto max-h-[90vh] shadow-2xl">
-            <SubmitAllyForm onClose={() => setShowForm(false)} />
-          </div>
-        </div>
-      )}
+      {/* Submit form modal — kept for programmatic use if needed */}
 
       {/* Login required prompt */}
       {showLoginPrompt && (

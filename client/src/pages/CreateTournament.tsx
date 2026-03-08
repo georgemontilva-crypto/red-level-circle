@@ -752,10 +752,10 @@ export default function CreateTournament() {
             <h2 className="font-orbitron font-bold text-xl text-white mb-2">Permiso insuficiente</h2>
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
               Solo los <strong className="text-white">Organizadores de Torneos (TO)</strong> pueden crear torneos en RLC.
-              Solicita el rol TO desde tu perfil en <strong className="text-white">Configuración → Solicitar Rol</strong>.
+              Completa el formulario de solicitud y el equipo lo revisará pronto.
             </p>
-            <a href="/dashboard/settings">
-              <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>IR A CONFIGURACIÓN</button>
+            <a href="/apply/role?role=to">
+              <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>SOLICITAR ROL TO</button>
             </a>
           </div>
         </div>

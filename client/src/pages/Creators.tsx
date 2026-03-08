@@ -580,35 +580,15 @@ export default function Creators() {
         )}
 
         {/* ── Floating action button: Solicitar ser Creador ── */}
-        <button
-          onClick={() => setShowApplyForm(true)}
+        <a
+          href="/apply/creator"
           className="fixed bottom-6 right-4 sm:bottom-8 sm:right-8 z-50 flex items-center gap-2 px-4 py-3 rounded-2xl font-orbitron font-bold text-sm text-white shadow-2xl transition-all hover:scale-105 active:scale-95"
           style={{ background: "oklch(0.50 0.22 25)", boxShadow: "0 0 24px oklch(0.50 0.22 25 / 0.4)" }}
           title="Solicitar ser Creador Oficial"
         >
           <Crown size={16} />
           <span className="hidden sm:inline">Ser Creador</span>
-        </button>
-
-        {/* ── Modal: Application Form ── */}
-        {showApplyForm && (
-          <div
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
-            style={{ background: "rgba(0,0,0,0.80)", backdropFilter: "blur(6px)" }}
-            onClick={e => { if (e.target === e.currentTarget) setShowApplyForm(false); }}
-          >
-            <div
-              className="w-full sm:max-w-md flex flex-col sm:rounded-2xl rounded-t-2xl shadow-2xl overflow-hidden"
-              style={{
-                background: "#111114",
-                border: "1px solid rgba(255,255,255,0.07)",
-                maxHeight: "92dvh",
-              }}
-            >
-              <ApplicationForm onClose={() => setShowApplyForm(false)} />
-            </div>
-          </div>
-        )}
+        </a>
 
 
 
