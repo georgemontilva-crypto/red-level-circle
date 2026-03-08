@@ -1076,15 +1076,17 @@ export default function Settings() {
               <p className="text-xs text-muted-foreground text-right mt-1">{form.bio.length}/500</p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
-                <CustomSelect
-                  value={form.mainGame}
-                  onChange={(val) => setForm((f) => ({ ...f, mainGame: val, gameRole: "" }))}
-                  options={GAMES.map((g) => ({ value: g, label: g }))}
-                  placeholder="Seleccionar juego"
-                />
-              </div>
+              {!(me as any)?.riotPuuid && (
+                <div>
+                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">JUEGO PRINCIPAL</label>
+                  <CustomSelect
+                    value={form.mainGame}
+                    onChange={(val) => setForm((f) => ({ ...f, mainGame: val, gameRole: "" }))}
+                    options={GAMES.map((g) => ({ value: g, label: g }))}
+                    placeholder="Seleccionar juego"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest flex items-center gap-1">
                   <MapPin className="w-3 h-3" /> PAÍS
@@ -1102,37 +1104,58 @@ export default function Settings() {
               <h3 className="font-orbitron text-xs tracking-widest text-muted-foreground mb-3 flex items-center gap-2">
                 <Gamepad2 className="w-3.5 h-3.5" /> PERFIL COMPETITIVO
               </h3>
+              {/* Aviso cuando Riot está vinculado */}
+              {(me as any)?.riotPuuid && (
+                <div className="flex items-start gap-3 p-3 rounded-lg mb-3"
+                  style={{ background: "oklch(0.55 0.22 25 / 0.08)", border: "1px solid oklch(0.55 0.22 25 / 0.2)" }}>
+                  <span className="text-base mt-0.5">🎮</span>
+                  <div>
+                    <p className="text-xs font-mono text-white font-bold">CUENTA RIOT VINCULADA</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Tu juego, rango y región se sincronizan automáticamente desde{" "}
+                      <span className="text-white font-mono">{(me as any).riotGameName}#{(me as any).riotTagLine}</span>.
+                      Para editarlos manualmente, desvincula tu cuenta de Riot más abajo.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ROL PRINCIPAL</label>
-                  <CustomSelect
-                    value={form.gameRole}
-                    onChange={(val) => setForm((f) => ({ ...f, gameRole: val }))}
-                    options={getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => ({ value: r.value, label: r.label }))}
-                    placeholder={form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}
-                    disabled={!form.mainGame}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ELO / RANGO</label>
-                  <input
-                    type="text"
-                    value={form.elo}
-                    onChange={(e) => setForm((f) => ({ ...f, elo: e.target.value }))}
-                    placeholder="Ej: Diamond II, Radiant..."
-                    maxLength={64}
-                    className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
-                  <CustomSelect
-                    value={form.competitiveRegion}
-                    onChange={(val) => setForm((f) => ({ ...f, competitiveRegion: val }))}
-                    options={COMPETITIVE_REGIONS.map((r) => ({ value: r.value, label: r.label }))}
-                    placeholder="Seleccionar región"
-                  />
-                </div>
+                {!(me as any)?.riotPuuid && (
+                  <div>
+                    <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ROL PRINCIPAL</label>
+                    <CustomSelect
+                      value={form.gameRole}
+                      onChange={(val) => setForm((f) => ({ ...f, gameRole: val }))}
+                      options={getRolesForGame(GAME_SLUG_MAP[form.mainGame] ?? null).map((r) => ({ value: r.value, label: r.label }))}
+                      placeholder={form.mainGame ? "Seleccionar rol" : "Elige un juego primero"}
+                      disabled={!form.mainGame}
+                    />
+                  </div>
+                )}
+                {!(me as any)?.riotPuuid && (
+                  <div>
+                    <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ELO / RANGO</label>
+                    <input
+                      type="text"
+                      value={form.elo}
+                      onChange={(e) => setForm((f) => ({ ...f, elo: e.target.value }))}
+                      placeholder="Ej: Diamond II, Radiant..."
+                      maxLength={64}
+                      className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors placeholder-muted-foreground"
+                    />
+                  </div>
+                )}
+                {!(me as any)?.riotPuuid && (
+                  <div>
+                    <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">REGIÓN COMPETITIVA</label>
+                    <CustomSelect
+                      value={form.competitiveRegion}
+                      onChange={(val) => setForm((f) => ({ ...f, competitiveRegion: val }))}
+                      options={COMPETITIVE_REGIONS.map((r) => ({ value: r.value, label: r.label }))}
+                      placeholder="Seleccionar región"
+                    />
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-mono text-muted-foreground mb-1.5 tracking-widest">ID EN EL JUEGO</label>
                   <input

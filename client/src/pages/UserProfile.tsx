@@ -301,8 +301,12 @@ export default function UserProfile() {
 
           {/* Meta info row — sincronizado con Riot cuando aplica */}
           {(() => {
-            const isRiotGame = profile.mainGame === "League of Legends" || profile.mainGame === "Valorant";
             const riotLinked = !!(lolProfile as any)?.account;
+            // Si Riot está vinculado, el juego principal es siempre LoL (la API de Riot es para LoL/Valorant)
+            const displayGame = riotLinked
+              ? (profile.mainGame === "Valorant" ? "Valorant" : "League of Legends")
+              : profile.mainGame;
+            const isRiotGame = displayGame === "League of Legends" || displayGame === "Valorant";
             const riotRankedSolo = (lolProfile as any)?.rankedSolo;
             const riotRegion = (lolProfile as any)?.region;
             // Tier colors para el badge de rango de Riot
@@ -323,7 +327,7 @@ export default function UserProfile() {
               euw1: "EUW", eun1: "EUNE", kr: "KR", jp1: "JP",
               oc1: "OCE", tr1: "TR", ru: "RU",
             };
-            const gameSlug = GAME_SLUG_MAP[(profile.mainGame ?? "")] ?? null;
+            const gameSlug = GAME_SLUG_MAP[(displayGame ?? "")] ?? null;
             const roles = getRolesForGame(gameSlug);
             const roleData = roles.find((r) => r.value === (profile as any).gameRole);
             const ranks = getRanksForGame(gameSlug);
@@ -339,13 +343,13 @@ export default function UserProfile() {
               : (profile as any).competitiveRegion ?? null;
             return (
               <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-muted-foreground">
-                {profile.mainGame && (
+                {displayGame && (
                   <span className="flex items-center gap-1">
                     <Gamepad2 className="w-3.5 h-3.5 text-white" />
-                    {profile.mainGame}
+                    {displayGame}
                   </span>
                 )}
-                {/* Rol — siempre del perfil manual */}
+                {/* Rol — del perfil manual (el usuario lo elige en Settings) */}
                 {roleData && (
                   <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full"
                     style={{ background: "oklch(0.55 0.22 25 / 0.12)", border: "1px solid oklch(0.55 0.22 25 / 0.25)", color: "oklch(0.75 0.15 25)" }}>
