@@ -362,6 +362,42 @@ async function runCustomMigrations() {
     "ALTER TABLE `tournaments` MODIFY COLUMN `bracketType` ENUM('single_elimination','double_elimination','groups','swiss','round_robin') NOT NULL",
     // 0050: content_creators — youtubeChannelId for stable embed URLs
     'ALTER TABLE `content_creators` ADD COLUMN `youtubeChannelId` VARCHAR(64) NULL',
+    // 0051: users — role system (player/to/cdc/partner/admin/super_admin)
+    "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('player','to','cdc','partner','admin','super_admin') NOT NULL DEFAULT 'player'",
+    // 0052: users — canCreateTournaments flag for CDC/Partner with special permission
+    'ALTER TABLE `users` ADD COLUMN `canCreateTournaments` BOOLEAN NOT NULL DEFAULT false',
+    // 0053: users — org profile fields for Tournament Organizers
+    'ALTER TABLE `users` ADD COLUMN `orgName` VARCHAR(128) NULL',
+    'ALTER TABLE `users` ADD COLUMN `orgDescription` TEXT NULL',
+    // 0054: role_requests table
+    'CREATE TABLE IF NOT EXISTS `role_requests` (' +
+    '  `id`            INT AUTO_INCREMENT PRIMARY KEY,' +
+    '  `userId`        INT NOT NULL,' +
+    '  `requestedRole` ENUM(\'to\',\'cdc\',\'partner\') NOT NULL,' +
+    '  `orgName`       VARCHAR(128) NOT NULL,' +
+    '  `orgDescription` TEXT NULL,' +
+    '  `experience`    TEXT NULL,' +
+    '  `discordContact` VARCHAR(128) NULL,' +
+    '  `websiteUrl`    VARCHAR(256) NULL,' +
+    '  `status`        ENUM(\'pending\',\'approved\',\'rejected\') NOT NULL DEFAULT \'pending\',' +
+    '  `reviewedBy`    INT NULL,' +
+    '  `reviewNote`    TEXT NULL,' +
+    '  `reviewedAt`    TIMESTAMP NULL,' +
+    '  `createdAt`     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  `updatedAt`     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,' +
+    '  INDEX `rr_user_idx` (`userId`)' +
+    ')',
+    // 0055: tournament_collaborators table
+    'CREATE TABLE IF NOT EXISTS `tournament_collaborators` (' +
+    '  `id`           INT AUTO_INCREMENT PRIMARY KEY,' +
+    '  `tournamentId` INT NOT NULL,' +
+    '  `userId`       INT NOT NULL,' +
+    '  `addedBy`      INT NOT NULL,' +
+    '  `addedAt`      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  INDEX `tc_tournament_idx` (`tournamentId`),' +
+    '  INDEX `tc_user_idx` (`userId`),' +
+    '  UNIQUE KEY `tc_unique` (`tournamentId`, `userId`)' +
+    ')',
   ];
   for (const sql of customMigrations) {
     try {
@@ -372,7 +408,8 @@ async function runCustomMigrations() {
       // 1146 = ER_NO_SUCH_TABLE: table doesn't exist yet for ALTER
       // 1054 = ER_BAD_FIELD_ERROR: column doesn't exist (CHANGE COLUMN on non-existent column)
       // 1091 = ER_CANT_DROP_FIELD_OR_KEY: can't drop field that doesn't exist
-      const ignoredErrno = [1050, 1054, 1060, 1091, 1146];
+      // 1265 = ER_WARN_DATA_TRUNCATED: MODIFY COLUMN enum when old values exist (migration 0051 handles data first)
+      const ignoredErrno = [1050, 1054, 1060, 1091, 1146, 1265];
       const ignoredCodes = ["ER_DUP_FIELDNAME", "ER_TABLE_EXISTS_ERROR", "ER_BAD_FIELD_ERROR", "ER_NO_SUCH_TABLE", "ER_CANT_DROP_FIELD_OR_KEY"];
       if (!ignoredErrno.includes(err.errno) && !ignoredCodes.includes(err.code)) {
         console.warn("[DB] Custom migration warning:", err.message, "errno:", err.errno, "code:", err.code);
