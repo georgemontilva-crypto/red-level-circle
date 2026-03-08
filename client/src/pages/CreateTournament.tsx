@@ -601,7 +601,13 @@ function GameSpecificConfig({
 // ─── Componente principal ────────────────────────────────────────────────────
 export default function CreateTournament() {
   const [, navigate] = useLocation();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const canCreate = isAuthenticated && user && (
+    (user as any).role === "to" ||
+    (user as any).role === "admin" ||
+    (user as any).role === "super_admin" ||
+    !!(user as any).canCreateTournaments
+  );
   const [form, setForm] = useState<FormData>(defaultForm);
   const [step, setStep] = useState(1);
   const [uploadingBanner, setUploadingBanner] = useState(false);
@@ -727,6 +733,29 @@ export default function CreateTournament() {
             <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Debes iniciar sesión para crear torneos en la plataforma.</p>
             <a href={getLoginUrl()}>
               <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>INICIAR SESIÓN</button>
+            </a>
+          </div>
+        </div>
+      </PremiumLayout>
+    );
+  }
+
+  // ── Guard: solo TOs, admins y usuarios con permiso especial pueden crear torneos ──
+  if (isAuthenticated && !canCreate) {
+    return (
+      <PremiumLayout title="CREAR TORNEO">
+        <div className="max-w-lg mx-auto">
+          <div className="rounded-2xl p-8 sm:p-10 text-center" style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ background: "rgba(220,38,38,0.10)", border: "1px solid rgba(220,38,38,0.25)" }}>
+              <Shield size={28} className="text-red-500" />
+            </div>
+            <h2 className="font-orbitron font-bold text-xl text-white mb-2">Permiso insuficiente</h2>
+            <p className="text-zinc-400 text-sm mb-6 leading-relaxed">
+              Solo los <strong className="text-white">Organizadores de Torneos (TO)</strong> pueden crear torneos en RLC.
+              Solicita el rol TO desde tu perfil en <strong className="text-white">Configuración → Solicitar Rol</strong>.
+            </p>
+            <a href="/dashboard/settings">
+              <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>IR A CONFIGURACIÓN</button>
             </a>
           </div>
         </div>

@@ -362,7 +362,11 @@ async function runCustomMigrations() {
     "ALTER TABLE `tournaments` MODIFY COLUMN `bracketType` ENUM('single_elimination','double_elimination','groups','swiss','round_robin') NOT NULL",
     // 0050: content_creators — youtubeChannelId for stable embed URLs
     'ALTER TABLE `content_creators` ADD COLUMN `youtubeChannelId` VARCHAR(64) NULL',
-    // 0051: users — role system (player/to/cdc/partner/admin/super_admin)
+    // 0051a: users — map old roles to new role system before MODIFY COLUMN
+    // user -> player, premium -> player, organizer -> to (must run before MODIFY COLUMN)
+    "UPDATE `users` SET `role` = 'player' WHERE `role` IN ('user', 'premium')",
+    "UPDATE `users` SET `role` = 'to' WHERE `role` = 'organizer'",
+    // 0051b: users — role system (player/to/cdc/partner/admin/super_admin)
     "ALTER TABLE `users` MODIFY COLUMN `role` ENUM('player','to','cdc','partner','admin','super_admin') NOT NULL DEFAULT 'player'",
     // 0052: users — canCreateTournaments flag for CDC/Partner with special permission
     'ALTER TABLE `users` ADD COLUMN `canCreateTournaments` BOOLEAN NOT NULL DEFAULT false',

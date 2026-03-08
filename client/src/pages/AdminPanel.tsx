@@ -88,17 +88,19 @@ function UsersTab() {
   const roleColors: Record<string, string> = {
     super_admin: "bg-purple-500/20 text-purple-300 border-purple-600/40",
     admin: "bg-yellow-500/20 text-yellow-400 border-yellow-600/40",
-    organizer: "bg-green-500/20 text-green-400 border-green-600/40",
-    premium: "bg-blue-500/20 text-blue-400 border-blue-600/40",
-    user: "bg-gray-500/20 text-muted-foreground border-gray-600/40",
+    to: "bg-green-500/20 text-green-400 border-green-600/40",
+    cdc: "bg-blue-500/20 text-blue-400 border-blue-600/40",
+    partner: "bg-cyan-500/20 text-cyan-400 border-cyan-600/40",
+    player: "bg-gray-500/20 text-muted-foreground border-gray-600/40",
   };
   const roleLabel = (role: string) => {
     switch (role) {
       case "super_admin": return "SUPER ADMIN";
       case "admin": return "ADMIN";
-      case "organizer": return "ORGA";
-      case "premium": return "CDC";
-      default: return "USUARIO";
+      case "to": return "TO";
+      case "cdc": return "CDC";
+      case "partner": return "PARTNER";
+      default: return "JUGADOR";
     }
   };
 
@@ -134,9 +136,10 @@ function UsersTab() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Usuario</SelectItem>
-                  <SelectItem value="premium">CDC</SelectItem>
-                  <SelectItem value="organizer">Organizador (ORGA)</SelectItem>
+                  <SelectItem value="player">Jugador</SelectItem>
+                  <SelectItem value="to">Organizador (TO)</SelectItem>
+                  <SelectItem value="cdc">CDC</SelectItem>
+                  <SelectItem value="partner">Partner</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
@@ -1687,14 +1690,14 @@ function RoleRequestsTab() {
                     />
                     <div className="flex gap-2">
                       <button
-                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "approve", reviewNote: notes[req.id] })}
+                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "approved", reviewNote: notes[req.id] })}
                         disabled={reviewMutation.isPending}
                         className="flex-1 py-2 rounded-lg bg-green-600/20 border border-green-500/40 text-green-300 hover:bg-green-600/30 font-orbitron text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                       >
                         <CheckCircle className="w-3.5 h-3.5" /> APROBAR
                       </button>
                       <button
-                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "reject", reviewNote: notes[req.id] })}
+                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "rejected", reviewNote: notes[req.id] })}
                         disabled={reviewMutation.isPending}
                         className="flex-1 py-2 rounded-lg bg-red-600/20 border border-red-500/40 text-red-300 hover:bg-red-600/30 font-orbitron text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
                       >
@@ -2463,10 +2466,12 @@ function OverviewTab() {
               <Badge className={`font-orbitron text-xs border ${
                 u.role === "super_admin" ? "bg-purple-500/20 text-purple-300 border-purple-600/40" :
                 u.role === "admin" ? "bg-yellow-500/20 text-yellow-400 border-yellow-600/40" :
-                u.role === "premium" ? "bg-blue-500/20 text-blue-400 border-blue-600/40" :
+                u.role === "to" ? "bg-green-500/20 text-green-400 border-green-600/40" :
+                u.role === "cdc" ? "bg-blue-500/20 text-blue-400 border-blue-600/40" :
+                u.role === "partner" ? "bg-cyan-500/20 text-cyan-400 border-cyan-600/40" :
                 "bg-gray-500/20 text-muted-foreground border-gray-600/40"
               }`}>
-                {u.role === "premium" ? "CDC" : u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : "USUARIO"}
+                {u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : u.role === "to" ? "TO" : u.role === "cdc" ? "CDC" : u.role === "partner" ? "PARTNER" : "JUGADOR"}
               </Badge>
             </div>
           ))}

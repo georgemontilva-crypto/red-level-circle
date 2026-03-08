@@ -245,6 +245,22 @@ const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   return next({ ctx });
 });
 
+// Helper: checks if a user can manage a tournament (creator, collaborator, or admin)
+async function isTournamentManager(userId: number, tournamentCreatorId: number, tournamentId: number, userRole: string): Promise<boolean> {
+  if (userId === tournamentCreatorId || isAdmin(userRole)) return true;
+  // Check if user is a collaborator
+  const db = await getDb();
+  if (!db) return false;
+  const [collab] = await db.select({ id: tournamentCollaborators.id })
+    .from(tournamentCollaborators)
+    .where(and(
+      eq(tournamentCollaborators.tournamentId, tournamentId),
+      eq(tournamentCollaborators.userId, userId)
+    ))
+    .limit(1);
+  return !!collab;
+}
+
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
@@ -356,7 +372,7 @@ export const appRouter = router({
         return t;
       }),
 
-    create: protectedProcedure
+    create: toProcedure
       .input(z.object({
         name: z.string().min(3).max(256),
         game: z.string().min(1).max(64),
@@ -479,14 +495,11 @@ export const appRouter = router({
         contactName: z.string().max(128).optional(),
         contactDiscord: z.string().max(128).optional(),
         contactDiscordServer: z.string().max(256).optional(),
-        prizeFirst: z.string().max(256).optional(),
-        prizeSecond: z.string().max(256).optional(),
-        prizeThird: z.string().max(256).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.id, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         // Si se cambia a privado y no tiene inviteCode, generar uno
@@ -530,7 +543,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.id, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournamentStatus(input.id, input.status);
@@ -579,7 +592,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.id);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.id, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const registrations = await getRegistrationsByTournament(input.id, "Aprobado");
@@ -602,7 +615,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateTournament(input.tournamentId, { winnerId: input.winnerId, status: "completed" });
@@ -704,7 +717,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const db = await getDb();
@@ -1072,7 +1085,7 @@ export const appRouter = router({
       .query(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         return getRegistrationsByTournament(input.tournamentId, input.status);
@@ -1238,7 +1251,7 @@ export const appRouter = router({
         if (!reg) throw new TRPCError({ code: "NOT_FOUND" });
         const t = await getTournamentById(reg.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, reg.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         await updateRegistrationStatus(input.id, input.status, ctx.user.id, input.creatorMessage);
@@ -1277,7 +1290,7 @@ export const appRouter = router({
         if (!reg) throw new TRPCError({ code: "NOT_FOUND" });
         const t = await getTournamentById(reg.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, reg.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         return getRegistrationAuditLog(input.registrationId);
@@ -1313,7 +1326,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         // Fetch match to get team IDs for auto-calculating winner
@@ -1421,7 +1434,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const registrations = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
@@ -1453,7 +1466,7 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         const t = await getTournamentById(input.tournamentId);
         if (!t) throw new TRPCError({ code: "NOT_FOUND" });
-        if (t.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+        if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
         const scheduledDate = new Date(input.scheduledAt);
@@ -2350,7 +2363,7 @@ export const appRouter = router({
   // ─── Admin ─────────────────────────────────────────────────────────────────
   admin: router({
     setRole: adminProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin", "super_admin"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["player", "to", "cdc", "partner", "admin", "super_admin"]) }))
       .mutation(async ({ input }) => {
         await updateUserRole(input.userId, input.role);
         return { success: true };
@@ -2425,7 +2438,7 @@ export const appRouter = router({
       .input(z.object({ search: z.string().optional() }))
       .query(async ({ input }) => adminListUsers(input.search)),
     updateUserRole: adminProcedure
-      .input(z.object({ userId: z.number(), role: z.enum(["user", "premium", "admin", "super_admin"]) }))
+      .input(z.object({ userId: z.number(), role: z.enum(["player", "to", "cdc", "partner", "admin", "super_admin"]) }))
       .mutation(async ({ input }) => {
         await adminUpdateUserRole(input.userId, input.role);
         return { success: true };

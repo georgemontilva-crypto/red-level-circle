@@ -5,6 +5,7 @@ import PremiumLayout from "@/components/PremiumLayout";
 import { useParams, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import {
   Trophy,
   Play,
@@ -181,6 +182,7 @@ export default function TournamentManage() {
   const params = useParams<{ id: string }>();
   const id = parseInt(params.id ?? "0");
   const [, navigate] = useLocation();
+  const { user, isAuthenticated } = useAuth();
   const [bracketView, setBracketView] = useState(true);
   const [resultModal, setResultModal] = useState<{
     matchId: number;
@@ -331,6 +333,26 @@ export default function TournamentManage() {
             className="w-10 h-10 rounded-full border-2 animate-spin"
             style={{ borderColor: "oklch(0.55 0.22 25)", borderTopColor: "transparent" }}
           />
+        </div>
+      </PremiumLayout>
+    );
+  }
+
+  // Guard: only tournament creator or admins can access this management page
+  const userRole = (user as any)?.role ?? "";
+  const isAdminUser = userRole === "admin" || userRole === "super_admin";
+  const isCreator = isAuthenticated && user && (user as any).id === tournament.creatorId;
+  if (!isAuthenticated || (!isCreator && !isAdminUser)) {
+    return (
+      <PremiumLayout title="GESTIÓN DE TORNEO">
+        <div className="max-w-lg mx-auto">
+          <div className="rounded-2xl p-8 sm:p-10 text-center" style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.07)" }}>
+            <h2 className="font-orbitron font-bold text-xl text-white mb-2">Acceso denegado</h2>
+            <p className="text-zinc-400 text-sm mb-6 leading-relaxed">Solo el organizador del torneo o un administrador pueden gestionar este torneo.</p>
+            <a href={`/tournament/${id}`}>
+              <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>VER TORNEO</button>
+            </a>
+          </div>
         </div>
       </PremiumLayout>
     );

@@ -186,7 +186,7 @@ export async function getUserByEmail(email: string) {
   return result[0];
 }
 
-export async function updateUserRole(userId: number, role: "user" | "premium" | "organizer" | "admin" | "super_admin") {
+export async function updateUserRole(userId: number, role: "player" | "to" | "cdc" | "partner" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) return;
   await db.update(users).set({ role }).where(eq(users.id, userId));
@@ -2686,7 +2686,7 @@ export async function adminListUsers(search?: string) {
   return query;
 }
 
-export async function adminUpdateUserRole(userId: number, role: "user" | "premium" | "organizer" | "admin" | "super_admin") {
+export async function adminUpdateUserRole(userId: number, role: "player" | "to" | "cdc" | "partner" | "admin" | "super_admin") {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
