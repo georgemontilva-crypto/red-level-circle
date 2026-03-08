@@ -1269,6 +1269,24 @@ export const appRouter = router({
                 teamCaptainId: team.captainId,
                 teamName: team.name,
               });
+              // Web Push + Email al capitán del equipo
+              try {
+                const { sendPushToUser, sendEmail, buildRegistrationApprovedEmail } = await import("./pushService");
+                const captain = await getUserById(team.captainId);
+                await sendPushToUser(team.captainId, {
+                  title: "✅ Inscripción aprobada",
+                  body: `Tu equipo "${team.name}" fue aceptado en "${t.name}"`,
+                  url: `/tournament/${t.id}`,
+                  tag: `reg-approved-${input.id}`,
+                });
+                if (captain?.email) {
+                  await sendEmail({
+                    to: captain.email,
+                    subject: `✅ Tu equipo fue aceptado en "${t.name}"`,
+                    html: buildRegistrationApprovedEmail({ userName: captain.name ?? captain.nickname ?? "Capitán", teamName: team.name, tournamentName: t.name, tournamentId: t.id }),
+                  });
+                }
+              } catch (_) { /* non-critical */ }
             } else if (input.status === "Rechazado") {
               eventBus.emit("registration.rejected", {
                 registrationId: input.id,
@@ -2916,6 +2934,22 @@ Genera el reporte de precio RLC para este producto.`;
               message: `Tu torneo "${t.name}" ha sido aprobado. ¡Ya puedes recibir inscripciones!`,
               link: `/dashboard/tournament/${t.id}`,
             });
+            // Web Push + Email
+            const { sendPushToUser, sendEmail, buildTournamentApprovedEmail } = await import("./pushService");
+            const creator = await getUserById(t.creatorId);
+            await sendPushToUser(t.creatorId, {
+              title: "✅ Torneo aprobado",
+              body: `Tu torneo "${t.name}" fue aprobado. ¡Abre las inscripciones!`,
+              url: `/dashboard/tournament/${t.id}`,
+              tag: `tournament-approved-${t.id}`,
+            });
+            if (creator?.email) {
+              await sendEmail({
+                to: creator.email,
+                subject: `✅ Tu torneo "${t.name}" fue aprobado`,
+                html: buildTournamentApprovedEmail({ userName: creator.name ?? creator.nickname ?? "Organizador", tournamentName: t.name, tournamentId: t.id }),
+              });
+            }
           } catch (e) { console.error("[ApproveTournament] Notification error:", e); }
         }
         // Generar noticia ahora que el torneo fue aprobado (no bloqueante)
@@ -2954,6 +2988,22 @@ Genera el reporte de precio RLC para este producto.`;
               message: `Tu torneo "${t.name}" no fue aprobado. Revisa las normas de RLC y vuelve a intentarlo.`,
               link: `/dashboard/my-tournaments`,
             });
+            // Web Push + Email
+            const { sendPushToUser, sendEmail, buildTournamentRejectedEmail } = await import("./pushService");
+            const creator = await getUserById(t.creatorId);
+            await sendPushToUser(t.creatorId, {
+              title: "❌ Torneo no aprobado",
+              body: `Tu torneo "${t.name}" no fue aprobado. Revisa los detalles.`,
+              url: `/dashboard/tournaments`,
+              tag: `tournament-rejected-${t.id}`,
+            });
+            if (creator?.email) {
+              await sendEmail({
+                to: creator.email,
+                subject: `Tu torneo "${t.name}" no fue aprobado`,
+                html: buildTournamentRejectedEmail({ userName: creator.name ?? creator.nickname ?? "Organizador", tournamentName: t.name }),
+              });
+            }
           } catch (e) { console.error("[RejectTournament] Notification error:", e); }
         }
         // Invalidate caches
@@ -5494,12 +5544,11 @@ Genera el reporte de precio RLC para este producto.`;
           })
           .where(eq(roleRequests.id, input.requestId));
 
-        if (input.action === "approved") {
+         if (input.action === "approved") {
           const user = await getUserById(req.userId);
           // Determine new role and canCreateTournaments flag
           const currentRole = user?.role ?? "player";
           const isCdcOrPartner = currentRole === "cdc" || currentRole === "partner";
-
           if (req.requestedRole === "to") {
             // If user is CDC or Partner, just set canCreateTournaments flag
             if (isCdcOrPartner) {
@@ -5514,12 +5563,39 @@ Genera el reporte de precio RLC para este producto.`;
           } else if (req.requestedRole === "partner") {
             await db.update(users).set({ role: "partner" }).where(eq(users.id, req.userId));
           }
-          // Notify user
+          // Notify user (in-app)
           await createNotification(req.userId, "system",
             `¡Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue aprobada! Bienvenido al equipo.`);
+          // Web Push + Email
+          try {
+            const { sendPushToUser, sendEmail, buildRoleApprovedEmail } = await import("./pushService");
+            await sendPushToUser(req.userId, {
+              title: "🏆 ¡Rol aprobado!",
+              body: `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue aprobada.`,
+              url: `/dashboard`,
+              tag: `role-approved-${req.id}`,
+            });
+            if (user?.email) {
+              await sendEmail({
+                to: user.email,
+                subject: `🏆 ¡Tu rol ${req.requestedRole.toUpperCase()} fue aprobado!`,
+                html: buildRoleApprovedEmail({ userName: user.name ?? user.nickname ?? "Usuario", role: req.requestedRole }),
+              });
+            }
+          } catch (_) { /* non-critical */ }
         } else {
           await createNotification(req.userId, "system",
             `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue revisada. ${input.reviewNote ? `Nota: ${input.reviewNote}` : ""}`);
+          // Web Push for rejection
+          try {
+            const { sendPushToUser } = await import("./pushService");
+            await sendPushToUser(req.userId, {
+              title: "Solicitud de rol revisada",
+              body: `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue revisada.${input.reviewNote ? ` Nota: ${input.reviewNote}` : ""}`,
+              url: `/settings`,
+              tag: `role-rejected-${req.id}`,
+            });
+          } catch (_) { /* non-critical */ }
         }
         return { success: true };
       }),
@@ -5687,6 +5763,33 @@ Genera el reporte de precio RLC para este producto.`;
         await db.update(users)
           .set({ orgName: input.orgName ?? null, orgDescription: input.orgDescription ?? null })
           .where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
+  }),
+  // ─── Web Push ────────────────────────────────────────────────────────────────
+  push: router({
+    vapidPublicKey: publicProcedure.query(() => {
+      return process.env.VAPID_PUBLIC_KEY ?? "";
+    }),
+    subscribe: protectedProcedure
+      .input(z.object({
+        endpoint: z.string().url(),
+        p256dh: z.string(),
+        auth: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { savePushSubscription } = await import("./pushService");
+        await savePushSubscription(ctx.user.id, {
+          endpoint: input.endpoint,
+          keys: { p256dh: input.p256dh, auth: input.auth },
+        });
+        return { success: true };
+      }),
+    unsubscribe: protectedProcedure
+      .input(z.object({ endpoint: z.string() }))
+      .mutation(async ({ input }) => {
+        const { removePushSubscription } = await import("./pushService");
+        await removePushSubscription(input.endpoint);
         return { success: true };
       }),
   }),

@@ -29,6 +29,13 @@ const rawEnv = {
   NODE_ENV: process.env.NODE_ENV ?? "development",
   BUILT_IN_FORGE_API_URL: process.env.BUILT_IN_FORGE_API_URL ?? "",
   BUILT_IN_FORGE_API_KEY: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // Web Push (VAPID) — optional, enables native push notifications
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY ?? "",
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY ?? "",
+  VAPID_SUBJECT: process.env.VAPID_SUBJECT ?? "mailto:admin@redlevelcircle.gg",
+  // Email (Resend) — optional, enables transactional emails
+  RESEND_API_KEY: process.env.RESEND_API_KEY ?? "",
+  EMAIL_FROM: process.env.EMAIL_FROM ?? "Red Level Circle <noreply@redlevelcircle.gg>",
 };
 
 if (rawEnv.NODE_ENV === "production") {
@@ -61,4 +68,9 @@ export const ENV = {
   isProduction: rawEnv.NODE_ENV === "production",
   forgeApiUrl: rawEnv.BUILT_IN_FORGE_API_URL,
   forgeApiKey: rawEnv.BUILT_IN_FORGE_API_KEY,
+  vapidPublicKey: rawEnv.VAPID_PUBLIC_KEY,
+  vapidPrivateKey: rawEnv.VAPID_PRIVATE_KEY,
+  vapidSubject: rawEnv.VAPID_SUBJECT,
+  resendApiKey: rawEnv.RESEND_API_KEY,
+  emailFrom: rawEnv.EMAIL_FROM,
 };

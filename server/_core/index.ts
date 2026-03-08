@@ -402,6 +402,17 @@ async function runCustomMigrations() {
     '  INDEX `tc_user_idx` (`userId`),' +
     '  UNIQUE KEY `tc_unique` (`tournamentId`, `userId`)' +
     ')',
+    // 0056: push_subscriptions table for Web Push (VAPID) native notifications
+    'CREATE TABLE IF NOT EXISTS `push_subscriptions` (' +
+    '  `id`        INT AUTO_INCREMENT PRIMARY KEY,' +
+    '  `userId`    INT NOT NULL,' +
+    '  `endpoint`  VARCHAR(512) NOT NULL,' +
+    '  `p256dh`    VARCHAR(256) NOT NULL,' +
+    '  `auth`      VARCHAR(128) NOT NULL,' +
+    '  `createdAt` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,' +
+    '  INDEX `ps_user_idx` (`userId`),' +
+    '  UNIQUE KEY `ps_endpoint_unique` (`endpoint`(255))' +
+    ')',
   ];
   for (const sql of customMigrations) {
     try {

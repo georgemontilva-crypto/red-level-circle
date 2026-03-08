@@ -7,11 +7,12 @@ import { Link } from "wouter";
 import {
   Camera, User, Globe, MessageSquare, Save, ChevronLeft, ChevronDown,
   Twitter, Gamepad2, MapPin, Shield, Crown, Swords, Loader2,
-  BadgeCheck, Clock, XCircle, Radio, ShoppingBag
+  BadgeCheck, Clock, XCircle, Radio, ShoppingBag, Bell, BellOff
 } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { useAvatarUpload } from "@/hooks/useAvatarUpload";
 import { getRolesForGame, COMPETITIVE_REGIONS } from "../../../shared/gameRoles";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const GAME_SLUG_MAP: Record<string, string> = {
   "League of Legends": "league-of-legends",
@@ -899,6 +900,63 @@ function VerificationSection() {
   );
 }
 
+// ── Push Notifications Section ────────────────────────────────────────────────────────────────
+function PushNotificationsSection() {
+  const { permission, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
+
+  if (permission === "unsupported") {
+    return (
+      <div className="rounded-2xl border border-border p-5" style={{ background: "#12151c" }}>
+        <div className="flex items-center gap-3 mb-3">
+          <BellOff className="w-5 h-5 text-zinc-500" />
+          <h3 className="font-orbitron font-bold text-sm tracking-widest text-zinc-400">NOTIFICACIONES PUSH</h3>
+        </div>
+        <p className="text-xs text-zinc-500">Tu navegador no soporta notificaciones push. Usa Chrome o Safari en móvil.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border p-5" style={{ background: "#12151c" }}>
+      <div className="flex items-center gap-3 mb-4">
+        <Bell className="w-5 h-5 text-red-500" />
+        <h3 className="font-orbitron font-bold text-sm tracking-widest text-white">NOTIFICACIONES PUSH</h3>
+      </div>
+      <p className="text-xs text-zinc-400 mb-4">
+        Activa las notificaciones para recibir alertas en tu móvil cuando se aprueben torneos, inscripciones, roles y más — incluso con la app cerrada.
+      </p>
+      {permission === "denied" ? (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-950/30 border border-red-900/40">
+          <BellOff className="w-4 h-4 text-red-400 flex-shrink-0" />
+          <p className="text-xs text-red-300">Notificaciones bloqueadas en el navegador. Ve a Ajustes del navegador y permite las notificaciones para este sitio.</p>
+        </div>
+      ) : (
+        <button
+          onClick={isSubscribed ? unsubscribe : subscribe}
+          disabled={isLoading}
+          className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-orbitron font-bold text-sm tracking-widest transition-all ${
+            isSubscribed
+              ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-600"
+              : "bg-red-600 hover:bg-red-700 text-white"
+          } disabled:opacity-50`}
+          style={isSubscribed ? {} : { boxShadow: "0 0 16px rgba(220,38,38,0.35)" }}
+        >
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : isSubscribed ? (
+            <><BellOff className="w-4 h-4" /> DESACTIVAR NOTIFICACIONES</>
+          ) : (
+            <><Bell className="w-4 h-4" /> ACTIVAR NOTIFICACIONES</>
+          )}
+        </button>
+      )}
+      {isSubscribed && (
+        <p className="text-xs text-green-400 mt-2 text-center">✓ Notificaciones activas en este dispositivo</p>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { isAuthenticated, user } = useAuth();
   const { data: me, refetch } = trpc.auth.me.useQuery();
@@ -1268,6 +1326,8 @@ export default function Settings() {
         <RoleRequestSection />
         {/* Verification */}
         <VerificationSection />
+        {/* Push Notifications */}
+        <PushNotificationsSection />
         {/* Save Button */}
         <div className="pb-8">
           <button

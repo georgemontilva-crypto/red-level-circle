@@ -1184,3 +1184,17 @@ export const tournamentCollaborators = mysqlTable("tournament_collaborators", {
 ]);
 export type TournamentCollaborator = typeof tournamentCollaborators.$inferSelect;
 export type InsertTournamentCollaborator = typeof tournamentCollaborators.$inferInsert;
+
+// ─── Push Subscriptions (Web Push / VAPID) ────────────────────────────────────
+export const pushSubscriptions = mysqlTable("push_subscriptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  endpoint: varchar("endpoint", { length: 512 }).notNull(),
+  p256dh: varchar("p256dh", { length: 256 }).notNull(),
+  auth: varchar("auth", { length: 128 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (t) => [
+  index("ps_user_idx").on(t.userId),
+]);
+export type PushSubscription = typeof pushSubscriptions.$inferSelect;
+export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
