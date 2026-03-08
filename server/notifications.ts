@@ -80,6 +80,38 @@ export async function createNotification(params: {
   });
 }
 
+/**
+ * Insert notifications for many users in a single DB batch (chunks of 500 rows).
+ * Dramatically faster than looping createNotification() one by one.
+ */
+export async function createBulkNotifications(params: {
+  userIds: number[];
+  type: typeof notifications.$inferInsert["type"];
+  title: string;
+  message: string;
+  link?: string;
+  referenceId?: number;
+  referenceType?: string;
+}): Promise<void> {
+  if (params.userIds.length === 0) return;
+  const db = await getDb();
+  if (!db) return;
+  const CHUNK = 500;
+  const rows = params.userIds.map((userId) => ({
+    userId,
+    type: params.type,
+    title: params.title,
+    message: params.message,
+    link: params.link,
+    referenceId: params.referenceId,
+    referenceType: params.referenceType,
+    isRead: false as const,
+  }));
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    await db.insert(notifications).values(rows.slice(i, i + CHUNK));
+  }
+}
+
 // ─── Query helpers ────────────────────────────────────────────────────────────
 
 export async function getUserNotifications(userId: number, limit = 30) {
