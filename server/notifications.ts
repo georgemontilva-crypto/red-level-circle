@@ -42,6 +42,19 @@ export async function notifyRlcReceived(params: {
   // Push SSE so the client updates the bell and balance instantly
   sseNotifyUser(params.userId, "notification");
   sseNotifyUser(params.userId, "coins");
+  // Web Push nativo al móvil (no-op si VAPID no está configurado)
+  try {
+    const { sendRlcReceivedPush } = await import("./pushService");
+    await sendRlcReceivedPush({
+      userId: params.userId,
+      amount: params.amount,
+      newBalance: params.newBalance,
+      type: params.type,
+      description: params.description,
+    });
+   } catch (e) {
+    console.warn("[Push] RLC push failed:", (e as Error).message);
+  }
 }
 
 export async function createNotification(params: {

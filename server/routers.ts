@@ -1837,6 +1837,37 @@ export const appRouter = router({
           publishedAt: input.isPublished ? new Date() : undefined,
         });
         sseBroadcast("news", { action: "created", id });
+        // Si la noticia se publica inmediatamente, notificar a todos los usuarios
+        if (input.isPublished) {
+          try {
+            // 1. Campanita interna: notificar a todos los usuarios registrados
+            const allUsers = await getAllUsers({ limit: 5000 });
+            for (const u of allUsers) {
+              await createNotification({
+                userId: u.id,
+                type: "news_published",
+                title: `📰 Nueva noticia: ${input.title}`,
+                message: input.excerpt ?? `Se ha publicado una nueva noticia en Red Level Circle.`,
+                link: `/news/${input.slug}`,
+                referenceId: id,
+                referenceType: "news",
+              });
+              sseNotifyUser(u.id, "notification");
+            }
+            // 2. Web Push nativo a todos los dispositivos suscritos
+            const { broadcastPushToAll } = await import("./pushService");
+            broadcastPushToAll({
+              title: `📰 ${input.title}`,
+              body: input.excerpt ?? "Nueva noticia publicada en Red Level Circle.",
+              icon: "/favicon.png",
+              badge: "/favicon.png",
+              url: `/news/${input.slug}`,
+              tag: "news-published",
+            }).catch((e) => console.warn("[Push] broadcastPushToAll news failed:", (e as Error).message));
+          } catch (e) {
+            console.warn("[News] Failed to broadcast notifications:", (e as Error).message);
+          }
+        }
         return { id };
       }),
 
@@ -1861,6 +1892,36 @@ export const appRouter = router({
         }
         if (data.isPublished) {
           await updateNews(id, { ...updateData, publishedAt: new Date() });
+          // Notificar a todos los usuarios cuando se publica una noticia (borrador → publicado)
+          try {
+            const article = await getNewsById(id);
+            if (article) {
+              const allUsers = await getAllUsers({ limit: 5000 });
+              for (const u of allUsers) {
+                await createNotification({
+                  userId: u.id,
+                  type: "news_published",
+                  title: `📰 Nueva noticia: ${article.title}`,
+                  message: (article as any).excerpt ?? `Se ha publicado una nueva noticia en Red Level Circle.`,
+                  link: `/news/${article.slug}`,
+                  referenceId: id,
+                  referenceType: "news",
+                });
+                sseNotifyUser(u.id, "notification");
+              }
+              const { broadcastPushToAll } = await import("./pushService");
+              broadcastPushToAll({
+                title: `📰 ${article.title}`,
+                body: (article as any).excerpt ?? "Nueva noticia publicada en Red Level Circle.",
+                icon: "/favicon.png",
+                badge: "/favicon.png",
+                url: `/news/${article.slug}`,
+                tag: "news-published",
+              }).catch((e) => console.warn("[Push] broadcastPushToAll news failed:", (e as Error).message));
+            }
+          } catch (e) {
+            console.warn("[News] Failed to broadcast notifications on update:", (e as Error).message);
+          }
         } else {
           await updateNews(id, updateData);
         }

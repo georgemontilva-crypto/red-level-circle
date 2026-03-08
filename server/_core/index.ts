@@ -413,6 +413,15 @@ async function runCustomMigrations() {
     '  INDEX `ps_user_idx` (`userId`),' +
     '  UNIQUE KEY `ps_endpoint_unique` (`endpoint`(255))' +
     ')',
+    // 0057: add news_published to notifications type enum
+    "ALTER TABLE `notifications` MODIFY COLUMN `type` ENUM(" +
+    "'bracket_ready','mission_approved','mission_rejected','order_confirmed'," +
+    "'order_processing','order_shipped','order_delivered','order_cancelled'," +
+    "'team_invite','team_invite_accepted','team_invite_rejected'," +
+    "'creator_verified','creator_rejected','verification_approved'," +
+    "'verification_rejected','verification_pending_admin','tournament_full'," +
+    "'match_scheduled','match_result','coins_earned','coins_spent'," +
+    "'news_published','general') NOT NULL",
   ];
   for (const sql of customMigrations) {
     try {

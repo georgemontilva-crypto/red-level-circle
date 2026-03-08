@@ -623,6 +623,7 @@ export const notifications = mysqlTable("notifications", {
     "match_result",
     "coins_earned",
     "coins_spent",
+    "news_published",
     "general",
   ]).notNull(),
   title: varchar("title", { length: 256 }).notNull(),

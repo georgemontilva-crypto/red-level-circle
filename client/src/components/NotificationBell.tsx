@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import {
   Bell, CheckCheck, Trophy, Zap, ShoppingBag,
-  Users, Star, Info, X, ChevronRight,
+  Users, Star, Info, X, ChevronRight, Newspaper,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
@@ -21,6 +21,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
   match_result:         <Trophy   className="w-4 h-4 text-yellow-400" />,
   coins_earned:         <Zap      className="w-4 h-4 text-yellow-400" />,
   coins_spent:          <ShoppingBag className="w-4 h-4 text-muted-foreground" />,
+  news_published:       <Newspaper className="w-4 h-4 text-blue-400" />,
   general:              <Info     className="w-4 h-4 text-muted-foreground"   />,
 };
 
@@ -85,6 +86,7 @@ function NotificationPanel({ dropdownRef, style, onClose }: NotificationPanelPro
     team_invite_rejected: "/teams",
     creator_verified:     "/creators",
     creator_rejected:     "/creators",
+    news_published:       "/news",
     general:              "",
   };
 

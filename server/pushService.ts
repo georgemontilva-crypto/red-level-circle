@@ -16,7 +16,7 @@
 import webpush from "web-push";
 import { getDb } from "./db";
 import { pushSubscriptions } from "../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 // ─── VAPID setup ──────────────────────────────────────────────────────────────
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY ?? "";
@@ -115,6 +115,28 @@ export async function sendPushToUser(userId: number, payload: PushPayload): Prom
         await removePushSubscription(subs[i].endpoint);
       }
     }
+  }
+}
+
+// ─── Broadcast push to ALL subscribed users ─────────────────────────────────
+/**
+ * Send a Web Push notification to every user that has at least one active subscription.
+ * Used for platform-wide events like news publications.
+ * Runs in the background — does NOT block the HTTP response.
+ */
+export async function broadcastPushToAll(payload: PushPayload): Promise<void> {
+  if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) return;
+  const db = await getDb();
+  if (!db) return;
+  // Get all unique userIds that have push subscriptions
+  const rows = await db
+    .selectDistinct({ userId: pushSubscriptions.userId })
+    .from(pushSubscriptions);
+  // Fire-and-forget: send to each user without blocking
+  for (const row of rows) {
+    sendPushToUser(row.userId, payload).catch((e) =>
+      console.warn(`[Push] broadcastPushToAll failed for user ${row.userId}:`, (e as Error).message)
+    );
   }
 }
 
@@ -287,6 +309,90 @@ export function buildRoleApprovedEmail(params: {
     <a href="https://redlevelcircle.gg/dashboard"
        style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">
       IR AL DASHBOARD →
+    </a>
+  `);
+}
+
+// ─── RLC Received ─────────────────────────────────────────────────────────────────────────────────
+export async function sendRlcReceivedPush(params: {
+  userId: number;
+  amount: number;
+  newBalance: number;
+  type: string;
+  description?: string;
+}): Promise<void> {
+  const typeLabels: Record<string, string> = {
+    deposit: "💰 RLC recibidos",
+    bet_won: "🏆 ¡Apuesta ganada!",
+    refund: "↩️ Reembolso RLC",
+    reward: "⭐ Recompensa RLC",
+  };
+  const title = typeLabels[params.type] ?? "💰 RLC recibidos";
+  const body = params.description
+    ? `${params.description}. Saldo: ${params.newBalance.toLocaleString()} RLC`
+    : `Has recibido ${params.amount.toLocaleString()} RLC. Saldo: ${params.newBalance.toLocaleString()} RLC`;
+
+  await sendPushToUser(params.userId, {
+    title,
+    body,
+    icon: "/favicon.png",
+    badge: "/favicon.png",
+    url: "/dashboard",
+    tag: "rlc-coins",
+  });
+}
+
+export function buildRlcReceivedEmail(params: {
+  userName: string;
+  amount: number;
+  newBalance: number;
+  type: string;
+  description?: string;
+}): string {
+  const typeLabels: Record<string, string> = {
+    deposit: "Depósito de RLC",
+    bet_won: "Apuesta ganada",
+    refund: "Reembolso de RLC",
+    reward: "Recompensa RLC",
+  };
+  const label = typeLabels[params.type] ?? "RLC recibidos";
+  const colorMap: Record<string, string> = {
+    deposit: "rgba(220,38,38,0.08)",
+    bet_won: "rgba(234,179,8,0.08)",
+    refund: "rgba(59,130,246,0.08)",
+    reward: "rgba(34,197,94,0.08)",
+  };
+  const borderMap: Record<string, string> = {
+    deposit: "rgba(220,38,38,0.25)",
+    bet_won: "rgba(234,179,8,0.25)",
+    refund: "rgba(59,130,246,0.25)",
+    reward: "rgba(34,197,94,0.25)",
+  };
+  const amountColorMap: Record<string, string> = {
+    deposit: "#f87171",
+    bet_won: "#fde047",
+    refund: "#93c5fd",
+    reward: "#86efac",
+  };
+  const bg = colorMap[params.type] ?? colorMap.deposit;
+  const border = borderMap[params.type] ?? borderMap.deposit;
+  const amountColor = amountColorMap[params.type] ?? amountColorMap.deposit;
+
+  return emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:20px;font-weight:700;">${label} 💰</h2>
+    <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;line-height:1.6;">
+      Hola <strong style="color:#fff;">${params.userName}</strong>, tu saldo ha sido actualizado.
+    </p>
+    <div style="background:${bg};border:1px solid ${border};border-radius:12px;padding:20px;margin-bottom:24px;">
+      <p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">RLC recibidos</p>
+      <p style="margin:0 0 12px;color:${amountColor};font-size:28px;font-weight:900;letter-spacing:2px;">+${params.amount.toLocaleString()} RLC</p>
+      ${params.description ? `<p style="margin:0 0 12px;color:#a1a1aa;font-size:13px;">${params.description}</p>` : ""}
+      <p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Saldo actual</p>
+      <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">${params.newBalance.toLocaleString()} RLC</p>
+    </div>
+    <a href="https://redlevelcircle.gg/dashboard"
+       style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">
+      VER MI WALLET →
     </a>
   `);
 }
