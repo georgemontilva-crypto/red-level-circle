@@ -29,6 +29,9 @@ import {
   Send,
   CheckSquare,
   Download,
+  UserPlus,
+  UserMinus,
+  Search,
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -52,6 +55,127 @@ const NEXT_STATUS_LABEL: Record<string, string> = {
   registration_open: "CERRAR INSCRIPCIONES",
   registration_closed: "INICIAR TORNEO",
 };
+
+// ─── Collaborators Section ───────────────────────────────────────────────────
+function CollaboratorsSection({ tournamentId }: { tournamentId: number }) {
+  const [search, setSearch] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+  const { data: collaborators, refetch } = trpc.collaborators.list.useQuery({ tournamentId });
+  const { data: searchResults } = trpc.collaborators.searchUsers.useQuery(
+    { query: search },
+    { enabled: search.length >= 2 }
+  );
+  const addMutation = trpc.collaborators.add.useMutation({
+    onSuccess: () => { toast.success("Colaborador agregado"); refetch(); setSearch(""); setShowSearch(false); },
+    onError: e => toast.error(e.message),
+  });
+  const removeMutation = trpc.collaborators.remove.useMutation({
+    onSuccess: () => { toast.success("Colaborador eliminado"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+
+  return (
+    <div
+      className="rounded-xl p-5"
+      style={{ background: "var(--bg-card)", border: "1px solid oklch(0.18 0.01 0)" }}
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-display text-sm font-bold tracking-wider text-foreground flex items-center gap-2">
+          <UserCheck size={16} style={{ color: "oklch(0.55 0.22 25)" }} />
+          COLABORADORES ({collaborators?.length ?? 0})
+        </h2>
+        <button
+          onClick={() => setShowSearch(s => !s)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-display tracking-wider transition-colors"
+          style={{ background: "oklch(0.55 0.22 25 / 0.15)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", color: "oklch(0.65 0.22 25)" }}
+        >
+          <UserPlus size={13} /> AGREGAR
+        </button>
+      </div>
+
+      {/* Search panel */}
+      {showSearch && (
+        <div className="mb-4 space-y-2">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar usuario por nombre o email..."
+              className="w-full pl-9 pr-4 py-2 rounded-lg text-sm outline-none"
+              style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.25 0.01 0)", color: "var(--text-primary)" }}
+            />
+          </div>
+          {searchResults && searchResults.length > 0 && (
+            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid oklch(0.22 0.01 0)" }}>
+              {searchResults.map((u: any) => (
+                <div
+                  key={u.id}
+                  className="flex items-center justify-between px-3 py-2 hover:bg-white/5 transition-colors"
+                  style={{ borderBottom: "1px solid oklch(0.18 0.01 0)" }}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-secondary flex items-center justify-center text-xs font-bold" style={{ color: "oklch(0.65 0.22 25)" }}>
+                      {(u.nickname ?? u.name ?? "?").charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm text-foreground font-display">{u.nickname ?? u.name}</p>
+                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => addMutation.mutate({ tournamentId, userId: u.id })}
+                    disabled={addMutation.isPending}
+                    className="px-3 py-1 rounded-lg text-xs font-display tracking-wider transition-colors"
+                    style={{ background: "oklch(0.55 0.22 25 / 0.2)", border: "1px solid oklch(0.55 0.22 25 / 0.4)", color: "oklch(0.65 0.22 25)" }}
+                  >
+                    AGREGAR
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {search.length >= 2 && searchResults?.length === 0 && (
+            <p className="text-xs text-muted-foreground text-center py-2 font-mono">No se encontraron usuarios</p>
+          )}
+        </div>
+      )}
+
+      {/* Current collaborators */}
+      {!collaborators || collaborators.length === 0 ? (
+        <p className="text-muted-foreground text-sm text-center py-4 font-mono">Sin colaboradores asignados</p>
+      ) : (
+        <div className="space-y-2">
+          {collaborators.map((c: any) => (
+            <div
+              key={c.id}
+              className="flex items-center justify-between px-3 py-2.5 rounded-lg"
+              style={{ background: "oklch(0.12 0.005 0)", border: "1px solid oklch(0.20 0.01 0)" }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-bold" style={{ color: "oklch(0.65 0.22 25)" }}>
+                  {(c.user?.nickname ?? c.user?.name ?? "?").charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm text-foreground font-display">{c.user?.nickname ?? c.user?.name ?? "Usuario"}</p>
+                  <p className="text-xs text-muted-foreground">Colaborador desde {new Date(c.addedAt).toLocaleDateString("es-ES")}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => removeMutation.mutate({ tournamentId, userId: c.userId })}
+                disabled={removeMutation.isPending}
+                className="p-1.5 rounded-lg transition-colors hover:bg-red-900/30"
+                title="Quitar colaborador"
+              >
+                <UserMinus size={14} className="text-red-400" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function TournamentManage() {
   const params = useParams<{ id: string }>();
@@ -634,6 +758,9 @@ export default function TournamentManage() {
             </div>
           )}
         </div>
+
+        {/* Collaborators */}
+        <CollaboratorsSection tournamentId={id} />
 
         {/* Bracket / Matches */}
         {matches && matches.length > 0 && (

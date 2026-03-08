@@ -48,7 +48,8 @@ const Missions        = lazy(() => import("./pages/Missions"));
 const CreatorMissions = lazy(() => import("./pages/CreatorMissions"));
 const Store           = lazy(() => import("./pages/Store"));
 const MyGallery       = lazy(() => import("./pages/MyGallery"));
-const MatchPageLazy   = lazy(() => import("./pages/MatchPage"));
+const MatchPageLazy      = lazy(() => import("./pages/MatchPage"));
+const OrganizerProfile   = lazy(() => import("./pages/OrganizerProfile"));
 
 // Legal pages (very rarely visited)
 const Terminos     = lazy(() => import("./pages/legal/terminos"));
@@ -160,6 +161,7 @@ function Router() {
               <Route path="/missions" component={Missions} />
               <Route path="/creator-missions" component={CreatorMissions} />
               <Route path="/profile/:id" component={UserProfile} />
+              <Route path="/organizer/:id" component={OrganizerProfile} />
               <Route path="/store/collections/:slug" component={Store} />
               <Route path="/store/collections" component={Store} />
               <Route path="/store/physical" component={Store} />

@@ -21,7 +21,12 @@ export const users = mysqlTable("users", {
   loginMethod: varchar("loginMethod", { length: 64 }),
   passwordHash: varchar("passwordHash", { length: 255 }),
   emailVerified: boolean("emailVerified").default(false).notNull(),
-  role: mysqlEnum("role", ["user", "premium", "organizer", "admin", "super_admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["player", "to", "cdc", "partner", "admin", "super_admin"]).default("player").notNull(),
+  // Extra permission: CDC/Partner that also got TO approval
+  canCreateTournaments: boolean("canCreateTournaments").default(false).notNull(),
+  // Organizer public profile fields (filled when requesting TO role)
+  orgName: varchar("orgName", { length: 128 }),
+  orgDescription: text("orgDescription"),
   // Profile type chosen during onboarding
   profileType: mysqlEnum("profileType", ["player", "team_captain", "event_creator"]).default("player"),
   avatar: text("avatar"),
@@ -1143,3 +1148,39 @@ export const matchCheckins = mysqlTable("match_checkins", {
   index("mci_match_idx").on(t.matchId),
 ]);
 export type MatchCheckin = typeof matchCheckins.$inferSelect;
+
+// ─── Role Requests ────────────────────────────────────────────────────────────
+export const roleRequests = mysqlTable("role_requests", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  requestedRole: mysqlEnum("requestedRole", ["to", "cdc", "partner"]).notNull(),
+  orgName: varchar("orgName", { length: 128 }).notNull(),
+  orgDescription: text("orgDescription"),
+  experience: text("experience"),
+  discordContact: varchar("discordContact", { length: 128 }),
+  websiteUrl: varchar("websiteUrl", { length: 256 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewNote: text("reviewNote"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => [
+  index("rr_user_idx").on(t.userId),
+]);
+export type RoleRequest = typeof roleRequests.$inferSelect;
+export type InsertRoleRequest = typeof roleRequests.$inferInsert;
+
+// ─── Tournament Collaborators ─────────────────────────────────────────────────
+export const tournamentCollaborators = mysqlTable("tournament_collaborators", {
+  id: int("id").autoincrement().primaryKey(),
+  tournamentId: int("tournamentId").notNull(),
+  userId: int("userId").notNull(),
+  addedBy: int("addedBy").notNull(),
+  addedAt: timestamp("addedAt").defaultNow().notNull(),
+}, (t) => [
+  index("tc_tournament_idx").on(t.tournamentId),
+  index("tc_user_idx").on(t.userId),
+]);
+export type TournamentCollaborator = typeof tournamentCollaborators.$inferSelect;
+export type InsertTournamentCollaborator = typeof tournamentCollaborators.$inferInsert;

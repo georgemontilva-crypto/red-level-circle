@@ -12,7 +12,7 @@ import {
   Trophy, Coins, Shield, CheckCircle, XCircle, Edit3,
   Trash2, Plus, Package, Eye, BarChart3, Crown, Youtube, Twitch, Twitter, Instagram, Clock, Gamepad2,
   BadgeCheck, Upload, ImageIcon, X, Layout, ArrowUp, ArrowDown, AlertTriangle, CheckCircle2, RefreshCw, Database,
-  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil, Sparkles
+  MapPin, Phone, Key, AlertCircle, ChevronRight, Zap, Pencil, Sparkles, UserCog, ExternalLink
 } from "lucide-react";
 import React, { useState, useRef, useEffect } from "react";
 import {
@@ -1554,6 +1554,171 @@ function TournamentsTab() {
   );
 }
 
+// ─── Role Requests Tab ───────────────────────────────────────────────────────
+function RoleRequestsTab() {
+  const { data: requests, refetch } = trpc.roleRequests.listPending.useQuery();
+  const reviewMutation = trpc.roleRequests.review.useMutation({
+    onSuccess: () => { toast.success("Solicitud procesada"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
+  const [notes, setNotes] = useState<Record<number, string>>({});
+  const [filter, setFilter] = useState<"pending" | "approved" | "rejected">("pending");
+
+  const { data: allRequests, refetch: refetchAll } = trpc.roleRequests.listAll.useQuery({ status: filter });
+
+  const ROLE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+    to: { label: "Tournament Organizer", color: "text-purple-300", bg: "bg-purple-500/10 border-purple-500/30" },
+    cdc: { label: "Creador de Contenido", color: "text-blue-300", bg: "bg-blue-500/10 border-blue-500/30" },
+    partner: { label: "Partner", color: "text-green-300", bg: "bg-green-500/10 border-green-500/30" },
+  };
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: "text-yellow-400",
+    approved: "text-green-400",
+    rejected: "text-red-400",
+  };
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader icon={UserCog} title="SOLICITUDES DE ROL" subtitle="Aprueba o rechaza solicitudes de TO, CDC y Partner" />
+
+      {/* Pending count badge */}
+      {requests && requests.length > 0 && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg border bg-yellow-400/10 border-yellow-400/30">
+          <Clock className="w-4 h-4 text-yellow-400" />
+          <span className="text-yellow-400 font-orbitron font-bold text-sm">{requests.length} solicitud{requests.length !== 1 ? "es" : ""} pendiente{requests.length !== 1 ? "s" : ""}</span>
+        </div>
+      )}
+
+      {/* Filter */}
+      <div className="flex gap-2">
+        {(["pending", "approved", "rejected"] as const).map(s => (
+          <button
+            key={s}
+            onClick={() => setFilter(s)}
+            className={`px-4 py-1.5 rounded-lg border font-mono text-xs transition-colors ${
+              filter === s
+                ? s === "pending" ? "bg-yellow-400/20 border-yellow-400/50 text-yellow-300"
+                  : s === "approved" ? "bg-green-400/20 border-green-400/50 text-green-300"
+                  : "bg-red-400/20 border-red-400/50 text-red-300"
+                : "border-border text-muted-foreground hover:text-white"
+            }`}
+          >
+            {s === "pending" ? "PENDIENTES" : s === "approved" ? "APROBADAS" : "RECHAZADAS"}
+          </button>
+        ))}
+      </div>
+
+      {/* List */}
+      <div className="space-y-3">
+        {!allRequests || allRequests.length === 0 ? (
+          <p className="text-muted-foreground text-sm text-center py-8 font-mono">No hay solicitudes {filter === "pending" ? "pendientes" : filter === "approved" ? "aprobadas" : "rechazadas"}</p>
+        ) : (
+          allRequests.map((req: any) => {
+            const roleInfo = ROLE_LABELS[req.requestedRole] ?? { label: req.requestedRole, color: "text-zinc-300", bg: "bg-zinc-500/10 border-zinc-500/30" };
+            return (
+              <div key={req.id} className="bg-card/60 border border-border rounded-xl p-4 space-y-3">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-secondary overflow-hidden flex-shrink-0">
+                      <UserAvatar avatar={req.user?.avatar} name={req.user?.name} size={40} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="text-white font-rajdhani font-semibold">{req.user?.nickname ?? req.user?.name ?? "Usuario"}</p>
+                        <Link href={`/profile/${req.userId}`}>
+                          <ExternalLink className="w-3.5 h-3.5 text-muted-foreground hover:text-white cursor-pointer" />
+                        </Link>
+                      </div>
+                      <p className="text-muted-foreground text-xs">{req.user?.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <span className={`px-3 py-1 rounded-full text-xs font-orbitron font-bold border ${roleInfo.bg} ${roleInfo.color}`}>
+                      {roleInfo.label}
+                    </span>
+                    <span className={`text-xs font-mono ${STATUS_COLORS[req.status]}`}>{req.status.toUpperCase()}</span>
+                  </div>
+                </div>
+
+                {/* Details */}
+                {req.orgName && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-xs font-mono text-muted-foreground mb-1">ORGANIZACIÓN / CANAL</p>
+                      <p className="text-white">{req.orgName}</p>
+                    </div>
+                    {req.discordContact && (
+                      <div>
+                        <p className="text-xs font-mono text-muted-foreground mb-1">DISCORD</p>
+                        <p className="text-white">{req.discordContact}</p>
+                      </div>
+                    )}
+                    {req.websiteUrl && (
+                      <div>
+                        <p className="text-xs font-mono text-muted-foreground mb-1">SITIO WEB</p>
+                        <a href={req.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-red-400 hover:text-red-300 text-sm truncate block">{req.websiteUrl}</a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {req.orgDescription && (
+                  <div>
+                    <p className="text-xs font-mono text-muted-foreground mb-1">DESCRIPCIÓN</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{req.orgDescription}</p>
+                  </div>
+                )}
+                {req.experience && (
+                  <div>
+                    <p className="text-xs font-mono text-muted-foreground mb-1">EXPERIENCIA</p>
+                    <p className="text-sm text-zinc-300 leading-relaxed">{req.experience}</p>
+                  </div>
+                )}
+
+                {/* Review actions (only for pending) */}
+                {req.status === "pending" && (
+                  <div className="pt-2 border-t border-border space-y-2">
+                    <input
+                      value={notes[req.id] ?? ""}
+                      onChange={e => setNotes(n => ({ ...n, [req.id]: e.target.value }))}
+                      placeholder="Nota para el usuario (opcional)..."
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "approve", reviewNote: notes[req.id] })}
+                        disabled={reviewMutation.isPending}
+                        className="flex-1 py-2 rounded-lg bg-green-600/20 border border-green-500/40 text-green-300 hover:bg-green-600/30 font-orbitron text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" /> APROBAR
+                      </button>
+                      <button
+                        onClick={() => reviewMutation.mutate({ requestId: req.id, action: "reject", reviewNote: notes[req.id] })}
+                        disabled={reviewMutation.isPending}
+                        className="flex-1 py-2 rounded-lg bg-red-600/20 border border-red-500/40 text-red-300 hover:bg-red-600/30 font-orbitron text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <XCircle className="w-3.5 h-3.5" /> RECHAZAR
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Review note for processed */}
+                {req.status !== "pending" && req.reviewNote && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs font-mono text-muted-foreground">NOTA: <span className="text-zinc-300">{req.reviewNote}</span></p>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Teams Tab ────────────────────────────────────────────────────────────────
 function TeamsTab() {
   const { data: teams, refetch } = trpc.admin.listTeams.useQuery();
@@ -2370,6 +2535,7 @@ export default function AdminPanel() {
             { value: "bets", label: "APUESTAS", icon: Coins },
             { value: "audit", label: "AUDITORÍA", icon: Database },
             { value: "allies", label: "ALIADOS", icon: MapPin },
+            { value: "role_requests", label: "SOLICITUDES ROL", icon: UserCog },
           ].map(({ value, label, icon: Icon }) => (
             <TabsTrigger key={value} value={value} className="font-orbitron text-xs data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Icon className="w-3.5 h-3.5 mr-1.5" />
@@ -2395,6 +2561,7 @@ export default function AdminPanel() {
           <TabsContent value="bets"><BetsTab /></TabsContent>
           <TabsContent value="audit"><AuditTab /></TabsContent>
           <TabsContent value="allies"><AlliesTab /></TabsContent>
+          <TabsContent value="role_requests"><RoleRequestsTab /></TabsContent>
         </div>
       </Tabs>
     </div>

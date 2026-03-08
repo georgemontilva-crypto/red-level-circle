@@ -502,6 +502,238 @@ function CreatorChannelsSection() {
   );
 }
 
+// ── Role Request Section ───────────────────────────────────────────────────────────────────
+function RoleRequestSection() {
+  const { data: me } = trpc.auth.me.useQuery();
+  const { data: myRequests, refetch } = trpc.roleRequests.myRequests.useQuery();
+  const submitMutation = trpc.roleRequests.submit.useMutation({
+    onSuccess: () => { toast.success("Solicitud enviada. El equipo RLC la revisará pronto."); refetch(); setShowForm(false); },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const [showForm, setShowForm] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"to" | "cdc" | "partner" | "">("" );
+  const [form, setForm] = useState({ orgName: "", orgDescription: "", experience: "", discordContact: "", websiteUrl: "" });
+
+  const currentRole = (me as any)?.role ?? "player";
+  const canCreateT = (me as any)?.canCreateTournaments;
+  const alreadyTO = currentRole === "to" || canCreateT;
+  const alreadyCDC = currentRole === "cdc";
+  const alreadyPartner = currentRole === "partner";
+  const isPrivileged = ["to", "cdc", "partner", "admin", "super_admin"].includes(currentRole);
+
+  const roleOptions = [
+    {
+      value: "to" as const,
+      label: "Tournament Organizer (TO)",
+      icon: "🏆",
+      desc: "Crea y gestiona torneos en la plataforma. Tendrás tu perfil público de organizador con historial de torneos.",
+      disabled: alreadyTO,
+      disabledMsg: alreadyTO ? "Ya eres TO" : "",
+    },
+    {
+      value: "cdc" as const,
+      label: "Creador de Contenido (CDC)",
+      icon: "🎮",
+      desc: "Accede al panel de stream, gestiona tu canal y aparece en la sección de creadores de RLC.",
+      disabled: alreadyCDC,
+      disabledMsg: alreadyCDC ? "Ya eres CDC" : "",
+    },
+    {
+      value: "partner" as const,
+      label: "Partner / Tienda Aliada",
+      icon: "🤝",
+      desc: "Para tiendas, marcas y organizaciones aliadas. Accede al panel de partner y beneficios exclusivos.",
+      disabled: alreadyPartner,
+      disabledMsg: alreadyPartner ? "Ya eres Partner" : "",
+    },
+  ];
+
+  const statusInfo = {
+    pending: { label: "Pendiente de revisión", color: "text-yellow-400", bg: "bg-yellow-400/10 border-yellow-400/30", icon: <Clock className="w-3.5 h-3.5" /> },
+    approved: { label: "Aprobada", color: "text-green-400", bg: "bg-green-400/10 border-green-400/30", icon: <BadgeCheck className="w-3.5 h-3.5" /> },
+    rejected: { label: "Rechazada", color: "text-red-400", bg: "bg-red-400/10 border-red-400/30", icon: <XCircle className="w-3.5 h-3.5" /> },
+  };
+
+  const roleLabel: Record<string, string> = { to: "TO", cdc: "CDC", partner: "Partner" };
+
+  return (
+    <div className="space-y-4">
+      <h2 className="font-orbitron text-sm tracking-widest text-red-400 flex items-center gap-2">
+        <Crown className="w-4 h-4" /> SOLICITAR ROL
+      </h2>
+      <div className="rounded-xl border border-border bg-card/50 p-5 space-y-4">
+        {/* Current role badge */}
+        <div className="flex items-center gap-3">
+          <span className="text-xs font-mono text-muted-foreground">ROL ACTUAL:</span>
+          <span className={`px-3 py-1 rounded-full text-xs font-orbitron font-bold border ${
+            currentRole === "super_admin" ? "bg-yellow-500/20 border-yellow-500/50 text-yellow-300" :
+            currentRole === "admin" ? "bg-red-500/20 border-red-500/50 text-red-300" :
+            currentRole === "to" ? "bg-purple-500/20 border-purple-500/50 text-purple-300" :
+            currentRole === "cdc" ? "bg-blue-500/20 border-blue-500/50 text-blue-300" :
+            currentRole === "partner" ? "bg-green-500/20 border-green-500/50 text-green-300" :
+            "bg-zinc-500/20 border-zinc-500/50 text-zinc-300"
+          }`}>
+            {currentRole === "player" ? "JUGADOR" :
+             currentRole === "to" ? "TOURNAMENT ORGANIZER" :
+             currentRole === "cdc" ? "CREADOR DE CONTENIDO" :
+             currentRole === "partner" ? "PARTNER" :
+             currentRole === "admin" ? "ADMINISTRADOR" :
+             currentRole === "super_admin" ? "SUPER ADMIN" : currentRole.toUpperCase()}
+          </span>
+          {canCreateT && currentRole !== "to" && (
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono border bg-purple-500/10 border-purple-500/30 text-purple-300">+TO</span>
+          )}
+        </div>
+
+        {/* Existing requests */}
+        {myRequests && myRequests.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-mono text-muted-foreground tracking-widest">MIS SOLICITUDES</p>
+            {myRequests.map((req: any) => (
+              <div key={req.id} className={`flex items-center justify-between px-4 py-3 rounded-lg border ${statusInfo[req.status as keyof typeof statusInfo]?.bg ?? "bg-secondary border-border"}`}>
+                <div className="flex items-center gap-2">
+                  {statusInfo[req.status as keyof typeof statusInfo]?.icon}
+                  <span className="text-sm font-mono text-white">{roleLabel[req.requestedRole] ?? req.requestedRole}</span>
+                  <span className={`text-xs font-mono ${statusInfo[req.status as keyof typeof statusInfo]?.color}`}>
+                    — {statusInfo[req.status as keyof typeof statusInfo]?.label}
+                  </span>
+                </div>
+                {req.reviewNote && (
+                  <span className="text-xs text-muted-foreground max-w-[200px] truncate">{req.reviewNote}</span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Role options */}
+        {!showForm && (
+          <div className="grid grid-cols-1 gap-3">
+            {roleOptions.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                disabled={opt.disabled}
+                onClick={() => { setSelectedRole(opt.value); setShowForm(true); }}
+                className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all ${
+                  opt.disabled
+                    ? "opacity-40 cursor-not-allowed border-border bg-secondary/30"
+                    : "border-border hover:border-red-500/50 hover:bg-red-500/5 cursor-pointer"
+                }`}
+              >
+                <span className="text-2xl mt-0.5">{opt.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-orbitron font-bold text-sm text-white">{opt.label}</span>
+                    {opt.disabled && <span className="text-xs font-mono text-green-400">{opt.disabledMsg}</span>}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{opt.desc}</p>
+                </div>
+                {!opt.disabled && <ChevronDown className="w-4 h-4 text-muted-foreground mt-1 flex-shrink-0 -rotate-90" />}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Request form */}
+        {showForm && selectedRole && (
+          <div className="space-y-4 pt-2 border-t border-border">
+            <p className="text-sm font-orbitron text-white">
+              Solicitud: <span className="text-red-400">{roleOptions.find(r => r.value === selectedRole)?.label}</span>
+            </p>
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1.5">
+                {selectedRole === "to" ? "NOMBRE DE LA ORGANIZACIÓN / EVENTO *" :
+                 selectedRole === "cdc" ? "NOMBRE DE TU CANAL / MARCA *" :
+                 "NOMBRE DE TU TIENDA / EMPRESA *"}
+              </label>
+              <input
+                value={form.orgName}
+                onChange={e => setForm(f => ({ ...f, orgName: e.target.value }))}
+                placeholder={selectedRole === "to" ? "Ej: Red Dragons Esports" : selectedRole === "cdc" ? "Ej: GamingConNacho" : "Ej: GamerStore LATAM"}
+                maxLength={128}
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1.5">DESCRIPCIÓN</label>
+              <textarea
+                value={form.orgDescription}
+                onChange={e => setForm(f => ({ ...f, orgDescription: e.target.value }))}
+                placeholder="Cuéntanos sobre tu organización, canal o tienda..."
+                rows={3}
+                maxLength={1000}
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors resize-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1.5">EXPERIENCIA / TRAYECTORIA</label>
+              <textarea
+                value={form.experience}
+                onChange={e => setForm(f => ({ ...f, experience: e.target.value }))}
+                placeholder={selectedRole === "to" ? "Torneos organizados anteriormente, comunidades, etc." : selectedRole === "cdc" ? "Años creando contenido, plataformas, logros..." : "Años en el mercado, productos, alianzas previas..."}
+                rows={3}
+                maxLength={2000}
+                className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors resize-none"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1.5">DISCORD DE CONTACTO</label>
+                <input
+                  value={form.discordContact}
+                  onChange={e => setForm(f => ({ ...f, discordContact: e.target.value }))}
+                  placeholder="usuario#0000 o @usuario"
+                  maxLength={128}
+                  className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-mono text-muted-foreground tracking-widest mb-1.5">SITIO WEB / RED SOCIAL</label>
+                <input
+                  value={form.websiteUrl}
+                  onChange={e => setForm(f => ({ ...f, websiteUrl: e.target.value }))}
+                  placeholder="https://..."
+                  maxLength={256}
+                  className="w-full bg-secondary border border-border rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => { setShowForm(false); setSelectedRole(""); setForm({ orgName: "", orgDescription: "", experience: "", discordContact: "", websiteUrl: "" }); }}
+                className="flex-1 py-2.5 rounded-lg border border-border text-muted-foreground hover:text-white font-mono text-sm transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!selectedRole || form.orgName.length < 2) return;
+                  submitMutation.mutate({
+                    requestedRole: selectedRole,
+                    orgName: form.orgName,
+                    orgDescription: form.orgDescription || undefined,
+                    experience: form.experience || undefined,
+                    discordContact: form.discordContact || undefined,
+                    websiteUrl: form.websiteUrl || undefined,
+                  });
+                }}
+                disabled={form.orgName.length < 2 || submitMutation.isPending}
+                className="flex-1 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-orbitron font-bold text-sm tracking-widest transition-colors"
+              >
+                {submitMutation.isPending ? "Enviando..." : "ENVIAR SOLICITUD"}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function VerificationSection() {
   const { data: myRequest, refetch } = trpc.verification.myRequest.useQuery();
   const requestMutation = trpc.verification.request.useMutation({
@@ -1009,6 +1241,8 @@ export default function Settings() {
         <RosterPhotoUpload currentUrl={(me as { rosterPhoto?: string })?.rosterPhoto ?? null} />
         {/* Creator Channels */}
         <CreatorChannelsSection />
+        {/* Role Requests */}
+        <RoleRequestSection />
         {/* Verification */}
         <VerificationSection />
         {/* Save Button */}

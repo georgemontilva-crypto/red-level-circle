@@ -174,7 +174,7 @@ import { validateImageMime } from "./mimeValidation";
 import { generateRosterCard } from "./rosterCard";
 import { getDb } from "./db";
 import { eq, inArray, sql, and, or, desc, isNotNull } from "drizzle-orm";
-import { sectionBanners, tournaments, teams, users, streams, tournamentMatches, tournamentAnnouncements, tournamentCheckins, tournamentFreeAgents, matchChatMessages, matchDisputes, matchResultConfirmations, tournamentActivityLog, matchCheckins } from "../drizzle/schema";
+import { sectionBanners, tournaments, teams, users, streams, tournamentMatches, tournamentAnnouncements, tournamentCheckins, tournamentFreeAgents, matchChatMessages, matchDisputes, matchResultConfirmations, tournamentActivityLog, matchCheckins, roleRequests, tournamentCollaborators } from "../drizzle/schema";
 import { getUserNotifications, getUnreadCount, markAllRead, markOneRead, createNotification, notifyRlcReceived } from "./notifications";
 import { eventBus } from "./eventBus";
 import {
@@ -200,12 +200,28 @@ import { syncTwitchStreams, syncYouTubeStreams } from "./twitchSync";
 // ─── Guards ───────────────────────────────────────────────────────────────────
 // Helper: checks if a role has admin-level privileges (admin or super_admin)
 const isAdmin = (role: string) => role === "admin" || role === "super_admin";
+// Helper: checks if user can create tournaments (TO, admin, super_admin, or CDC/Partner with canCreateTournaments)
+const canCreateTournaments = (user: { role: string; canCreateTournaments?: boolean | null }) =>
+  user.role === "to" || isAdmin(user.role) || !!user.canCreateTournaments;
 
 const premiumProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (ctx.user.role !== "premium" && !isAdmin(ctx.user.role)) {
+  // In the new role system, TO, CDC, Partner, admin, super_admin all have premium-level access
+  const privilegedRoles = ["to", "cdc", "partner", "admin", "super_admin"];
+  if (!privilegedRoles.includes(ctx.user.role)) {
     throw new TRPCError({
       code: "FORBIDDEN",
-      message: "Esta funcionalidad requiere una cuenta Premium.",
+      message: "Esta funcionalidad requiere una cuenta con rol especial.",
+    });
+  }
+  return next({ ctx });
+});
+
+// toProcedure: requires TO role, or admin/super_admin, or canCreateTournaments flag
+const toProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!canCreateTournaments(ctx.user as any)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Solo organizadores de torneos (TO) pueden realizar esta acción.",
     });
   }
   return next({ ctx });
@@ -5344,6 +5360,315 @@ Genera el reporte de precio RLC para este producto.`;
         // Generar bracket con seeding
         await generateBracket(input.tournamentId, seededOrder);
         return { success: true, seededOrder };
+      }),
+  }),
+
+  // ─── Role Requests ───────────────────────────────────────────────────────────────────
+  roleRequests: router({
+    // Submit a new role request (any authenticated user)
+    submit: protectedProcedure
+      .input(z.object({
+        requestedRole: z.enum(["to", "cdc", "partner"]),
+        orgName: z.string().min(2).max(128),
+        orgDescription: z.string().max(1000).optional(),
+        experience: z.string().max(2000).optional(),
+        discordContact: z.string().max(128).optional(),
+        websiteUrl: z.string().max(256).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        // Check if user already has a pending request for this role
+        const existing = await db.select().from(roleRequests)
+          .where(and(
+            eq(roleRequests.userId, ctx.user.id),
+            eq(roleRequests.requestedRole, input.requestedRole),
+            eq(roleRequests.status, "pending")
+          ))
+          .limit(1);
+        if (existing.length > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Ya tienes una solicitud pendiente para este rol." });
+        }
+        await db.insert(roleRequests).values({
+          userId: ctx.user.id,
+          requestedRole: input.requestedRole,
+          orgName: input.orgName,
+          orgDescription: input.orgDescription ?? null,
+          experience: input.experience ?? null,
+          discordContact: input.discordContact ?? null,
+          websiteUrl: input.websiteUrl ?? null,
+          status: "pending",
+        });
+        // Notify admins
+        const admins = await db.select({ id: users.id }).from(users)
+          .where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
+        await Promise.all(admins.map(a =>
+          createNotification(a.id, "system",
+            `Nueva solicitud de rol ${input.requestedRole.toUpperCase()} de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"}`)
+        ));
+        return { success: true };
+      }),
+
+    // Get my role requests
+    myRequests: protectedProcedure.query(async ({ ctx }) => {
+      const db = await getDb();
+      return db.select().from(roleRequests)
+        .where(eq(roleRequests.userId, ctx.user.id))
+        .orderBy(desc(roleRequests.createdAt));
+    }),
+
+    // Admin: list all role requests
+    adminList: adminProcedure
+      .input(z.object({
+        status: z.enum(["pending", "approved", "rejected", "all"]).default("pending"),
+      }).optional())
+      .query(async ({ input }) => {
+        const db = await getDb();
+        const statusFilter = input?.status && input.status !== "all" ? input.status : undefined;
+        const rows = await db.select({
+          id: roleRequests.id,
+          userId: roleRequests.userId,
+          requestedRole: roleRequests.requestedRole,
+          orgName: roleRequests.orgName,
+          orgDescription: roleRequests.orgDescription,
+          experience: roleRequests.experience,
+          discordContact: roleRequests.discordContact,
+          websiteUrl: roleRequests.websiteUrl,
+          status: roleRequests.status,
+          reviewNote: roleRequests.reviewNote,
+          reviewedAt: roleRequests.reviewedAt,
+          createdAt: roleRequests.createdAt,
+          userName: users.name,
+          userNickname: users.nickname,
+          userAvatar: users.avatar,
+          userEmail: users.email,
+          userRole: users.role,
+        })
+        .from(roleRequests)
+        .leftJoin(users, eq(roleRequests.userId, users.id))
+        .where(statusFilter ? eq(roleRequests.status, statusFilter as any) : undefined)
+        .orderBy(desc(roleRequests.createdAt));
+        return rows;
+      }),
+
+    // Admin: approve or reject a role request
+    review: adminProcedure
+      .input(z.object({
+        requestId: z.number(),
+        action: z.enum(["approved", "rejected"]),
+        reviewNote: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [req] = await db.select().from(roleRequests)
+          .where(eq(roleRequests.id, input.requestId)).limit(1);
+        if (!req) throw new TRPCError({ code: "NOT_FOUND" });
+        if (req.status !== "pending") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Esta solicitud ya fue revisada." });
+        }
+        // Update request status
+        await db.update(roleRequests)
+          .set({
+            status: input.action,
+            reviewedBy: ctx.user.id,
+            reviewNote: input.reviewNote ?? null,
+            reviewedAt: new Date(),
+          })
+          .where(eq(roleRequests.id, input.requestId));
+
+        if (input.action === "approved") {
+          const user = await getUserById(req.userId);
+          // Determine new role and canCreateTournaments flag
+          const currentRole = user?.role ?? "player";
+          const isCdcOrPartner = currentRole === "cdc" || currentRole === "partner";
+
+          if (req.requestedRole === "to") {
+            // If user is CDC or Partner, just set canCreateTournaments flag
+            if (isCdcOrPartner) {
+              await db.update(users).set({ canCreateTournaments: true, orgName: req.orgName, orgDescription: req.orgDescription ?? null })
+                .where(eq(users.id, req.userId));
+            } else {
+              await db.update(users).set({ role: "to", orgName: req.orgName, orgDescription: req.orgDescription ?? null })
+                .where(eq(users.id, req.userId));
+            }
+          } else if (req.requestedRole === "cdc") {
+            await db.update(users).set({ role: "cdc" }).where(eq(users.id, req.userId));
+          } else if (req.requestedRole === "partner") {
+            await db.update(users).set({ role: "partner" }).where(eq(users.id, req.userId));
+          }
+          // Notify user
+          await createNotification(req.userId, "system",
+            `¡Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue aprobada! Bienvenido al equipo.`);
+        } else {
+          await createNotification(req.userId, "system",
+            `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue revisada. ${input.reviewNote ? `Nota: ${input.reviewNote}` : ""}`);
+        }
+        return { success: true };
+      }),
+  }),
+
+  // ─── Tournament Collaborators ─────────────────────────────────────────────────
+  collaborators: router({
+    // List collaborators for a tournament
+    list: publicProcedure
+      .input(z.object({ tournamentId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        return db.select({
+          id: tournamentCollaborators.id,
+          userId: tournamentCollaborators.userId,
+          addedAt: tournamentCollaborators.addedAt,
+          name: users.name,
+          nickname: users.nickname,
+          avatar: users.avatar,
+        })
+        .from(tournamentCollaborators)
+        .leftJoin(users, eq(tournamentCollaborators.userId, users.id))
+        .where(eq(tournamentCollaborators.tournamentId, input.tournamentId));
+      }),
+
+    // Add a collaborator (only tournament creator or admin)
+    add: protectedProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        userId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [tournament] = await db.select({ creatorId: tournaments.creatorId })
+          .from(tournaments).where(eq(tournaments.id, input.tournamentId)).limit(1);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo el creador del torneo puede agregar colaboradores." });
+        }
+        // Check user exists
+        const [targetUser] = await db.select({ id: users.id, nickname: users.nickname, name: users.name })
+          .from(users).where(eq(users.id, input.userId)).limit(1);
+        if (!targetUser) throw new TRPCError({ code: "NOT_FOUND", message: "Usuario no encontrado." });
+        // Insert (ignore duplicate)
+        try {
+          await db.insert(tournamentCollaborators).values({
+            tournamentId: input.tournamentId,
+            userId: input.userId,
+            addedBy: ctx.user.id,
+          });
+        } catch (e: any) {
+          if (e?.code === "ER_DUP_ENTRY") {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Este usuario ya es colaborador del torneo." });
+          }
+          throw e;
+        }
+        await createNotification(input.userId, "tournament",
+          `Fuiste agregado como colaborador en el torneo.`);
+        return { success: true };
+      }),
+
+    // Remove a collaborator
+    remove: protectedProcedure
+      .input(z.object({
+        tournamentId: z.number(),
+        userId: z.number(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const db = await getDb();
+        const [tournament] = await db.select({ creatorId: tournaments.creatorId })
+          .from(tournaments).where(eq(tournaments.id, input.tournamentId)).limit(1);
+        if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
+        if (tournament.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN" });
+        }
+        await db.delete(tournamentCollaborators)
+          .where(and(
+            eq(tournamentCollaborators.tournamentId, input.tournamentId),
+            eq(tournamentCollaborators.userId, input.userId)
+          ));
+        return { success: true };
+      }),
+  }),
+
+  // ─── Organizer Public Profile ──────────────────────────────────────────────────
+  organizers: router({
+    // Get organizer public profile by userId
+    profile: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        const [user] = await db.select({
+          id: users.id,
+          name: users.name,
+          nickname: users.nickname,
+          avatar: users.avatar,
+          bio: users.bio,
+          orgName: users.orgName,
+          orgDescription: users.orgDescription,
+          role: users.role,
+          canCreateTournaments: users.canCreateTournaments,
+          country: users.country,
+          createdAt: users.createdAt,
+          socialDiscord: users.socialDiscord,
+          socialTwitch: users.socialTwitch,
+          socialTwitter: users.socialTwitter,
+        })
+        .from(users)
+        .where(eq(users.id, input.userId))
+        .limit(1);
+        if (!user) throw new TRPCError({ code: "NOT_FOUND" });
+        if (user.role !== "to" && !canCreateTournaments(user) && !isAdmin(user.role)) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Este usuario no es organizador." });
+        }
+        // Get follower count
+        const followerCount = await getFollowerCount(input.userId);
+        // Get tournaments created by this user
+        const allTournaments = await db.select({
+          id: tournaments.id,
+          name: tournaments.name,
+          game: tournaments.game,
+          bracketType: tournaments.bracketType,
+          startDate: tournaments.startDate,
+          status: tournaments.status,
+          maxTeams: tournaments.maxTeams,
+          registrationType: tournaments.registrationType,
+          banner: tournaments.banner,
+        })
+        .from(tournaments)
+        .where(and(
+          eq(tournaments.creatorId, input.userId),
+          or(
+            eq(tournaments.status, "registration_open"),
+            eq(tournaments.status, "registration_closed"),
+            eq(tournaments.status, "in_progress"),
+            eq(tournaments.status, "completed")
+          )
+        ))
+        .orderBy(desc(tournaments.startDate));
+        // Count participants for each tournament
+        const tournamentsWithCounts = await Promise.all(allTournaments.map(async (t) => {
+          const regs = await getRegistrationsByTournament(t.id);
+          const approved = regs.filter((r: any) => r.status === "Aprobado" || r.status === "approved").length;
+          return { ...t, participantCount: approved };
+        }));
+        const now = new Date();
+        const upcoming = tournamentsWithCounts.filter(t =>
+          t.status === "registration_open" || t.status === "registration_closed" || t.status === "in_progress"
+        );
+        const past = tournamentsWithCounts.filter(t => t.status === "completed");
+        return { user, followerCount, upcoming, past };
+      }),
+
+    // Update organizer profile fields (orgName, orgDescription)
+    updateProfile: protectedProcedure
+      .input(z.object({
+        orgName: z.string().min(2).max(128).optional(),
+        orgDescription: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!canCreateTournaments(ctx.user as any) && !isAdmin(ctx.user.role)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Solo organizadores pueden actualizar su perfil de organizador." });
+        }
+        const db = await getDb();
+        await db.update(users)
+          .set({ orgName: input.orgName ?? null, orgDescription: input.orgDescription ?? null })
+          .where(eq(users.id, ctx.user.id));
+        return { success: true };
       }),
   }),
 });
