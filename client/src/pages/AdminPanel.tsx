@@ -1374,16 +1374,37 @@ function NewsTab() {
     onSuccess: () => { toast.success("Eliminado"); refetch(); },
     onError: e => toast.error(e.message),
   });
+  const deleteAllNews = trpc.admin.deleteAllNews.useMutation({
+    onSuccess: () => { toast.success("Todas las noticias eliminadas"); refetch(); },
+    onError: e => toast.error(e.message),
+  });
 
   const autoSlug = (title: string) => title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
   return (
     <div className="space-y-6">
       <SectionHeader icon={Newspaper} title="PORTAL DE NOTICIAS" subtitle="Crea y gestiona artículos" />
-      <Button onClick={() => setShowForm(!showForm)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
-        <Plus className="w-3.5 h-3.5 mr-1.5" />
-        NUEVA NOTICIA
-      </Button>
+      <div className="flex items-center gap-3 flex-wrap">
+        <Button onClick={() => setShowForm(!showForm)} className="bg-red-600 hover:bg-red-700 text-white font-orbitron text-xs">
+          <Plus className="w-3.5 h-3.5 mr-1.5" />
+          NUEVA NOTICIA
+        </Button>
+        {newsList && newsList.length > 0 && (
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (window.confirm(`¿Eliminar las ${newsList.length} noticias? Esta acción no se puede deshacer.`)) {
+                deleteAllNews.mutate();
+              }
+            }}
+            disabled={deleteAllNews.isPending}
+            className="h-9 text-xs border-red-900/50 text-red-400 hover:bg-red-950/40 font-orbitron"
+          >
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+            LIMPIAR TODAS ({newsList.length})
+          </Button>
+        )}
+      </div>
       {showForm && (
         <div className="bg-card/60 border border-red-900/40 rounded-xl p-5 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

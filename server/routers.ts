@@ -112,6 +112,7 @@ import {
   adminCreateNews,
   adminUpdateNews,
   adminDeleteNews,
+  adminDeleteAllNews,
   adminListNews,
   adminListPendingTournaments,
   adminApproveTournament,
@@ -2891,6 +2892,11 @@ Genera el reporte de precio RLC para este producto.`;
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         await adminDeleteNews(input.id);
+        return { success: true };
+      }),
+    deleteAllNews: adminProcedure
+      .mutation(async () => {
+        await adminDeleteAllNews();
         return { success: true };
       }),
     pendingTournaments: adminProcedure

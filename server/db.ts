@@ -2941,6 +2941,11 @@ export async function adminDeleteNews(id: number) {
   await db.delete(news).where(eq(news.id, id));
 }
 
+export async function adminDeleteAllNews() {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(news);
+}
 export async function adminListNews() {
   const db = await getDb();
   if (!db) return [];
