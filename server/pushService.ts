@@ -427,3 +427,117 @@ export function buildMatchScheduledEmail(params: {
     </a>
   `);
 }
+
+
+// ─── Internal team emails ─────────────────────────────────────────────────────
+
+export async function notifyInternalAllySubmit(params: {
+  name: string; description?: string; country?: string; city?: string;
+  email?: string; phone?: string; website?: string;
+  instagram?: string; twitter?: string; facebook?: string; tiktok?: string;
+}): Promise<void> {
+  const rows = [
+    ["Nombre", params.name], ["País", params.country ?? "—"], ["Ciudad", params.city ?? "—"],
+    ["Email de contacto", params.email ?? "—"], ["Teléfono", params.phone ?? "—"],
+    ["Web", params.website ?? "—"], ["Instagram", params.instagram ?? "—"],
+    ["Twitter / X", params.twitter ?? "—"], ["Facebook", params.facebook ?? "—"],
+    ["TikTok", params.tiktok ?? "—"],
+  ].map(([label, value]) =>
+    `<tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;width:160px;">${label}</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${value}</td></tr>`
+  ).join("");
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:20px;font-weight:700;">🤝 Nueva solicitud de Aliado</h2>
+    <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;">Un negocio o marca ha enviado su solicitud para unirse al directorio de aliados de RLC.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:24px;">${rows}</table>
+    ${params.description ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:24px;"><p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Descripción</p><p style="margin:0;color:#fff;font-size:14px;line-height:1.6;">${params.description}</p></div>` : ""}
+    <a href="https://redlevelcircle.gg/admin" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">VER EN ADMIN PANEL →</a>
+  `);
+  await sendEmail({ to: "publicidad@redlevelcircle.com", subject: `🤝 Nueva solicitud de Aliado — ${params.name}`, html });
+}
+
+export async function notifyInternalShopPurchase(params: {
+  orderId: number | string; userName: string; userEmail?: string;
+  itemName: string; quantity: number; totalPrice: number;
+  category: string; shippingAddress?: string; userNote?: string;
+}): Promise<void> {
+  const categoryLabel = (params.category === "physical" || params.category === "bundle") ? "📦 Producto Físico"
+    : params.category === "gift_card" ? "🎁 Tarjeta de Regalo" : "💻 Producto Digital";
+  let shippingHtml = "";
+  if (params.shippingAddress) {
+    try {
+      const addr = JSON.parse(params.shippingAddress);
+      shippingHtml = `<div style="background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);border-radius:12px;padding:16px;margin-bottom:24px;"><p style="margin:0 0 8px;color:#f87171;font-size:12px;text-transform:uppercase;letter-spacing:1px;font-weight:700;">📍 Dirección de Envío</p><p style="margin:0;color:#fff;font-size:14px;line-height:1.8;"><strong>${addr.fullName ?? ""}</strong><br/>${addr.address ?? ""}<br/>${addr.city ?? ""}, ${addr.country ?? ""} ${addr.postalCode ?? ""}<br/>Contacto: ${addr.contact ?? "—"}</p></div>`;
+    } catch {}
+  }
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:20px;font-weight:700;">🛒 Nueva compra — Pedido #${params.orderId}</h2>
+    <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;">${categoryLabel}</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;width:160px;">Cliente</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.userName}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Email</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.userEmail ?? "—"}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Producto</td><td style="padding:6px 12px;color:#fff;font-size:13px;font-weight:700;">${params.itemName}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Cantidad</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.quantity}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Total pagado</td><td style="padding:6px 12px;color:#f87171;font-size:15px;font-weight:900;">${params.totalPrice.toLocaleString()} RLC</td></tr>
+      ${params.userNote ? `<tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Nota del cliente</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.userNote}</td></tr>` : ""}
+    </table>
+    ${shippingHtml}
+    <a href="https://redlevelcircle.gg/admin" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">VER EN ADMIN PANEL →</a>
+  `);
+  await sendEmail({ to: "ventas@redlevelcircle.com", subject: `🛒 Nueva compra — ${params.itemName} (Pedido #${params.orderId})`, html });
+}
+
+export async function notifyInternalCreatorApply(params: {
+  userName: string; userEmail?: string; userId: number;
+  bio?: string; category?: string; youtube?: string; twitch?: string;
+  twitter?: string; instagram?: string; tiktok?: string; facebook?: string;
+  kick?: string; subscribers?: number;
+}): Promise<void> {
+  const socials = [
+    ["YouTube", params.youtube], ["Twitch", params.twitch], ["Twitter / X", params.twitter],
+    ["Instagram", params.instagram], ["TikTok", params.tiktok], ["Facebook", params.facebook], ["Kick", params.kick],
+  ].filter(([, v]) => v).map(([label, value]) =>
+    `<tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;width:160px;">${label}</td><td style="padding:6px 12px;color:#60a5fa;font-size:13px;">${value}</td></tr>`
+  ).join("");
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:20px;font-weight:700;">🎥 Nueva solicitud de Creador de Contenido</h2>
+    <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;">Un usuario ha solicitado ser Creador de Contenido Oficial en RLC.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;width:160px;">Usuario</td><td style="padding:6px 12px;color:#fff;font-size:13px;font-weight:700;">${params.userName}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Email</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.userEmail ?? "—"}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Categoría</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.category ?? "—"}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Suscriptores</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.subscribers?.toLocaleString() ?? "—"}</td></tr>
+      ${socials}
+    </table>
+    ${params.bio ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:24px;"><p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Bio</p><p style="margin:0;color:#fff;font-size:14px;line-height:1.6;">${params.bio}</p></div>` : ""}
+    <a href="https://redlevelcircle.gg/admin" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">REVISAR EN ADMIN PANEL →</a>
+  `);
+  await sendEmail({ to: "cdc@redlevelcircle.com", subject: `🎥 Nueva solicitud CDC — ${params.userName}`, html });
+}
+
+export async function notifyInternalRoleRequest(params: {
+  userName: string; userEmail?: string; userId: number;
+  requestedRole: string; orgName: string; orgDescription?: string;
+  experience?: string; discordContact?: string; websiteUrl?: string;
+}): Promise<void> {
+  const roleLabels: Record<string, string> = { to: "Tournament Organizer (TO)", cdc: "Creador de Contenido (CDC)", partner: "Partner RLC" };
+  const roleEmails: Record<string, string> = { to: "to@redlevelcircle.com", cdc: "cdc@redlevelcircle.com", partner: "publicidad@redlevelcircle.com" };
+  const roleIcons: Record<string, string> = { to: "🏆", cdc: "🎥", partner: "🤝" };
+  const roleLabel = roleLabels[params.requestedRole] ?? params.requestedRole.toUpperCase();
+  const toEmail = roleEmails[params.requestedRole] ?? "admin@redlevelcircle.com";
+  const icon = roleIcons[params.requestedRole] ?? "📋";
+  const html = emailWrapper(`
+    <h2 style="margin:0 0 8px;color:#fff;font-size:20px;font-weight:700;">${icon} Nueva solicitud de Rol — ${roleLabel}</h2>
+    <p style="margin:0 0 20px;color:#a1a1aa;font-size:14px;">Un usuario ha solicitado el rol <strong style="color:#fff;">${roleLabel}</strong> en la plataforma.</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;margin-bottom:24px;">
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;width:160px;">Usuario</td><td style="padding:6px 12px;color:#fff;font-size:13px;font-weight:700;">${params.userName}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Email</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.userEmail ?? "—"}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Organización / Nombre</td><td style="padding:6px 12px;color:#fff;font-size:13px;font-weight:700;">${params.orgName}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Discord</td><td style="padding:6px 12px;color:#fff;font-size:13px;">${params.discordContact ?? "—"}</td></tr>
+      <tr><td style="padding:6px 12px;color:#a1a1aa;font-size:13px;">Web / Portafolio</td><td style="padding:6px 12px;color:#60a5fa;font-size:13px;">${params.websiteUrl ?? "—"}</td></tr>
+    </table>
+    ${params.orgDescription ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:16px;"><p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Descripción</p><p style="margin:0;color:#fff;font-size:14px;line-height:1.6;">${params.orgDescription}</p></div>` : ""}
+    ${params.experience ? `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:16px;margin-bottom:24px;"><p style="margin:0 0 4px;color:#a1a1aa;font-size:12px;text-transform:uppercase;letter-spacing:1px;">Experiencia</p><p style="margin:0;color:#fff;font-size:14px;line-height:1.6;">${params.experience}</p></div>` : ""}
+    <a href="https://redlevelcircle.gg/admin" style="display:inline-block;background:#dc2626;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:14px;letter-spacing:1px;">REVISAR EN ADMIN PANEL →</a>
+  `);
+  await sendEmail({ to: toEmail, subject: `${icon} Nueva solicitud ${roleLabel} — ${params.orgName}`, html });
+}

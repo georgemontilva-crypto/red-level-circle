@@ -3194,16 +3194,32 @@ Genera el reporte de precio RLC para este producto.`;
           throw new TRPCError({ code: "BAD_REQUEST", message: "Los productos físicos requieren dirección de envío" });
         }
         const result = await buyShopItem(ctx.user.id, input.itemId, input.quantity, input.userNote, input.shippingAddress);
-        // Notify admin
-        try {
-          const { notifyOwner } = await import("./_core/notification");
-          const categoryLabel = (item?.category === "physical" || item?.category === "bundle") ? "📦 FÍSICO" : "💻 DIGITAL";
-          const shippingInfo = input.shippingAddress ? (() => { try { const a = JSON.parse(input.shippingAddress!); return `\nEnvío: ${a.fullName}, ${a.address}, ${a.city}, ${a.country} ${a.postalCode} | Contacto: ${a.contact}`; } catch { return ""; } })() : "";
-          await notifyOwner({
-            title: `🛒 [${categoryLabel}] Nueva compra — Pedido #${result.orderId}`,
-            content: `${ctx.user.name ?? ctx.user.openId} (${ctx.user.email ?? "sin email"}) compró ${input.quantity}x "${item?.name}" por ${result.totalPrice} RLC Coins.${shippingInfo}`,
-          });
-        } catch {}
+        // Notify admin (internal notification + email to ventas@)
+        setImmediate(async () => {
+          try {
+            const { notifyOwner } = await import("./_core/notification");
+            const categoryLabel = (item?.category === "physical" || item?.category === "bundle") ? "📦 FÍSICO" : "💻 DIGITAL";
+            const shippingInfo = input.shippingAddress ? (() => { try { const a = JSON.parse(input.shippingAddress!); return `\nEnvío: ${a.fullName}, ${a.address}, ${a.city}, ${a.country} ${a.postalCode} | Contacto: ${a.contact}`; } catch { return ""; } })() : "";
+            await notifyOwner({
+              title: `🛒 [${categoryLabel}] Nueva compra — Pedido #${result.orderId}`,
+              content: `${ctx.user.name ?? ctx.user.openId} (${ctx.user.email ?? "sin email"}) compró ${input.quantity}x "${item?.name}" por ${result.totalPrice} RLC Coins.${shippingInfo}`,
+            });
+          } catch {}
+          try {
+            const { notifyInternalShopPurchase } = await import("./pushService");
+            await notifyInternalShopPurchase({
+              orderId: result.orderId,
+              userName: ctx.user.name ?? ctx.user.openId ?? "Usuario",
+              userEmail: ctx.user.email ?? undefined,
+              itemName: item?.name ?? `Producto #${input.itemId}`,
+              quantity: input.quantity,
+              totalPrice: result.totalPrice,
+              category: item?.category ?? "digital",
+              shippingAddress: input.shippingAddress,
+              userNote: input.userNote,
+            });
+          } catch (e) { console.error("[Email] shop purchase:", (e as Error).message); }
+        });
         return result;
       }),
 
@@ -3815,7 +3831,29 @@ Genera el reporte de precio RLC para este producto.`;
         subscribers: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
-        return applyAsCreator(ctx.user.id, input);
+        const result = await applyAsCreator(ctx.user.id, input);
+        // Notify cdc@redlevelcircle.com
+        setImmediate(async () => {
+          try {
+            const { notifyInternalCreatorApply } = await import("./pushService");
+            await notifyInternalCreatorApply({
+              userName: ctx.user.name ?? ctx.user.openId ?? "Usuario",
+              userEmail: ctx.user.email ?? undefined,
+              userId: ctx.user.id,
+              bio: input.bio,
+              category: input.category,
+              youtube: input.youtube,
+              twitch: input.twitch,
+              twitter: input.twitter,
+              instagram: input.instagram,
+              tiktok: input.tiktok,
+              facebook: input.facebook,
+              kick: input.kick,
+              subscribers: input.subscribers,
+            });
+          } catch (e) { console.error("[Email] creator apply:", (e as Error).message); }
+        });
+        return result;
       }),
     /** Update the caller's streaming channel handles (twitch, youtube, etc.) */
     updateChannels: protectedProcedure
@@ -4168,6 +4206,25 @@ Genera el reporte de precio RLC para este producto.`;
           ...input,
           status: "pending",
           submittedBy: userId,
+        });
+        // Notify publicidad@redlevelcircle.com
+        setImmediate(async () => {
+          try {
+            const { notifyInternalAllySubmit } = await import("./pushService");
+            await notifyInternalAllySubmit({
+              name: input.name,
+              description: input.description,
+              country: input.country,
+              city: input.city,
+              email: input.email,
+              phone: input.phone,
+              website: input.website ?? undefined,
+              instagram: input.instagram ?? undefined,
+              twitter: input.twitter ?? undefined,
+              facebook: input.facebook ?? undefined,
+              tiktok: input.tiktok ?? undefined,
+            });
+          } catch (e) { console.error("[Email] ally submit:", (e as Error).message); }
         });
         return { success: true };
       }),
@@ -5533,17 +5590,33 @@ Genera el reporte de precio RLC para este producto.`;
           websiteUrl: input.websiteUrl ?? null,
           status: "pending",
         });
-        // Notify admins
+        // Notify admins via in-app notification
         const admins = await db.select({ id: users.id }).from(users)
           .where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
         await Promise.all(admins.map(a =>
           createNotification(a.id, "system",
             `Nueva solicitud de rol ${input.requestedRole.toUpperCase()} de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"}`)
         ));
+        // Notify team email (to@, cdc@, publicidad@) depending on role
+        setImmediate(async () => {
+          try {
+            const { notifyInternalRoleRequest } = await import("./pushService");
+            await notifyInternalRoleRequest({
+              userName: ctx.user.name ?? ctx.user.openId ?? "Usuario",
+              userEmail: ctx.user.email ?? undefined,
+              userId: ctx.user.id,
+              requestedRole: input.requestedRole,
+              orgName: input.orgName,
+              orgDescription: input.orgDescription,
+              experience: input.experience,
+              discordContact: input.discordContact,
+              websiteUrl: input.websiteUrl,
+            });
+          } catch (e) { console.error("[Email] role request:", (e as Error).message); }
+        });
         return { success: true };
       }),
-
-    // Get my role requests
+    // Get my role requestss
     myRequests: protectedProcedure.query(async ({ ctx }) => {
       const db = await getDb();
       return db.select().from(roleRequests)
