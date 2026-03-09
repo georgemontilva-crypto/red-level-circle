@@ -2828,6 +2828,33 @@ export async function adminUpdateOrderStatus(
         referenceId: orderId,
         referenceType: "order",
       });
+      // Send email to buyer
+      setImmediate(async () => {
+        try {
+          const { getUserById } = await import("./db");
+          const buyer = await getUserById(order.userId);
+          if (buyer?.email) {
+            const { sendEmail } = await import("./pushService");
+            const statusLabels: Record<string, string> = {
+              processing: "en proceso",
+              delivered: order.itemCategory === "physical" ? "enviado" : "entregado",
+              cancelled: "cancelado",
+            };
+            const statusColors: Record<string, string> = {
+              processing: "#f6ad55",
+              delivered: "#48bb78",
+              cancelled: "#e53e3e",
+            };
+            const statusLabel = statusLabels[status] || status;
+            const statusColor = statusColors[status] || "#e53e3e";
+            await sendEmail({
+              to: buyer.email,
+              subject: `Pedido ${statusLabel}: ${order.itemName}`,
+              html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;margin:0;padding:0"><div style="max-width:600px;margin:0 auto;padding:40px 20px"><div style="text-align:center;margin-bottom:32px"><h1 style="color:#e53e3e;font-size:28px;margin:0">Red Level Circle</h1></div><div style="background:#1a1a2e;border-radius:12px;padding:32px;border:1px solid #e53e3e33"><h2 style="color:#fff;margin-top:0">${notif.title}</h2><p style="color:#ccc;line-height:1.6">${notif.message}</p>${options?.trackingNumber ? `<div style="background:#0d0d0d;border-radius:8px;padding:16px;margin:16px 0"><p style="color:#aaa;margin:0 0 8px 0;font-size:12px">NÚMERO DE GUÍA</p><p style="color:#fff;font-size:18px;font-weight:bold;margin:0">${options.trackingNumber}${options?.shippingCarrier ? ` <span style="color:#aaa;font-size:14px">(${options.shippingCarrier})</span>` : ""}</p></div>` : ""}${options?.note && status === "cancelled" ? `<div style="background:#1a0000;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #e53e3e"><p style="color:#aaa;margin:0 0 4px 0;font-size:12px">MOTIVO</p><p style="color:#fff;margin:0">${options.note}</p></div>` : ""}<div style="text-align:center;margin-top:32px"><a href="https://redlevelcircle.gg/shop?tab=orders" style="background:#e53e3e;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">VER MIS PEDIDOS</a></div></div><p style="color:#666;text-align:center;font-size:12px;margin-top:24px">Red Level Circle · redlevelcircle.gg</p></div></body></html>`,
+            });
+          }
+        } catch (_) { /* non-critical */ }
+      });
     }
   }
 }

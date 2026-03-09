@@ -4994,9 +4994,37 @@ Genera el reporte de precio RLC para este producto.`;
           await createNotification({ userId: sub.userId, type: "mission_approved", title: "¡Misión aprobada!", message: `Tu entrega para "${mission.title}" fue aprobada. Recibiste ${mission.rewardRlc} RLC.`, link: `/creator-missions`, referenceId: mission.id, referenceType: "creator_mission" });
           sseNotifyUser(sub.userId, "notification");
           sseNotifyUser(sub.userId, "coins");
+          // Email al creador: tarea aprobada
+          setImmediate(async () => {
+            try {
+              const creator = await getUserById(sub.userId);
+              if (creator?.email) {
+                const { sendEmail } = await import("./pushService");
+                await sendEmail({
+                  to: creator.email,
+                  subject: `✅ ¡Misión aprobada! Recibiste ${mission.rewardRlc} RLC`,
+                  html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;margin:0;padding:0"><div style="max-width:600px;margin:0 auto;padding:40px 20px"><div style="text-align:center;margin-bottom:32px"><h1 style="color:#e53e3e;font-size:28px;margin:0">Red Level Circle</h1></div><div style="background:#1a1a2e;border-radius:12px;padding:32px;border:1px solid #48bb7833"><h2 style="color:#48bb78;margin-top:0">✅ ¡Misión aprobada!</h2><p style="color:#ccc;line-height:1.6">Tu entrega para la misión <strong style="color:#fff">"${mission.title}"</strong> fue aprobada por el equipo de RLC.</p><div style="background:#0d0d0d;border-radius:8px;padding:20px;text-align:center;margin:20px 0"><p style="color:#aaa;margin:0 0 8px 0;font-size:12px">RECOMPENSA RECIBIDA</p><p style="color:#f6ad55;font-size:32px;font-weight:bold;margin:0">+${mission.rewardRlc} RLC</p></div>${input.adminNote ? `<p style="color:#aaa;font-size:14px">Nota del admin: ${input.adminNote}</p>` : ""}<div style="text-align:center;margin-top:32px"><a href="https://redlevelcircle.gg/creator-missions" style="background:#48bb78;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">VER MIS MISIONES</a></div></div><p style="color:#666;text-align:center;font-size:12px;margin-top:24px">Red Level Circle · redlevelcircle.gg</p></div></body></html>`,
+                });
+              }
+            } catch (_) { /* non-critical */ }
+          });
         } else if (input.action === "rejected" && mission) {
           await createNotification({ userId: sub.userId, type: "mission_rejected", title: "Entrega rechazada", message: `Tu entrega para "${mission.title}" fue rechazada.${input.adminNote ? ` Motivo: ${input.adminNote}` : ""} Puedes volver a enviar.`, link: `/creator-missions`, referenceId: mission.id, referenceType: "creator_mission" });
           sseNotifyUser(sub.userId, "notification");
+          // Email al creador: tarea rechazada
+          setImmediate(async () => {
+            try {
+              const creator = await getUserById(sub.userId);
+              if (creator?.email) {
+                const { sendEmail } = await import("./pushService");
+                await sendEmail({
+                  to: creator.email,
+                  subject: `Entrega rechazada: ${mission.title}`,
+                  html: `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="background:#0d0d0d;color:#fff;font-family:Arial,sans-serif;margin:0;padding:0"><div style="max-width:600px;margin:0 auto;padding:40px 20px"><div style="text-align:center;margin-bottom:32px"><h1 style="color:#e53e3e;font-size:28px;margin:0">Red Level Circle</h1></div><div style="background:#1a1a2e;border-radius:12px;padding:32px;border:1px solid #e53e3e33"><h2 style="color:#e53e3e;margin-top:0">Entrega rechazada</h2><p style="color:#ccc;line-height:1.6">Tu entrega para la misión <strong style="color:#fff">"${mission.title}"</strong> fue rechazada.</p>${input.adminNote ? `<div style="background:#1a0000;border-radius:8px;padding:16px;margin:16px 0;border-left:4px solid #e53e3e"><p style="color:#aaa;margin:0 0 4px 0;font-size:12px">MOTIVO</p><p style="color:#fff;margin:0">${input.adminNote}</p></div>` : ""}<p style="color:#ccc;line-height:1.6">Puedes revisar los comentarios y volver a enviar tu entrega.</p><div style="text-align:center;margin-top:32px"><a href="https://redlevelcircle.gg/creator-missions" style="background:#e53e3e;color:#fff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:16px">VER MIS MISIONES</a></div></div><p style="color:#666;text-align:center;font-size:12px;margin-top:24px">Red Level Circle · redlevelcircle.gg</p></div></body></html>`,
+                });
+              }
+            } catch (_) { /* non-critical */ }
+          });
         }
         return { ok: true };
       }),
@@ -5594,8 +5622,10 @@ Genera el reporte de precio RLC para este producto.`;
         const admins = await db.select({ id: users.id }).from(users)
           .where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
         await Promise.all(admins.map(a =>
-          createNotification(a.id, "system",
-            `Nueva solicitud de rol ${input.requestedRole.toUpperCase()} de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"}`)
+          createNotification({ userId: a.id, type: "general",
+            title: `Nueva solicitud de rol ${input.requestedRole.toUpperCase()}`,
+            message: `Solicitud de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"} para el rol ${input.requestedRole.toUpperCase()}. Revisa el Admin Panel.`,
+            link: "/admin" })
         ));
         // Notify team email (to@, cdc@, publicidad@) depending on role
         setImmediate(async () => {
@@ -5703,8 +5733,10 @@ Genera el reporte de precio RLC para este producto.`;
             await db.update(users).set({ role: "partner" }).where(eq(users.id, req.userId));
           }
           // Notify user (in-app)
-          await createNotification(req.userId, "system",
-            `¡Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue aprobada! Bienvenido al equipo.`);
+          await createNotification({ userId: req.userId, type: "general",
+            title: `¡Rol ${req.requestedRole.toUpperCase()} aprobado!`,
+            message: `¡Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue aprobada! Bienvenido al equipo.`,
+            link: "/dashboard" });
           // Web Push + Email
           try {
             const { sendPushToUser, sendEmail, buildRoleApprovedEmail } = await import("./pushService");
@@ -5723,8 +5755,10 @@ Genera el reporte de precio RLC para este producto.`;
             }
           } catch (_) { /* non-critical */ }
         } else {
-          await createNotification(req.userId, "system",
-            `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue revisada. ${input.reviewNote ? `Nota: ${input.reviewNote}` : ""}`);
+          await createNotification({ userId: req.userId, type: "general",
+            title: `Solicitud de rol ${req.requestedRole.toUpperCase()} revisada`,
+            message: `Tu solicitud de rol ${req.requestedRole.toUpperCase()} fue revisada.${input.reviewNote ? ` Nota: ${input.reviewNote}` : ""}`,
+            link: "/settings" });
           // Web Push for rejection
           try {
             const { sendPushToUser } = await import("./pushService");
