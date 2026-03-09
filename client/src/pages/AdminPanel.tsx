@@ -2418,10 +2418,12 @@ function AuditTab() {
 }
 
 // ─── Overview Tab ─────────────────────────────────────────────────────────────
-function OverviewTab() {
+function OverviewTab({ onTabChange }: { onTabChange?: (tab: string) => void }) {
   const { data: stats } = trpc.admin.stats.useQuery();
   const { data: pendingVerifs } = trpc.verification.list.useQuery({ status: "pending" });
   const { data: pendingCreators } = trpc.creators.listPending.useQuery();
+  const { data: pendingAllies } = trpc.allies.adminList.useQuery();
+  const { data: pendingRoleReqs } = trpc.roleRequests.listPending.useQuery();
 
   if (!stats) return (
     <div className="flex items-center justify-center py-16">
@@ -2429,12 +2431,17 @@ function OverviewTab() {
     </div>
   );
 
+  const pendingAlliesCount = (pendingAllies ?? []).filter((a: any) => a.status === "pending").length;
+  const pendingRoleReqsCount = (pendingRoleReqs ?? []).length;
+
   const pendingActions = [
-    stats.pendingOrders > 0 && { label: "Pedidos sin procesar", count: stats.pendingOrders, color: "text-pink-400 bg-pink-500/10 border-pink-500/30", icon: ShoppingBag },
-    stats.pendingTournaments > 0 && { label: "Torneos pendientes de aprobación", count: stats.pendingTournaments, color: "text-orange-400 bg-orange-500/10 border-orange-500/30", icon: Trophy },
-    (pendingVerifs?.length ?? 0) > 0 && { label: "Solicitudes de verificación", count: pendingVerifs!.length, color: "text-blue-400 bg-blue-500/10 border-blue-500/30", icon: BadgeCheck },
-    (pendingCreators?.length ?? 0) > 0 && { label: "Aplicaciones de creadores", count: pendingCreators!.length, color: "text-purple-400 bg-purple-500/10 border-purple-500/30", icon: Crown },
-  ].filter(Boolean) as { label: string; count: number; color: string; icon: React.ElementType }[];
+    stats.pendingOrders > 0 && { label: "Pedidos sin procesar", count: stats.pendingOrders, color: "text-pink-400 bg-pink-500/10 border-pink-500/30", icon: ShoppingBag, tab: "shop" },
+    stats.pendingTournaments > 0 && { label: "Torneos pendientes de aprobación", count: stats.pendingTournaments, color: "text-orange-400 bg-orange-500/10 border-orange-500/30", icon: Trophy, tab: "tournaments" },
+    (pendingVerifs?.length ?? 0) > 0 && { label: "Solicitudes de verificación", count: pendingVerifs!.length, color: "text-blue-400 bg-blue-500/10 border-blue-500/30", icon: BadgeCheck, tab: "verifications" },
+    (pendingCreators?.length ?? 0) > 0 && { label: "Aplicaciones de creadores", count: pendingCreators!.length, color: "text-purple-400 bg-purple-500/10 border-purple-500/30", icon: Crown, tab: "creators" },
+    pendingAlliesCount > 0 && { label: "Solicitudes de aliados", count: pendingAlliesCount, color: "text-yellow-400 bg-yellow-500/10 border-yellow-500/30", icon: MapPin, tab: "allies" },
+    pendingRoleReqsCount > 0 && { label: "Solicitudes de rol pendientes", count: pendingRoleReqsCount, color: "text-green-400 bg-green-500/10 border-green-500/30", icon: UserCog, tab: "role_requests" },
+  ].filter(Boolean) as { label: string; count: number; color: string; icon: React.ElementType; tab: string }[];
 
   return (
     <div className="space-y-6">
@@ -2449,11 +2456,15 @@ function OverviewTab() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {pendingActions.map((action) => (
-              <div key={action.label} className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${action.color}`}>
+              <button
+                key={action.label}
+                onClick={() => onTabChange?.(action.tab)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg border ${action.color} hover:opacity-80 transition-opacity text-left w-full`}
+              >
                 <action.icon className="w-4 h-4 flex-shrink-0" />
                 <p className="flex-1 text-sm font-mono font-semibold">{action.label}</p>
                 <span className="text-lg font-black font-mono">{action.count}</span>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -2505,6 +2516,7 @@ function OverviewTab() {
 // ─── Main Panel ───────────────────────────────────────────────────────────────
 export default function AdminPanel() {
   const { user, isAuthenticated } = useAuth();
+  const [activeTab, setActiveTab] = React.useState("overview");
   const { data: stats } = trpc.admin.stats.useQuery();
   const { data: pending } = trpc.admin.pendingTournaments.useQuery();
 
@@ -2542,7 +2554,7 @@ export default function AdminPanel() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="overview">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="bg-card/60 border border-red-900/30 rounded-xl p-1 flex-wrap h-auto gap-1">
           {[
             { value: "overview", label: "RESUMEN", icon: BarChart3 },
@@ -2571,7 +2583,7 @@ export default function AdminPanel() {
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="overview"><OverviewTab /></TabsContent>
+          <TabsContent value="overview"><OverviewTab onTabChange={setActiveTab} /></TabsContent>
           <TabsContent value="tournaments"><TournamentsTab /></TabsContent>
           <TabsContent value="users"><UsersTab /></TabsContent>
           <TabsContent value="teams"><TeamsTab /></TabsContent>

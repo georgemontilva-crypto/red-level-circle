@@ -158,14 +158,20 @@ export async function sendEmail(payload: EmailPayload): Promise<void> {
   try {
     const { Resend } = await import("resend");
     const resend = new Resend(RESEND_API_KEY);
-    await resend.emails.send({
+    console.log("[Email] Sending to:", payload.to, "| from:", EMAIL_FROM, "| subject:", payload.subject);
+    const result = await resend.emails.send({
       from: EMAIL_FROM,
       to: payload.to,
       subject: payload.subject,
       html: payload.html,
     });
+    if (result.error) {
+      console.error("[Email] Resend API error:", JSON.stringify(result.error), "| from:", EMAIL_FROM, "| to:", payload.to);
+    } else {
+      console.log("[Email] Sent OK id:", result.data?.id, "| to:", payload.to);
+    }
   } catch (err) {
-    console.error("[Email] Failed to send email:", (err as Error).message);
+    console.error("[Email] Exception sending email to", payload.to, ":", (err as Error).message);
   }
 }
 
