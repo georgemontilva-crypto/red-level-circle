@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import {
   Users, Shield, Trophy, Eye, BarChart3, Star, Package, ShoppingBag,
   Crown, Clock, AlertTriangle, CheckCircle2, Plus, Newspaper, MapPin,
-  Zap, ChevronRight, Gamepad2, Coins, Layout
+  Zap, ChevronRight, Gamepad2, Coins, Layout, Flag
 } from "lucide-react";
 import { PageHeader, StatCard } from "../components/AdminUI";
 import { UserAvatar } from "@/components/UserAvatar";
@@ -53,11 +53,13 @@ export function DashboardPage() {
   const { data: pendingTournaments } = trpc.admin.pendingTournaments.useQuery();
   const { data: pendingCreators } = trpc.creators.listPending.useQuery();
   const { data: pendingAllies } = trpc.allies.adminList.useQuery();
+  const { data: pendingRoleRequests } = trpc.roleRequests.adminList.useQuery({ status: "pending" });
 
   const pendingCreatorsCount = pendingCreators?.filter(c => c.status === "pending").length ?? 0;
   const pendingTournamentsCount = pendingTournaments?.length ?? 0;
   const pendingAlliesCount = pendingAllies?.filter((a: any) => a.status === "pending").length ?? 0;
-  const totalPending = pendingCreatorsCount + pendingTournamentsCount + pendingAlliesCount;
+  const pendingRoleRequestsCount = pendingRoleRequests?.length ?? 0;
+  const totalPending = pendingCreatorsCount + pendingTournamentsCount + pendingAlliesCount + pendingRoleRequestsCount;
 
   return (
     <div className="space-y-8 w-full">
@@ -119,6 +121,13 @@ export function DashboardPage() {
                 count={pendingAlliesCount}
                 href="/admin/content/allies"
                 color="bg-blue-500/20 text-blue-400"
+              />
+              <PendingCard
+                icon={Flag}
+                label="Solicitudes de Rol"
+                count={pendingRoleRequestsCount}
+                href="/admin/system/role-requests"
+                color="bg-purple-500/20 text-purple-400"
               />
             </div>
           )}

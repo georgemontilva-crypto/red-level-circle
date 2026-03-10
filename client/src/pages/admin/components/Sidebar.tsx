@@ -71,9 +71,10 @@ const nav: NavItem[] = [
     label: "Sistema",
     icon: Shield,
     children: [
+      { href: "/admin/system/role-requests", label: "Solicitudes de Rol", icon: Flag },
       { href: "/admin/system/verifications", label: "Verificaciones", icon: BadgeCheck },
       { href: "/admin/system/audit", label: "Auditoría", icon: Database },
-      { href: "/admin/system/roles", label: "Roles", icon: Flag },
+      { href: "/admin/system/roles", label: "Roles", icon: Shield },
     ],
   },
 ];
