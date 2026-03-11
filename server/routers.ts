@@ -2526,6 +2526,48 @@ export const appRouter = router({
       .input(z.object({ userId: z.number(), role: z.enum(["player", "to", "cdc", "partner", "admin", "super_admin"]) }))
       .mutation(async ({ input }) => {
         await adminUpdateUserRole(input.userId, input.role);
+
+        const db = await getDb();
+        const { contentCreators, allies: alliesTable } = await import("../drizzle/schema");
+
+        // Limpiar canCreateTournaments si el nuevo rol no lo requiere
+        if (!["to", "admin", "super_admin"].includes(input.role)) {
+          await db.update(users)
+            .set({ canCreateTournaments: false })
+            .where(eq(users.id, input.userId));
+        }
+
+        // Desactivar content_creator si el nuevo rol no lo justifica
+        if (!["cdc", "admin", "super_admin"].includes(input.role)) {
+          await db.update(contentCreators)
+            .set({ status: "rejected" })
+            .where(eq(contentCreators.userId, input.userId));
+        }
+
+        // Desactivar ally si el nuevo rol no lo justifica
+        if (!["partner", "admin", "super_admin"].includes(input.role)) {
+          await db.update(alliesTable)
+            .set({ status: "rejected" })
+            .where(eq(alliesTable.submittedBy, input.userId));
+        }
+
+        // Notificar al usuario del cambio de rol
+        const roleLabels: Record<string, string> = {
+          player: "Usuario",
+          to: "Organizador de Torneos",
+          cdc: "Creador de Contenido",
+          partner: "Aliado Comercial",
+          admin: "Administrador",
+          super_admin: "Super Administrador",
+        };
+        await createNotification({
+          userId: input.userId,
+          type: "general",
+          title: "Tu rol ha sido actualizado",
+          message: `Tu rol en Red Level Circle ahora es: ${roleLabels[input.role] ?? input.role}. Si tienes preguntas contacta al equipo.`,
+          link: "/perfil",
+        });
+
         return { success: true };
       }),
     updateBannerPermission: adminProcedure
