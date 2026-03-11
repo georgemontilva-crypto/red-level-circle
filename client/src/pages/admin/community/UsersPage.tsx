@@ -31,9 +31,19 @@ export function UsersPage() {
 
   const roleColors: Record<string, string> = {
     super_admin: "bg-purple-500/20 text-purple-300 border-purple-600/40",
-    admin: "bg-yellow-500/20 text-yellow-400 border-yellow-600/40",
-    premium: "bg-blue-500/20 text-blue-400 border-blue-600/40",
-    user: "bg-zinc-500/20 text-zinc-400 border-zinc-600/40",
+    admin:       "bg-yellow-500/20 text-yellow-400 border-yellow-600/40",
+    to:          "bg-orange-500/20 text-orange-400 border-orange-600/40",
+    cdc:         "bg-blue-500/20 text-blue-400 border-blue-600/40",
+    partner:     "bg-green-500/20 text-green-400 border-green-600/40",
+    player:      "bg-zinc-500/20 text-zinc-400 border-zinc-600/40",
+  };
+  const roleLabels: Record<string, string> = {
+    super_admin: "Super Admin",
+    admin:       "Admin",
+    to:          "Org. Torneos",
+    cdc:         "Creador",
+    partner:     "Aliado",
+    player:      "Usuario",
   };
 
   return (
@@ -56,15 +66,17 @@ export function UsersPage() {
               <p className="text-zinc-500 text-xs truncate">{u.email}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Badge className={`font-orbitron text-xs border ${roleColors[u.role] ?? roleColors.user}`}>
-                {u.role === "premium" ? "CDC" : u.role === "super_admin" ? "SUPER ADMIN" : u.role === "admin" ? "ADMIN" : "USUARIO"}
+              <Badge className={`font-orbitron text-xs border ${roleColors[u.role] ?? roleColors.player}`}>
+                {(roleLabels[u.role] ?? u.role).toUpperCase()}
               </Badge>
               <span className="text-yellow-400 text-xs font-orbitron">{u.rlcBalance ?? 0} RLC</span>
               <Select value={u.role} onValueChange={role => updateRole.mutate({ userId: u.id, role: role as any })}>
-                <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Usuario</SelectItem>
-                  <SelectItem value="premium">CDC</SelectItem>
+                  <SelectItem value="player">Usuario</SelectItem>
+                  <SelectItem value="to">Org. de Torneos</SelectItem>
+                  <SelectItem value="cdc">Creador de Contenido</SelectItem>
+                  <SelectItem value="partner">Aliado</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="super_admin">Super Admin</SelectItem>
                 </SelectContent>
