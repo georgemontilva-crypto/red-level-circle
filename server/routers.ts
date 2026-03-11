@@ -3831,11 +3831,27 @@ Genera el reporte de precio RLC para este producto.`;
         subscribers: z.number().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Bloqueo de duplicados: no permitir dos solicitudes pending
+        const existingCreator = await getCreatorByUserId(ctx.user.id);
+        if (existingCreator && existingCreator.status === "pending") {
+          throw new TRPCError({ code: "CONFLICT", message: "Ya tienes una solicitud pendiente" });
+        }
         const result = await applyAsCreator(ctx.user.id, input);
+        // Notify admins in-app
+        const db = await getDb();
+        const admins = await db.select({ id: users.id }).from(users)
+          .where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
+        await Promise.all(admins.map(a =>
+          createNotification({ userId: a.id, type: "general",
+            title: "Nueva solicitud de Creador de Contenido",
+            message: `Solicitud de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"}. Revisa el Admin Panel.`,
+            link: "/admin/creators" })
+        ));
         // Notify cdc@redlevelcircle.com
         setImmediate(async () => {
           try {
             const { notifyInternalCreatorApply } = await import("./pushService");
+            console.log("[Email] Intentando enviar a: cdc@redlevelcircle.com");
             await notifyInternalCreatorApply({
               userName: ctx.user.name ?? ctx.user.openId ?? "Usuario",
               userEmail: ctx.user.email ?? undefined,
@@ -3851,6 +3867,7 @@ Genera el reporte de precio RLC para este producto.`;
               kick: input.kick,
               subscribers: input.subscribers,
             });
+            console.log("[Email] Enviado exitosamente");
           } catch (e) { console.error("[Email] creator apply:", (e as Error).message); }
         });
         return result;
@@ -4202,15 +4219,34 @@ Genera el reporte de precio RLC para este producto.`;
         const db = await getDb();
         const { allies: alliesTable } = await import("../drizzle/schema");
         const userId = (ctx as any).user?.id ?? null;
+        // Bloqueo de duplicados para usuarios autenticados
+        if (userId !== null) {
+          const existing = await db.select().from(alliesTable)
+            .where(and(eq(alliesTable.submittedBy, userId), eq(alliesTable.status, "pending")))
+            .limit(1);
+          if (existing.length > 0) {
+            throw new TRPCError({ code: "CONFLICT", message: "Ya tienes una solicitud pendiente" });
+          }
+        }
         await db.insert(alliesTable).values({
           ...input,
           status: "pending",
           submittedBy: userId,
         });
+        // Notify admins in-app
+        const admins = await db.select({ id: users.id }).from(users)
+          .where(or(eq(users.role, "admin"), eq(users.role, "super_admin")));
+        await Promise.all(admins.map(a =>
+          createNotification({ userId: a.id, type: "general",
+            title: "Nueva solicitud de Aliado Comercial",
+            message: `Nueva solicitud de aliado: ${input.name}. Revisa el Admin Panel.`,
+            link: "/admin/allies" })
+        ));
         // Notify publicidad@redlevelcircle.com
         setImmediate(async () => {
           try {
             const { notifyInternalAllySubmit } = await import("./pushService");
+            console.log("[Email] Intentando enviar a: publicidad@redlevelcircle.com");
             await notifyInternalAllySubmit({
               name: input.name,
               description: input.description,
@@ -4224,6 +4260,7 @@ Genera el reporte de precio RLC para este producto.`;
               facebook: input.facebook ?? undefined,
               tiktok: input.tiktok ?? undefined,
             });
+            console.log("[Email] Enviado exitosamente");
           } catch (e) { console.error("[Email] ally submit:", (e as Error).message); }
         });
         return { success: true };
@@ -5631,6 +5668,8 @@ Genera el reporte de precio RLC para este producto.`;
         setImmediate(async () => {
           try {
             const { notifyInternalRoleRequest } = await import("./pushService");
+            const roleEmailMap: Record<string, string> = { to: "to@redlevelcircle.com", cdc: "cdc@redlevelcircle.com", partner: "publicidad@redlevelcircle.com" };
+            console.log(`[Email] Intentando enviar a: ${roleEmailMap[input.requestedRole] ?? "admin@redlevelcircle.com"}`);
             await notifyInternalRoleRequest({
               userName: ctx.user.name ?? ctx.user.openId ?? "Usuario",
               userEmail: ctx.user.email ?? undefined,
@@ -5642,6 +5681,7 @@ Genera el reporte de precio RLC para este producto.`;
               discordContact: input.discordContact,
               websiteUrl: input.websiteUrl,
             });
+            console.log("[Email] Enviado exitosamente");
           } catch (e) { console.error("[Email] role request:", (e as Error).message); }
         });
         return { success: true };
