@@ -6,11 +6,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import {
   Trophy, Users, Zap, ChevronRight, ChevronLeft,
   Play, Newspaper, Star, Youtube, Twitch, Twitter, Instagram,
-  Calendar, Gamepad2, Crown, UserPlus, ArrowRight,
+  Calendar, Gamepad2, Crown, UserPlus, UserCheck, Loader2, ArrowRight,
   Swords, Target, TrendingUp, Globe, Medal, Coins, Flame,
   Shield, Clock, CheckCircle2, BarChart3, RefreshCw,
   GitBranch, User2, Hash, Handshake, Store, Facebook, Eye
 } from "lucide-react";
+import { toast } from "sonner";
 import { DefaultBannerBg } from "@/components/DefaultBannerBg";
 import { UserAvatar } from "@/components/UserAvatar";
 import { VerifiedBadge } from "@/components/VerifiedBadge";
@@ -634,6 +635,12 @@ function TeamsAndPeopleSection() {
   );
   const follow = trpc.follows.follow.useMutation();
   const utils = trpc.useUtils();
+  const { data: followingList } = trpc.follows.getFollowing.useQuery(
+    { userId: user?.id ?? 0 },
+    { enabled: isAuthenticated && !!user?.id }
+  );
+  const followingIds = new Set(followingList?.map((u: any) => u.id) ?? []);
+  const [pendingFollows, setPendingFollows] = useState<Set<number>>(new Set());
 
   // Offset para mostrar diferentes equipos/personas en cada refresh
   const [teamOffset, setTeamOffset] = useState(0);
@@ -787,16 +794,34 @@ function TeamsAndPeopleSection() {
                     <button
                       onClick={e => {
                         e.preventDefault();
+                        if (pendingFollows.has(u.id)) return;
+                        setPendingFollows(prev => new Set(prev).add(u.id));
                         follow.mutate({ userId: u.id }, {
                           onSuccess: () => {
+                            setPendingFollows(prev => { const s = new Set(prev); s.delete(u.id); return s; });
                             utils.home.recentUsers.invalidate();
                             utils.home.suggestedUsers.invalidate();
-                          }
+                            utils.follows.getFollowing.invalidate();
+                            toast.success(`¡Ahora sigues a ${u.nickname ?? u.name}!`);
+                          },
+                          onError: (e) => {
+                            setPendingFollows(prev => { const s = new Set(prev); s.delete(u.id); return s; });
+                            toast.error(e.message);
+                          },
                         });
                       }}
-                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono bg-blue-600/20 text-blue-400 hover:bg-blue-600/40 transition-colors"
+                      disabled={pendingFollows.has(u.id) || followingIds.has(u.id)}
+                      className={followingIds.has(u.id)
+                        ? "shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-500/20 text-green-400 border border-green-500/30 cursor-default"
+                        : "shrink-0 flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-500/20 text-blue-400 border border-blue-500/30 hover:bg-blue-500/30 transition-colors"
+                      }
                     >
-                      <UserPlus size={10} /> Seguir
+                      {followingIds.has(u.id)
+                        ? <><UserCheck size={10} /> Siguiendo</>
+                        : pendingFollows.has(u.id)
+                          ? <Loader2 size={10} className="animate-spin" />
+                          : <><UserPlus size={10} /> Seguir</>
+                      }
                     </button>
                   )}
                 </div>
