@@ -596,7 +596,7 @@ export const appRouter = router({
         if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.id, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-        const registrations = await getRegistrationsByTournament(input.id, "Aprobado");
+        const registrations = await getRegistrationsByTournament(input.id, "approved");
         if (registrations.length < 2) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Se necesitan al menos 2 equipos aprobados." });
         }
@@ -621,7 +621,7 @@ export const appRouter = router({
         }
         await updateTournament(input.tournamentId, { winnerId: input.winnerId, status: "completed" });
         // Update team stats
-        const registrations = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const registrations = await getRegistrationsByTournament(input.tournamentId, "approved");
         for (const reg of registrations) {
           await updateTeamStats(reg.teamId, reg.teamId === input.winnerId);
         }
@@ -754,7 +754,7 @@ export const appRouter = router({
           }
         }
         // Verificar que el equipo está registrado y aprobado
-        const regs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const regs = await getRegistrationsByTournament(input.tournamentId, "approved");
         const reg = regs.find((r: any) => r.teamId === input.teamId);
         if (!reg) throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo no está registrado en este torneo." });
         // Verificar que el usuario es capitán del equipo
@@ -1139,12 +1139,12 @@ export const appRouter = router({
         // ── Fix: Validar que no exista ya una inscripción activa del mismo equipo ──
         const existingRegs = await getRegistrationsByTournament(input.tournamentId);
         const alreadyRegistered = existingRegs.find(
-          (r) => r.teamId === input.teamId && (r.status === "Pendiente" || r.status === "Aprobado")
+          (r) => r.teamId === input.teamId && (r.status === "pending" || r.status === "approved")
         );
         if (alreadyRegistered) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: alreadyRegistered.status === "Aprobado"
+            message: alreadyRegistered.status === "approved"
               ? "Este equipo ya está inscrito en el torneo."
               : "Este equipo ya tiene una solicitud de inscripción pendiente.",
           });
@@ -1153,7 +1153,7 @@ export const appRouter = router({
         // ── Fix: Validar cupo disponible (aprobados + pendientes vs maxTeams) ──
         const tAny = t as any;
         if (tAny.maxTeams) {
-          const approvedCount = existingRegs.filter((r) => r.status === "Aprobado").length;
+          const approvedCount = existingRegs.filter((r) => r.status === "approved").length;
           if (approvedCount >= tAny.maxTeams) {
             throw new TRPCError({ code: "BAD_REQUEST", message: "El torneo ya está lleno." });
           }
@@ -1224,7 +1224,7 @@ export const appRouter = router({
         }
         // Auto-generate brackets if tournament is now fulll
         try {
-          const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+          const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "approved");
           if (t.maxTeams && approvedRegs.length >= t.maxTeams) {
             // Generate brackets automatically
             const teamIds = approvedRegs.map((r) => r.teamId);
@@ -1244,7 +1244,7 @@ export const appRouter = router({
     updateStatus: premiumProcedure
       .input(z.object({
         id: z.number(),
-        status: z.enum(["Aprobado", "Rechazado", "Cancelado"]),
+        status: z.enum(["approved", "rejected", "cancelled"]),
         creatorMessage: z.string().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
@@ -1260,7 +1260,7 @@ export const appRouter = router({
         try {
           const team = await getTeamById(reg.teamId);
           if (team?.captainId) {
-            if (input.status === "Aprobado") {
+            if (input.status === "approved") {
               eventBus.emit("registration.approved", {
                 registrationId: input.id,
                 teamId: reg.teamId,
@@ -1287,7 +1287,7 @@ export const appRouter = router({
                   });
                 }
               } catch (_) { /* non-critical */ }
-            } else if (input.status === "Rechazado") {
+            } else if (input.status === "rejected") {
               eventBus.emit("registration.rejected", {
                 registrationId: input.id,
                 teamId: reg.teamId,
@@ -1456,7 +1456,7 @@ export const appRouter = router({
         if (!await isTournamentManager(ctx.user.id, t.creatorId!, input.tournamentId, ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-        const registrations = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const registrations = await getRegistrationsByTournament(input.tournamentId, "approved");
         if (registrations.length < 2) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Se necesitan al menos 2 equipos aprobados para generar el bracket." });
         }
@@ -1613,7 +1613,7 @@ export const appRouter = router({
           .where(eq(tournaments.id, input.tournamentId))
           .limit(1);
         if (!tournament) throw new TRPCError({ code: "NOT_FOUND" });
-        if (tournament.organizerId !== ctx.userId && ctx.userRole !== "admin") {
+        if (tournament.creatorId !== ctx.user.id && !isAdmin(ctx.user.role)) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Solo el organizador puede generar códigos de sala" });
         }
 
@@ -2331,7 +2331,7 @@ export const appRouter = router({
         }
         // Verificar que el equipo participa en el torneo
         const { getRegistrationsByTournament } = await import("./db");
-        const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "Aprobado");
+        const approvedRegs = await getRegistrationsByTournament(input.tournamentId, "approved");
         const teamInTournament = approvedRegs.some((r: { teamId: number }) => r.teamId === input.teamId);
         if (!teamInTournament) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo seleccionado no participa en este torneo." });
@@ -3145,7 +3145,7 @@ Genera el reporte de precio RLC para este producto.`;
       .input(z.object({ userId: z.number(), banned: z.boolean() }))
       .mutation(async ({ input }) => {
         // Set role to 'user' when banning (remove any elevated access)
-        if (input.banned) await adminUpdateUserRole(input.userId, "user");
+        if (input.banned) await adminUpdateUserRole(input.userId, "player");
         return { success: true };
       }),
     uploadImage: adminProcedure
@@ -6009,7 +6009,7 @@ Genera el reporte de precio RLC para este producto.`;
         // Count participants for each tournament
         const tournamentsWithCounts = await Promise.all(allTournaments.map(async (t) => {
           const regs = await getRegistrationsByTournament(t.id);
-          const approved = regs.filter((r: any) => r.status === "Aprobado" || r.status === "approved").length;
+          const approved = regs.filter((r: any) => r.status === "approved").length;
           return { ...t, participantCount: approved };
         }));
         const now = new Date();

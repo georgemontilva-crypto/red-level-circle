@@ -422,6 +422,12 @@ async function runCustomMigrations() {
     "'verification_rejected','verification_pending_admin','tournament_full'," +
     "'match_scheduled','match_result','coins_earned','coins_spent'," +
     "'news_published','general') NOT NULL",
+    // 0058: migrate tournament_registrations.status from Spanish to English enum values
+    "UPDATE `tournament_registrations` SET `status` = 'pending'   WHERE `status` = 'Pendiente'",
+    "UPDATE `tournament_registrations` SET `status` = 'approved'  WHERE `status` = 'Aprobado'",
+    "UPDATE `tournament_registrations` SET `status` = 'rejected'  WHERE `status` = 'Rechazado'",
+    "UPDATE `tournament_registrations` SET `status` = 'cancelled' WHERE `status` = 'Cancelado'",
+    "ALTER TABLE `tournament_registrations` MODIFY COLUMN `status` ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending'",
   ];
   for (const sql of customMigrations) {
     try {

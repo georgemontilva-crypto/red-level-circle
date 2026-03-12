@@ -485,7 +485,7 @@ export async function createRegistration(data: {
   if (!db) throw new Error("DB not available");
   const [result] = await db.insert(tournamentRegistrations).values({
     ...data,
-    status: "Pendiente",
+    status: "pending",
   });
   return (result as { insertId: number }).insertId;
 }
@@ -555,7 +555,7 @@ export async function getRegistrationById(id: number) {
 
 export async function updateRegistrationStatus(
   id: number,
-  status: "Pendiente" | "Aprobado" | "Rechazado" | "Cancelado",
+  status: "pending" | "approved" | "rejected" | "cancelled",
   changedById: number,
   creatorMessage?: string
 ) {
@@ -608,7 +608,7 @@ export async function countPendingRegistrations(creatorId: number) {
     .where(
       and(
         eq(tournaments.creatorId, creatorId),
-        eq(tournamentRegistrations.status, "Pendiente")
+        eq(tournamentRegistrations.status, "pending")
       )
     );
   return result[0]?.count ?? 0;
@@ -4133,7 +4133,7 @@ export async function getTeamRankingByTournament(tournamentId: number) {
     .where(
       and(
         eq(tournamentRegistrations.tournamentId, tournamentId),
-        eq(tournamentRegistrations.status, "Aprobado")
+        eq(tournamentRegistrations.status, "approved")
       )
     );
 

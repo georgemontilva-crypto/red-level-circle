@@ -213,7 +213,7 @@ export default function TournamentManage() {
 
   const { data: tournament, refetch: refetchTournament } = trpc.tournaments.byId.useQuery({ id });
   const { data: registrations, refetch: refetchRegs } = trpc.registrations.byTournament.useQuery(
-    { tournamentId: id, status: "Aprobado" },
+    { tournamentId: id, status: "approved" },
     { enabled: !!tournament }
   );
   const { data: allRegistrations } = trpc.registrations.byTournament.useQuery(
@@ -360,7 +360,7 @@ export default function TournamentManage() {
 
   const statusInfo = STATUS_LABELS[tournament.status] ?? { label: tournament.status, color: "var(--text-muted)" };
   const approvedCount = registrations?.length ?? 0;
-  const pendingCount = allRegistrations?.filter((r) => r.status === "Pendiente").length ?? 0;
+  const pendingCount = allRegistrations?.filter((r) => r.status === "pending").length ?? 0;
   const completedMatches = matches?.filter((m) => m.status === "completed").length ?? 0;
   const totalMatches = matches?.length ?? 0;
 

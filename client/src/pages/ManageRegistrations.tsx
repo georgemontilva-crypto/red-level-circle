@@ -24,22 +24,22 @@ import {
 } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  Pendiente: {
+  pending: {
     label: "Pendiente",
     color: "oklch(0.65 0.18 80)",
     icon: <Clock size={14} />,
   },
-  Aprobado: {
+  approved: {
     label: "Aprobado",
     color: "oklch(0.65 0.18 145)",
     icon: <CheckCircle size={14} />,
   },
-  Rechazado: {
+  rejected: {
     label: "Rechazado",
     color: "oklch(0.55 0.22 25)",
     icon: <XCircle size={14} />,
   },
-  Cancelado: {
+  cancelled: {
     label: "Cancelado",
     color: "oklch(0.45 0.005 0)",
     icon: <AlertCircle size={14} />,
@@ -52,7 +52,7 @@ export default function ManageRegistrations() {
   const [search, setSearch] = useState("");
   const [actionModal, setActionModal] = useState<{
     regId: number;
-    action: "Aprobado" | "Rechazado" | "Cancelado";
+    action: "approved" | "rejected" | "cancelled";
     teamName: string;
   } | null>(null);
   const [actionMessage, setActionMessage] = useState("");
@@ -271,7 +271,7 @@ export default function ManageRegistrations() {
                 </div>
               ) : (
                 filteredRegistrations.map((reg, idx) => {
-                  const cfg = STATUS_CONFIG[reg.status] ?? STATUS_CONFIG["Pendiente"];
+                  const cfg = STATUS_CONFIG[reg.status] ?? STATUS_CONFIG["pending"];
                   return (
                     <div
                       key={reg.id}
@@ -352,13 +352,13 @@ export default function ManageRegistrations() {
                           <History size={14} />
                         </button>
 
-                        {reg.status === "Pendiente" && (
+                        {reg.status === "pending" && (
                           <>
                             <button
                               onClick={() =>
                                 setActionModal({
                                   regId: reg.id,
-                                  action: "Aprobado",
+                                  action: "approved",
                                   teamName: reg.teamName ?? `Equipo #${reg.teamId}`,
                                 })
                               }
@@ -375,7 +375,7 @@ export default function ManageRegistrations() {
                               onClick={() =>
                                 setActionModal({
                                   regId: reg.id,
-                                  action: "Rechazado",
+                                  action: "rejected",
                                   teamName: reg.teamName ?? `Equipo #${reg.teamId}`,
                                 })
                               }
@@ -390,12 +390,12 @@ export default function ManageRegistrations() {
                             </button>
                           </>
                         )}
-                        {reg.status === "Aprobado" && (
+                        {reg.status === "approved" && (
                           <button
                             onClick={() =>
                               setActionModal({
                                 regId: reg.id,
-                                action: "Cancelado",
+                                action: "cancelled",
                                 teamName: reg.teamName ?? `Equipo #${reg.teamId}`,
                               })
                             }
@@ -447,9 +447,9 @@ export default function ManageRegistrations() {
               </div>
               <div>
                 <h3 className="font-display text-lg font-bold tracking-wider text-foreground">
-                  {actionModal.action === "Aprobado"
+                  {actionModal.action === "approved"
                     ? "APROBAR EQUIPO"
-                    : actionModal.action === "Rechazado"
+                    : actionModal.action === "rejected"
                     ? "RECHAZAR EQUIPO"
                     : "CANCELAR INSCRIPCIÓN"}
                 </h3>
@@ -465,9 +465,9 @@ export default function ManageRegistrations() {
                 value={actionMessage}
                 onChange={(e) => setActionMessage(e.target.value)}
                 placeholder={
-                  actionModal.action === "Aprobado"
+                  actionModal.action === "approved"
                     ? "Ej: Bienvenidos al torneo. Revisen el canal de Discord..."
-                    : actionModal.action === "Rechazado"
+                    : actionModal.action === "rejected"
                     ? "Ej: El equipo no cumple con los requisitos mínimos..."
                     : "Ej: La inscripción ha sido cancelada por..."
                 }
