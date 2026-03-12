@@ -2551,6 +2551,14 @@ export const appRouter = router({
             .where(eq(alliesTable.submittedBy, input.userId));
         }
 
+        // Marcar como rejected los role_requests aprobados anteriores (ya no corresponden al rol actual)
+        await db.update(roleRequests)
+          .set({ status: "rejected" })
+          .where(and(
+            eq(roleRequests.userId, input.userId),
+            eq(roleRequests.status, "approved")
+          ));
+
         // Notificar al usuario del cambio de rol
         const roleLabels: Record<string, string> = {
           player: "Usuario",
@@ -5676,7 +5684,7 @@ Genera el reporte de precio RLC para este producto.`;
       }))
       .mutation(async ({ ctx, input }) => {
         const db = await getDb();
-        // Check if user already has a pending request for this role
+        // Bloquear si ya existe una solicitud pendiente para este rol
         const existing = await db.select().from(roleRequests)
           .where(and(
             eq(roleRequests.userId, ctx.user.id),
@@ -5685,7 +5693,15 @@ Genera el reporte de precio RLC para este producto.`;
           ))
           .limit(1);
         if (existing.length > 0) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Ya tienes una solicitud pendiente para este rol." });
+          throw new TRPCError({ code: "CONFLICT", message: "Ya tienes una solicitud pendiente para este rol." });
+        }
+        // Bloquear si el usuario ya tiene este rol activo
+        const currentUser = await db.select({ role: users.role })
+          .from(users)
+          .where(eq(users.id, ctx.user.id))
+          .limit(1);
+        if (currentUser[0]?.role === input.requestedRole) {
+          throw new TRPCError({ code: "CONFLICT", message: "Ya tienes este rol activo." });
         }
         await db.insert(roleRequests).values({
           userId: ctx.user.id,
