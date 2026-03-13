@@ -1,7 +1,7 @@
 /**
  * /apply/creator
  * Formulario único de solicitud para ser Creador de Contenido (CDC) en RLC.
- * Solo accesible por botón directo desde /creadores o Home.
+ * Solo accesible por botón directo desde /creators o Home.
  * Llama a trpc.creators.submitApplication (tabla contentCreators).
  */
 import { useState } from "react";
@@ -64,7 +64,7 @@ export default function CreatorApply() {
   const submitMutation = trpc.creators.submitApplication.useMutation({
     onSuccess: () => {
       toast.success("¡Solicitud enviada! Te notificaremos pronto.");
-      navigate("/creadores");
+      navigate("/creators");
     },
     onError: (e) => toast.error(e.message),
   });
@@ -120,7 +120,7 @@ export default function CreatorApply() {
             Tu cuenta está verificada y apareces en el directorio de creadores de RLC.
           </p>
           <button
-            onClick={() => navigate("/creadores")}
+            onClick={() => navigate("/creators")}
             className="w-full py-3 rounded-xl font-orbitron font-bold tracking-widest text-sm text-white"
             style={{ background: ACCENT }}
           >
@@ -148,7 +148,7 @@ export default function CreatorApply() {
             Te notificaremos cuando haya una respuesta.
           </p>
           <button
-            onClick={() => navigate("/creadores")}
+            onClick={() => navigate("/creators")}
             className="w-full py-3 rounded-xl font-orbitron font-bold tracking-widest text-sm text-white"
             style={{ background: ACCENT }}
           >
