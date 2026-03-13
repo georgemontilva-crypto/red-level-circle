@@ -3895,7 +3895,7 @@ Genera el reporte de precio RLC para este producto.`;
           createNotification({ userId: a.id, type: "general",
             title: "Nueva solicitud de Creador de Contenido",
             message: `Solicitud de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"}. Revisa el Admin Panel.`,
-            link: "/admin/creators" })
+            link: "/admin/community/creators" })
         ));
         // Notify cdc@redlevelcircle.com
         setImmediate(async () => {
@@ -4290,7 +4290,7 @@ Genera el reporte de precio RLC para este producto.`;
           createNotification({ userId: a.id, type: "general",
             title: "Nueva solicitud de Aliado Comercial",
             message: `Nueva solicitud de aliado: ${input.name}. Revisa el Admin Panel.`,
-            link: "/admin/allies" })
+            link: "/admin/content/allies" })
         ));
         // Notify publicidad@redlevelcircle.com
         setImmediate(async () => {
@@ -5720,7 +5720,7 @@ Genera el reporte de precio RLC para este producto.`;
           createNotification({ userId: a.id, type: "general",
             title: `Nueva solicitud de rol ${input.requestedRole.toUpperCase()}`,
             message: `Solicitud de ${ctx.user.nickname ?? ctx.user.name ?? "usuario"} para el rol ${input.requestedRole.toUpperCase()}. Revisa el Admin Panel.`,
-            link: "/admin" })
+            link: "/admin/system/role-requests" })
         ));
         // Notify team email (to@, cdc@, publicidad@) depending on role
         setImmediate(async () => {
