@@ -52,9 +52,33 @@ export async function notifyRlcReceived(params: {
       type: params.type,
       description: params.description,
     });
-   } catch (e) {
+  } catch (e) {
     console.warn("[Push] RLC push failed:", (e as Error).message);
   }
+  // Email transaccional (no-op si el usuario no tiene email o RESEND_API_KEY no está configurado)
+  setImmediate(async () => {
+    try {
+      const { getUserById } = await import("./db");
+      const user = await getUserById(params.userId);
+      if (user?.email) {
+        const { sendEmail, buildRlcReceivedEmail } = await import("./pushService");
+        const html = buildRlcReceivedEmail({
+          userName: user.nickname ?? user.name ?? "Usuario",
+          amount: params.amount,
+          newBalance: params.newBalance,
+          type: params.type,
+          description: params.description,
+        });
+        await sendEmail({
+          to: user.email,
+          subject: "💰 Recibiste RLC Coins",
+          html,
+        });
+      }
+    } catch (e) {
+      console.warn("[Email] RLC email failed:", (e as Error).message);
+    }
+  });
 }
 
 export async function createNotification(params: {

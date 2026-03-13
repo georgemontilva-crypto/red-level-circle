@@ -2704,7 +2704,7 @@ export async function adminUpdateVerified(userId: number, isVerified: boolean) {
   await db.update(users).set({ isVerified }).where(eq(users.id, userId));
 }
 
-export async function adminAdjustRLC(userId: number, amount: number, reason: string) {
+export async function adminAdjustRLC(userId: number, amount: number, reason: string): Promise<number> {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   // Update balance
@@ -2720,6 +2720,7 @@ export async function adminAdjustRLC(userId: number, amount: number, reason: str
     description: reason,
     balanceAfter: newBalance,
   });
+  return newBalance;
 }
 
 // ─── Admin: Shop Items ────────────────────────────────────────────────────────

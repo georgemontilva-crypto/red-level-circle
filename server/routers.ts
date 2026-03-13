@@ -2593,7 +2593,26 @@ export const appRouter = router({
     adjustRLC: adminProcedure
       .input(z.object({ userId: z.number(), amount: z.number().int(), reason: z.string() }))
       .mutation(async ({ input }) => {
-        await adminAdjustRLC(input.userId, input.amount, input.reason);
+        const newBalance = await adminAdjustRLC(input.userId, input.amount, input.reason);
+        if (input.amount > 0) {
+          await notifyRlcReceived({
+            userId: input.userId,
+            amount: input.amount,
+            type: "deposit",
+            newBalance,
+            description: input.reason ?? "Ajuste de RLC",
+          });
+        } else if (input.amount < 0) {
+          await createNotification({
+            userId: input.userId,
+            type: "general",
+            title: "Ajuste de RLC Coins",
+            message: `Se han ajustado ${input.amount} RLC de tu cuenta. ${input.reason ?? ""}`.trim(),
+            link: "/wallet",
+          });
+          sseNotifyUser(input.userId, "notification");
+          sseNotifyUser(input.userId, "coins");
+        }
         return { success: true };
       }),
     listOrders: adminProcedure
