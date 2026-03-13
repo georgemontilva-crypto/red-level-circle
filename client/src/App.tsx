@@ -50,6 +50,7 @@ const Store           = lazy(() => import("./pages/Store"));
 const MyGallery       = lazy(() => import("./pages/MyGallery"));
 const MatchPageLazy      = lazy(() => import("./pages/MatchPage"));
 const OrganizerProfile   = lazy(() => import("./pages/OrganizerProfile"));
+const Wallet             = lazy(() => import("./pages/Wallet"));
 
 // ── Hidden apply pages (only reachable via direct button, not in nav) ─────────
 const TOApply      = lazy(() => import("./pages/apply/TOApply"));
@@ -179,6 +180,7 @@ function Router() {
               <Route path="/store/physical" component={Store} />
               <Route path="/store/cosmetics" component={Store} />
               <Route path="/store" component={Store} />
+              <Route path="/wallet" component={Wallet} />
               <Route path="/inventory" component={Inventory} />
               <Route path="/gallery">{() => <Suspense fallback={<PageLoader />}><MyGallery /></Suspense>}</Route>
               <Route path="/settings" component={Settings} />
