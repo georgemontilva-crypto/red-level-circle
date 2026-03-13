@@ -754,7 +754,7 @@ export default function CreateTournament() {
               Solo los <strong className="text-white">Organizadores de Torneos (TO)</strong> pueden crear torneos en RLC.
               Completa el formulario de solicitud y el equipo lo revisará pronto.
             </p>
-            <a href="/apply/role?role=to">
+            <a href="/apply/to">
               <button className="px-6 py-3 rounded-xl font-orbitron font-bold text-sm text-white" style={{ background: "oklch(0.50 0.22 25)" }}>SOLICITAR ROL TO</button>
             </a>
           </div>

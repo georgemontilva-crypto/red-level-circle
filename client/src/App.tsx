@@ -52,7 +52,8 @@ const MatchPageLazy      = lazy(() => import("./pages/MatchPage"));
 const OrganizerProfile   = lazy(() => import("./pages/OrganizerProfile"));
 
 // ── Hidden apply pages (only reachable via direct button, not in nav) ─────────
-const RoleApply    = lazy(() => import("./pages/apply/RoleApply"));
+const TOApply      = lazy(() => import("./pages/apply/TOApply"));
+const PartnerApply = lazy(() => import("./pages/apply/RoleApply"));
 const CreatorApply = lazy(() => import("./pages/apply/CreatorApply"));
 const AllyApply    = lazy(() => import("./pages/apply/AllyApply"));
 
@@ -125,7 +126,8 @@ function Router() {
   return (
     <Switch>
       {/* Hidden apply pages — no sidebar, no nav, only reachable via direct button */}
-      <Route path="/apply/role">{() => <Suspense fallback={<PageLoader />}><RoleApply /></Suspense>}</Route>
+      <Route path="/apply/to">{() => <Suspense fallback={<PageLoader />}><TOApply /></Suspense>}</Route>
+      <Route path="/apply/partner">{() => <Suspense fallback={<PageLoader />}><PartnerApply /></Suspense>}</Route>
       <Route path="/apply/creator">{() => <Suspense fallback={<PageLoader />}><CreatorApply /></Suspense>}</Route>
       <Route path="/apply/ally">{() => <Suspense fallback={<PageLoader />}><AllyApply /></Suspense>}</Route>
 

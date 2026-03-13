@@ -1,19 +1,38 @@
 /**
- * /apply/partner
- * Formulario de solicitud para ser Partner Comercial de RLC.
- * Solo accesible por botón directo.
- * Llama a trpc.roleRequests.submit con requestedRole: "partner".
+ * /apply/to
+ * Formulario de solicitud para ser Tournament Organizer (TO) en RLC.
+ * Solo accesible por botón directo desde /torneos o CreateTournament.
+ * Llama a trpc.roleRequests.submit con requestedRole: "to".
+ * games y region se encodan en orgDescription para no requerir cambios de schema.
  */
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
-import { ChevronLeft, Crown, CheckCircle, Clock, XCircle, Shield } from "lucide-react";
+import {
+  ChevronLeft, Trophy, CheckCircle, Clock, XCircle, Shield,
+} from "lucide-react";
+
+const GAMES = [
+  "League of Legends",
+  "Valorant",
+  "Honor of Kings",
+  "Mobile Legends",
+  "Otro",
+];
+
+const REGIONS = [
+  "Venezuela",
+  "Colombia",
+  "México",
+  "Latinoamérica",
+  "Global",
+];
 
 const ACCENT = "#2F6BFF";
 
-export default function RoleApply() {
+export default function TOApply() {
   const [, navigate] = useLocation();
   const { isAuthenticated, loading } = useAuth();
   const { data: me } = trpc.auth.me.useQuery();
@@ -22,13 +41,15 @@ export default function RoleApply() {
     { enabled: !!me }
   );
 
-  const [submitted, setSubmitted] = useState(false);
   const [form, setForm] = useState({
     orgName: "",
-    orgDescription: "",
-    websiteUrl: "",
+    games: [] as string[],
+    region: "",
+    experience: "",
     discordContact: "",
+    websiteUrl: "",
   });
+  const [submitted, setSubmitted] = useState(false);
 
   const submitMutation = trpc.roleRequests.submit.useMutation({
     onSuccess: () => {
@@ -38,6 +59,16 @@ export default function RoleApply() {
     },
     onError: (e) => toast.error(e.message),
   });
+
+  const toggleGame = (game: string) =>
+    setForm((f) => ({
+      ...f,
+      games: f.games.includes(game)
+        ? f.games.filter((g) => g !== game)
+        : [...f.games, game],
+    }));
+
+  const canSubmit = form.orgName.trim().length >= 2 && form.games.length > 0 && !!form.region;
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
@@ -58,7 +89,7 @@ export default function RoleApply() {
         <Shield className="w-16 h-16" style={{ color: ACCENT }} />
         <h1 className="font-orbitron font-bold text-2xl text-white text-center">Inicia sesión primero</h1>
         <p className="text-zinc-400 text-center text-sm">
-          Necesitas una cuenta de Red Level Circle para solicitar ser Partner.
+          Necesitas una cuenta de Red Level Circle para solicitar el rol de Organizador.
         </p>
         <button
           onClick={() => navigate("/login")}
@@ -71,7 +102,7 @@ export default function RoleApply() {
     );
   }
 
-  const existingRequest = myRequests?.find((r: any) => r.requestedRole === "partner");
+  const existingRequest = myRequests?.find((r: any) => r.requestedRole === "to");
 
   // ── Pending ────────────────────────────────────────────────────────────────
   if (submitted || existingRequest?.status === "pending") {
@@ -86,15 +117,15 @@ export default function RoleApply() {
           </div>
           <h1 className="font-orbitron font-bold text-2xl text-white">Solicitud en revisión</h1>
           <p className="text-zinc-400 text-sm leading-relaxed">
-            Tu solicitud para ser <strong className="text-white">Partner RLC</strong> está siendo
-            revisada por el equipo. Te notificaremos cuando haya una respuesta.
+            Tu solicitud para el rol <strong className="text-white">Tournament Organizer</strong> está
+            siendo revisada por el equipo de Red Level Circle. Te notificaremos cuando haya una respuesta.
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/torneos")}
             className="w-full py-3 rounded-xl font-orbitron font-bold tracking-widest text-sm text-white"
             style={{ background: ACCENT }}
           >
-            VOLVER AL INICIO
+            VER TORNEOS
           </button>
         </div>
       </div>
@@ -112,16 +143,16 @@ export default function RoleApply() {
           >
             <CheckCircle className="w-10 h-10 text-green-400" />
           </div>
-          <h1 className="font-orbitron font-bold text-2xl text-white">¡Ya eres Partner RLC!</h1>
+          <h1 className="font-orbitron font-bold text-2xl text-white">¡Ya eres Tournament Organizer!</h1>
           <p className="text-zinc-400 text-sm">
-            Tu solicitud fue aprobada. Ya puedes disfrutar de todos los beneficios del programa Partner.
+            Tu solicitud fue aprobada. Ya puedes crear y gestionar torneos en RLC.
           </p>
           <button
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/torneos")}
             className="w-full py-3 rounded-xl font-orbitron font-bold tracking-widest text-sm text-white"
             style={{ background: ACCENT }}
           >
-            VOLVER AL INICIO
+            IR A TORNEOS
           </button>
         </div>
       </div>
@@ -144,7 +175,7 @@ export default function RoleApply() {
         </button>
         <div>
           <h1 className="font-orbitron font-bold text-sm text-white tracking-widest">
-            APLICAR COMO ALIADO COMERCIAL
+            SOLICITAR ROL TOURNAMENT ORGANIZER
           </h1>
           <p className="text-xs text-zinc-500">Red Level Circle</p>
         </div>
@@ -180,14 +211,14 @@ export default function RoleApply() {
               className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
               style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}40` }}
             >
-              <Crown size={18} style={{ color: ACCENT }} />
+              <Trophy size={18} style={{ color: ACCENT }} />
             </div>
             <div>
               <h2 className="font-orbitron font-bold text-sm text-white tracking-widest">
                 DATOS DE TU SOLICITUD
               </h2>
               <p className="text-zinc-500 text-xs mt-0.5">
-                El equipo revisará tu solicitud y te contactará pronto
+                El equipo revisará tu solicitud y te notificará pronto
               </p>
             </div>
           </div>
@@ -195,12 +226,12 @@ export default function RoleApply() {
           {/* Org name */}
           <div>
             <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-1.5">
-              NOMBRE DE TU EMPRESA O TIENDA *
+              NOMBRE DE TU ORGANIZACIÓN O ALIAS *
             </label>
             <input
               value={form.orgName}
               onChange={(e) => setForm((f) => ({ ...f, orgName: e.target.value }))}
-              placeholder="Ej: GamerStore LATAM"
+              placeholder="Ej: Red Dragons Esports"
               maxLength={128}
               className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
@@ -209,19 +240,85 @@ export default function RoleApply() {
             />
           </div>
 
-          {/* Description */}
+          {/* Games */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-2.5">
+              JUEGOS QUE ORGANIZAS *{" "}
+              <span className="text-zinc-600 normal-case font-normal">(puedes seleccionar varios)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {GAMES.map((game) => (
+                <button
+                  key={game}
+                  type="button"
+                  onClick={() => toggleGame(game)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono transition-all"
+                  style={
+                    form.games.includes(game)
+                      ? { background: `${ACCENT}20`, border: `1px solid ${ACCENT}70`, color: "white" }
+                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "#71717a" }
+                  }
+                >
+                  {game}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Region */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-2.5">
+              REGIÓN PRINCIPAL *
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {REGIONS.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, region: r }))}
+                  className="px-3 py-1.5 rounded-lg text-xs font-mono transition-all"
+                  style={
+                    form.region === r
+                      ? { background: `${ACCENT}20`, border: `1px solid ${ACCENT}70`, color: "white" }
+                      : { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", color: "#71717a" }
+                  }
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Experience */}
           <div>
             <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-1.5">
-              DESCRIPCIÓN DEL NEGOCIO{" "}
-              <span className="text-zinc-600 normal-case font-normal">(opcional)</span>
+              CUÉNTANOS TU EXPERIENCIA ORGANIZANDO TORNEOS
             </label>
             <textarea
-              value={form.orgDescription}
-              onChange={(e) => setForm((f) => ({ ...f, orgDescription: e.target.value }))}
-              placeholder="Cuéntanos sobre tu empresa, productos o servicios..."
-              rows={3}
-              maxLength={1000}
+              value={form.experience}
+              onChange={(e) => setForm((f) => ({ ...f, experience: e.target.value }))}
+              placeholder="Torneos organizados anteriormente, comunidades, logros..."
+              rows={4}
+              maxLength={2000}
               className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 resize-none focus:outline-none transition-colors"
+              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = `${ACCENT}80`; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
+            />
+            <p className="text-xs text-zinc-600 text-right mt-1">{form.experience.length}/2000</p>
+          </div>
+
+          {/* Discord */}
+          <div>
+            <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-1.5">
+              DISCORD DE CONTACTO
+            </label>
+            <input
+              value={form.discordContact}
+              onChange={(e) => setForm((f) => ({ ...f, discordContact: e.target.value }))}
+              placeholder="usuario#0000 o @usuario"
+              maxLength={128}
+              className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = `${ACCENT}80`; }}
               onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
@@ -231,32 +328,14 @@ export default function RoleApply() {
           {/* Website */}
           <div>
             <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-1.5">
-              SITIO WEB{" "}
+              SITIO WEB / RED SOCIAL{" "}
               <span className="text-zinc-600 normal-case font-normal">(opcional)</span>
             </label>
             <input
               value={form.websiteUrl}
               onChange={(e) => setForm((f) => ({ ...f, websiteUrl: e.target.value }))}
-              placeholder="https://tutienda.com"
+              placeholder="https://..."
               maxLength={256}
-              className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = `${ACCENT}80`; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; }}
-            />
-          </div>
-
-          {/* Discord */}
-          <div>
-            <label className="block text-xs font-mono text-zinc-400 tracking-widest mb-1.5">
-              DISCORD O CONTACTO{" "}
-              <span className="text-zinc-600 normal-case font-normal">(opcional)</span>
-            </label>
-            <input
-              value={form.discordContact}
-              onChange={(e) => setForm((f) => ({ ...f, discordContact: e.target.value }))}
-              placeholder="usuario#0000, @usuario o email"
-              maxLength={128}
               className="w-full rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none transition-colors"
               style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
               onFocus={(e) => { e.currentTarget.style.borderColor = `${ACCENT}80`; }}
@@ -270,16 +349,23 @@ export default function RoleApply() {
 
           <button
             type="button"
-            disabled={form.orgName.trim().length < 2 || submitMutation.isPending}
-            onClick={() =>
+            disabled={!canSubmit || submitMutation.isPending}
+            onClick={() => {
+              // games y region se encodan en orgDescription para no requerir cambios de schema
+              const orgDescription = [
+                `Juegos: ${form.games.join(", ")}`,
+                `Región: ${form.region}`,
+              ].join("\n");
+
               submitMutation.mutate({
-                requestedRole: "partner",
+                requestedRole: "to",
                 orgName: form.orgName.trim(),
-                orgDescription: form.orgDescription || undefined,
-                websiteUrl: form.websiteUrl || undefined,
+                orgDescription,
+                experience: form.experience || undefined,
                 discordContact: form.discordContact || undefined,
-              })
-            }
+                websiteUrl: form.websiteUrl || undefined,
+              });
+            }}
             className="w-full flex items-center justify-center gap-2 py-3 rounded-xl font-orbitron font-bold text-sm text-white tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed"
             style={{ background: ACCENT }}
           >
@@ -299,7 +385,7 @@ export default function RoleApply() {
           </button>
 
           <p className="text-xs text-zinc-500 text-center">
-            El equipo de Red Level Circle revisará tu solicitud y te notificará por email y campanita.
+            El equipo de Red Level Circle revisará tu solicitud y te notificará por la campanita y email.
           </p>
         </div>
       </div>
