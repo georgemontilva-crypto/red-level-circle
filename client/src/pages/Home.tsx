@@ -1133,7 +1133,7 @@ export default function Home() {
               </div>
             </div>
           </Link>
-          <Link href="/creators#apply">
+          <Link href="/apply/creator">
             <div className="relative rounded-2xl overflow-hidden cursor-pointer group h-40">
               <div className="absolute inset-0 bg-gradient-to-br from-red-950/60 via-zinc-900 to-black" />
               <div className="relative p-6 h-full flex flex-col justify-between">
