@@ -108,6 +108,19 @@ export default function WalletPage() {
   const balance      = data?.balance ?? 0;
   const transactions = (data?.transactions ?? []) as Tx[];
 
+  // ── Banner publicitario ────────────────────────────────────────────────────
+  const { data: bannerData, refetch: refetchBanner } = trpc.banners.getSection.useQuery(
+    { sectionKey: "wallet_banner" },
+  );
+  const bannerUrl = bannerData?.imageUrl ?? null;
+
+  const uploadBannerImage = trpc.banners.uploadImage.useMutation();
+  const upsertBanner = trpc.banners.upsert.useMutation({
+    onSuccess: () => { refetchBanner(); toast.success("Banner actualizado"); },
+    onError: () => toast.error("Error al guardar banner"),
+  });
+  const isUploadingBanner = uploadBannerImage.isPending || upsertBanner.isPending;
+
   // ── Stats ──────────────────────────────────────────────────────────────────
   const totalGanado  = transactions.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
   const totalGastado = transactions.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
@@ -240,32 +253,59 @@ export default function WalletPage() {
         <div className="flex justify-end mb-2 flex-shrink-0">
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-widest transition-all hover:opacity-80"
+            disabled={isUploadingBanner}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-widest transition-all hover:opacity-80 disabled:opacity-50"
             style={{ background: "rgba(255,255,255,0.06)", color: "#71717a", border: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <Upload className="w-3 h-3" /> Cambiar imagen
+            <Upload className="w-3 h-3" />
+            {isUploadingBanner ? "Subiendo..." : "Cambiar imagen"}
           </button>
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/gif,image/webp,image/avif"
             className="hidden"
             onChange={e => {
               const file = e.target.files?.[0];
-              if (file) toast.info(`Integración con R2 próximamente — archivo: ${file.name}`);
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64 = (reader.result as string).split(",")[1];
+                const mimeType = file.type as "image/jpeg" | "image/png" | "image/gif" | "image/webp" | "image/avif";
+                uploadBannerImage.mutate(
+                  { base64, mimeType, sectionKey: "wallet_banner" },
+                  {
+                    onSuccess: ({ url }) => {
+                      upsertBanner.mutate({ sectionKey: "wallet_banner", imageUrl: url, isActive: true });
+                    },
+                    onError: () => toast.error("Error al subir imagen"),
+                  },
+                );
+              };
+              reader.readAsDataURL(file);
               e.target.value = "";
             }}
           />
         </div>
       )}
       <div
-        className="flex-1 rounded-2xl flex items-center justify-center"
-        style={{
+        className="flex-1 rounded-2xl overflow-hidden"
+        style={bannerUrl ? {} : {
           background: "linear-gradient(135deg, #16191f 0%, #0d0f14 100%)",
           border: "1px dashed rgba(255,255,255,0.08)",
         }}
       >
-        <p className="text-xs font-mono" style={{ color: "#3f3f46" }}>PUBLICIDAD</p>
+        {bannerUrl ? (
+          <img
+            src={bannerUrl}
+            alt="Banner publicitario"
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <p className="text-xs font-mono" style={{ color: "#3f3f46" }}>PUBLICIDAD</p>
+          </div>
+        )}
       </div>
     </div>
   );
