@@ -127,21 +127,99 @@ export default function WalletPage() {
     ? transactions
     : transactions.filter(t => FILTER_MAP[t.type] === activeFilter);
 
+  // ── Shared sub-blocks (used in both skeleton and render) ───────────────────
+  const headerCard = (
+    <div
+      className="rounded-2xl p-6 relative overflow-hidden"
+      style={{
+        background: "linear-gradient(135deg, rgba(220,38,38,0.22) 0%, rgba(180,20,20,0.10) 60%, rgba(0,0,0,0) 100%)",
+        border: "1px solid rgba(220,38,38,0.30)",
+      }}
+    >
+      {/* Skull decorativo semitransparente */}
+      <img
+        src="/rlcskull.webp"
+        alt=""
+        aria-hidden="true"
+        className="absolute pointer-events-none select-none"
+        style={{
+          right: "-28px",
+          top: "50%",
+          transform: "translateY(-50%)",
+          width: "170px",
+          height: "170px",
+          objectFit: "contain",
+          opacity: 0.15,
+          filter: "grayscale(1) brightness(1.5)",
+        }}
+      />
+      {/* Decorative glow */}
+      <div
+        className="absolute -top-6 -right-6 w-28 h-28 rounded-full pointer-events-none"
+        style={{ background: "rgba(220,38,38,0.15)", filter: "blur(28px)" }}
+      />
+
+      <p className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: "rgba(220,38,38,0.7)" }}>
+        Saldo disponible
+      </p>
+
+      <div className="flex items-center gap-3 mb-5">
+        <RLCIcon size={48} />
+        <div>
+          <p className="text-5xl font-black font-mono leading-none" style={{ color: "#ef4444" }}>
+            {balance.toLocaleString()}
+          </p>
+          <p className="text-xs font-mono mt-1" style={{ color: "rgba(220,38,38,0.55)" }}>RLC Coins</p>
+        </div>
+      </div>
+
+      {/* CTA buttons */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => navigate("/missions")}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron font-bold text-xs transition-all hover:opacity-90"
+          style={{ background: "#ef4444", color: "#fff" }}
+        >
+          <Zap className="w-3.5 h-3.5" /> Ganar RLC
+        </button>
+        <button
+          onClick={() => navigate("/shop")}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron font-bold text-xs transition-all hover:opacity-90"
+          style={{
+            background: "rgba(220,38,38,0.12)",
+            border: "1px solid rgba(220,38,38,0.30)",
+            color: "#ef4444",
+          }}
+        >
+          <ShoppingBag className="w-3.5 h-3.5" /> Gastar RLC
+        </button>
+      </div>
+    </div>
+  );
+
   // ── Loading skeleton ────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen" style={{ background: "#0a0a0a" }}>
-        <div className="max-w-[480px] mx-auto px-4 py-6 space-y-5">
-          <div className="h-48 rounded-2xl animate-pulse" style={{ background: "rgba(220,38,38,0.08)" }} />
-          <div className="grid grid-cols-2 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
-            ))}
-          </div>
-          <div className="space-y-2">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
-            ))}
+        <div className="max-w-[1100px] mx-auto px-4 py-6">
+          <div className="flex flex-col md:flex-row md:items-start gap-5">
+            {/* Left skeleton */}
+            <div className="md:w-[380px] md:flex-shrink-0">
+              <div className="h-64 rounded-2xl animate-pulse" style={{ background: "rgba(220,38,38,0.08)" }} />
+            </div>
+            {/* Right skeleton */}
+            <div className="flex-1 space-y-5">
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+                ))}
+              </div>
+              <div className="space-y-2">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: "rgba(255,255,255,0.05)" }} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -150,158 +228,101 @@ export default function WalletPage() {
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "#0a0a0a" }}>
-      <div className="max-w-[480px] mx-auto px-4 py-6 space-y-5">
+      <div className="max-w-[1100px] mx-auto px-4 py-6">
+        <div className="flex flex-col md:flex-row md:items-start gap-5">
 
-        {/* ── 1. Header / Balance ───────────────────────────────────────────── */}
-        <div
-          className="rounded-2xl p-6 relative overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, rgba(220,38,38,0.22) 0%, rgba(180,20,20,0.10) 60%, rgba(0,0,0,0) 100%)",
-            border: "1px solid rgba(220,38,38,0.30)",
-          }}
-        >
-          {/* Skull decorativo semitransparente */}
-          <img
-            src="/rlcskull.webp"
-            alt=""
-            aria-hidden="true"
-            className="absolute pointer-events-none select-none"
-            style={{
-              right: "-28px",
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: "170px",
-              height: "170px",
-              objectFit: "contain",
-              opacity: 0.15,
-              filter: "grayscale(1) brightness(1.5)",
-            }}
-          />
-          {/* Decorative glow */}
-          <div
-            className="absolute -top-6 -right-6 w-28 h-28 rounded-full pointer-events-none"
-            style={{ background: "rgba(220,38,38,0.15)", filter: "blur(28px)" }}
-          />
-
-          <p className="text-xs font-mono uppercase tracking-widest mb-4" style={{ color: "rgba(220,38,38,0.7)" }}>
-            Saldo disponible
-          </p>
-
-          <div className="flex items-center gap-3 mb-5">
-            <RLCIcon size={48} />
-            <div>
-              <p className="text-5xl font-black font-mono leading-none" style={{ color: "#ef4444" }}>
-                {balance.toLocaleString()}
-              </p>
-              <p className="text-xs font-mono mt-1" style={{ color: "rgba(220,38,38,0.55)" }}>RLC Coins</p>
-            </div>
+          {/* ── Left column — sticky balance card ─────────────────────────── */}
+          <div className="md:w-[380px] md:flex-shrink-0 md:sticky md:top-6">
+            {headerCard}
           </div>
 
-          {/* CTA buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={() => navigate("/missions")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron font-bold text-xs transition-all hover:opacity-90"
-              style={{ background: "#ef4444", color: "#fff" }}
-            >
-              <Zap className="w-3.5 h-3.5" /> Ganar RLC
-            </button>
-            <button
-              onClick={() => navigate("/shop")}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-orbitron font-bold text-xs transition-all hover:opacity-90"
-              style={{
-                background: "rgba(220,38,38,0.12)",
-                border: "1px solid rgba(220,38,38,0.30)",
-                color: "#ef4444",
-              }}
-            >
-              <ShoppingBag className="w-3.5 h-3.5" /> Gastar RLC
-            </button>
-          </div>
-        </div>
+          {/* ── Right column — stats + filters + list ─────────────────────── */}
+          <div className="flex-1 min-w-0 space-y-5">
 
-        {/* ── 2. Stats row ──────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 gap-3">
-          {[
-            { label: "Total ganado",   value: totalGanado,   icon: <TrendingUp   className="w-4 h-4" />, color: "#22c55e" },
-            { label: "Total gastado",  value: totalGastado,  icon: <TrendingDown className="w-4 h-4" />, color: "#ef4444" },
-            { label: "Txs este mes",   value: thisMo,        icon: <Calendar     className="w-4 h-4" />, color: "#60a5fa", raw: true },
-            { label: "Mayor depósito", value: mayorDeposito, icon: <Star         className="w-4 h-4" />, color: "#FACC15" },
-          ].map((s, i) => (
-            <div
-              key={i}
-              className="rounded-xl p-4 space-y-1"
-              style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              <div className="flex items-center gap-1.5" style={{ color: s.color }}>
-                {s.icon}
-                <span className="text-[10px] font-mono tracking-wider" style={{ color: "#52525b" }}>
-                  {s.label.toUpperCase()}
-                </span>
-              </div>
-              <p className="font-orbitron font-bold text-lg" style={{ color: s.color }}>
-                {(s as any).raw ? s.value : s.value.toLocaleString()}
-                {!(s as any).raw && <span className="text-xs ml-1 opacity-60">RLC</span>}
-              </p>
+            {/* ── Stats row ─────────────────────────────────────────────── */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Total ganado",   value: totalGanado,   icon: <TrendingUp   className="w-4 h-4" />, color: "#22c55e" },
+                { label: "Total gastado",  value: totalGastado,  icon: <TrendingDown className="w-4 h-4" />, color: "#ef4444" },
+                { label: "Txs este mes",   value: thisMo,        icon: <Calendar     className="w-4 h-4" />, color: "#60a5fa", raw: true },
+                { label: "Mayor depósito", value: mayorDeposito, icon: <Star         className="w-4 h-4" />, color: "#FACC15" },
+              ].map((s, i) => (
+                <div
+                  key={i}
+                  className="rounded-xl p-4 space-y-1"
+                  style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <div className="flex items-center gap-1.5" style={{ color: s.color }}>
+                    {s.icon}
+                    <span className="text-[10px] font-mono tracking-wider" style={{ color: "#52525b" }}>
+                      {s.label.toUpperCase()}
+                    </span>
+                  </div>
+                  <p className="font-orbitron font-bold text-lg" style={{ color: s.color }}>
+                    {(s as any).raw ? s.value : s.value.toLocaleString()}
+                    {!(s as any).raw && <span className="text-xs ml-1 opacity-60">RLC</span>}
+                  </p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {/* ── 3. Filtros ────────────────────────────────────────────────────── */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
-          {FILTERS.map(f => {
-            const count = countFor(f.key);
-            const active = activeFilter === f.key;
-            return (
-              <button
-                key={f.key}
-                onClick={() => setActiveFilter(f.key)}
-                className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all"
-                style={{
-                  background: active ? `${f.color}14` : "rgba(255,255,255,0.04)",
-                  border: active ? `1px solid ${f.color}40` : "1px solid rgba(255,255,255,0.06)",
-                  color: active ? f.color : "#71717a",
-                }}
-              >
-                {f.label}
-                {count > 0 && (
-                  <span
-                    className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+            {/* ── Filtros ───────────────────────────────────────────────── */}
+            <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+              {FILTERS.map(f => {
+                const count = countFor(f.key);
+                const active = activeFilter === f.key;
+                return (
+                  <button
+                    key={f.key}
+                    onClick={() => setActiveFilter(f.key)}
+                    className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-mono font-medium transition-all"
                     style={{
-                      background: active ? `${f.color}20` : "rgba(255,255,255,0.06)",
-                      color: active ? f.color : "#52525b",
+                      background: active ? `${f.color}14` : "rgba(255,255,255,0.04)",
+                      border: active ? `1px solid ${f.color}40` : "1px solid rgba(255,255,255,0.06)",
+                      color: active ? f.color : "#71717a",
                     }}
                   >
-                    {count}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── 4. Lista de transacciones ─────────────────────────────────────── */}
-        <div className="space-y-2">
-          {filtered.length === 0 ? (
-            <div
-              className="rounded-2xl p-12 text-center space-y-3"
-              style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.05)" }}
-            >
-              <Wallet className="w-12 h-12 mx-auto opacity-20" style={{ color: "#FACC15" }} />
-              <p className="font-orbitron font-bold text-sm tracking-wide" style={{ color: "#71717a" }}>
-                Sin transacciones
-              </p>
-              <p className="text-xs" style={{ color: "#3f3f46" }}>
-                {activeFilter === "all"
-                  ? "Aún no tienes movimientos en tu wallet."
-                  : "No hay transacciones en esta categoría."}
-              </p>
+                    {f.label}
+                    {count > 0 && (
+                      <span
+                        className="text-[10px] px-1.5 py-0.5 rounded-full font-bold"
+                        style={{
+                          background: active ? `${f.color}20` : "rgba(255,255,255,0.06)",
+                          color: active ? f.color : "#52525b",
+                        }}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-          ) : (
-            filtered.map(tx => <TxRow key={tx.id} tx={tx} />)
-          )}
-        </div>
 
+            {/* ── Lista de transacciones ────────────────────────────────── */}
+            <div className="space-y-2">
+              {filtered.length === 0 ? (
+                <div
+                  className="rounded-2xl p-12 text-center space-y-3"
+                  style={{ background: "#16191f", border: "1px solid rgba(255,255,255,0.05)" }}
+                >
+                  <Wallet className="w-12 h-12 mx-auto opacity-20" style={{ color: "#FACC15" }} />
+                  <p className="font-orbitron font-bold text-sm tracking-wide" style={{ color: "#71717a" }}>
+                    Sin transacciones
+                  </p>
+                  <p className="text-xs" style={{ color: "#3f3f46" }}>
+                    {activeFilter === "all"
+                      ? "Aún no tienes movimientos en tu wallet."
+                      : "No hay transacciones en esta categoría."}
+                  </p>
+                </div>
+              ) : (
+                filtered.map(tx => <TxRow key={tx.id} tx={tx} />)
+              )}
+            </div>
+
+          </div>
+        </div>
       </div>
     </div>
   );
