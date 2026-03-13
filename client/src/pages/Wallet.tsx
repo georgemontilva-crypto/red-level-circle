@@ -108,7 +108,7 @@ export default function WalletPage() {
   const [, navigate] = useLocation();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
 
-  const { data, isLoading } = trpc.users.wallet.useQuery();
+  const { data, isLoading } = trpc.auth.wallet.useQuery();
   const balance      = data?.balance ?? 0;
   const transactions = (data?.transactions ?? []) as Tx[];
 

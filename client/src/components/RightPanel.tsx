@@ -41,8 +41,8 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
 
 const TYPE_LINKS: Record<string, string> = {
   order_confirmed:      "/shop?tab=orders",
-  coins_earned:         "/shop?tab=orders",
-  coins_spent:          "/shop?tab=orders",
+  coins_earned:         "/wallet",
+  coins_spent:          "/wallet",
   bracket_ready:        "/tournaments",
   match_scheduled:      "/betting",
   match_result:         "/betting",
@@ -409,6 +409,17 @@ function WalletTab() {
             );
           })
         )}
+      </div>
+
+      {/* Link to full wallet page */}
+      <div className="flex-shrink-0 px-4 pb-4">
+        <a
+          href="/wallet"
+          className="block w-full text-center py-2.5 rounded-xl text-xs font-mono font-bold tracking-widest transition-colors mt-3"
+          style={{ background: "rgba(255,215,0,0.08)", border: "1px solid rgba(255,215,0,0.20)", color: "#FFD700" }}
+        >
+          VER HISTORIAL COMPLETO →
+        </a>
       </div>
     </div>
   );
