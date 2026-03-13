@@ -88,7 +88,7 @@ function MissionStepper({ mission }: { mission: Mission }) {
 
 // ─── Platform chips ───────────────────────────────────────────────────────────
 function PlatformChips({ platforms }: { platforms: string }) {
-  const chips = platforms.split(",").map(p => p.trim()).filter(Boolean);
+  const chips = platforms?.split(",").map(p => p.trim()).filter(Boolean) ?? [];
   return (
     <div className="flex flex-wrap gap-1.5">
       {chips.map((p, i) => (
@@ -251,7 +251,7 @@ function MissionDetail({ mission, onBack, onRefetch }: {
   const sub = mission.submission;
 
   const [links, setLinks] = useState<{ url: string; platform: string }[]>(
-    sub?.links.map(l => ({ url: l.url, platform: l.platform ?? "" })) ?? [{ url: "", platform: "" }]
+    (sub?.links ?? []).map(l => ({ url: l.url, platform: l.platform ?? "" }))
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -526,7 +526,7 @@ function MissionDetail({ mission, onBack, onRefetch }: {
           <h3 className="font-orbitron font-bold text-xs text-zinc-400 tracking-widest">TU ENTREGA</h3>
 
           <div className="space-y-2">
-            {sub.links.map((link, i) => (
+            {(sub.links ?? []).map((link, i) => (
               <a key={i} href={link.url} target="_blank" rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors">
                 <ExternalLink className="w-3.5 h-3.5 shrink-0" />
