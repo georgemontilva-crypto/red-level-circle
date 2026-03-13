@@ -142,7 +142,7 @@ export async function broadcastPushToAll(payload: PushPayload): Promise<void> {
 
 // ─── Email via Resend ─────────────────────────────────────────────────────────
 const RESEND_API_KEY = process.env.RESEND_API_KEY ?? "";
-const EMAIL_FROM = process.env.EMAIL_FROM ?? "Red Level Circle <noreply@redlevelcircle.gg>";
+const EMAIL_FROM = process.env.EMAIL_FROM ?? "Red Level Circle <noreply@redlevelcircle.com>";
 
 export interface EmailPayload {
   to: string;
