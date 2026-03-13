@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown,
-  Star, Coins, Wallet, Zap, ShoppingBag, Calendar, Gift,
+  Star, Coins, Wallet, Zap, ShoppingBag, Calendar, Gift, Upload,
 } from "lucide-react";
 import { RLCIcon } from "@/components/RLCIcon";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -99,6 +100,9 @@ export default function WalletPage() {
   const [, navigate] = useLocation();
   const [activeFilter, setActiveFilter] = useState<FilterKey>("all");
   const [redeemCode, setRedeemCode] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  const isSuperAdmin = user?.role === "super_admin";
 
   const { data, isLoading } = trpc.auth.wallet.useQuery();
   const balance      = data?.balance ?? 0;
@@ -231,15 +235,38 @@ export default function WalletPage() {
   );
 
   const adBanner = (
-    <div
-      className="rounded-2xl flex items-center justify-center flex-shrink-0"
-      style={{
-        height: "160px",
-        background: "linear-gradient(135deg, #16191f 0%, #0d0f14 100%)",
-        border: "1px dashed rgba(255,255,255,0.08)",
-      }}
-    >
-      <p className="text-xs font-mono" style={{ color: "#3f3f46" }}>PUBLICIDAD</p>
+    <div className="flex-1 flex flex-col min-h-0">
+      {isSuperAdmin && (
+        <div className="flex justify-end mb-2 flex-shrink-0">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-widest transition-all hover:opacity-80"
+            style={{ background: "rgba(255,255,255,0.06)", color: "#71717a", border: "1px solid rgba(255,255,255,0.08)" }}
+          >
+            <Upload className="w-3 h-3" /> Cambiar imagen
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => {
+              const file = e.target.files?.[0];
+              if (file) toast.info(`Integración con R2 próximamente — archivo: ${file.name}`);
+              e.target.value = "";
+            }}
+          />
+        </div>
+      )}
+      <div
+        className="flex-1 rounded-2xl flex items-center justify-center"
+        style={{
+          background: "linear-gradient(135deg, #16191f 0%, #0d0f14 100%)",
+          border: "1px dashed rgba(255,255,255,0.08)",
+        }}
+      >
+        <p className="text-xs font-mono" style={{ color: "#3f3f46" }}>PUBLICIDAD</p>
+      </div>
     </div>
   );
 
@@ -326,13 +353,13 @@ export default function WalletPage() {
   // ── Loading skeleton ────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen md:h-[calc(100vh-80px)] md:overflow-hidden" style={{ background: "#0a0a0a" }}>
-        <div className="max-w-7xl mx-auto px-6 md:px-8 py-6 h-full">
+      <div className="min-h-screen md:h-[calc(100vh-64px)] md:overflow-hidden" style={{ background: "#0a0a0a" }}>
+        <div className="w-full px-4 md:px-6 py-6 h-full">
           <div className="flex flex-col md:flex-row md:h-full gap-5">
             <div className="md:w-[340px] md:flex-shrink-0 flex flex-col gap-4">
               <div className="h-56 rounded-2xl animate-pulse" style={{ background: "rgba(220,38,38,0.08)" }} />
               <div className="h-28 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.04)" }} />
-              <div className="h-40 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
+              <div className="flex-1 rounded-2xl animate-pulse" style={{ background: "rgba(255,255,255,0.03)" }} />
             </div>
             <div className="flex-1 flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3">
@@ -355,16 +382,16 @@ export default function WalletPage() {
 
   return (
     <div
-      className="min-h-screen md:overflow-hidden pb-20 md:pb-0"
-      style={{ background: "#0a0a0a", height: "calc(100vh - 80px)" }}
+      className="min-h-screen md:h-[calc(100vh-64px)] md:overflow-hidden pb-20 md:pb-0"
+      style={{ background: "#0a0a0a" }}
     >
-      <div className="max-w-7xl mx-auto px-6 md:px-8 py-6 h-full">
+      <div className="w-full px-4 md:px-6 py-6 h-full">
 
         {/* ── Desktop: 2-column fixed layout │ Mobile: single column scroll ── */}
-        <div className="flex flex-col md:flex-row gap-5 h-full">
+        <div className="flex flex-col md:flex-row gap-5 md:h-full">
 
-          {/* ── Left column (340px) ───────────────────────────────────────── */}
-          <div className="md:w-[340px] md:flex-shrink-0 flex flex-col gap-4 md:overflow-y-auto scrollbar-none">
+          {/* ── Left column (340px, fills height) ────────────────────────── */}
+          <div className="md:w-[340px] md:flex-shrink-0 flex flex-col gap-4 md:h-full">
             {balanceCard}
             {redeemCard}
             {adBanner}
