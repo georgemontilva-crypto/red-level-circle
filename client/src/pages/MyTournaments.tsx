@@ -26,7 +26,7 @@ const BLOCKED_DELETE = ["in_progress", "completed"];
 
 export default function MyTournaments() {
   const utils = trpc.useUtils();
-  const { data: tournaments, isLoading } = trpc.tournaments.myTournaments.useQuery();
+  const { data: tournaments, isLoading, error } = trpc.tournaments.myTournaments.useQuery();
   const deleteMutation = trpc.tournaments.delete.useMutation({
     onSuccess: () => {
       toast.success("Torneo eliminado correctamente.");
@@ -76,6 +76,10 @@ export default function MyTournaments() {
                 style={{ background: "var(--bg-card)" }}
               />
             ))}
+          </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-red-400 text-sm font-mono">{error.message}</p>
           </div>
         ) : !tournaments || tournaments.length === 0 ? (
           <div
