@@ -24,7 +24,7 @@ export function TopNav() {
   const gridRef = useRef<HTMLDivElement>(null);
 
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
-  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isPremium = ["premium", "to", "cdc", "partner", "admin", "super_admin"].includes(user?.role ?? "");
 
   // Cart count
   const { data: cartData } = trpc.shop.getCart.useQuery(undefined, {

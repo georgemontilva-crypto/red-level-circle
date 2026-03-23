@@ -431,7 +431,7 @@ export default function RightPanel({ open, activeTab, onTabChange, onClose }: Ri
   const { user, isAuthenticated, logout } = useAuth();
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isPremium = ["premium", "to", "cdc", "partner", "admin", "super_admin"].includes(user?.role ?? "");
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
   const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : "U";
 

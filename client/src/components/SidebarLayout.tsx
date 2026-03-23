@@ -124,7 +124,7 @@ export default function SidebarLayout({ children }: SidebarLayoutProps) {
   const [mobileGridOpen, setMobileGridOpen] = useState(false);
   const mobileGridRef = useRef<HTMLDivElement>(null);
 
-  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isPremium = ["premium", "to", "cdc", "partner", "admin", "super_admin"].includes(user?.role ?? "");
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
 
   const { data: pendingCount } = trpc.registrations.pendingCount.useQuery(undefined, { enabled: isPremium });

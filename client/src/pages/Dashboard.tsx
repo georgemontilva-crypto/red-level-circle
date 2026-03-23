@@ -18,7 +18,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
 export default function Dashboard() {
   const { user } = useAuth();
   const [, navigate] = useLocation();
-  const isPremium = user?.role === "premium" || user?.role === "admin" || user?.role === "super_admin";
+  const isPremium = ["premium", "to", "cdc", "partner", "admin", "super_admin"].includes(user?.role ?? "");
 
   const { data: myTournaments, isLoading: loadingTournaments } = trpc.tournaments.myTournaments.useQuery(
     undefined,
